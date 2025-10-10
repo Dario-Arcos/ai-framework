@@ -110,7 +110,7 @@ fi
 
 # Add framework marketplace if not already present
 MARKETPLACE_NAME="ai-framework-local"
-if ! grep -q "$FRAMEWORK_DIR/plugin" "$MARKETPLACE_FILE" 2>/dev/null; then
+if ! grep -q "$FRAMEWORK_DIR/.claude-plugin" "$MARKETPLACE_FILE" 2>/dev/null; then
 	python3 - <<EOF
 import json
 with open('$MARKETPLACE_FILE', 'r') as f:
@@ -123,7 +123,7 @@ data['marketplaces'] = [m for m in data.get('marketplaces', []) if m.get('name')
 data.setdefault('marketplaces', []).append({
     'name': '$MARKETPLACE_NAME',
     'type': 'directory',
-    'path': '$FRAMEWORK_DIR/plugin'
+    'path': '$FRAMEWORK_DIR/.claude-plugin'
 })
 
 with open('$MARKETPLACE_FILE', 'w') as f:
