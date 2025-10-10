@@ -1,0 +1,12 @@
+{
+  "name": "ai-framework",
+  "owner": {
+    "name": "Dario Arcos"
+  },
+  "plugins": [
+    {
+      "name": "ai-framework",
+      "source": "./"
+    }
+  ]
+}
