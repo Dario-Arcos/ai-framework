@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--isolated",
+        "--viewport-size",
+        "1920x1080",
+        "--browser",
+        "chrome",
+        "--timeout-action",
+        "10000",
+        "--timeout-navigation",
+        "30000"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["@jpisnice/shadcn-ui-mcp-server"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# AI Framework - .gitignore
+
+# Runtime/Logs (never distribute)
+plugin/.claude-plugin/hooks/*.db
+template/.claude/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Test installations
+test-project/
+example-install/

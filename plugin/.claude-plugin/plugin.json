@@ -1,0 +1,19 @@
+{
+  "name": "ai-framework",
+  "description": "Constitutional AI-First development framework with 40+ specialized agents, intelligent hooks, and workflow automation",
+  "version": "1.0.0",
+  "author": {
+    "name": "Dario Arcos"
+  },
+  "homepage": "https://github.com/Dario-Arcos/ai-framework",
+  "repository": "https://github.com/Dario-Arcos/ai-framework",
+  "license": "MIT",
+  "keywords": [
+    "ai-first",
+    "constitutional-governance",
+    "tdd",
+    "agents",
+    "workflow-automation",
+    "claude-code"
+  ]
+}
