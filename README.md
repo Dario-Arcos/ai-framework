@@ -130,24 +130,6 @@ See all: Type `/help` in Claude Code
 
 ---
 
-## Validation
-
-Verify installation integrity:
-
-```bash
-cd /path/to/your/project
-~/ai-framework/validate.sh
-```
-
-Checks:
-
-- ✓ All configuration files present
-- ✓ JSON files valid
-- ✓ All governance rules installed
-- ✓ Plugin registered
-
----
-
 ## Architecture
 
 ### Hybrid Distribution Model

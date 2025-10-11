@@ -26,3 +26,4 @@ Thumbs.db
 # Test installations
 test-project/
 example-install/
+.claude-plugin/hooks/__pycache__/
