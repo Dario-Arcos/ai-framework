@@ -1,95 +1,88 @@
 # AI Framework
 
-**Production-ready AI-first development ecosystem** for Claude Code.
+**Transform any project into an AI-first development environment in 30 seconds.**
 
-Constitutional governance · 40+ specialized agents · Intelligent hooks · Workflow automation
+Constitutional governance · 40+ specialized agents · Intelligent hooks · Zero configuration
 
 ---
 
-## What Is This?
+## Why This Exists
 
-A complete, plug-and-play framework that transforms any project into an AI-first development environment. Install once, get:
+Most AI tools suggest. This framework **enforces**.
 
-- ✅ **Constitutional Governance** (Value/Complexity ratio, TDD enforcement, Complexity budgets)
-- ✅ **40+ Specialized AI Agents** (Architecture, Testing, DevOps, Security, Documentation, UX)
-- ✅ **22 Slash Commands** (Git/GitHub workflows, SDD cycle, Documentation automation)
-- ✅ **Intelligent Hooks** (Security guards, Code formatters, TDD enforcement, Notifications)
-- ✅ **MCP Servers** (Playwright for E2E testing, Shadcn/ui for components)
+Install once, get a complete ecosystem that **mandates** quality:
 
-**Framework-agnostic** · Works with any tech stack · Zero vendor lock-in
+- ⚖️ **Constitutional Governance** — Value/Complexity ratio ≥2x, TDD enforcement, Complexity budgets
+- 🤖 **40+ Specialized Agents** — Architecture, Security, Testing, DevOps, Documentation, UX
+- ⚡ **22 Slash Commands** — Git workflows, SDD cycle, Documentation automation
+- 🛡️ **5 Intelligent Hooks** — Security guards, Code formatters, TDD enforcement
+- 🎭 **MCP Servers** — Playwright (E2E), Shadcn/ui (Components)
+
+Framework-agnostic · Production-ready · Zero vendor lock-in
 
 ---
 
 ## Quick Install
 
 ```bash
-# 1. Install the plugin (auto-installs framework on first use)
+# Install plugin (auto-installs framework on first use)
 claude add plugin
-# Select marketplace: ai-framework (GitHub)
-# Select plugin: ai-framework
+# → Select: ai-framework (GitHub marketplace)
 
-# 2. Start Claude Code in your project
+# Start Claude Code in your project
 cd /path/to/your/project
 claude
 
-# That's it! Framework installs automatically on first session.
+# Done. Framework installs automatically.
 ```
 
 **Installation time:** ~30 seconds
-**Note:** The plugin automatically installs all configuration files on your first Claude Code session.
+**What gets installed:** See [Architecture](#architecture)
 
 ---
 
 ## What Gets Installed
 
-### Configuration Files
+### Your Project Root
 
 ```
 your-project/
-├── CLAUDE.md                    # Project-level configuration
-├── .mcp.json                    # MCP servers (Playwright, Shadcn)
+├── CLAUDE.md                # Project configuration
+├── .mcp.json                # MCP servers
 ├── .claude/
-│   ├── settings.json            # Hooks orchestrator
-│   └── rules/                   # 5 governance files
-│       ├── project-context.md           # Always Works™ methodology
-│       ├── effective-agents-guide.md    # Context engineering
-│       ├── datetime.md
-│       ├── github-operations.md
-│       └── worktree-operations.md
+│   ├── settings.json        # Hooks orchestrator
+│   └── rules/               # 5 governance files
 └── .specify/
-    ├── memory/                  # Constitutional documents
-    │   ├── constitution.md              # Core principles
-    │   ├── product-design-principles.md # Steve Jobs philosophy
-    │   └── uix-design-principles.md     # S-Tier SaaS checklist
-    ├── scripts/bash/            # Utility scripts (5 files)
-    └── templates/               # Templates (5 files)
+    ├── memory/              # Constitutional documents
+    ├── scripts/bash/        # Utility scripts
+    └── templates/           # Workflow templates
 ```
 
 ### Plugin Components (via Claude Code)
 
-- **44 Agents** organized in 13 categories
-- **22 Commands** organized in 4 modules
-- **5 Hooks** (Python scripts for enforcement)
+- **44 Agents** — 13 categories (Architecture, Security, Testing, DevOps...)
+- **22 Commands** — 4 modules (SDD cycle, Git/GitHub, Utils, Docs)
+- **5 Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
 
 ---
 
 ## Core Principles
 
-This framework enforces **5 non-negotiable principles**:
+Framework enforces **5 non-negotiable principles**:
 
-1. **AI-First**: Everything executable by AI with human oversight
-2. **Value/Complexity**: ROI ≥ 2x implementation complexity
-3. **Test-First Development**: TDD mandatory (Red-Green-Refactor)
-4. **Complexity Budget**: S≤80LOC | M≤250LOC | L≤600LOC (net change)
-5. **Reuse First**: Library-first, avoid abstractions <30% justification
+| Principle             | Enforcement                                          |
+| --------------------- | ---------------------------------------------------- |
+| **AI-First**          | Everything executable by AI with human oversight     |
+| **Value/Complexity**  | ROI ≥ 2x implementation complexity                   |
+| **Test-First**        | TDD mandatory (Red-Green-Refactor)                   |
+| **Complexity Budget** | S≤80LOC \| M≤250LOC \| L≤600LOC (net change)         |
+| **Reuse First**       | Library-first, avoid abstractions <30% justification |
 
 Full governance: [`.specify/memory/constitution.md`](template/.specify/memory/constitution.md)
 
 ---
 
-## Usage
-
-### Available Commands
+## Commands
 
 ```bash
 # Specification-Driven Development
@@ -103,130 +96,103 @@ Full governance: [`.specify/memory/constitution.md`](template/.specify/memory/co
 /git-github:pr          # Create pull request
 /git-github:issue-manager  # Manage issues
 
-# Documentation
+# Documentation & Research
 /utils:docs             # Update documentation
 /utils:changelog        # Auto-generate changelog
-
-# Research
 /utils:deep-research    # Professional investigation
 /utils:three-experts    # 3-expert panel workflow
 ```
 
-See all: Type `/help` in Claude Code
-
-### Agent Categories
-
-- **Architecture & System Design** (8 agents)
-- **Code Review & Security** (5 agents)
-- **Testing & Debugging** (4 agents)
-- **DevOps & Deployment** (4 agents)
-- **Documentation** (5 agents)
-- **Performance & Observability** (3 agents)
-- **Database Management** (2 agents)
-- **Shadcn-UI Components** (4 agents)
-- **UX & Design** (3 agents)
-- **Web & Application** (5 agents)
-- **Incident Response** (2 agents)
+**See all:** Type `/help` in Claude Code
 
 ---
 
-## Architecture
+## Agent Categories
 
-### Hybrid Distribution Model
+**Architecture & System Design** (8)
+Backend, Frontend, Cloud, Kubernetes, Mobile, GraphQL, Hybrid Cloud
 
-```
-Framework Repository
-├── plugin/                  # Official Plugin (commands/agents/hooks)
-│   └── .claude-plugin/
-│       ├── plugin.json
-│       ├── agents/          (44 files)
-│       ├── commands/        (22 files)
-│       ├── hooks/           (5 scripts)
-│       └── .mcp.json
-│
-└── template/                # Configuration Templates
-    ├── CLAUDE.md
-    ├── .claude/
-    │   ├── settings.json
-    │   └── rules/
-    └── .specify/
-```
+**Code Review & Security** (5)
+Architect Review, Quality Review, Security Review, Edge Case Detection, Config Security
 
-**Why Hybrid?**
+**Testing & Debugging** (4)
+TDD Orchestrator, Test Automator, Playwright Generator, Systematic Debugger
 
-- Uses official plugin system where supported (agents, commands, hooks)
-- Direct file distribution for unsupported items (settings, constitution)
-- One-command installation for complete ecosystem
+**DevOps & Deployment** (4)
+Deployment Engineer, Terraform Specialist, DevOps Troubleshooter, DX Optimizer
+
+**Documentation** (5)
+API Documenter, Docs Architect, Tutorial Engineer, Reference Builder, Mermaid Expert
+
+**Database** (2)
+Database Admin, Database Optimizer
+
+**UX & Design** (3)
+Premium UX Designer, Design Review, GSAP Animation Architect
+
+**Shadcn-UI** (4)
+Requirements Analyzer, Component Researcher, Implementation Builder, Quick Helper
+
+**Web & Application** (5)
+TypeScript, JavaScript, Python, PHP, Ruby specialists
+
+**Performance & Observability** (3)
+Observability Engineer, Performance Engineer, Web Search Specialist
+
+**Incident Response** (2)
+Incident Responder, Network Engineer
 
 ---
 
 ## Requirements
 
-### Critical (Required)
+**Critical** (Required)
 
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/installation)
 - [Git](https://git-scm.com/downloads)
 - [Python 3.8+](https://www.python.org/downloads/)
 
-### Essential (Full Functionality)
+**Essential** (Full Functionality)
 
-- [GitHub CLI](https://cli.github.com/) - for git/github commands
-- [Node.js 18+](https://nodejs.org/) - for MCPs and formatters
+- [GitHub CLI](https://cli.github.com/) — Git/GitHub commands
+- [Node.js 18+](https://nodejs.org/) — MCPs and formatters
 
-### Optional
+**Optional**
 
-- Python formatters: Black, Ruff, or autopep8
+- Python formatters: Black, Ruff, autopep8
 - Prettier (auto-installed via npx)
-- shfmt (Bash formatter)
-- jq (JSON processor)
-
----
-
-## Troubleshooting
-
-| Issue                     | Solution                                     |
-| ------------------------- | -------------------------------------------- |
-| Plugin not appearing      | `claude add plugin`, select from marketplace |
-| Settings.json not loading | Restart Claude Code                          |
-| Hooks not executing       | Check Python 3 installation                  |
-| Commands not visible      | Type `/help` to refresh command list         |
-
----
-
-## Contributing
-
-This framework is open for contributions:
-
-1. Fork the repository
-2. Create feature branch
-3. Follow constitutional principles (see `.specify/memory/constitution.md`)
-4. Submit PR with clear description
-
----
-
-## License
-
-MIT License - See [LICENSE](LICENSE)
-
-Contributions and feedback welcome via [GitHub Issues](https://github.com/Dario-Arcos/ai-framework/issues).
+- shfmt, jq
 
 ---
 
 ## Documentation
 
-- **[Constitution](template/.specify/memory/constitution.md)** - Core principles & governance
-- **[Always Works™](template/.claude/rules/project-context.md)** - Quality methodology
-- **[Effective Agents](template/.claude/rules/effective-agents-guide.md)** - Context engineering
-- **[Product Design](template/.specify/memory/product-design-principles.md)** - Steve Jobs philosophy
-- **[UX Design](template/.specify/memory/uix-design-principles.md)** - S-Tier SaaS checklist
+- **[Constitution](template/.specify/memory/constitution.md)** — Core principles & governance
+- **[Always Works™](template/.claude/rules/project-context.md)** — Quality methodology
+- **[Effective Agents](template/.claude/rules/effective-agents-guide.md)** — Context engineering
+- **[Product Design](template/.specify/memory/product-design-principles.md)** — Steve Jobs philosophy
+- **[UX Design](template/.specify/memory/uix-design-principles.md)** — S-Tier SaaS checklist
 
 ---
 
-## Version
+## Troubleshooting
 
-**Current:** 1.0.0
+| Issue                | Solution                                     |
+| -------------------- | -------------------------------------------- |
+| Plugin not appearing | `claude add plugin`, select from marketplace |
+| Settings not loading | Restart Claude Code                          |
+| Hooks not executing  | Check Python 3 installation                  |
+| Commands not visible | Type `/help` to refresh                      |
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+---
+
+## License
+
+MIT License — See [LICENSE](LICENSE)
+
+**Version:** 1.0.0 | **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+
+Contributions welcome via [GitHub Issues](https://github.com/Dario-Arcos/ai-framework/issues)
 
 ---
 
