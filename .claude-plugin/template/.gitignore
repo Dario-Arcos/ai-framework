@@ -1,0 +1,62 @@
+# AI Framework - Project .gitignore
+# Auto-installed by AI Framework plugin
+# Prevents framework files from being committed to your project repository
+
+# ============================================================================
+# FRAMEWORK FILES (installed but not committed)
+# ============================================================================
+
+# Framework configuration directories
+.claude/
+.specify/
+
+# ============================================================================
+# FRAMEWORK RUNTIME (logs, databases, temp files)
+# ============================================================================
+
+# Framework logs (created during Claude Code sessions)
+.claude/logs/
+
+# Hook databases (notifications, tracking)
+.claude-plugin/
+
+# ============================================================================
+# MCP SERVERS (optional - customize based on your needs)
+# ============================================================================
+
+# Uncomment if you DON'T want to commit .mcp.json to your team repository
+# (useful if each developer has different MCP configurations)
+# .mcp.json
+
+# ============================================================================
+# COMMON PROJECT FILES (add your own)
+# ============================================================================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+
+# Build outputs
+dist/
+build/
+*.log

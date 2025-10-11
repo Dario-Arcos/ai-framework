@@ -162,6 +162,7 @@ else
 	echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 	echo ""
 	echo -e "${RED}$ERRORS error(s) and $WARNINGS warning(s) found${NC}"
-	echo -e "${RED}Please run install.sh again to fix installation${NC}"
+	echo -e "${RED}Please reinstall the plugin: claude add plugin → ai-framework${NC}"
+	echo -e "${YELLOW}Or restart Claude Code to trigger auto-installation${NC}"
 	exit 1
 fi

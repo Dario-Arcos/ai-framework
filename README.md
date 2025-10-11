@@ -23,25 +23,20 @@ A complete, plug-and-play framework that transforms any project into an AI-first
 ## Quick Install
 
 ```bash
-# 1. Clone this framework
-git clone https://github.com/Dario-Arcos/ai-framework.git
-cd ai-framework
-
-# 2. Navigate to your project
-cd /path/to/your/project
-
-# 3. Install
-~/ai-framework/install.sh
-
-# 4. Complete plugin setup
+# 1. Install the plugin (auto-installs framework on first use)
 claude add plugin
-# Select: ai-framework
+# Select marketplace: ai-framework (GitHub)
+# Select plugin: ai-framework
 
-# 5. Start coding!
+# 2. Start Claude Code in your project
+cd /path/to/your/project
 claude
+
+# That's it! Framework installs automatically on first session.
 ```
 
-**Installation time:** ~2 minutes
+**Installation time:** ~30 seconds
+**Note:** The plugin automatically installs all configuration files on your first Claude Code session.
 
 ---
 
@@ -237,10 +232,11 @@ Contributions and feedback welcome via [GitHub Issues](https://github.com/Dario-
 
 ## Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute getting started
-- **[Constitution](template/.specify/memory/constitution.md)** - Core principles
+- **[Constitution](template/.specify/memory/constitution.md)** - Core principles & governance
 - **[Always Works™](template/.claude/rules/project-context.md)** - Quality methodology
 - **[Effective Agents](template/.claude/rules/effective-agents-guide.md)** - Context engineering
+- **[Product Design](template/.specify/memory/product-design-principles.md)** - Steve Jobs philosophy
+- **[UX Design](template/.specify/memory/uix-design-principles.md)** - S-Tier SaaS checklist
 
 ---
 
