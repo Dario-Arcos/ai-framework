@@ -9,7 +9,6 @@ import sys
 import json
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 
 def find_project_dir():
@@ -43,14 +42,28 @@ def validate_project_dir(project_dir):
 
 
 def is_already_installed(project_dir):
-    """Check if framework is already installed using marker file"""
-    marker = project_dir / ".specify" / ".ai-framework-installed"
-    return marker.exists()
+    """
+    Check if framework is already installed by verifying key framework files.
+    No marker files needed - we check for actual framework content.
+    """
+    # Key files that indicate framework is installed
+    key_files = [
+        project_dir / "CLAUDE.md",
+        project_dir / ".specify" / "memory" / "constitution.md",
+        project_dir / ".claude" / "settings.json",
+    ]
+
+    # If ALL key files exist, framework is already installed
+    return all(f.exists() for f in key_files)
 
 
 def copy_template_files(plugin_root, project_dir):
-    """Copy template files from plugin to user project (no overwrite)"""
+    """
+    Copy template files from plugin to user project (no overwrite).
+    Returns True if any files were actually copied, False otherwise.
+    """
     template_dir = plugin_root / "template"
+    files_copied = False
 
     # Directories to copy
     dirs_to_copy = [
@@ -72,6 +85,7 @@ def copy_template_files(plugin_root, project_dir):
                 # Copy only if destination doesn't exist
                 if not dest.exists():
                     shutil.copytree(src, dest, dirs_exist_ok=False)
+                    files_copied = True
             except (OSError, shutil.Error):
                 # Silent fail - file/dir might already exist
                 pass
@@ -82,32 +96,19 @@ def copy_template_files(plugin_root, project_dir):
         if src.exists() and not dest.exists():
             try:
                 shutil.copy2(src, dest)
+                files_copied = True
             except (OSError, IOError):
                 # Silent fail - file might already exist
                 pass
 
-
-def create_marker(project_dir):
-    """Create installation marker file"""
-    marker_dir = project_dir / ".specify"
-    marker_dir.mkdir(parents=True, exist_ok=True)
-
-    marker = marker_dir / ".ai-framework-installed"
-    install_date = datetime.now().isoformat()
-
-    # Write marker file
-    marker_content = "Installed on " + install_date + "\n"
-    with open(marker, "w", encoding="utf-8") as marker_file:
-        marker_file.write(marker_content)
-
-    return install_date
+    return files_copied
 
 
-def output_success_message(install_date):
+def output_success_message():
     """Output JSON message notifying user to restart Claude Code"""
     message = {
         "systemMessage": "✅ AI Framework instalado correctamente. Por favor reinicia Claude Code para cargar la configuración completa y los comandos personalizados.",
-        "additionalContext": "AI Framework installed on " + install_date,
+        "additionalContext": "AI Framework installation completed",
     }
     print(json.dumps(message, indent=2))
 
@@ -121,9 +122,9 @@ def main():
         # Validate project directory
         validate_project_dir(project_dir)
 
-        # Check if already installed
+        # Check if already installed (intelligent detection)
         if is_already_installed(project_dir):
-            # Silent exit - already installed
+            # Silent exit - already installed, no annoying messages
             sys.exit(0)
 
         # Get plugin root from environment variable
@@ -135,13 +136,12 @@ def main():
         plugin_root = Path(plugin_root_env)
 
         # Copy template files to user project
-        copy_template_files(plugin_root, project_dir)
+        files_copied = copy_template_files(plugin_root, project_dir)
 
-        # Create installation marker
-        install_date = create_marker(project_dir)
-
-        # Notify user
-        output_success_message(install_date)
+        # Only show success message if files were actually copied
+        # (first-time installation)
+        if files_copied:
+            output_success_message()
 
         sys.exit(0)
 
