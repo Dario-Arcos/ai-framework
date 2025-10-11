@@ -27,20 +27,20 @@ from pathlib import Path
 from datetime import datetime
 
 
-def find_claude_root():
-    """Find .claude directory using current working directory (where Claude Code was started)"""
+def find_project_root():
+    """Find project root using current working directory (where Claude Code was started)"""
     # Start from current working directory (user's project directory)
     current = Path(os.getcwd()).resolve()
     max_levels = 20  # Prevent infinite loops from circular symlinks
 
     # Check if current directory has .claude
     if (current / ".claude").exists() and (current / ".claude").is_dir():
-        return current / ".claude"
+        return current
 
     # Search upward for directory that CONTAINS .claude
     for _ in range(max_levels):
         if (current / ".claude").exists() and (current / ".claude").is_dir():
-            return current / ".claude"
+            return current
         if current == current.parent:
             break
         current = current.parent
@@ -50,11 +50,13 @@ def find_claude_root():
 def log_result():
     """Log behavioral guidelines activation"""
     try:
-        claude_root = find_claude_root()
-        if not claude_root:
+        project_root = find_project_root()
+        if not project_root:
             return
 
-        log_dir = claude_root / "logs" / datetime.now().strftime("%Y-%m-%d")
+        log_dir = (
+            project_root / ".claude" / "logs" / datetime.now().strftime("%Y-%m-%d")
+        )
         log_dir.mkdir(parents=True, exist_ok=True)
 
         with open(log_dir / "minimal_thinking.jsonl", "a") as f:
