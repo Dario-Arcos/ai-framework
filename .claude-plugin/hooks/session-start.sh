@@ -44,6 +44,15 @@ cp -n "${CLAUDE_PLUGIN_ROOT}/template/.mcp.json" "$PROJECT_DIR/" 2>/dev/null || 
 
 # Crear marker de instalación
 mkdir -p "$PROJECT_DIR/.specify"
-echo "Installed on $(date)" >"$MARKER"
+INSTALL_DATE=$(date)
+echo "Installed on $INSTALL_DATE" >"$MARKER"
+
+# Notificar al usuario que debe reiniciar para cargar la configuración completa
+cat <<EOF
+{
+  "systemMessage": "✅ AI Framework instalado correctamente. Por favor reinicia Claude Code para cargar la configuración completa y los comandos personalizados.",
+  "additionalContext": "AI Framework installed on $INSTALL_DATE"
+}
+EOF
 
 exit 0
