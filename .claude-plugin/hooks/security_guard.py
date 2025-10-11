@@ -25,17 +25,26 @@ ARCHITECTURAL NECESSITY:
 import json
 import re
 import sys
+import os
 from datetime import datetime
 from pathlib import Path
 
 
 def find_project_root():
-    """Find project root by searching upward for .claude directory"""
-    path = Path(__file__).resolve()
+    """Find project root using current working directory (where Claude Code was started)"""
+    # Start from current working directory (user's project directory)
+    path = Path(os.getcwd()).resolve()
+
+    # Check if current directory has .claude
+    if (path / ".claude").exists() and (path / ".claude").is_dir():
+        return path
+
+    # Search upward for directory that CONTAINS .claude
     while path.parent != path:
-        if (path / ".claude").exists():
+        if (path / ".claude").exists() and (path / ".claude").is_dir():
             return path
         path = path.parent
+
     raise RuntimeError("Project root with .claude directory not found")
 
 

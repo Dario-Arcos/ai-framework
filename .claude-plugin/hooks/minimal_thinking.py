@@ -22,22 +22,30 @@ ARCHITECTURAL NECESSITY:
   exits the context window. This mechanism guarantees behavioral invariants
   throughout the entire session lifecycle.
 """
-import sys, json
+import sys, json, os
 from pathlib import Path
 from datetime import datetime
 
+
 def find_claude_root():
-    """Find .claude directory going up from this script"""
-    current = Path(__file__).parent
+    """Find .claude directory using current working directory (where Claude Code was started)"""
+    # Start from current working directory (user's project directory)
+    current = Path(os.getcwd()).resolve()
     max_levels = 20  # Prevent infinite loops from circular symlinks
-    
+
+    # Check if current directory has .claude
+    if (current / ".claude").exists() and (current / ".claude").is_dir():
+        return current / ".claude"
+
+    # Search upward for directory that CONTAINS .claude
     for _ in range(max_levels):
-        if (current / '.claude').exists():
-            return current / '.claude'
+        if (current / ".claude").exists() and (current / ".claude").is_dir():
+            return current / ".claude"
         if current == current.parent:
             break
         current = current.parent
     return None
+
 
 def log_result():
     """Log behavioral guidelines activation"""
@@ -45,24 +53,30 @@ def log_result():
         claude_root = find_claude_root()
         if not claude_root:
             return
-        
-        log_dir = claude_root / 'logs' / datetime.now().strftime('%Y-%m-%d')
+
+        log_dir = claude_root / "logs" / datetime.now().strftime("%Y-%m-%d")
         log_dir.mkdir(parents=True, exist_ok=True)
-        
-        with open(log_dir / 'minimal_thinking.jsonl', 'a') as f:
-            f.write(json.dumps({
-                "timestamp": datetime.now().isoformat(),
-                "guidelines_injected": True
-            }) + '\n')
+
+        with open(log_dir / "minimal_thinking.jsonl", "a") as f:
+            f.write(
+                json.dumps(
+                    {
+                        "timestamp": datetime.now().isoformat(),
+                        "guidelines_injected": True,
+                    }
+                )
+                + "\n"
+            )
     except:
         pass  # Silent fail
+
 
 def main():
     try:
         data = json.loads(sys.stdin.read(10485760))  # 10MB limit
     except (json.JSONDecodeError, MemoryError):
         sys.exit(0)  # Silent fail, don't block Claude
-    
+
     # Inject behavioral guidelines before Claude processes the prompt
     guidelines = """MUST BE USED PROACTIVELY:
 
@@ -75,6 +89,7 @@ def main():
 
     print(guidelines)
     log_result()
+
 
 if __name__ == "__main__":
     main()
