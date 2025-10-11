@@ -5,6 +5,24 @@
 
 set -e
 
+# VALIDACIÓN CRÍTICA: Verificar que CLAUDE_PROJECT_DIR esté correctamente configurado
+if [ -z "$CLAUDE_PROJECT_DIR" ]; then
+	echo "ERROR: CLAUDE_PROJECT_DIR no está definido" >&2
+	echo "DEBUG: PWD=$PWD" >&2
+	echo "DEBUG: CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT" >&2
+	exit 1
+fi
+
+if [ "$CLAUDE_PROJECT_DIR" = "/" ]; then
+	echo "ERROR: CLAUDE_PROJECT_DIR no puede ser la raíz del sistema" >&2
+	exit 1
+fi
+
+if [ ! -d "$CLAUDE_PROJECT_DIR" ]; then
+	echo "ERROR: CLAUDE_PROJECT_DIR no es un directorio válido: $CLAUDE_PROJECT_DIR" >&2
+	exit 1
+fi
+
 # Marker para detectar si ya está instalado
 MARKER="$CLAUDE_PROJECT_DIR/.specify/.ai-framework-installed"
 
