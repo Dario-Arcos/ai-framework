@@ -4,6 +4,9 @@
 plugin/.claude-plugin/hooks/*.db
 template/.claude/logs/
 
+# Local development settings (personal config)
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
