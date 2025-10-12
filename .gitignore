@@ -43,3 +43,11 @@ Thumbs.db
 *.tmp
 *.bak
 *.backup
+
+# ============================================================================
+# AI FRAMEWORK FILES (auto-added by ai-framework plugin)
+# ============================================================================
+
+.claude/logs/
+.claude/settings.local.json
+.claude/*.db
