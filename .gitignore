@@ -1,40 +1,45 @@
-# AI Framework - .gitignore
+# AI Framework - Repository .gitignore
+# This is the framework's own .gitignore (NOT the template for user projects)
 
-# Runtime/Logs (never distribute)
-plugin/.claude-plugin/hooks/*.db
-template/.claude/logs/
+# ============================================================================
+# FRAMEWORK DEVELOPMENT - Files to ignore during development
+# ============================================================================
 
-# Local development settings (personal config)
-.claude/settings.local.json
+# Framework uses itself - ignore installed files (source is in template/)
+.claude/
+.specify/
+CLAUDE.md
+.mcp.json
 
-# OS
+# Runtime/Logs (generated during development/testing)
+.claude-plugin/hooks/*.db
+.claude-plugin/hooks/__pycache__/
+
+# Test installations (test projects created during development)
+test-project/
+example-install/
+
+# ============================================================================
+# OS FILES
+# ============================================================================
+
 .DS_Store
 Thumbs.db
 
-# Editor
+# ============================================================================
+# EDITOR DIRECTORIES
+# ============================================================================
+
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Temporary files
+# ============================================================================
+# TEMPORARY FILES
+# ============================================================================
+
 *.tmp
 *.bak
 *.backup
-
-# Test installations
-test-project/
-example-install/
-.claude-plugin/hooks/__pycache__/
-
-# ============================================================================
-# AI FRAMEWORK FILES (auto-added by ai-framework plugin)
-# ============================================================================
-
-.claude/
-.specify/
-.claude/logs/
-.claude-plugin/hooks/*.db
-CLAUDE.md
-.mcp.json

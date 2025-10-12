@@ -6,11 +6,12 @@
 # FRAMEWORK FILES (installed but not committed)
 # ============================================================================
 
-# Framework configuration directories
+# Framework internals (rules, configuration)
 .claude/
 .specify/
 
-# Framework configuration files
+# Framework project files (ignored by default)
+# To version these files, comment out the lines below:
 CLAUDE.md
 .mcp.json
 
@@ -21,7 +22,11 @@ CLAUDE.md
 # Framework logs (created during Claude Code sessions)
 .claude/logs/
 
+# Personal settings (not shared with team)
+.claude/settings.local.json
+
 # Hook databases (notifications, tracking)
+.claude/*.db
 .claude-plugin/hooks/*.db
 .claude-plugin/hooks/__pycache__/
 
