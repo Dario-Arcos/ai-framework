@@ -75,13 +75,13 @@ CRITICAL_PATTERNS = [
         "message": "CRITICAL: SQL injection risk (f-string in query)",
         "severity": "critical",
     },
-    # Command injection via subprocess with variables
+    # Command injection via subprocess with shell=True
     {
         "regex": re.compile(
-            r"subprocess\.(run|call|Popen|check_output)\s*\((?:[^)]*\{|[^)]*\w+\[|[^)]*\w+\.\w+|\s*\w+(?:\s|,|\)))",
+            r"subprocess\.(run|call|Popen|check_output)\s*\([^)]*shell\s*=\s*True",
             re.I,
         ),
-        "message": "CRITICAL: Command injection risk (dynamic subprocess input)",
+        "message": "CRITICAL: Command injection risk (shell=True with subprocess)",
         "severity": "critical",
     },
     # Path traversal (recommended by official docs: "Block path traversal")

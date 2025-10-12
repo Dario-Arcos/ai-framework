@@ -29,24 +29,26 @@ REQUIREMENTS:
   - shfmt for shell scripts (optional)
 """
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 # Formatter mapping (assumes tools are installed)
 FORMATTERS = {
-    '.js': ['npx', 'prettier', '--write'],
-    '.jsx': ['npx', 'prettier', '--write'],
-    '.ts': ['npx', 'prettier', '--write'],
-    '.tsx': ['npx', 'prettier', '--write'],
-    '.json': ['npx', 'prettier', '--write'],
-    '.md': ['npx', 'prettier', '--write'],
-    '.yml': ['npx', 'prettier', '--write'],
-    '.yaml': ['npx', 'prettier', '--write'],
-    '.py': ['black', '--quiet'],
-    '.sh': ['shfmt', '-w'],
-    '.bash': ['shfmt', '-w'],
+    ".js": ["npx", "prettier", "--write"],
+    ".jsx": ["npx", "prettier", "--write"],
+    ".ts": ["npx", "prettier", "--write"],
+    ".tsx": ["npx", "prettier", "--write"],
+    ".json": ["npx", "prettier", "--write"],
+    ".md": ["npx", "prettier", "--write"],
+    ".yml": ["npx", "prettier", "--write"],
+    ".yaml": ["npx", "prettier", "--write"],
+    ".py": ["black", "--quiet"],
+    ".sh": ["shfmt", "-w"],
+    ".bash": ["shfmt", "-w"],
 }
+
 
 def main():
     try:
@@ -67,11 +69,14 @@ def main():
             print(json.dumps({"status": "skipped", "reason": "unsupported_ext"}))
             sys.exit(0)
 
+        # Check if formatter tool exists
+        if not shutil.which(formatter[0]):
+            print(json.dumps({"status": "skipped", "reason": "formatter_not_found"}))
+            sys.exit(0)
+
         # Run formatter (timeout 10s, capture output to suppress noise)
         result = subprocess.run(
-            formatter + [file_path],
-            capture_output=True,
-            timeout=10
+            formatter + [file_path], capture_output=True, timeout=10
         )
 
         # Report success/failure (non-blocking)
@@ -87,6 +92,7 @@ def main():
         print(json.dumps({"status": "error", "reason": str(e)[:50]}))
 
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
