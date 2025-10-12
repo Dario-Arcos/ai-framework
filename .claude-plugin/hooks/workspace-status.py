@@ -49,10 +49,7 @@ def build_output_message(settings):
     """Build the complete output message (steps 1, 3, 5, 6, 7, 8)"""
     lines = []
 
-    # Step 1: Header
-    lines.append("*Configurando workspace...*\n")
-
-    # Step 3: Basic context (using environment info, no subprocess)
+    # Step 3: Basic context (direct, no header)
     cwd = os.getcwd()
     is_worktree = "worktree-" in cwd
 

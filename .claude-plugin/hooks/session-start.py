@@ -28,28 +28,19 @@ FRAMEWORK_SECTION_KEYWORDS = (
 
 
 def find_project_dir():
-    """Find project directory using environment variables or cwd"""
-    # IMPORTANTE: CLAUDE_PROJECT_DIR no está disponible en SessionStart hooks
-    # Usamos os.getcwd() que apunta al directorio donde Claude Code fue iniciado
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    return Path(project_dir).resolve()
+    """Find project directory (cwd when Claude started)"""
+    return Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
 
 
 def validate_project_dir(project_dir):
-    """Validate that project directory is safe and accessible"""
-    # Check if it's root (unsafe)
+    """Validate project directory is safe and accessible"""
     if str(project_dir) == "/" or str(project_dir) == project_dir.root:
-        sys.stderr.write(
-            "ERROR: El directorio del proyecto no puede ser la raíz del sistema\n"
-        )
+        sys.stderr.write("ERROR: Project dir cannot be system root\n")
         sys.exit(1)
-
-    # Check if directory exists and is accessible
     if not project_dir.is_dir():
-        error_msg = (
-            "ERROR: El directorio del proyecto no existe: " + str(project_dir) + "\n"
+        sys.stderr.write(
+            "ERROR: Project dir does not exist: " + str(project_dir) + "\n"
         )
-        sys.stderr.write(error_msg)
         sys.exit(1)
 
 
@@ -66,36 +57,27 @@ def is_already_installed(project_dir):
 def extract_framework_rules(template_gitignore):
     """Extract framework-specific ignore rules from template .gitignore."""
     rules = []
-    in_framework_section = False
-    skip_next_separator = False
+    in_section = False
+    skip_first_separator = False
 
     try:
         with open(template_gitignore, "r", encoding="utf-8") as f:
             for line in f:
                 stripped = line.strip()
 
-                if any(keyword in line for keyword in FRAMEWORK_SECTION_KEYWORDS):
-                    in_framework_section = True
-                    skip_next_separator = True
+                if any(kw in line for kw in FRAMEWORK_SECTION_KEYWORDS):
+                    in_section = True
+                    skip_first_separator = True
                     continue
 
-                if (
-                    skip_next_separator
-                    and stripped.startswith("#")
-                    and SECTION_SEPARATOR_PATTERN in line
-                ):
-                    skip_next_separator = False
+                if stripped.startswith("#") and SECTION_SEPARATOR_PATTERN in line:
+                    if skip_first_separator:
+                        skip_first_separator = False
+                    else:
+                        in_section = False
                     continue
 
-                if (
-                    in_framework_section
-                    and stripped.startswith("#")
-                    and SECTION_SEPARATOR_PATTERN in line
-                ):
-                    in_framework_section = False
-                    continue
-
-                if in_framework_section and stripped and not stripped.startswith("#"):
+                if in_section and stripped and not stripped.startswith("#"):
                     rules.append(stripped)
 
     except (OSError, IOError):
@@ -238,29 +220,6 @@ def copy_template_files(plugin_root, project_dir):
     return files_copied
 
 
-def output_success_message(project_dir):
-    """Output JSON message notifying user to restart Claude Code"""
-    # Create marker for workspace-status.py to skip this session
-    marker = project_dir / ".claude" / ".pending_restart"
-    try:
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.touch()
-    except:
-        pass  # Silent fail if can't create marker
-
-    message = {
-        "systemMessage": (
-            "✅ AI Framework instalado correctamente\n\n"
-            "🔄 Último paso: Reinicia Claude Code una vez más\n\n"
-            "Claude acabó de instalar tus configuraciones personalizadas "
-            "(status line, settings, templates) y necesita recargarlas.\n\n"
-            "💡 Solo sucede esta primera vez. Después todo funciona automáticamente."
-        ),
-        "additionalContext": "AI Framework installation completed",
-    }
-    print(json.dumps(message, indent=2))
-
-
 def main():
     """Main installation flow"""
     try:
@@ -294,9 +253,39 @@ def main():
         if not already_installed:
             files_copied = copy_template_files(plugin_root, project_dir)
 
-        # Show success message if files were copied or gitignore updated
-        if files_copied or gitignore_updated:
-            output_success_message(project_dir)
+        # Show appropriate message based on what changed
+        if files_copied:
+            # Create marker for workspace-status.py coordination
+            try:
+                (project_dir / ".claude" / ".pending_restart").touch()
+            except:
+                pass
+            # Configuration installed - restart required
+            print(
+                json.dumps(
+                    {
+                        "systemMessage": (
+                            "✅ AI Framework instalado\n\n"
+                            "Archivos: settings.local.json, CLAUDE.md, .mcp.json\n"
+                            "🔄 Reinicia Claude Code para cargarlos.\n\n"
+                            "💡 Solo esta vez."
+                        ),
+                        "additionalContext": "Config installed, restart required",
+                    },
+                    indent=2,
+                )
+            )
+        elif gitignore_updated:
+            # Only gitignore updated - no restart needed
+            print(
+                json.dumps(
+                    {
+                        "systemMessage": "✅ .gitignore actualizado.\nNo necesitas reiniciar.",
+                        "additionalContext": "Gitignore updated, no restart needed",
+                    },
+                    indent=2,
+                )
+            )
 
         sys.exit(0)
 
