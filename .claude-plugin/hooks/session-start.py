@@ -241,7 +241,13 @@ def copy_template_files(plugin_root, project_dir):
 def output_success_message():
     """Output JSON message notifying user to restart Claude Code"""
     message = {
-        "systemMessage": "✅ AI Framework instalado correctamente. Por favor reinicia Claude Code para cargar la configuración completa y los comandos personalizados.",
+        "systemMessage": (
+            "✅ AI Framework instalado correctamente\n\n"
+            "🔄 Último paso: Reinicia Claude Code una vez más\n\n"
+            "Claude acabó de instalar tus configuraciones personalizadas "
+            "(status line, settings, templates) y necesita recargarlas.\n\n"
+            "💡 Solo sucede esta primera vez. Después todo funciona automáticamente."
+        ),
         "additionalContext": "AI Framework installation completed",
     }
     print(json.dumps(message, indent=2))

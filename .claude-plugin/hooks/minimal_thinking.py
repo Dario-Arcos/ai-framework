@@ -89,7 +89,14 @@ def main():
 5. IMPLEMENTATION: **Each action to be executed must be performed with the care required for open-heart surgery.** Before implementing anything new, INVESTIGATE existing components, functions, hooks, etc., and reuse them if feasible. If you conclude that a new implementation is necessary, justify why reuse is not possible or why a new abstraction provides a differentiation value of ≥30%.
 6. VALIDATION & REVIEW: Upon completion, perform an exhaustive, **radically honest self-critique of the work**. Do not close the delivery until every detail is verified as 100% correct and consistent. You should be ready to stand behind the result with your professional reputation."""
 
-    print(guidelines)
+    # Return JSON format required by Claude Code (not plain text)
+    output = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": guidelines,
+        }
+    }
+    print(json.dumps(output))
     log_result()
 
 
