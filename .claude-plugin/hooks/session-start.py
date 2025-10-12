@@ -58,7 +58,7 @@ def is_already_installed(project_dir):
     key_files = [
         project_dir / "CLAUDE.md",
         project_dir / ".specify" / "memory" / "constitution.md",
-        project_dir / ".claude" / "settings.json",
+        project_dir / ".claude" / "settings.local.json",
     ]
     return all(f.exists() for f in key_files)
 
@@ -213,6 +213,16 @@ def copy_template_files(plugin_root, project_dir):
                 if not dest.exists():
                     shutil.copytree(src, dest, dirs_exist_ok=False)
                     files_copied = True
+                else:
+                    # Directory exists, copy missing files only
+                    for item in src.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(src)
+                            dest_file = dest / rel_path
+                            if not dest_file.exists():
+                                dest_file.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(item, dest_file)
+                                files_copied = True
             except (OSError, shutil.Error):
                 pass
 

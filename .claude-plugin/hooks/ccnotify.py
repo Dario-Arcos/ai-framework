@@ -17,9 +17,7 @@ class ClaudePromptTracker:
         """Initialize the prompt tracker with database setup"""
         # Use current working directory (user's project) for database and logs
         self.project_root = self.find_project_root()
-        self.db_path = os.path.join(
-            self.project_root, ".claude-plugin", "hooks", "ccnotify.db"
-        )
+        self.db_path = os.path.join(self.project_root, ".claude", "ccnotify.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self.setup_logging()
         self.init_database()

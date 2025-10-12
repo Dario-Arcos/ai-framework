@@ -1,0 +1,79 @@
+{
+  "cleanupPeriodDays": 7,
+  "enableAllProjectMcpServers": true,
+  "includeCoAuthoredBy": false,
+
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [],
+
+    "allow": [
+      "Read(**)",
+      "Edit(**)",
+      "MultiEdit(**)",
+      "Write(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "LS(**)",
+      "NotebookRead(**)",
+      "NotebookEdit(**)",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+
+      "Bash(npm ci)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run test:*)",
+      "Bash(yarn :*)",
+      "Bash(pnpm :*)",
+
+      "Bash(python -m venv :*)",
+      "Bash(pip install :*)",
+      "Bash(node :*)",
+
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:github.com)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset --hard:*)",
+
+      "Bash(docker :*)",
+      "Bash(kubectl :*)",
+      "Bash(aws :*)",
+      "Bash(gcloud :*)",
+      "Bash(az :*)",
+      "Bash(terraform :*)",
+      "Bash(systemctl :*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf :*)",
+      "Bash(rm -rf ~/*)",
+      "Bash(sudo:*)",
+      "Bash(chown:*)",
+      "Bash(chmod -R 777:*)",
+      "Bash(dd if=:*)",
+      "Bash(mkfs:*)",
+      "Bash(diskutil :*)",
+      "Bash(shutdown:*)",
+      "Bash(reboot:*)",
+
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./secrets/**)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx --yes ccstatusline@latest",
+    "padding": 0
+  }
+}
