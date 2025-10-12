@@ -220,6 +220,34 @@ def copy_template_files(plugin_root, project_dir):
     return files_copied
 
 
+def check_missing_essential_deps():
+    """Check for missing essential dependencies with high UX impact"""
+    # DEPENDENCY REGISTRY (sync with setup-dependencies.md)
+    # Format: (tool, platforms)
+    # platforms: "darwin" | "linux" | "all"
+    DEPS = [
+        ("terminal-notifier", "darwin"),  # Notifications (macOS only)
+        ("black", "all"),  # Python formatter
+        # Future additions here:
+        # ("playwright", "all"),  # E2E testing
+        # ("jq", "all"),  # JSON processing
+    ]
+
+    missing = []
+
+    try:
+        for tool, platforms in DEPS:
+            # Check if applies to current platform
+            if platforms == "all" or sys.platform == platforms:
+                if not shutil.which(tool):
+                    missing.append(tool)
+    except Exception:
+        # If check fails, return empty (fail-safe: don't block installation)
+        return []
+
+    return missing
+
+
 def main():
     """Main installation flow"""
     try:
@@ -260,16 +288,40 @@ def main():
                 (project_dir / ".claude" / ".pending_restart").touch()
             except:
                 pass
-            # Configuration installed - restart required
+
+            # Check for missing essential dependencies
+            missing_deps = check_missing_essential_deps()
+
+            # Build installation message
+            if missing_deps:
+                # Platform-specific install command
+                if sys.platform == "darwin":
+                    install_cmd = "brew install " + " ".join(missing_deps)
+                else:
+                    # Linux/Windows: Python packages (black, etc)
+                    install_cmd = "pip install " + " ".join(missing_deps)
+
+                msg = (
+                    "✅ AI Framework instalado\n\n"
+                    "⚠️ Setup recomendado (una vez):\n"
+                    "Faltan: " + ", ".join(missing_deps) + "\n\n"
+                    "Instalación rápida: /utils:setup-dependencies\n"
+                    "Manual: " + install_cmd + "\n\n"
+                    "💡 Framework funciona sin esto, pero notificaciones/formateo limitados.\n\n"
+                    "🔄 Reinicia Claude Code ahora."
+                )
+            else:
+                msg = (
+                    "✅ AI Framework instalado\n\n"
+                    "Archivos: settings.local.json, CLAUDE.md, .mcp.json\n"
+                    "🔄 Reinicia Claude Code para cargarlos.\n\n"
+                    "💡 Solo esta vez."
+                )
+
             print(
                 json.dumps(
                     {
-                        "systemMessage": (
-                            "✅ AI Framework instalado\n\n"
-                            "Archivos: settings.local.json, CLAUDE.md, .mcp.json\n"
-                            "🔄 Reinicia Claude Code para cargarlos.\n\n"
-                            "💡 Solo esta vez."
-                        ),
+                        "systemMessage": msg,
                         "additionalContext": "Config installed, restart required",
                     },
                     indent=2,
