@@ -13,13 +13,18 @@
     ],
     "PreToolUse": [
       {
-        "matcher": ".*",
+        "matcher": "Task",
         "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.py",
             "timeout": 5
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/security_guard.py",
@@ -47,12 +52,12 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/minimal_thinking.py",
-            "timeout": 3
+            "timeout": 2
           },
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py UserPromptSubmit",
-            "timeout": 3
+            "timeout": 2
           }
         ]
       }
@@ -64,7 +69,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop",
-            "timeout": 3
+            "timeout": 2
           }
         ]
       }
@@ -76,7 +81,7 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Notification",
-            "timeout": 3
+            "timeout": 2
           }
         ]
       }

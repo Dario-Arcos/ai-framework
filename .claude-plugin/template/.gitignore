@@ -10,6 +10,10 @@
 .claude/
 .specify/
 
+# Framework configuration files
+CLAUDE.md
+.mcp.json
+
 # ============================================================================
 # FRAMEWORK RUNTIME (logs, databases, temp files)
 # ============================================================================
@@ -18,15 +22,8 @@
 .claude/logs/
 
 # Hook databases (notifications, tracking)
-.claude-plugin/
-
-# ============================================================================
-# MCP SERVERS (optional - customize based on your needs)
-# ============================================================================
-
-# Uncomment if you DON'T want to commit .mcp.json to your team repository
-# (useful if each developer has different MCP configurations)
-# .mcp.json
+.claude-plugin/hooks/*.db
+.claude-plugin/hooks/__pycache__/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)

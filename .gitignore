@@ -27,3 +27,14 @@ Thumbs.db
 test-project/
 example-install/
 .claude-plugin/hooks/__pycache__/
+
+# ============================================================================
+# AI FRAMEWORK FILES (auto-added by ai-framework plugin)
+# ============================================================================
+
+.claude/
+.specify/
+.claude/logs/
+.claude-plugin/hooks/*.db
+CLAUDE.md
+.mcp.json
