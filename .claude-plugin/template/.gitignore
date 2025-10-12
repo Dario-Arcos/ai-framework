@@ -30,6 +30,10 @@ CLAUDE.md
 .claude-plugin/hooks/*.db
 .claude-plugin/hooks/__pycache__/
 
+# Hook coordination markers (temporary files)
+.claude/.pending_restart
+.claude/.framework_initialized
+
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
 # ============================================================================

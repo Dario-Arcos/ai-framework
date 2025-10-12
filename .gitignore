@@ -51,3 +51,7 @@ Thumbs.db
 .claude/logs/
 .claude/settings.local.json
 .claude/*.db
+
+# Hook coordination markers (temporary files)
+.claude/.pending_restart
+.claude/.framework_initialized

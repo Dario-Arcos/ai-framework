@@ -238,8 +238,16 @@ def copy_template_files(plugin_root, project_dir):
     return files_copied
 
 
-def output_success_message():
+def output_success_message(project_dir):
     """Output JSON message notifying user to restart Claude Code"""
+    # Create marker for workspace-status.py to skip this session
+    marker = project_dir / ".claude" / ".pending_restart"
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch()
+    except:
+        pass  # Silent fail if can't create marker
+
     message = {
         "systemMessage": (
             "✅ AI Framework instalado correctamente\n\n"
@@ -288,7 +296,7 @@ def main():
 
         # Show success message if files were copied or gitignore updated
         if files_copied or gitignore_updated:
-            output_success_message()
+            output_success_message(project_dir)
 
         sys.exit(0)
 
