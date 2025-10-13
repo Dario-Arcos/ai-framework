@@ -2,9 +2,9 @@
 layout: home
 
 hero:
-  name: "Trivance AI Handbook"
-  text: "AI-First Development"
-  tagline: "Constitutional framework para desarrollo orquestado por Claude Code"
+  name: "AI Framework Handbook"
+  text: "AI development that works"
+  tagline: "Research-backed. Constitutional. Production-ready."
   actions:
     - theme: brand
       text: Setup
