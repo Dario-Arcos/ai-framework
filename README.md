@@ -123,7 +123,7 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 
 ## Documentation
 
-**[Full Documentation →](https://trivance-io.github.io/trivance-ai-orchestrator/)**
+**[Full Documentation →](https://dario-arcos.github.io/ai-framework/)**
 
 Constitution · Always Works™ methodology · Context engineering · Design principles
 

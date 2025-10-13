@@ -1,0 +1,91 @@
+/**
+ * Trivance Brand Colors - Custom Theme
+ * Basado en identidad visual corporativa
+ * https://trivance.io
+ */
+
+:root {
+  /* ===== BRAND COLORS ===== */
+  --vp-c-brand-1: #5B5FED;
+  --vp-c-brand-2: #4A4ED8;
+  --vp-c-brand-3: #7276F3;
+  --vp-c-brand-soft: #E8E9FE;
+
+  /* ===== BACKGROUNDS ===== */
+  --vp-c-bg: #FFFFFF;
+  --vp-c-bg-soft: #F9FAFB;
+  --vp-c-bg-mute: #F3F4F6;
+  --vp-c-bg-alt: #F9FAFB;
+
+  /* ===== TEXT ===== */
+  --vp-c-text-1: #1F2937;
+  --vp-c-text-2: #4B5563;
+  --vp-c-text-3: #6B7280;
+
+  /* ===== BORDERS ===== */
+  --vp-c-divider: #E5E7EB;
+  --vp-c-border: #D1D5DB;
+
+  /* ===== SEMANTIC COLORS ===== */
+  --vp-c-success-1: #10B981;
+  --vp-c-success-2: #059669;
+  --vp-c-warning-1: #F59E0B;
+  --vp-c-warning-2: #D97706;
+  --vp-c-danger-1: #EF4444;
+  --vp-c-danger-2: #DC2626;
+}
+
+/* Dark mode */
+.dark {
+  --vp-c-bg: #0F172A;
+  --vp-c-bg-soft: #1E293B;
+  --vp-c-bg-mute: #334155;
+  --vp-c-bg-alt: #1E293B;
+
+  --vp-c-text-1: #F1F5F9;
+  --vp-c-text-2: #CBD5E1;
+  --vp-c-text-3: #94A3B8;
+
+  --vp-c-divider: #334155;
+  --vp-c-border: #475569;
+
+  /* Brand colors stay vibrant in dark mode */
+  --vp-c-brand-1: #7276F3;
+  --vp-c-brand-2: #8B8EF7;
+  --vp-c-brand-soft: #1E2347;
+}
+
+/* ===== BUTTON OVERRIDES ===== */
+.VPButton.brand {
+  background-color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+
+.VPButton.brand:hover {
+  background-color: var(--vp-c-brand-2);
+  border-color: var(--vp-c-brand-2);
+}
+
+/* ===== LINK COLORS ===== */
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+  text-decoration-color: var(--vp-c-brand-soft);
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+}
+
+/* ===== HOME PAGE BRAND ACCENT ===== */
+.VPHero .name {
+  background: linear-gradient(120deg, var(--vp-c-brand-1) 30%, var(--vp-c-brand-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== DARK MODE ICON FIX ===== */
+/* Invert feature icons in dark mode for visibility */
+.dark .VPFeature .box > img.VPImage {
+  filter: invert(1);
+}

@@ -1,0 +1,5 @@
+# GitHub CODEOWNERS
+# Only tech leads can approve PRs to main
+
+# Default owner for everything
+* @Dario-Arcos
