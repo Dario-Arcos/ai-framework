@@ -195,27 +195,35 @@ AUTO_CREATE_BRANCH=false
   echo "$git_data" | sed 's/^[^ ]* //' > /tmp/pr_messages.txt
   ```
 - Detectar tipo principal usando conventional commits:
+
   ```bash
   # Extraer tipos de commits convencionales (feat, fix, docs, etc.)
   cat /tmp/pr_messages.txt | grep -Eo '^(feat|fix|docs|refactor|style|test|chore)' > /tmp/pr_types.txt;
   cat /tmp/pr_types.txt | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > /tmp/primary.txt;
+
+  # IMPORTANT: Execute these TWO commands SEPARATELY (do NOT combine with &&):
   primary_type=\`cat /tmp/primary.txt\`;
-  # Si no se detectó tipo: usar 'feat' por defecto
-  [ -z "$primary_type" ] && primary_type="feat"
+  [ -z "$primary_type" ] && primary_type="feat";
   ```
+
 - Detectar tema central: extraer scope de conventional commits o palabra más frecuente
+
   ```bash
   # Intentar extraer scope de commits: feat(auth), fix(api), etc.
   cat /tmp/pr_messages.txt | sed -n 's/^[a-z]*(\([^)]*\)).*/\1/p' > /tmp/pr_scopes.txt;
   cat /tmp/pr_scopes.txt | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > /tmp/tema.txt;
+
+  # IMPORTANT: Execute variable assignment SEPARATELY from conditional:
   tema_central=\`cat /tmp/tema.txt\`;
+
   # Si no hay scope, analizar palabras frecuentes (excluir stopwords)
   if [ -z "$tema_central" ]; then
       cat /tmp/pr_messages.txt | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' '\n' | grep -vE '^(add|fix|update|implement|the|and|or|for|to|in|of|with)$' > /tmp/pr_words.txt;
       cat /tmp/pr_words.txt | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > /tmp/tema.txt;
-      tema_central=\`cat /tmp/tema.txt\`
+      tema_central=\`cat /tmp/tema.txt\`;
   fi
   ```
+
 - Generar timestamp UTC:
   ```bash
   timestamp=\`date -u +"%Y%m%d-%H%M%S"\`
