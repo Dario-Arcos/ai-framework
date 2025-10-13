@@ -54,6 +54,28 @@ def is_already_installed(project_dir):
     return all(f.exists() for f in key_files)
 
 
+# Minimal plugin markers (1 per critical file)
+PLUGIN_MARKERS = {
+    "CLAUDE.md": "Operating Protocol",
+    ".claude/settings.local.json": "bypassPermissions",
+    ".specify/memory/constitution.md": "Trivance AI Orchestrator",
+}
+
+
+def has_plugin_config(project_dir):
+    """Check if existing files contain plugin configuration."""
+    for rel_path, marker in PLUGIN_MARKERS.items():
+        file_path = project_dir / rel_path
+        if file_path.exists():
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                if marker not in content:
+                    return False  # File exists but missing plugin config
+            except (OSError, IOError):
+                return False
+    return True
+
+
 def extract_framework_rules(template_gitignore):
     """Extract framework-specific ignore rules from template .gitignore."""
     rules = []
@@ -266,19 +288,43 @@ def main():
         plugin_root = Path(plugin_root_env)
 
         # Check if already installed (intelligent detection)
-        already_installed = is_already_installed(project_dir)
+        files_exist = is_already_installed(project_dir)
+        has_config = has_plugin_config(project_dir) if files_exist else False
+        partial_install = files_exist and not has_config
 
         # Always merge .gitignore (even if already installed)
         # This ensures .gitignore stays up-to-date with template changes
         gitignore_updated = merge_gitignore(plugin_root, project_dir)
 
-        # If already installed and gitignore didn't change, silent exit
-        if already_installed and not gitignore_updated:
+        # If fully installed and gitignore didn't change, silent exit
+        if files_exist and has_config and not gitignore_updated:
+            sys.exit(0)
+
+        # Handle partial installation (files exist but no plugin config)
+        if partial_install:
+            msg = (
+                "⚠️ AI Framework: Configuración parcial detectada\n\n"
+                "Tus archivos existen pero no contienen configuración del plugin.\n\n"
+                "📁 Compara con templates: .claude-plugin/template/\n\n"
+                "Opciones:\n"
+                "• Copiar secciones relevantes manualmente\n"
+                "• Reemplazar archivos (respalda primero)\n\n"
+                "🔄 Reinicia Claude Code después de actualizar."
+            )
+            print(
+                json.dumps(
+                    {
+                        "systemMessage": msg,
+                        "additionalContext": "Partial installation detected",
+                    },
+                    indent=2,
+                )
+            )
             sys.exit(0)
 
         # Copy template files to user project (only if not installed)
         files_copied = False
-        if not already_installed:
+        if not files_exist:
             files_copied = copy_template_files(plugin_root, project_dir)
 
         # Show appropriate message based on what changed

@@ -15,6 +15,9 @@
 CLAUDE.md
 .mcp.json
 
+# MCP server data directories
+.playwright-mcp/
+
 # ============================================================================
 # FRAMEWORK RUNTIME (logs, databases, temp files)
 # ============================================================================

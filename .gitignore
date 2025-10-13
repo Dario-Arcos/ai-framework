@@ -11,6 +11,9 @@
 CLAUDE.md
 .mcp.json
 
+# MCP server data directories
+.playwright-mcp/
+
 # Runtime/Logs (generated during development/testing)
 .claude-plugin/hooks/*.db
 .claude-plugin/hooks/__pycache__/
