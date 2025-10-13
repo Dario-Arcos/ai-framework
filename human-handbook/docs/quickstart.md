@@ -50,7 +50,7 @@ cd /path/to/your/project
 claude
 ```
 
-### Trivance Multi-Repo Setup
+### Multi-Repo Setup
 
 ```bash
 ./scripts/core/setup.sh

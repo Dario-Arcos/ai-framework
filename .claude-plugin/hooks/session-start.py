@@ -58,7 +58,7 @@ def is_already_installed(project_dir):
 PLUGIN_MARKERS = {
     "CLAUDE.md": "Operating Protocol",
     ".claude/settings.local.json": "bypassPermissions",
-    ".specify/memory/constitution.md": "Trivance AI Orchestrator",
+    ".specify/memory/constitution.md": "AI Framework",
 }
 
 

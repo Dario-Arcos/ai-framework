@@ -1,4 +1,4 @@
-// Theme configuration for Trivance AI Handbook
+// Theme configuration for AI Framework Handbook
 // Extends VitePress default theme with custom brand colors
 
 import DefaultTheme from "vitepress/theme";

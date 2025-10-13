@@ -9,11 +9,11 @@ Templates requiring updates: None (clarification only, no breaking changes)
 Follow-up TODOs: None
 -->
 
-# Trivance AI Orchestrator Constitution
+# AI Framework Constitution
 
 **Version**: 2.1.2 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-04
 
-> This Constitution is the _highest law_ of how Trivance AI Orchestrator conceives, designs, builds, and operates digital products with and for AI. It defines purpose, rights, duties, powers, limits, due process, and amendment. Everything else—policies, playbooks, checklists—derives authority from here and is void where it conflicts.
+> This Constitution is the _highest law_ of how AI Framework conceives, designs, builds, and operates digital products with and for AI. It defines purpose, rights, duties, powers, limits, due process, and amendment. Everything else—policies, playbooks, checklists—derives authority from here and is void where it conflicts.
 
 ---
 
