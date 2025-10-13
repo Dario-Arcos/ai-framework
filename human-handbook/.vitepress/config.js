@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   lang: "es-ES",
-  title: "Trivance AI Handbook",
+  title: "AI Framework Handbook",
   description: "Guía completa para desarrollo AI-first con Claude Code",
   base: "/ai-framework/",
   appearance: true,

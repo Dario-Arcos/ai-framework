@@ -50,12 +50,6 @@ cd /path/to/your/project
 claude
 ```
 
-### Trivance Multi-Repo Setup
-
-```bash
-./scripts/core/setup.sh
-```
-
 ---
 
 ## Step 4: First Session (5 min)

@@ -158,7 +158,7 @@ For long tasks:
 
 ---
 
-## Integration with Trivance Constitution
+## Integration with AI Framework Constitution
 
 Context engineering directly supports constitutional mandates:
 
