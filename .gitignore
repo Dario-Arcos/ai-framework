@@ -55,3 +55,14 @@ Thumbs.db
 # Hook coordination markers (temporary files)
 .claude/.pending_restart
 .claude/.framework_initialized
+
+# ============================================================================
+# DOCUMENTATION (VitePress) - Build artifacts and dependencies
+# ============================================================================
+
+# Node.js dependencies (VitePress documentation)
+node_modules/
+
+# VitePress build artifacts (regenerated on build)
+human-handbook/.vitepress/cache/
+human-handbook/.vitepress/dist/

@@ -1,0 +1,14 @@
+{
+  "name": "trivance-ai-handbook",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "docs:dev": "vitepress dev human-handbook",
+    "docs:build": "vitepress build human-handbook",
+    "docs:preview": "vitepress preview human-handbook"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

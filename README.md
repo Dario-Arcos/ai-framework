@@ -140,6 +140,61 @@ Constitution · Always Works™ methodology · Context engineering · Design pri
 
 ---
 
+## Project Structure
+
+This repository is a **monorepo** containing both the plugin and its documentation:
+
+```
+ai-framework/
+├── .claude-plugin/          # Plugin source code
+│   ├── hooks/               # 7 intelligent hooks (Python)
+│   ├── commands/            # 24 slash commands (Markdown)
+│   ├── agents/              # 45 specialized agents
+│   └── template/            # Files installed in user projects
+├── .github/workflows/       # CI/CD automation
+│   ├── deploy.yml           # Auto-deploy docs to GitHub Pages
+│   ├── claude-code-review.yml  # Security-first PR reviews
+│   └── claude.yml           # Interactive Claude on @mentions
+├── human-handbook/          # VitePress documentation site
+│   ├── .vitepress/          # Build configuration
+│   ├── docs/                # Markdown documentation
+│   └── public/              # Static assets
+├── docs/                    # Technical architecture docs
+├── package.json             # VitePress dependency (docs only)
+└── README.md                # You are here
+```
+
+**Why monorepo?**
+
+- Plugin and docs share lifecycle (versioning, releases)
+- Single source of truth for documentation
+- Simplified CI/CD (one repo to maintain)
+
+---
+
+## Security Considerations
+
+### npm Dependencies (Documentation)
+
+The documentation uses VitePress 1.6.4, which currently shows 3 moderate severity vulnerabilities in its dev dependencies (esbuild).
+
+**Conscious decision:** We've opted NOT to apply `npm audit fix` because:
+
+1. **Risk is development-only:** Vulnerabilities affect the dev server (`npm run docs:dev`), not production builds
+2. **Fix breaks the project:** The suggested fix downgrades VitePress from 1.6.4 to 0.1.1 (67 versions back), which would break all modern features
+3. **Controlled environment:** The dev server is only used by maintainers in local environments
+4. **GitHub Actions safety:** Our CI/CD only runs `npm run docs:build`, never the dev server
+
+**Mitigation:**
+
+- Production builds (`human-handbook/.vitepress/dist/`) are unaffected
+- Dev server usage is restricted to maintainer's local machine
+- Monitoring upstream (VitePress/esbuild) for proper fixes
+
+This follows industry best practices (Next.js, Vite, Tailwind all accept similar dev-only risks rather than breaking their toolchains).
+
+---
+
 ## License
 
 MIT License — See [LICENSE](LICENSE)
