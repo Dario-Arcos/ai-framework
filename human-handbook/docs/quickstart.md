@@ -138,3 +138,7 @@ claude
 ---
 
 **Need assistance?** Run `claude "Help me with [issue]"` for setup, debugging, and workflow guidance.
+
+---
+
+_Última actualización: 2025-10-13_

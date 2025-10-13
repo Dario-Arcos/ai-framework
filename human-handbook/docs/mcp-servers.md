@@ -19,21 +19,26 @@ Más servidores se agregarán según evolucione el ecosistema.
 
 ## ⚙️ Cómo Funciona la Configuración
 
-El plugin instala defaults mínimos. Tú controlas qué servers adicionales activar.
-
-### Precedencia de archivos
+### Precedencia de archivos (oficial)
 
 ```
-Plugin instala:
-├─ .mcp.json                      ← Define servers disponibles
-└─ .claude/settings.local.json    ← Whitelist: ["playwright", "shadcn"]
-
-Usuario modifica (mayor precedencia):
-└─ .claude/settings.json          ← Override: ["playwright", "shadcn", "github"]
-                                     Claude usa este ↑
+PRECEDENCIA (mayor → menor):
+3. .claude/settings.local.json    ← Plugin instala aquí (MAYOR)
+4. .claude/settings.json          ← Si creas este, es IGNORADO
 ```
 
-⚠️ **Importante:** `settings.json` (si existe) tiene MAYOR precedencia que `settings.local.json`.
+⚠️ **Crítico:** `settings.local.json` tiene MAYOR precedencia que `settings.json`.
+
+### Para agregar servidores
+
+Edita `.claude/settings.local.json` (el que instaló el plugin):
+
+```json
+{
+  "enabledMcpjsonServers": ["playwright", "shadcn", "github"]
+  // ... resto de configuración
+}
+```
 
 ---
 
@@ -58,11 +63,16 @@ Usuario modifica (mayor precedencia):
 }
 ```
 
-### 2. Activar en `.claude/settings.json`
+### 2. Activar en `.claude/settings.local.json`
 
 ```json
 {
-  "enabledMcpjsonServers": ["playwright", "shadcn", "github"]
+  "enabledMcpjsonServers": ["playwright", "shadcn", "github"],
+  "cleanupPeriodDays": 7,
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    // ... resto de configuración existente
+  }
 }
 ```
 
