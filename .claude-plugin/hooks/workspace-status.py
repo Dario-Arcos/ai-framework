@@ -273,9 +273,7 @@ def generate_basic_project_context(project_dir, stack, core_agents, specific_age
         return False
 
 
-def build_output_message(
-    settings, project_context_created=False, stack=None, agents=None
-):
+def build_output_message(settings, context_exists=False):
     """Build the complete output message (steps 1, 3, 5, 6, 7, 8)"""
     lines = []
 
@@ -290,17 +288,15 @@ def build_output_message(
         lines.append("ℹ️ En repositorio principal")
     lines.append("")
 
-    # Project context auto-detection feedback (if just created)
-    if project_context_created and stack and agents:
-        lines.append("✅ **Project context auto-detectado**\n")
-        if stack["languages"]:
-            lines.append(f"📦 Stack: {', '.join(stack['languages'])}")
-            if stack["frameworks"]:
-                lines.append(f"   Frameworks: {', '.join(stack['frameworks'])}")
-        core, specific = agents
-        total_agents = len(core) + len(specific)
-        lines.append(f"🤖 Agentes: {total_agents} recomendados")
-        lines.append("💡 Análisis profundo: /utils:project-init\n")
+    # Project context status with clear actionable guidance
+    if context_exists:
+        lines.append("📋 **Project Context:** Configurado")
+        lines.append(
+            "💡 Mantenlo actualizado: /utils:project-init (si el proyecto evolucionó)\n"
+        )
+    else:
+        lines.append("📋 **Project Context:** No configurado")
+        lines.append("⚡ Configúralo ahora: /utils:project-init\n")
 
     # Step 5: Workflow protocol
     if not is_worktree:
@@ -360,28 +356,23 @@ def main():
         # Step 2 & 8: Read settings for security check
         settings = read_settings_json(project_dir)
 
-        # Auto-detect project context if missing
+        # Check if project context exists
         context_file = project_dir / ".specify" / "memory" / "project-context.md"
-        project_context_created = False
-        stack = None
-        agents = None
+        context_exists = context_file.exists()
 
-        if not context_file.exists():
+        # Auto-generate if missing (silent, no user notification)
+        if not context_exists:
             try:
                 stack = quick_tech_detection(project_dir)
                 core, specific = map_agents_to_stack(stack)
-                agents = (core, specific)
-
-                # Generate basic context file
-                project_context_created = generate_basic_project_context(
-                    project_dir, stack, core, specific
-                )
+                generate_basic_project_context(project_dir, stack, core, specific)
+                context_exists = True  # Update status after successful generation
             except:
-                # Silent fail: if detection fails, just skip
+                # Silent fail: if detection fails, user will see "No configurado"
                 pass
 
         # Steps 1, 3, 5, 6, 7, 8: Build output
-        message = build_output_message(settings, project_context_created, stack, agents)
+        message = build_output_message(settings, context_exists)
 
         # Output JSON format
         output = {
