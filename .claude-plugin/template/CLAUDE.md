@@ -87,7 +87,7 @@ _If you expect to exceed the budget: **stop and ask**._
 - Recommended agents for your codebase
 - Integration points and dependencies
 
-**Always Works™**: @.claude/rules/project-context.md
+**Always Works™**: @.claude/rules/always-works.md
 
 - Comprehensive testing methodology and implementation validation
 - 30-second reality check for functionality and simplicity

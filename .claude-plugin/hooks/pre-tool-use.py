@@ -82,10 +82,10 @@ def is_task_tool_invocation(data):
 
 
 def find_project_context_path():
-    """Locate project-context.md file in .claude/rules/"""
+    """Locate always-works.md file in .claude/rules/"""
     try:
         project_root = find_project_root()
-        context_path = project_root / ".claude" / "rules" / "project-context.md"
+        context_path = project_root / ".claude" / "rules" / "always-works.md"
         return context_path if context_path.exists() else None
     except Exception:
         return None
@@ -113,12 +113,12 @@ def main():
         log_result(True, None)
         sys.exit(0)
 
-    # Locate and read project-context.md file for Task tools
+    # Locate and read always-works.md file for Task tools
     context_path = find_project_context_path()
 
     if not context_path or not context_path.exists():
         log_result(False, context_path)
-        print("# Project Governance: .claude/rules/project-context.md not found")
+        print("# Project Governance: .claude/rules/always-works.md not found")
         sys.exit(0)
 
     try:
@@ -139,7 +139,7 @@ def main():
         except:
             pass
         print(
-            f"# Project Governance: Error reading .claude/rules/project-context.md - {str(e)}"
+            f"# Project Governance: Error reading .claude/rules/always-works.md - {str(e)}"
         )
         sys.exit(0)
 
