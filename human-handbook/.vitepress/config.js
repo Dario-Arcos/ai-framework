@@ -41,6 +41,7 @@ export default defineConfig({
         text: "Guía Rápida",
         items: [
           { text: "Inicio Rápido", link: "/docs/quickstart" },
+          { text: "MCP Servers", link: "/docs/mcp-servers" },
           { text: "Tips Pro", link: "/docs/claude-code-pro-tips" },
         ],
       },
