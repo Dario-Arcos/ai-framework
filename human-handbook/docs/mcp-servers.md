@@ -22,12 +22,15 @@ Más servidores se agregarán según evolucione el ecosistema.
 ### Precedencia de archivos (oficial)
 
 ```
-PRECEDENCIA (mayor → menor):
+PRECEDENCIA completa (mayor → menor):
+1. Enterprise managed policies     (no aplica al plugin)
+2. Command line arguments          (no aplica al plugin)
 3. .claude/settings.local.json    ← Plugin instala aquí (MAYOR)
 4. .claude/settings.json          ← Si creas este, es IGNORADO
+5. ~/.claude/settings.json         (global, no aplica al plugin)
 ```
 
-⚠️ **Crítico:** `settings.local.json` tiene MAYOR precedencia que `settings.json`.
+⚠️ **Crítico:** El plugin usa #3 (`settings.local.json`), que tiene MAYOR precedencia que `settings.json` (#4).
 
 ### Para agregar servidores
 
@@ -46,14 +49,12 @@ Edita `.claude/settings.local.json` (el que instaló el plugin):
 
 ### 1. Agregar a `.mcp.json`
 
+Abre tu `.mcp.json` existente y agrega el nuevo servidor (ejemplo: GitHub):
+
 ```json
 {
   "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest", "--isolated"]
-    },
-    "shadcn": { "command": "npx", "args": ["@jpisnice/shadcn-ui-mcp-server"] },
+    // ... tus servers existentes (playwright, shadcn)
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
@@ -62,6 +63,8 @@ Edita `.claude/settings.local.json` (el que instaló el plugin):
   }
 }
 ```
+
+⚠️ **No sobreescribas** los servers existentes - solo agrega el nuevo.
 
 ### 2. Activar en `.claude/settings.local.json`
 
