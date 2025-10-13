@@ -80,6 +80,13 @@ _If you expect to exceed the budget: **stop and ask**._
 - Test-first development methodology (TDD mandatory)
 - Quality standards and implementation rules
 
+**Project Context**: @.specify/memory/project-context.md
+
+- Auto-detected tech stack and architecture
+- Project-specific conventions and patterns
+- Recommended agents for your codebase
+- Integration points and dependencies
+
 **Always Works™**: @.claude/rules/project-context.md
 
 - Comprehensive testing methodology and implementation validation
