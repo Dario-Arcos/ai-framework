@@ -372,9 +372,10 @@ def main():
             else:
                 msg = (
                     "✅ AI Framework instalado\n\n"
-                    "Archivos: settings.local.json, CLAUDE.md, .mcp.json\n"
-                    "🔄 Reinicia Claude Code para cargarlos.\n\n"
-                    "💡 Solo esta vez."
+                    "📋 Verificación recomendada (una vez):\n"
+                    "   /utils:setup-dependencies\n\n"
+                    "Esto verifica que todas las herramientas estén disponibles.\n\n"
+                    "🔄 Después reinicia Claude Code para cargar la configuración."
                 )
 
             print(
