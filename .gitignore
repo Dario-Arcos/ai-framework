@@ -5,11 +5,13 @@
 # FRAMEWORK DEVELOPMENT - Files to ignore during development
 # ============================================================================
 
-# Framework uses itself - ignore installed files (source is in template/)
-.claude/
-.specify/
-CLAUDE.md
-.mcp.json
+# Framework uses itself - ignore installed files ONLY at root (source is in template/)
+# Leading "/" anchors patterns to repository root, preventing conflicts with
+# .claude-plugin/template/.claude/ and similar paths
+/.claude/
+/.specify/
+/CLAUDE.md
+/.mcp.json
 
 # MCP server data directories
 .playwright-mcp/
@@ -51,17 +53,17 @@ Thumbs.db
 # AI FRAMEWORK FILES (auto-added by ai-framework plugin)
 # ============================================================================
 
-specs/
-.claude/uix-designs/
-.claude/prps/
+/specs/
+/.claude/uix-designs/
+/.claude/prps/
 
-.claude/logs/
-.claude/settings.local.json
-.claude/*.db
+/.claude/logs/
+/.claude/settings.local.json
+/.claude/*.db
 
 # Hook coordination markers (temporary files)
-.claude/.pending_restart
-.claude/.framework_initialized
+/.claude/.pending_restart
+/.claude/.framework_initialized
 
 # ============================================================================
 # DOCUMENTATION (VitePress) - Build artifacts and dependencies
