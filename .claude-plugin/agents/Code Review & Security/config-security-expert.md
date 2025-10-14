@@ -1,7 +1,6 @@
 ---
 name: config-security-expert
 description: Configuration security specialist focused on preventing production outages through vigilant config change review
-model: sonnet
 tools: LS, Read, Grep, Glob, Bash
 ---
 

@@ -2,7 +2,6 @@
 name: agent-assignment-analyzer
 description: Specialist in intelligent task analysis and agent selection for parallel execution workflows. Analyzes tasks, identifies dependencies, and generates optimal agent assignment strategies without generating documents.
 tools: Read, Grep, Glob, LS, Bash, Task, WebFetch
-model: opus
 ---
 
 # Agent Assignment Analyzer

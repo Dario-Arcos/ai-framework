@@ -3,14 +3,14 @@ allowed-tools: Bash(date -u +"%Y-%m-%dT%H:%M:%SZ"), Read, Write, LS
 model: claude-opus-4-1
 ---
 
-# PRD New
+# PRP New
 
-Launch brainstorming for new product requirement document (minimalista, business-focused).
+Launch brainstorming for new product requirements prompt (minimalista, business-focused).
 
 ## Usage
 
 ```
-/PRD-cycle:prd-new <feature_name>
+/PRP-cycle:prp-new <feature_name>
 ```
 
 ## Required Rules
@@ -32,26 +32,26 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
    - No spaces or special characters allowed
    - If invalid, tell user: "❌ Feature name must be kebab-case (lowercase letters, numbers, hyphens only). Examples: user-auth, payment-v2, notification-system"
 
-2. **Check for existing PRD:**
-   - Check if `.claude/prds/$ARGUMENTS/prd.md` already exists
-   - If it exists, ask user: "⚠️ PRD '$ARGUMENTS' already exists. Do you want to overwrite it? (yes/no)"
+2. **Check for existing PRP:**
+   - Check if `.claude/prps/$ARGUMENTS/prp.md` already exists
+   - If it exists, ask user: "⚠️ PRP '$ARGUMENTS' already exists. Do you want to overwrite it? (yes/no)"
    - Only proceed with explicit 'yes' confirmation
-   - If user says no, suggest: "Use a different name or sync existing PRD: /PRD-cycle:prd-sync $ARGUMENTS"
+   - If user says no, suggest: "Use a different name or sync existing PRP: /PRP-cycle:prp-sync $ARGUMENTS"
 
 3. **Verify directory structure:**
-   - Ensure `.claude/prds/$ARGUMENTS/` directory exists or can be created
-   - If cannot create, tell user: "❌ Cannot create PRD directory. Please check permissions."
+   - Ensure `.claude/prps/$ARGUMENTS/` directory exists or can be created
+   - If cannot create, tell user: "❌ Cannot create PRP directory. Please check permissions."
 
 ## Instructions
 
-You are a product manager creating a **lean, business-focused** Product Requirements Document (PRD) for: **$ARGUMENTS**
+You are a product manager creating a **lean, business-focused** Product Requirements Prompt (PRP) for: **$ARGUMENTS**
 
 ### Design Philosophy (Steve Jobs Principles)
 
 **"Simplicity is the ultimate sophistication"**
 
-- PRD describes WHAT and WHY, not HOW
-- Target: 50-100 lines (vs typical 300+ line PRDs)
+- PRP describes WHAT and WHY, not HOW
+- Target: 50-100 lines (vs typical 300+ line documents)
 - Say NO to implementation details (stack, architecture, config)
 - Focus on user value and business outcomes
 
@@ -66,16 +66,20 @@ Ask clarifying questions about:
 - **Constraints**: Budget, timeline, compliance requirements?
 - **Scope**: What are we explicitly NOT building in V1?
 
-### PRD Structure (Minimalista)
+### PRP Structure (Minimalista)
 
-Create a lean PRD with ONLY these sections:
+Create a lean PRP with ONLY these sections:
 
 #### 1. Problem Statement (5-10 lines)
 
-- What problem exists today?
-- Who experiences this problem?
-- Why is it important to solve NOW?
-- What's the cost of NOT solving it?
+Use structured format for clarity (AI-parseable):
+
+- **Problem**: [What problem exists today?]
+- **Affected Users**: [Who experiences this problem?]
+- **Frequency**: [How often does this occur?]
+- **Current Cost**: [Time/money wasted with current approach]
+- **Why Now**: [Why is it important to solve NOW?]
+- **Risk of Inaction**: [What happens if we DON'T solve it?]
 
 #### 2. User Impact (10-20 lines)
 
@@ -97,15 +101,17 @@ Create a lean PRD with ONLY these sections:
 
 #### 3. Success Criteria (5-10 lines)
 
+Use checkboxes and measurement methods (AI-parseable):
+
 **Quantitative**
 
-- Metric 1: [Baseline] → [Target] (e.g., "Onboarding time: 30min → 5min")
-- Metric 2: [Baseline] → [Target]
+- [ ] Metric 1: [Baseline] → [Target] (Measured by: [method/tool])
+- [ ] Metric 2: [Baseline] → [Target] (Measured by: [method/tool])
 
 **Qualitative**
 
-- Observable outcome 1 (e.g., "Zero Slack questions about 'where is X documented?'")
-- Observable outcome 2
+- [ ] Observable outcome 1 (Verified by: [observation method])
+- [ ] Observable outcome 2 (Verified by: [observation method])
 
 #### 4. Constraints (5-10 lines)
 
@@ -143,17 +149,19 @@ Explicitly list what we're NOT building:
 
 ### File Format with Frontmatter
 
-Save the completed PRD to: `.claude/prds/$ARGUMENTS/prd.md` with this exact structure:
+Save the completed PRP to: `.claude/prps/$ARGUMENTS/prp.md` with this exact structure:
 
 ```markdown
 ---
 name: $ARGUMENTS
-description: [Brief one-line description of the PRD]
+description: [Brief one-line description of the PRP]
 status: backlog
 created: [Current ISO date/time]
+complexity_budget: S|M|L
+priority: P1|P2|P3
 ---
 
-# PRD: $ARGUMENTS
+# PRP: $ARGUMENTS
 
 ## Problem Statement
 
@@ -177,40 +185,46 @@ created: [Current ISO date/time]
 
 ---
 
-**Next Steps**: Run `/PRD-cycle:prd-sync $ARGUMENTS` to sync to GitHub as Parent Issue
+**Next Steps**: Run `/PRP-cycle:prp-sync $ARGUMENTS` to sync to GitHub as Parent Issue
 ```
 
 ### Frontmatter Guidelines
 
 - **name**: Use the exact feature name (same as $ARGUMENTS)
-- **description**: Write a concise one-line summary of what this PRD covers
-- **status**: Always start with "backlog" for new PRDs
+- **description**: Write a concise one-line summary of what this PRP covers
+- **status**: Always start with "backlog" for new PRPs
 - **created**: !bash date -u +"%Y-%m-%dT%H:%M:%SZ"
   - Never use placeholder text
   - Must be actual system time in ISO 8601 format
+- **complexity_budget**: Estimate size (S: ≤80 LOC, M: ≤250 LOC, L: ≤600 LOC)
+- **priority**: Assign priority (P1: Critical, P2: Important, P3: Nice-to-have)
 
 ### Quality Checks
 
-Before saving the PRD, verify:
+Before saving the PRP, verify:
 
 - [ ] Total length: 50-100 lines (excluding frontmatter)
 - [ ] No implementation details (no stack, no config, no architecture)
+- [ ] Problem statement uses structured format with fields
+- [ ] Success criteria use checkboxes with measurement/verification methods
 - [ ] Problem and user impact are crystal clear
 - [ ] Success criteria are measurable
 - [ ] Out of scope explicitly defined
 - [ ] All sections complete (no placeholder text like "TBD")
 - [ ] Written for business stakeholders (non-technical language)
+- [ ] Frontmatter includes complexity_budget and priority
 
 ### Post-Creation
 
-After successfully creating the PRD:
+After successfully creating the PRP:
 
-1. Confirm: "✅ PRD created: .claude/prds/$ARGUMENTS/prd.md"
+1. Confirm: "✅ PRP created: .claude/prps/$ARGUMENTS/prp.md"
 2. Show brief summary:
    - Problem: [One sentence]
    - Target: [Primary metric]
    - Complexity: Size S/M/L
-3. Suggest next step: "Ready to sync to GitHub? Run: `/PRD-cycle:prd-sync $ARGUMENTS`"
+   - Priority: P1/P2/P3
+3. Suggest next step: "Ready to sync to GitHub? Run: `/PRP-cycle:prp-sync $ARGUMENTS`"
 
 ## Error Recovery
 
@@ -220,6 +234,6 @@ If any step fails:
 - Provide specific steps to fix the issue
 - Never leave partial or corrupted files
 
-**Target**: Create a lean, business-focused PRD that fits on one screen (50-100 lines). Technical details are handled by SDD-cycle, not here.
+**Target**: Create a lean, business-focused PRP that fits on one screen (50-100 lines). Technical details are handled by SDD-cycle, not here.
 
-Conduct a thorough brainstorming session before writing the PRD. Ask questions, explore trade-offs, and ensure comprehensive coverage of the **business requirements** (not technical implementation) for "$ARGUMENTS".
+Conduct a thorough brainstorming session before writing the PRP. Ask questions, explore trade-offs, and ensure comprehensive coverage of the **business requirements** (not technical implementation) for "$ARGUMENTS".

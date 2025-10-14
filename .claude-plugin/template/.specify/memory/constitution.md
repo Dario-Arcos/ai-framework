@@ -1,17 +1,17 @@
 <!--
-Sync Impact Report - Constitution v2.1.2
-Version change: v2.1.1 → v2.1.2 (Command substitution rationale documentation)
+Sync Impact Report - Constitution v2.2.0
+Version change: v2.1.2 → v2.2.0 (Remove implementation-specific content)
 Modified principles: All 5 core principles preserved
-Modified sections: Article IX §1 (Shell Scripting) - added technical rationale for backticks mandate, documented parser limitation with examples
+Modified sections: Article VII §4 (Framework Alignment) - expanded to include project context compliance mandate
 Added sections: None
-Removed sections: None
-Templates requiring updates: None (clarification only, no breaking changes)
-Follow-up TODOs: None
+Removed sections: Article VI §2 (Language Consistency - moved to CLAUDE.md), Article IX (Technical Stack Standards - tool-specific content removed)
+Templates requiring updates: None (removed redundant and non-agnostic content)
+Follow-up TODOs: Create .claude/rules/claude-commands-shell-syntax.md with Article IX §1 content (implementation documentation)
 -->
 
 # AI Framework Constitution
 
-**Version**: 2.1.2 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-04
+**Version**: 2.2.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-14
 
 > This Constitution is the _highest law_ of how AI Framework conceives, designs, builds, and operates digital products with and for AI. It defines purpose, rights, duties, powers, limits, due process, and amendment. Everything else—policies, playbooks, checklists—derives authority from here and is void where it conflicts.
 
@@ -113,13 +113,11 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 **Section 1. Observability.** All interfaces must be observable, debuggable, and traceable; Services publish SLIs aligned to SLOs.
 
-**Section 2. Language Consistency.** Spanish for human documentation, English for code and AI documentation - never mix in same file.
+**Section 2. Communication Style.** Professional, minimalist communication style eliminating promotional content.
 
-**Section 3. Communication Style.** Professional, minimalist communication style eliminating promotional content.
+**Section 3. Production Readiness.** Production-ready output with quantified business impact required; Code quality reviewer used proactively for validation.
 
-**Section 4. Production Readiness.** Production-ready output with quantified business impact required; Code quality reviewer used proactively for validation.
-
-**Section 5. Security Priority.** Security, performance, and reliability take priority over features.
+**Section 4. Security Priority.** Security, performance, and reliability take priority over features.
 
 ---
 
@@ -131,7 +129,11 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 **Section 3. TDD Enforcement.** Red-green-refactor discipline strictly enforced.
 
-**Section 4. Framework Alignment.** Framework and library choices must align with existing project conventions.
+**Section 4. Framework Alignment & Project Context.** Framework and library choices must align with existing project conventions:
+
+- **MUST read** `.specify/memory/project-context.md` before making technology or architecture decisions
+- **MUST respect** existing stack (languages, frameworks, databases, tools) unless explicit justification for change (security risk, EOL, performance bottleneck)
+- **MAY suggest** strategic improvements or tactical optimizations if gaps, risks, or inefficiencies are identified, with documented rationale and ROI analysis
 
 **Section 5. Security Non-Negotiables.** No credential exposure, secrets in managers, least privilege access.
 
@@ -146,16 +148,6 @@ A proposal **must** satisfy all tests below to be legitimate:
 **Section 3. Exception Process.** Complexity budget violations require explicit justification, simpler alternative analysis, and Constitutional Council approval with 30-day sunset clause.
 
 **Section 4. Amendment.** Amendments require: (a) written proposal with rationale and impact; (b) review across all powers; (c) ratification by simple majority; (d) communicated adoption plan.
-
----
-
-## Article IX — Technical Stack Standards
-
-**Section 1. Shell Scripting (Claude Commands).** All shell commands in Claude Commands must follow macOS/zsh standards:
-
-- **Command Substitution**: MUST use backticks `` `...` `` instead of `$(...)`. Rationale: Claude Code's Bash tool parser cannot handle `$(...)` syntax when combined with pipelines (`|`), causing `parse error near ')'`. This is an execution environment limitation, not a style preference. Example: `result=$(git log | grep "fix")` fails; `` result=`git log | grep "fix"` `` works. Note: POSIX.1-2017 recommends `$(...)` for general use, but backticks are mandatory here due to parser constraints.
-- **POSIX Compliance**: MUST use POSIX-compliant syntax only; prohibited: `[[ ]]` (use `[ ]`), `==` (use `=`), `=~` (use `grep -E`)
-- **Error Handling**: Always use `2>/dev/null` for suppressing errors and validate command outputs
 
 ---
 
@@ -177,7 +169,6 @@ The following **Statutes** are _normative_ and derive authority from this Consti
 **Constitutional Tests** — Six mandatory checks any proposal must pass.
 **Complexity Budget** — Formal limits on implementation scope to prevent over-engineering.
 **ROI** — Return on Investment calculated as benefit minus complexity (both scored 1-5).
-**Command Substitution** — Shell syntax for capturing command output; use backticks `` `...` `` in Claude Commands for macOS/zsh compatibility.
 
 ---
 
