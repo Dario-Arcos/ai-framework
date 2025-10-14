@@ -1,13 +1,13 @@
 ---
 allowed-tools: Read, Edit, Write, Bash(gh), Bash(date)
-description: Push spec to GitHub as child issue linked to parent PRD
+description: Push spec to GitHub as child issue linked to parent PRP
 ---
 
 # Spec Sync
 
-Push spec to GitHub as child issue linked to parent PRD.
+Push spec to GitHub as child issue linked to parent PRP.
 
-**IMPORTANT:** This command REQUIRES a parent PRD issue. Specs must always be linked to a PRD. If you don't have a PRD issue yet, run `/PRD-cycle:prd-sync` first.
+**IMPORTANT:** This command REQUIRES a parent PRP issue. Specs must always be linked to a PRP. If you don't have a PRP issue yet, run `/PRP-cycle:prp-sync` first.
 
 ## Usage
 
@@ -186,7 +186,7 @@ Documentation complete. Stakeholders can now review what was built.
 Next steps:
   - View spec: <issue_url>
   - Close feature branch: Merge PR or delete branch
-  - Start next feature: /PRD-cycle:prd-new <feature_name>
+  - Start next feature: /PRP-cycle:prp-new <feature_name>
 ```
 
 ## Error Handling
@@ -230,12 +230,12 @@ This approach is more robust than bash scripting because:
 - More maintainable and debuggable
 - Handles edge cases intelligently
 
-## Relationship to PRD Workflow
+## Relationship to PRP Workflow
 
 **Recommended Flow (Sync After Implementation):**
 
 ```
-PRD.md → [prd-sync] → GitHub Issue #247 (PRD - parent)
+PRP.md → [prp-sync] → GitHub Issue #247 (PRP - parent)
                            ↓
                     [speckit.specify --from-issue 247]
                            ↓
@@ -263,10 +263,10 @@ Run `/speckit.sync` AFTER implementation is complete and validated. This ensures
 
 **Stakeholder View:**
 
-- Business team tracks PRD issue #247 (parent) - high-level requirements
+- Business team tracks PRP issue #247 (parent) - high-level requirements
 - Tech team tracks Spec issue #248 (child) - technical documentation of what was built
-- Parent-child relationship via "Parent PRD: #247" in spec body
-- Clear separation of concerns: business requirements (PRD) vs technical implementation (Spec)
+- Parent-child relationship via "Parent PRP: #247" in spec body
+- Clear separation of concerns: business requirements (PRP) vs technical implementation (Spec)
 
 ## Portability to Linear
 

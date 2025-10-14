@@ -30,7 +30,7 @@ CLAUDE.md
 
 # Claude Code generated directories (created by commands)
 .claude/uix-designs/
-.claude/prds/
+.claude/prps/
 
 # Personal settings (not shared with team)
 .claude/settings.local.json

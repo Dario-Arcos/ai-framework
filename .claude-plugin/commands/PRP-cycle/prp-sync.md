@@ -1,17 +1,17 @@
 ---
 allowed-tools: Read, Edit, Write, Bash(gh), Bash(date)
-description: Push PRD to GitHub as parent issue with optional milestone assignment
+description: Push PRP to GitHub as parent issue with optional milestone assignment
 ---
 
-# PRD Sync
+# PRP Sync
 
-Push PRD to GitHub as parent issue with optional milestone assignment.
+Push PRP to GitHub as parent issue with optional milestone assignment.
 
 ## Usage
 
 ```
-/PRD-cycle:prd-sync <feature_name>
-/PRD-cycle:prd-sync <feature_name> --milestone <number>
+/PRP-cycle:prp-sync <feature_name>
+/PRP-cycle:prp-sync <feature_name> --milestone <number>
 ```
 
 ## User Input
@@ -37,9 +37,9 @@ $ARGUMENTS
 
 **Validate required files exist**:
 
-- `.claude/prds/<feature_name>/prd.md`
+- `.claude/prps/<feature_name>/prp.md`
 
-If PRD file missing, show error and stop.
+If PRP file missing, show error and stop.
 
 ### 2. Milestone Handling
 
@@ -57,20 +57,20 @@ If PRD file missing, show error and stop.
 
 **Prepare issue content**:
 
-- Read `.claude/prds/<feature_name>/prd.md`
+- Read `.claude/prps/<feature_name>/prp.md`
 - Strip the frontmatter (everything between `---` lines)
-- Use clean PRD content as issue body
+- Use clean PRP content as issue body
 
 **Create GitHub issue**:
 
-- Title: Extract from PRD frontmatter `name` field
-- Body: Clean PRD content without frontmatter
-- Labels: `prd`, `parent-issue`, `sdd`
+- Title: Extract from PRP frontmatter `name` field
+- Body: Clean PRP content without frontmatter
+- Labels: `prp`, `parent-issue`, `sdd`
 - Assign to milestone only if milestone number was provided
 
-### 4. Update PRD File
+### 4. Update PRP File
 
-**Update** `.claude/prds/<feature_name>/prd.md` frontmatter with:
+**Update** `.claude/prps/<feature_name>/prp.md` frontmatter with:
 
 - `github: <issue_url>`
 - `github_synced: <current_timestamp>`
@@ -81,7 +81,7 @@ Use current timestamp in ISO format: `YYYY-MM-DDTHH:MM:SSZ`
 
 ### 5. Create GitHub Mapping File
 
-**Create** `.claude/prds/<feature_name>/github-mapping.md` with this content:
+**Create** `.claude/prps/<feature_name>/github-mapping.md` with this content:
 
 ```markdown
 # GitHub Issue Mapping
@@ -100,21 +100,21 @@ Synced: <current_timestamp>
 **Display success message**:
 
 ```
-✅ PRD synced to GitHub
+✅ PRP synced to GitHub
   [If milestone provided] - Milestone: #<milestone_number> - <milestone_title>
   - Parent Issue: #<issue_number> - <feature_name>
-  [If milestone provided] - PRD issue created and assigned to milestone
-  [If no milestone] - PRD issue created (no milestone assigned)
+  [If milestone provided] - PRP issue created and assigned to milestone
+  [If no milestone] - PRP issue created (no milestone assigned)
 
 Next steps:
   - Technical specification: /SDD-cycle:specify --from-issue <issue_number>
   [If milestone provided] - View milestone: <milestone_url>
-  - View PRD issue: <issue_url>
+  - View PRP issue: <issue_url>
 ```
 
 ## Error Handling
 
-- **If PRD.md not found**: Show clear error message with correct path
+- **If PRP.md not found**: Show clear error message with correct path
 - **If milestone number invalid**: Show error that milestone doesn't exist
 - **If issue creation fails**: Report what succeeded, don't rollback
 - **If file updates fail**: Report specific file and continue with others
@@ -126,16 +126,16 @@ Next steps:
 - Update files only after successful GitHub operations
 - Keep operations atomic and simple
 - Sub-issues handled by SDD workflow, not this command
-- Use `--milestone N` to assign PRD to existing milestone
+- Use `--milestone N` to assign PRP to existing milestone
 - Milestones provide optional business-level progress tracking
-- PRD represents business requirement, not technical implementation
+- PRP represents business requirement, not technical implementation
 
 ## Implementation Approach
 
 This command uses **natural language instructions** processed by Claude Code's native capabilities rather than complex bash scripting. Claude will:
 
 1. **Parse arguments** intelligently from `$ARGUMENTS`
-2. **Read PRD content** using the Read tool
+2. **Read PRP content** using the Read tool
 3. **Execute GitHub operations** using simple Bash commands (issue creation, optional milestone assignment)
 4. **Update files** using Edit tool for surgical changes
 5. **Create new files** using Write tool when needed
@@ -150,16 +150,16 @@ This approach is more robust than bash scripting because:
 
 ## Relationship to SDD Workflow
 
-**PRD as Parent Issue Strategy**:
+**PRP as Parent Issue Strategy**:
 
-- PRD represents the business requirement being tracked
+- PRP represents the business requirement being tracked
 - GitHub issue becomes the central hub for all technical sub-issues
 - SDD workflow creates technical specification and implementation sub-issues
-- Business stakeholders track progress via parent PRD issue
+- Business stakeholders track progress via parent PRP issue
 - Technical team tracks implementation via SDD sub-issues
 
 **Workflow Integration**:
 
 ```
-PRD.md → [prd-sync] → GitHub Parent Issue → [SDD-cycle:specify --from-issue] → Technical Spec + Sub-Issues
+PRP.md → [prp-sync] → GitHub Parent Issue → [SDD-cycle:specify --from-issue] → Technical Spec + Sub-Issues
 ```
