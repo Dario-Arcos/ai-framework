@@ -51,6 +51,10 @@ Thumbs.db
 # AI FRAMEWORK FILES (auto-added by ai-framework plugin)
 # ============================================================================
 
+specs/
+.claude/uix-designs/
+.claude/prps/
+
 .claude/logs/
 .claude/settings.local.json
 .claude/*.db
