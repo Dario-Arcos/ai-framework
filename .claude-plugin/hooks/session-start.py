@@ -208,6 +208,10 @@ def copy_template_files(plugin_root, project_dir):
     files_to_copy = [
         ("CLAUDE.md", project_dir / "CLAUDE.md"),
         (".mcp.json", project_dir / ".mcp.json"),
+        (
+            ".claude/settings.local.json",
+            project_dir / ".claude" / "settings.local.json",
+        ),
     ]
 
     for src_name, dest in dirs_to_copy:
@@ -218,9 +222,9 @@ def copy_template_files(plugin_root, project_dir):
                     shutil.copytree(src, dest, dirs_exist_ok=False)
                     files_copied = True
                 else:
-                    # Directory exists, copy missing files only
+                    # Directory exists, copy missing files only (skip settings.local.json)
                     for item in src.rglob("*"):
-                        if item.is_file():
+                        if item.is_file() and item.name != "settings.local.json":
                             rel_path = item.relative_to(src)
                             dest_file = dest / rel_path
                             if not dest_file.exists():
@@ -232,8 +236,17 @@ def copy_template_files(plugin_root, project_dir):
 
     for src_name, dest in files_to_copy:
         src = template_dir / src_name
-        if src.exists() and not dest.exists():
+        # Special handling for settings.local.json: overwrite if incomplete (<500 bytes)
+        should_copy = not dest.exists()
+        if dest.exists() and "settings.local.json" in src_name:
             try:
+                should_copy = dest.stat().st_size < 500
+            except (OSError, IOError):
+                pass
+
+        if src.exists() and should_copy:
+            try:
+                dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dest)
                 files_copied = True
             except (OSError, IOError):
@@ -303,13 +316,13 @@ def main():
         # Handle partial installation (files exist but no plugin config)
         if partial_install:
             msg = (
-                "⚠️ AI Framework: Configuración parcial detectada\n\n"
-                "Tus archivos existen pero no contienen configuración del plugin.\n\n"
-                "📁 Compara con templates: .claude-plugin/template/\n\n"
+                "⚠️ Config personalizada detectada (no se sobrescribirá)\n\n"
                 "Opciones:\n"
-                "• Copiar secciones relevantes manualmente\n"
-                "• Reemplazar archivos (respalda primero)\n\n"
-                "🔄 Reinicia Claude Code después de actualizar."
+                "1. Mantener tu config → Sin acción\n"
+                "2. Usar plugin config:\n"
+                "   • Elimina: CLAUDE.md, .claude/, .specify/\n"
+                "   • Reinicia Claude (reinstala automático)\n\n"
+                "💡 Para comparar: pregunta a Claude por los templates"
             )
             print(
                 json.dumps(
