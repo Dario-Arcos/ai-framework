@@ -10,6 +10,9 @@
 .claude/
 .specify/
 
+# Framework spec directories (features created by /speckit commands)
+specs/
+
 # Framework project files (ignored by default)
 # To version these files, comment out the lines below:
 CLAUDE.md
@@ -24,6 +27,13 @@ CLAUDE.md
 
 # Framework logs (created during Claude Code sessions)
 .claude/logs/
+
+# Claude Code generated directories (created by commands)
+.claude/reviews/
+.claude/implementations/
+.claude/uix-designs/
+.claude/epics/
+.claude/prds/
 
 # Personal settings (not shared with team)
 .claude/settings.local.json
@@ -48,24 +58,76 @@ CLAUDE.md
 
 # OS files
 .DS_Store
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
 
 # Editor directories
 .vscode/
 .idea/
+.cursor-settings.json
 *.swp
 *.swo
 *~
 
 # Dependencies
 node_modules/
+*/node_modules/
 vendor/
+jspm_packages/
+.npm
+
+# Python
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
+*.so
 .pytest_cache/
+
+# Test coverage
 .coverage
+coverage/
+*.lcov
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
 
 # Build outputs
 dist/
 build/
+.next/
+.expo/
+.parcel-cache
+
+# Logs
 *.log
+
+# Backup and temporary files
+*.backup
+*.bak
+*-backup.*
+*-fixed.*
+*-temp.*
+*.orig
+backup/
+backups/
+tmp/
+temp/
+*.tmp
+
+# Local configuration overrides
+settings.local.json
+config.local.json
+
+# Playwright MCP test artifacts (if using Playwright MCP server)
+test-results/
+playwright-report/
+blob-report/
+.local-browsers/
+drivers/
+.auth/
+*.auth.json
