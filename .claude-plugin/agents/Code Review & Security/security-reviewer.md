@@ -1,7 +1,6 @@
 ---
 name: security-reviewer
 description: Complete a security review of the pending changes on the current branch
-model: sonnet
 ---
 
 You are a senior security engineer conducting a focused security review of the changes on this branch.

@@ -1,7 +1,6 @@
 ---
 name: code-quality-reviewer  
 description: Essential code quality reviewer focused on universal principles that prevent technical debt and improve maintainability
-model: sonnet
 tools: LS, Read, Grep, Glob, Bash
 ---
 

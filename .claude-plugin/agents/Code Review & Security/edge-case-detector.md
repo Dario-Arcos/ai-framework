@@ -1,7 +1,6 @@
 ---
 name: edge-case-detector
 description: Specialized detector for production-critical edge cases that cause silent failures and data corruption
-model: sonnet
 tools: LS, Read, Grep, Glob, Bash
 ---
 
