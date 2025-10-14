@@ -1,77 +1,115 @@
-# AI Framework - Repository .gitignore
-# This is the framework's own .gitignore (NOT the template for user projects)
+# AI Framework - Project .gitignore
+# Auto-installed by AI Framework plugin
+# Prevents framework files from being committed to your project repository
 
 # ============================================================================
-# FRAMEWORK DEVELOPMENT - Files to ignore during development
+# FRAMEWORK FILES (installed but not committed)
 # ============================================================================
 
-# Framework uses itself - ignore installed files ONLY at root (source is in template/)
-# Leading "/" anchors patterns to repository root, preventing conflicts with
-# .claude-plugin/template/.claude/ and similar paths
+# Framework internals (rules, configuration)
 /.claude/
 /.specify/
+
+# Framework spec directories (features created by /speckit commands)
+/specs/
+
+# Framework project files (ignored by default)
+# To version these files, comment out the lines below:
 /CLAUDE.md
 /.mcp.json
 
 # MCP server data directories
-.playwright-mcp/
-
-# Runtime/Logs (generated during development/testing)
-.claude-plugin/hooks/*.db
-.claude-plugin/hooks/__pycache__/
-
-# Test installations (test projects created during development)
-test-project/
-example-install/
+/.playwright-mcp/
 
 # ============================================================================
-# OS FILES
+# FRAMEWORK RUNTIME (logs, databases, temp files)
 # ============================================================================
 
+# Hook databases (notifications, tracking)
+/.claude-plugin/hooks/*.db
+/.claude-plugin/hooks/__pycache__/
+
+# ============================================================================
+# COMMON PROJECT FILES (add your own)
+# ============================================================================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
 .DS_Store
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
 
-# ============================================================================
-# EDITOR DIRECTORIES
-# ============================================================================
-
+# Editor directories
 .vscode/
 .idea/
+.cursor-settings.json
 *.swp
 *.swo
 *~
 
-# ============================================================================
-# TEMPORARY FILES
-# ============================================================================
-
-*.tmp
-*.bak
-*.backup
-
-# ============================================================================
-# AI FRAMEWORK FILES (auto-added by ai-framework plugin)
-# ============================================================================
-
-/specs/
-/.claude/uix-designs/
-/.claude/prps/
-
-/.claude/logs/
-/.claude/settings.local.json
-/.claude/*.db
-
-# Hook coordination markers (temporary files)
-/.claude/.pending_restart
-/.claude/.framework_initialized
-
-# ============================================================================
-# DOCUMENTATION (VitePress) - Build artifacts and dependencies
-# ============================================================================
-
-# Node.js dependencies (VitePress documentation)
+# Dependencies
 node_modules/
+*/node_modules/
+vendor/
+jspm_packages/
+.npm
 
-# VitePress build artifacts (regenerated on build)
-human-handbook/.vitepress/cache/
-human-handbook/.vitepress/dist/
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Test coverage
+.coverage
+coverage/
+*.lcov
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+
+# Build outputs
+dist/
+build/
+.next/
+.expo/
+.parcel-cache
+
+# Logs
+*.log
+
+# Backup and temporary files
+*.backup
+*.bak
+*-backup.*
+*-fixed.*
+*-temp.*
+*.orig
+backup/
+backups/
+tmp/
+temp/
+*.tmp
+
+# Local configuration overrides
+settings.local.json
+config.local.json
+
+# Playwright MCP test artifacts (if using Playwright MCP server)
+test-results/
+playwright-report/
+blob-report/
+.local-browsers/
+drivers/
+.auth/
+*.auth.json
