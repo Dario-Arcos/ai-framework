@@ -29,10 +29,7 @@ CLAUDE.md
 .claude/logs/
 
 # Claude Code generated directories (created by commands)
-.claude/reviews/
-.claude/implementations/
 .claude/uix-designs/
-.claude/epics/
 .claude/prds/
 
 # Personal settings (not shared with team)
@@ -131,3 +128,6 @@ blob-report/
 drivers/
 .auth/
 *.auth.json
+
+# Specs directory
+specs/
