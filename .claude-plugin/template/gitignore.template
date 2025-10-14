@@ -21,30 +21,15 @@
 /.mcp.json
 
 # MCP server data directories
-.playwright-mcp/
+/.playwright-mcp/
 
 # ============================================================================
 # FRAMEWORK RUNTIME (logs, databases, temp files)
 # ============================================================================
 
-# Framework logs (created during Claude Code sessions)
-.claude/logs/
-
-# Claude Code generated directories (created by commands)
-.claude/uix-designs/
-.claude/prps/
-
-# Personal settings (not shared with team)
-.claude/settings.local.json
-
 # Hook databases (notifications, tracking)
-.claude/*.db
-.claude-plugin/hooks/*.db
-.claude-plugin/hooks/__pycache__/
-
-# Hook coordination markers (temporary files)
-.claude/.pending_restart
-.claude/.framework_initialized
+/.claude-plugin/hooks/*.db
+/.claude-plugin/hooks/__pycache__/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
@@ -130,6 +115,3 @@ blob-report/
 drivers/
 .auth/
 *.auth.json
-
-# Specs directory
-specs/

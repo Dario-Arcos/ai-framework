@@ -114,7 +114,7 @@ def merge_gitignore(plugin_root, project_dir):
     - If .gitignore doesn't exist: copy template
     - If .gitignore exists: append missing framework rules
     """
-    template_gitignore = plugin_root / "template" / ".gitignore"
+    template_gitignore = plugin_root / "template" / "gitignore.template"
     project_gitignore = project_dir / ".gitignore"
 
     if not template_gitignore.exists():
