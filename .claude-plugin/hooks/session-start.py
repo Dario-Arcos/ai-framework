@@ -8,7 +8,9 @@ import os
 import sys
 import json
 import shutil
+import filecmp
 from pathlib import Path
+from common import find_project_dir, json_output
 
 
 # =============================================================================
@@ -25,11 +27,6 @@ FRAMEWORK_SECTION_KEYWORDS = (
     "FRAMEWORK FILES",
     "FRAMEWORK RUNTIME",
 )
-
-
-def find_project_dir():
-    """Find project directory (cwd when Claude started)"""
-    return Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
 
 
 def validate_project_dir(project_dir):
@@ -52,28 +49,6 @@ def is_already_installed(project_dir):
         project_dir / ".claude" / "settings.local.json",
     ]
     return all(f.exists() for f in key_files)
-
-
-# Minimal plugin markers (1 per critical file)
-PLUGIN_MARKERS = {
-    "CLAUDE.md": "Operating Protocol",
-    ".claude/settings.local.json": "bypassPermissions",
-    ".specify/memory/constitution.md": "AI Framework",
-}
-
-
-def has_plugin_config(project_dir):
-    """Check if existing files contain plugin configuration."""
-    for rel_path, marker in PLUGIN_MARKERS.items():
-        file_path = project_dir / rel_path
-        if file_path.exists():
-            try:
-                content = file_path.read_text(encoding="utf-8")
-                if marker not in content:
-                    return False  # File exists but missing plugin config
-            except (OSError, IOError):
-                return False
-    return True
 
 
 def extract_framework_rules(template_gitignore):
@@ -283,124 +258,115 @@ def check_missing_essential_deps():
     return missing
 
 
+def sync_all_files(plugin_root, project_dir):
+    """
+    Synchronize all framework files (MANDATORY_SYNC approach)
+    Returns: list of updated files
+    """
+    template_dir = plugin_root / "template"
+    updated = []
+
+    # Files to ALWAYS sync (code, not config)
+    mandatory_files = [
+        # .specify/ (all except project-context.md)
+        ".specify/memory/constitution.md",
+        ".specify/memory/product-design-principles.md",
+        ".specify/memory/uix-design-principles.md",
+        ".specify/scripts/bash/check-prerequisites.sh",
+        ".specify/scripts/bash/common.sh",
+        ".specify/scripts/bash/create-new-feature.sh",
+        ".specify/scripts/bash/setup-plan.sh",
+        ".specify/scripts/bash/update-agent-context.sh",
+        ".specify/templates/agent-file-template.md",
+        ".specify/templates/checklist-template.md",
+        ".specify/templates/plan-template.md",
+        ".specify/templates/spec-template.md",
+        ".specify/templates/tasks-template.md",
+        # .claude/rules/ (all files)
+        ".claude/rules/always-works.md",
+        ".claude/rules/datetime.md",
+        ".claude/rules/effective-agents-guide.md",
+        ".claude/rules/github-operations.md",
+        ".claude/rules/worktree-operations.md",
+        "CLAUDE.md",  # Always overwrite (system file)
+        ".mcp.json",  # Always overwrite (system file)
+    ]
+
+    for rel_path in mandatory_files:
+        template_file = template_dir / rel_path
+        user_file = project_dir / rel_path
+
+        if not template_file.exists():
+            continue
+
+        try:
+            user_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # If identical, skip
+            if user_file.exists() and filecmp.cmp(
+                template_file, user_file, shallow=False
+            ):
+                continue
+
+            # Copy (create or update)
+            shutil.copy2(template_file, user_file)
+            updated.append(rel_path)
+        except (OSError, IOError):
+            pass  # Silent fail, don't block installation
+
+    return updated
+
+
 def main():
     """Main installation flow"""
     try:
-        # Get project directory
         project_dir = find_project_dir()
-
-        # Validate project directory
         validate_project_dir(project_dir)
 
-        # Get plugin root from environment variable
         plugin_root_env = os.environ.get("CLAUDE_PLUGIN_ROOT")
         if not plugin_root_env:
-            sys.stderr.write("ERROR: CLAUDE_PLUGIN_ROOT no está definido\n")
+            sys.stderr.write("ERROR: CLAUDE_PLUGIN_ROOT not defined\n")
             sys.exit(1)
 
         plugin_root = Path(plugin_root_env)
+        if not plugin_root.exists():
+            sys.stderr.write(f"ERROR: Plugin root does not exist: {plugin_root}\n")
+            sys.exit(1)
 
-        # Check if already installed (intelligent detection)
-        files_exist = is_already_installed(project_dir)
-        has_config = has_plugin_config(project_dir) if files_exist else False
-        partial_install = files_exist and not has_config
-
-        # Always merge .gitignore (even if already installed)
-        # This ensures .gitignore stays up-to-date with template changes
+        # Merge .gitignore first
         gitignore_updated = merge_gitignore(plugin_root, project_dir)
 
-        # If fully installed and gitignore didn't change, silent exit
-        if files_exist and has_config and not gitignore_updated:
-            sys.exit(0)
+        # Check installation status
+        files_exist = is_already_installed(project_dir)
 
-        # Handle partial installation (files exist but no plugin config)
-        if partial_install:
-            msg = (
-                "⚠️ Config personalizada detectada (no se sobrescribirá)\n\n"
-                "Opciones:\n"
-                "1. Mantener tu config → Sin acción\n"
-                "2. Usar plugin config:\n"
-                "   • Elimina: CLAUDE.md, .claude/, .specify/\n"
-                "   • Reinicia Claude (reinstala automático)\n\n"
-                "💡 Para comparar: pregunta a Claude por los templates"
-            )
-            print(
-                json.dumps(
-                    {
-                        "systemMessage": msg,
-                        "additionalContext": "Partial installation detected",
-                    },
-                    indent=2,
-                )
-            )
-            sys.exit(0)
-
-        # Copy template files to user project (only if not installed)
-        files_copied = False
+        # First install: copy all + sync
         if not files_exist:
-            files_copied = copy_template_files(plugin_root, project_dir)
-
-        # Show appropriate message based on what changed
-        if files_copied:
-            # Create marker for workspace-status.py coordination
-            try:
-                (project_dir / ".claude" / ".pending_restart").touch()
-            except:
-                pass
-
-            # Check for missing essential dependencies
+            copy_template_files(plugin_root, project_dir)
+            updated_files = sync_all_files(plugin_root, project_dir)
             missing_deps = check_missing_essential_deps()
 
-            # Build installation message
+            msg = "✅ AI Framework instalado\n\n"
             if missing_deps:
-                # Platform-specific install command
-                if sys.platform == "darwin":
-                    install_cmd = "brew install " + " ".join(missing_deps)
-                else:
-                    # Linux/Windows: Python packages (black, etc)
-                    install_cmd = "pip install " + " ".join(missing_deps)
+                msg += f"⚠️ Setup recomendado: /utils:setup-dependencies\n"
+                msg += f"Faltan: {', '.join(missing_deps)}\n\n"
+            msg += "🔄 Reinicia Claude Code ahora"
 
-                msg = (
-                    "✅ AI Framework instalado\n\n"
-                    "⚠️ Setup recomendado (una vez):\n"
-                    "Faltan: " + ", ".join(missing_deps) + "\n\n"
-                    "Instalación rápida: /utils:setup-dependencies\n"
-                    "Manual: " + install_cmd + "\n\n"
-                    "💡 Framework funciona sin esto, pero notificaciones/formateo limitados.\n\n"
-                    "🔄 Reinicia Claude Code ahora."
-                )
-            else:
-                msg = (
-                    "✅ AI Framework instalado\n\n"
-                    "📋 Verificación recomendada (una vez):\n"
-                    "   /utils:setup-dependencies\n\n"
-                    "Esto verifica que todas las herramientas estén disponibles.\n\n"
-                    "🔄 Después reinicia Claude Code para cargar la configuración."
-                )
+            print(json_output(msg, "Initial installation"))
+            sys.exit(0)
 
-            print(
-                json.dumps(
-                    {
-                        "systemMessage": msg,
-                        "additionalContext": "Config installed, restart required",
-                    },
-                    indent=2,
-                )
-            )
-        elif gitignore_updated:
-            # Only gitignore updated - no restart needed
-            print(
-                json.dumps(
-                    {
-                        "systemMessage": "✅ .gitignore actualizado.\nNo necesitas reiniciar.",
-                        "additionalContext": "Gitignore updated, no restart needed",
-                    },
-                    indent=2,
-                )
-            )
+        # Already installed: sync files
+        updated_files = sync_all_files(plugin_root, project_dir)
+
+        # Show message only if changes detected
+        if updated_files or gitignore_updated:
+            parts = []
+            if updated_files:
+                parts.append(f"✅ {len(updated_files)} archivos actualizados")
+            if gitignore_updated:
+                parts.append("✅ .gitignore actualizado")
+            print(json_output("\n".join(parts), "Framework synced"))
 
         sys.exit(0)
-
     except Exception as e:
         error_msg = "ERROR: Installation failed: " + str(e) + "\n"
         sys.stderr.write(error_msg)
