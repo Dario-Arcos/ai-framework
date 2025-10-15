@@ -57,29 +57,52 @@ claude
 ### Map Codebase Context
 
 ```
-/utils:understand
+/ai-framework:utils:understand
 ```
 
 **Purpose:** Claude analyzes your entire codebase architecture, preventing hours of refactoring later.
 
 ### Complete Feature Implementation
 
+**Opción A: Branch simple** (desarrollo lineal)
+
 ```
-/SDD-cycle:specify "add input validation to registration form"
-/SDD-cycle:clarify
-/SDD-cycle:plan
-/SDD-cycle:tasks
-/SDD-cycle:analyze
-/SDD-cycle:implement
+/ai-framework:SDD-cycle:speckit.specify "add input validation to registration form"
+# → Crea branch 001-add-input-validation en MISMO directorio
+/ai-framework:SDD-cycle:speckit.clarify
+/ai-framework:SDD-cycle:speckit.plan
+/ai-framework:SDD-cycle:speckit.tasks
+/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
+/ai-framework:SDD-cycle:speckit.analyze
+/ai-framework:SDD-cycle:speckit.implement
 ```
 
-**Workflow:** Specification → Clarification → Planning → Task generation → Cross-artifact analysis → TDD-enforced implementation.
+**Opción B: Worktree aislado** (trabajo paralelo, RECOMENDADO)
+
+```
+/ai-framework:git-github:worktree:create "add input validation to registration form" main
+# → Abre IDE en nueva ventana
+# ⚠️ En nueva ventana: Cmd+` para abrir terminal, luego:
+pwd  # Verificar: debe mostrar ../worktree-add-input-validation/
+claude  # Iniciar nueva sesión Claude
+
+# Continuar con SDD workflow (ORDEN CORRECTO):
+/ai-framework:SDD-cycle:speckit.specify "add input validation to registration form"
+/ai-framework:SDD-cycle:speckit.clarify
+/ai-framework:SDD-cycle:speckit.plan
+/ai-framework:SDD-cycle:speckit.tasks
+/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
+/ai-framework:SDD-cycle:speckit.analyze
+/ai-framework:SDD-cycle:speckit.implement
+```
+
+**Workflow (ORDEN CORRECTO):** Specification → Clarification → Planning → Task generation → **Agent Assignment (CRÍTICO)** → Cross-artifact analysis → TDD-enforced implementation with specialized agents.
 
 ### Create Production-Ready PR
 
 ```
-/git-github:commit "feat: add registration validation"
-/git-github:pr develop
+/ai-framework:git-github:commit "feat: add registration validation"
+/ai-framework:git-github:pr develop
 ```
 
 **Output:** Security-reviewed PR with comprehensive description, test plan, and CI/CD integration.
@@ -100,9 +123,9 @@ claude
 
 ## Next Steps
 
-1. **[ai-first-workflow.md](ai-first-workflow.md)** - Complete PRD → SDD → GitHub ecosystem
-2. **[commands-guide.md](commands-guide.md)** - 26 documented commands
-3. **[agents-guide.md](agents-guide.md)** - 44 specialized agents
+1. **[ai-first-workflow.md](ai-first-workflow.md)** - Complete PRP → SDD → GitHub ecosystem
+2. **[commands-guide.md](commands-guide.md)** - 24 documented commands
+3. **[agents-guide.md](agents-guide.md)** - 45 specialized agents
 4. **[claude-code-pro-tips.md](claude-code-pro-tips.md)** - Expert workflow patterns
 
 ---
@@ -112,17 +135,18 @@ claude
 **Week 1: Foundation**
 
 - Setup environment
-- Master `/utils:session-start` and `/utils:understand`
+- Master `/ai-framework:utils:session-start` and `/ai-framework:utils:understand`
 
 **Week 2: Development Cycle**
 
-- Complete SDD workflow
-- Practice `/SDD-cycle:specify`, `/SDD-cycle:clarify`, `/SDD-cycle:implement`
+- Complete SDD workflow (ORDEN CORRECTO: specify → clarify → plan → tasks → agent-assignment → analyze → implement)
+- Practice `/ai-framework:SDD-cycle:speckit.specify`, `/ai-framework:SDD-cycle:speckit.clarify`, agent-assignment (via Task tool), `/ai-framework:SDD-cycle:speckit.implement`
+- Master parallel execution with specialized agents
 
 **Week 3: Version Control**
 
 - GitHub operations
-- Master `/git-github:commit`, `/git-github:pr`, `/git-github:worktree:*`
+- Master `/ai-framework:git-github:commit`, `/ai-framework:git-github:pr`, `/ai-framework:git-github:worktree:*`
 
 **Week 4+: Advanced**
 
@@ -135,4 +159,4 @@ claude
 
 ---
 
-_Última actualización: 2025-10-13_
+_Última actualización: 2025-10-14_

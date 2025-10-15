@@ -27,8 +27,16 @@ features:
       width: 48
       height: 48
     title: AI-First Workflow
-    details: Ecosistema PRD → SDD → GitHub con TDD enforcement
+    details: Ecosistema PRP → SDD → GitHub con TDD enforcement
     link: /docs/ai-first-workflow
+
+  - icon:
+      src: /icons/plug.svg
+      width: 48
+      height: 48
+    title: MCP Servers
+    details: Playwright y Shadcn/ui para browser testing y componentes
+    link: /docs/mcp-servers
 
   - icon:
       src: /icons/cpu.svg
@@ -45,4 +53,12 @@ features:
     title: Best Practices
     details: Patterns profesionales para workflows AI-First
     link: /docs/claude-code-pro-tips
+
+  - icon:
+      src: /icons/file-text.svg
+      width: 48
+      height: 48
+    title: Changelog
+    details: Historial de versiones y cambios del framework (v1.0.0)
+    link: /docs/changelog
 ---
