@@ -279,10 +279,7 @@ def scan_template_files(template_dir):
         if str(rel_path).startswith(".specify/scripts/"):
             continue
 
-        # Skip settings.local.json (user config, not code)
-        if item.name == "settings.local.json":
-            continue
-
+        # Include all files (settings.local.json needs special handling in sync)
         files_to_sync.append(str(rel_path))
 
     return files_to_sync
@@ -305,6 +302,16 @@ def sync_all_files(plugin_root, project_dir):
 
         if not template_file.exists():
             continue
+
+        # Special handling: preserve user's customized settings (>= 500 bytes)
+        if "settings.local.json" in rel_path:
+            if user_file.exists():
+                try:
+                    file_size = user_file.stat().st_size
+                    if file_size >= 500:
+                        continue  # Preserve customized settings
+                except (OSError, IOError):
+                    pass  # If stat fails, proceed with copy
 
         try:
             user_file.parent.mkdir(parents=True, exist_ok=True)

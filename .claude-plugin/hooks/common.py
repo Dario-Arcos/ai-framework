@@ -4,7 +4,6 @@ Common utilities for Claude Code hooks
 Provides shared functions to avoid duplication across hooks
 """
 import os
-import sys
 import json
 from pathlib import Path
 
@@ -29,12 +28,8 @@ def find_project_dir():
             return parent
         current = parent
 
-    # If we couldn't find .claude/ directory, fail explicitly
-    sys.stderr.write(
-        "ERROR: Could not locate project root (.claude/ directory not found).\n"
-        "Please run this command from within a Claude Code project directory.\n"
-    )
-    sys.exit(1)
+    # Fallback to cwd
+    return Path(os.getcwd()).resolve()
 
 
 def read_settings(project_dir):
