@@ -4,8 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "docs:dev": "cp CHANGELOG.md human-handbook/docs/changelog.md && vitepress dev human-handbook",
-    "docs:build": "cp CHANGELOG.md human-handbook/docs/changelog.md && vitepress build human-handbook",
+    "docs:dev": "test -f CHANGELOG.md && (echo '<!-- AUTO-GENERATED from CHANGELOG.md - DO NOT EDIT DIRECTLY -->\n' > human-handbook/docs/changelog.md && cat CHANGELOG.md >> human-handbook/docs/changelog.md) && vitepress dev human-handbook",
+    "docs:build": "test -f CHANGELOG.md && (echo '<!-- AUTO-GENERATED from CHANGELOG.md - DO NOT EDIT DIRECTLY -->\n' > human-handbook/docs/changelog.md && cat CHANGELOG.md >> human-handbook/docs/changelog.md) && vitepress build human-handbook",
     "docs:preview": "vitepress preview human-handbook"
   },
   "devDependencies": {
