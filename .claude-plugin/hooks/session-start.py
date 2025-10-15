@@ -10,7 +10,23 @@ import json
 import shutil
 import filecmp
 from pathlib import Path
-from common import find_project_dir, json_output
+
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+
+def find_project_dir():
+    """Find project directory using current working directory"""
+    return Path(os.getcwd()).resolve()
+
+
+def json_output(message, context=""):
+    """Format JSON output for Claude"""
+    return json.dumps(
+        {"systemMessage": message, "additionalContext": context}, indent=2
+    )
 
 
 # =============================================================================
