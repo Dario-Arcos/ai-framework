@@ -155,11 +155,8 @@ def main():
         # Steps 1, 3, 5, 6, 7, 8: Build output
         message = build_output_message(settings, context_exists)
 
-        # Show message to user WITHOUT persistence
-        # Hypothesis: systemMessage alone (no additionalContext) shows to user one-time
-        # additionalContext was causing re-rendering in commit 91ac68a
-        output = {"systemMessage": message}
-        print(json.dumps(output, indent=2))
+        # Show message via stderr (not added to Claude context)
+        sys.stderr.write("\n" + message + "\n")
 
         sys.exit(0)
 

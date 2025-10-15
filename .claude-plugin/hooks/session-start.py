@@ -6,7 +6,6 @@ Installs framework files to user's project on first run only.
 """
 import os
 import sys
-import json
 import shutil
 import filecmp
 import hashlib
@@ -321,10 +320,8 @@ def main():
                 msg += f"Faltan: {', '.join(missing_deps)}\n\n"
             msg += "🔄 Reinicia Claude Code ahora"
 
-            # Show message to user WITHOUT persistence
-            # Hypothesis: systemMessage alone (no additionalContext) shows one-time
-            output = {"systemMessage": msg}
-            print(json.dumps(output, indent=2))
+            # Show message via stderr (not added to Claude context)
+            sys.stderr.write("\n" + msg + "\n")
 
             # Signal workspace-status hook to skip this session
             pending_restart_marker = project_dir / ".claude" / ".pending_restart"
@@ -341,10 +338,9 @@ def main():
             if gitignore_updated:
                 parts.append("✅ .gitignore actualizado")
 
-            # Show message to user WITHOUT persistence
+            # Show message via stderr (not added to Claude context)
             msg = "\n".join(parts)
-            output = {"systemMessage": msg}
-            print(json.dumps(output, indent=2))
+            sys.stderr.write("\n" + msg + "\n")
 
         sys.exit(0)
     except Exception as e:
