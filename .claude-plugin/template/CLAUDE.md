@@ -157,3 +157,11 @@ _If you expect to exceed the budget: **stop and ask**._
 - **Contextual Suggestions**: Suggest proactively specialists based on challenge type, never mandate usage.
 - **Orchestrator Priority**: Use `tech-lead-orchestrator` for multi-step challenges and strategic coordination.
 - **Specialist Selection**: Core specialists for quality, framework specialists for implementation.
+
+### Git Operations (MANDATORY)
+
+- **Commit Authorization**: NEVER execute `git commit` without explicit user authorization. Always ask before committing changes.
+- **Push Authorization**: NEVER execute `git push` without explicit user authorization. Always ask before pushing to remote.
+- **Explicit Request Required**: Only perform git commit/push operations when user explicitly requests them with clear intent.
+- **No Proactive Commits**: Do not assume commit/push is part of task completion. User controls all git operations.
+- **Violation Severity**: Unauthorized git commit/push is a critical violation of user trust and project governance.
