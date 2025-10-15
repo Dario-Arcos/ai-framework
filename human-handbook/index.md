@@ -5,6 +5,9 @@ hero:
   name: "AI Framework Handbook"
   text: "AI development that works"
   tagline: "Research-backed. Constitutional. Production-ready."
+  image:
+    src: https://img.shields.io/github/v/release/Dario-Arcos/ai-framework?style=for-the-badge&logo=github&logoColor=white&label=Latest&color=0969da
+    alt: Latest Release
   actions:
     - theme: brand
       text: Setup
