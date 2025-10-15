@@ -57,6 +57,30 @@ claude
 
 ---
 
+## Post-Installation
+
+**Step 1: Restart Claude Code** (Required)
+
+Exit and reopen Claude Code to load the framework.
+
+**Step 2: Initialize Project Context** (Critical)
+
+```bash
+/ai-framework:utils:project-init
+```
+
+Analyzes your codebase and configures agent recommendations.
+
+**Step 3: Install Dependencies** (Optional)
+
+```bash
+/ai-framework:utils:setup-dependencies
+```
+
+Installs optional tools (notifications, formatters).
+
+---
+
 ## What Gets Installed
 
 ### Your Project Root

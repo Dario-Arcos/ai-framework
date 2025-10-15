@@ -179,34 +179,6 @@ def merge_gitignore(plugin_root, project_dir):
         return False
 
 
-def check_missing_essential_deps():
-    """Check for missing essential dependencies with high UX impact"""
-    # DEPENDENCY REGISTRY (sync with setup-dependencies.md)
-    # Format: (tool, platforms)
-    # platforms: "darwin" | "linux" | "all"
-    DEPS = [
-        ("terminal-notifier", "darwin"),  # Notifications (macOS only)
-        ("black", "all"),  # Python formatter
-        # Future additions here:
-        # ("playwright", "all"),  # E2E testing
-        # ("jq", "all"),  # JSON processing
-    ]
-
-    missing = []
-
-    try:
-        for tool, platforms in DEPS:
-            # Check if applies to current platform
-            if platforms == "all" or sys.platform == platforms:
-                if not shutil.which(tool):
-                    missing.append(tool)
-    except Exception:
-        # If check fails, return empty (fail-safe: don't block installation)
-        return []
-
-    return missing
-
-
 def scan_template_files(template_dir):
     """Scan template directory and return list of files to sync."""
     files_to_sync = []
@@ -304,44 +276,10 @@ def main():
         # Merge .gitignore first (special handling)
         gitignore_updated = merge_gitignore(plugin_root, project_dir)
 
-        # Check installation status
-        files_exist = is_already_installed(project_dir)
-
         # Sync all files (fresh install or update)
         updated_files = sync_all_files(plugin_root, project_dir)
 
-        # Fresh install: show welcome message
-        if not files_exist:
-            missing_deps = check_missing_essential_deps()
-
-            msg = "✅ AI Framework instalado\n\n"
-            if missing_deps:
-                msg += f"⚠️ Setup recomendado: /utils:setup-dependencies\n"
-                msg += f"Faltan: {', '.join(missing_deps)}\n\n"
-            msg += "🔄 Reinicia Claude Code ahora"
-
-            # Show message via stderr (not added to Claude context)
-            sys.stderr.write("\n" + msg + "\n")
-
-            # Signal workspace-status hook to skip this session
-            pending_restart_marker = project_dir / ".claude" / ".pending_restart"
-            pending_restart_marker.parent.mkdir(parents=True, exist_ok=True)
-            pending_restart_marker.touch()
-
-            sys.exit(0)
-
-        # Update: show changes if any
-        if updated_files or gitignore_updated:
-            parts = []
-            if updated_files:
-                parts.append(f"✅ {len(updated_files)} archivos actualizados")
-            if gitignore_updated:
-                parts.append("✅ .gitignore actualizado")
-
-            # Show message via stderr (not added to Claude context)
-            msg = "\n".join(parts)
-            sys.stderr.write("\n" + msg + "\n")
-
+        # Installation complete (fresh install or update)
         sys.exit(0)
     except Exception as e:
         error_msg = "ERROR: Installation failed: " + str(e) + "\n"
