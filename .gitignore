@@ -118,3 +118,6 @@ drivers/
 human-handbook/.vitepress/dist/
 human-handbook/.vitepress/cache/
 human-handbook/docs/changelog.md
+
+# macOS system files - Deep recursion (ai-framework fix)
+**/.DS_Store

@@ -273,6 +273,7 @@ AUTO_CREATE_BRANCH=false
 - Contar líneas: `echo "$files_data" | awk '{adds+=$1; dels+=$2} END {print adds, dels}'`
 - Identificar áreas afectadas: `scope_areas` (directorios del proyecto)
 - Detectar breaking changes: buscar keywords BREAKING/deprecated/removed en commits
+- **IMPORTANTE**: Al numerar items (bugs, issues, tasks), usa formato SIN símbolo hash: 'Bug 1:', 'Issue 1:', 'Task 1:' (NO 'Bug #1:', 'Issue #1:') para evitar auto-linking no intencional de GitHub
 - Construir body:
 
   ```bash

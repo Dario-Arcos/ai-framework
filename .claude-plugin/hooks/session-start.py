@@ -189,12 +189,13 @@ def copy_template_files(plugin_root, project_dir):
         ),
     ]
 
+    # Allow copytree to merge with existing directories
     for src_name, dest in dirs_to_copy:
         src = template_dir / src_name
         if src.exists():
             try:
                 if not dest.exists():
-                    shutil.copytree(src, dest, dirs_exist_ok=False)
+                    shutil.copytree(src, dest, dirs_exist_ok=True)
                     files_copied = True
                 else:
                     # Directory exists, copy missing files only (skip settings.local.json)
@@ -206,8 +207,10 @@ def copy_template_files(plugin_root, project_dir):
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(item, dest_file)
                                 files_copied = True
-            except (OSError, shutil.Error):
-                pass
+            except (OSError, shutil.Error) as e:
+                sys.stderr.write(
+                    f"WARNING: Failed to copy directory {src_name}: {str(e)}\n"
+                )
 
     for src_name, dest in files_to_copy:
         src = template_dir / src_name
@@ -224,8 +227,9 @@ def copy_template_files(plugin_root, project_dir):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dest)
                 files_copied = True
-            except (OSError, IOError):
-                pass
+            except (OSError, IOError) as e:
+                rel_path = dest.relative_to(project_dir)
+                sys.stderr.write(f"WARNING: Failed to copy {rel_path}: {str(e)}\n")
 
     return files_copied
 
@@ -258,6 +262,32 @@ def check_missing_essential_deps():
     return missing
 
 
+def scan_template_files(template_dir):
+    """Scan template directory and return list of files to sync."""
+    files_to_sync = []
+
+    for item in template_dir.rglob("*"):
+        if not item.is_file():
+            continue
+
+        # Skip excluded files
+        if item.name in [".DS_Store", "gitignore.template"]:
+            continue
+
+        # Skip .specify/scripts directory (bash utilities, not synced)
+        rel_path = item.relative_to(template_dir)
+        if str(rel_path).startswith(".specify/scripts/"):
+            continue
+
+        # Skip settings.local.json (user config, not code)
+        if item.name == "settings.local.json":
+            continue
+
+        files_to_sync.append(str(rel_path))
+
+    return files_to_sync
+
+
 def sync_all_files(plugin_root, project_dir):
     """
     Synchronize all framework files (MANDATORY_SYNC approach)
@@ -266,31 +296,8 @@ def sync_all_files(plugin_root, project_dir):
     template_dir = plugin_root / "template"
     updated = []
 
-    # Files to ALWAYS sync (code, not config)
-    mandatory_files = [
-        # .specify/ (all except project-context.md)
-        ".specify/memory/constitution.md",
-        ".specify/memory/product-design-principles.md",
-        ".specify/memory/uix-design-principles.md",
-        ".specify/scripts/bash/check-prerequisites.sh",
-        ".specify/scripts/bash/common.sh",
-        ".specify/scripts/bash/create-new-feature.sh",
-        ".specify/scripts/bash/setup-plan.sh",
-        ".specify/scripts/bash/update-agent-context.sh",
-        ".specify/templates/agent-file-template.md",
-        ".specify/templates/checklist-template.md",
-        ".specify/templates/plan-template.md",
-        ".specify/templates/spec-template.md",
-        ".specify/templates/tasks-template.md",
-        # .claude/rules/ (all files)
-        ".claude/rules/always-works.md",
-        ".claude/rules/datetime.md",
-        ".claude/rules/effective-agents-guide.md",
-        ".claude/rules/github-operations.md",
-        ".claude/rules/worktree-operations.md",
-        "CLAUDE.md",  # Always overwrite (system file)
-        ".mcp.json",  # Always overwrite (system file)
-    ]
+    # Dynamically discover all template files to sync
+    mandatory_files = scan_template_files(template_dir)
 
     for rel_path in mandatory_files:
         template_file = template_dir / rel_path
@@ -311,8 +318,8 @@ def sync_all_files(plugin_root, project_dir):
             # Copy (create or update)
             shutil.copy2(template_file, user_file)
             updated.append(rel_path)
-        except (OSError, IOError):
-            pass  # Silent fail, don't block installation
+        except (OSError, IOError) as e:
+            sys.stderr.write(f"WARNING: Failed to sync {rel_path}: {str(e)}\n")
 
     return updated
 
@@ -352,6 +359,12 @@ def main():
             msg += "🔄 Reinicia Claude Code ahora"
 
             print(json_output(msg, "Initial installation"))
+
+            # Signal workspace-status hook to skip this session
+            pending_restart_marker = project_dir / ".claude" / ".pending_restart"
+            pending_restart_marker.parent.mkdir(parents=True, exist_ok=True)
+            pending_restart_marker.touch()
+
             sys.exit(0)
 
         # Already installed: sync files
