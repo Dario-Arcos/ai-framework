@@ -18,6 +18,26 @@ def find_project_dir():
     return Path(os.getcwd()).resolve()
 
 
+def is_git_worktree():
+    """
+    Check if current directory is a git worktree.
+
+    Git worktrees have .git as a FILE (not directory).
+    Main repo has .git as a DIRECTORY.
+
+    Returns:
+        bool: True if worktree, False otherwise
+    """
+    try:
+        git_path = Path(".git")
+        # Worktree: .git is a file containing path to main repo
+        # Main repo: .git is a directory
+        return git_path.exists() and git_path.is_file()
+    except (OSError, IOError):
+        # If check fails, assume not worktree (safe default)
+        return False
+
+
 def check_pending_restart(project_dir):
     """Check if installer just requested restart"""
     marker = project_dir / ".claude" / ".pending_restart"
@@ -51,7 +71,7 @@ def build_output_message(settings, context_exists=False):
 
     # Step 3: Basic context (direct, no header)
     cwd = os.getcwd()
-    is_worktree = "worktree-" in cwd
+    is_worktree = is_git_worktree()
 
     lines.append(f"📍 Working Directory: {cwd}")
     if is_worktree:

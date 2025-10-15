@@ -9,6 +9,7 @@ import sys
 import json
 import shutil
 import filecmp
+import hashlib
 from pathlib import Path
 
 
@@ -20,13 +21,6 @@ from pathlib import Path
 def find_project_dir():
     """Find project directory using current working directory"""
     return Path(os.getcwd()).resolve()
-
-
-def json_output(message, context=""):
-    """Format JSON output for Claude"""
-    return json.dumps(
-        {"systemMessage": message, "additionalContext": context}, indent=2
-    )
 
 
 # =============================================================================
@@ -255,15 +249,20 @@ def sync_all_files(plugin_root, project_dir):
         if not template_file.exists():
             continue
 
-        # Special handling: preserve user's customized settings (>= 500 bytes)
+        # Special handling: preserve user's customized settings
+        # Use hash comparison to detect ANY modification (not size-based)
         if "settings.local.json" in rel_path:
             if user_file.exists():
                 try:
-                    file_size = user_file.stat().st_size
-                    if file_size >= 500:
+                    # Compare file hashes to detect customization
+                    user_hash = hashlib.sha256(user_file.read_bytes()).hexdigest()
+                    template_hash = hashlib.sha256(
+                        template_file.read_bytes()
+                    ).hexdigest()
+                    if user_hash != template_hash:
                         continue  # Preserve customized settings
                 except (OSError, IOError):
-                    pass  # If stat fails, proceed with copy
+                    pass  # If comparison fails, proceed with copy
 
         try:
             user_file.parent.mkdir(parents=True, exist_ok=True)
@@ -318,7 +317,7 @@ def main():
                 msg += f"Faltan: {', '.join(missing_deps)}\n\n"
             msg += "🔄 Reinicia Claude Code ahora"
 
-            print(json_output(msg, "Initial installation"))
+            print(msg)
 
             # Signal workspace-status hook to skip this session
             pending_restart_marker = project_dir / ".claude" / ".pending_restart"
@@ -334,7 +333,7 @@ def main():
                 parts.append(f"✅ {len(updated_files)} archivos actualizados")
             if gitignore_updated:
                 parts.append("✅ .gitignore actualizado")
-            print(json_output("\n".join(parts), "Framework synced"))
+            print("\n".join(parts))
 
         sys.exit(0)
     except Exception as e:
