@@ -135,12 +135,8 @@ def main():
         # Steps 1, 3, 5, 6, 7, 8: Build output
         message = build_output_message(settings, context_exists)
 
-        # Output JSON format
-        output = {
-            "systemMessage": message,
-            "additionalContext": "Workspace status displayed",
-        }
-        print(json.dumps(output, indent=2))
+        # Output directo - evita persistencia de systemMessage en UI
+        print(message)
 
         sys.exit(0)
 
