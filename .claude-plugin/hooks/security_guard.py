@@ -241,14 +241,13 @@ def main():
     except OSError as e:
         # Log to stderr for observability (similar to pre-tool-use.py)
         try:
-            sys.stderr.write(
-                f"HOOK_LOG_ERROR: {json.dumps({
-                'timestamp': datetime.now().isoformat(),
-                'hook': 'security_guard',
-                'error': 'logging_failed',
-                'reason': str(e)[:100]
-            })}\n"
-            )
+            error_log = {
+                "timestamp": datetime.now().isoformat(),
+                "hook": "security_guard",
+                "error": "logging_failed",
+                "reason": str(e)[:100],
+            }
+            sys.stderr.write("HOOK_LOG_ERROR: " + json.dumps(error_log) + "\n")
         except:
             pass  # Ultimate fallback - only if stderr also fails
 

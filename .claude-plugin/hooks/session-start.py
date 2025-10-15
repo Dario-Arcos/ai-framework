@@ -317,7 +317,10 @@ def main():
                 msg += f"Faltan: {', '.join(missing_deps)}\n\n"
             msg += "🔄 Reinicia Claude Code ahora"
 
-            print(msg)
+            # Show message to user WITHOUT persistence
+            # Hypothesis: systemMessage alone (no additionalContext) shows one-time
+            output = {"systemMessage": msg}
+            print(json.dumps(output, indent=2))
 
             # Signal workspace-status hook to skip this session
             pending_restart_marker = project_dir / ".claude" / ".pending_restart"
@@ -333,7 +336,11 @@ def main():
                 parts.append(f"✅ {len(updated_files)} archivos actualizados")
             if gitignore_updated:
                 parts.append("✅ .gitignore actualizado")
-            print("\n".join(parts))
+
+            # Show message to user WITHOUT persistence
+            msg = "\n".join(parts)
+            output = {"systemMessage": msg}
+            print(json.dumps(output, indent=2))
 
         sys.exit(0)
     except Exception as e:
