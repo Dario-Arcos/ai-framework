@@ -186,70 +186,6 @@ def merge_gitignore(plugin_root, project_dir):
         return False
 
 
-def copy_template_files(plugin_root, project_dir):
-    """Copy template files to project (no overwrite)."""
-    template_dir = plugin_root / "template"
-    files_copied = False
-
-    dirs_to_copy = [
-        (".specify", project_dir / ".specify"),
-        (".claude", project_dir / ".claude"),
-    ]
-
-    files_to_copy = [
-        ("CLAUDE.md", project_dir / "CLAUDE.md"),
-        (".mcp.json", project_dir / ".mcp.json"),
-        (
-            ".claude/settings.local.json",
-            project_dir / ".claude" / "settings.local.json",
-        ),
-    ]
-
-    # Allow copytree to merge with existing directories
-    for src_name, dest in dirs_to_copy:
-        src = template_dir / src_name
-        if src.exists():
-            try:
-                if not dest.exists():
-                    shutil.copytree(src, dest, dirs_exist_ok=True)
-                    files_copied = True
-                else:
-                    # Directory exists, copy missing files only (skip settings.local.json)
-                    for item in src.rglob("*"):
-                        if item.is_file() and item.name != "settings.local.json":
-                            rel_path = item.relative_to(src)
-                            dest_file = dest / rel_path
-                            if not dest_file.exists():
-                                dest_file.parent.mkdir(parents=True, exist_ok=True)
-                                shutil.copy2(item, dest_file)
-                                files_copied = True
-            except (OSError, shutil.Error) as e:
-                sys.stderr.write(
-                    f"WARNING: Failed to copy directory {src_name}: {str(e)}\n"
-                )
-
-    for src_name, dest in files_to_copy:
-        src = template_dir / src_name
-        # Special handling for settings.local.json: overwrite if incomplete (<500 bytes)
-        should_copy = not dest.exists()
-        if dest.exists() and "settings.local.json" in src_name:
-            try:
-                should_copy = dest.stat().st_size < 500
-            except (OSError, IOError):
-                pass
-
-        if src.exists() and should_copy:
-            try:
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dest)
-                files_copied = True
-            except (OSError, IOError) as e:
-                rel_path = dest.relative_to(project_dir)
-                sys.stderr.write(f"WARNING: Failed to copy {rel_path}: {str(e)}\n")
-
-    return files_copied
-
-
 def check_missing_essential_deps():
     """Check for missing essential dependencies with high UX impact"""
     # DEPENDENCY REGISTRY (sync with setup-dependencies.md)
@@ -363,16 +299,17 @@ def main():
             sys.stderr.write(f"ERROR: Plugin root does not exist: {plugin_root}\n")
             sys.exit(1)
 
-        # Merge .gitignore first
+        # Merge .gitignore first (special handling)
         gitignore_updated = merge_gitignore(plugin_root, project_dir)
 
         # Check installation status
         files_exist = is_already_installed(project_dir)
 
-        # First install: copy all + sync
+        # Sync all files (fresh install or update)
+        updated_files = sync_all_files(plugin_root, project_dir)
+
+        # Fresh install: show welcome message
         if not files_exist:
-            copy_template_files(plugin_root, project_dir)
-            updated_files = sync_all_files(plugin_root, project_dir)
             missing_deps = check_missing_essential_deps()
 
             msg = "✅ AI Framework instalado\n\n"
@@ -390,10 +327,7 @@ def main():
 
             sys.exit(0)
 
-        # Already installed: sync files
-        updated_files = sync_all_files(plugin_root, project_dir)
-
-        # Show message only if changes detected
+        # Update: show changes if any
         if updated_files or gitignore_updated:
             parts = []
             if updated_files:
