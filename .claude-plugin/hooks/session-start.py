@@ -277,7 +277,9 @@ def sync_all_files(plugin_root, project_dir):
             shutil.copy2(template_file, user_file)
             updated.append(rel_path)
         except (OSError, IOError) as e:
-            sys.stderr.write(f"WARNING: Failed to sync {rel_path}: {str(e)}\n")
+            sys.stderr.write(
+                "WARNING: Failed to sync " + rel_path + ": " + str(e) + "\n"
+            )
 
     return updated
 
@@ -295,7 +297,9 @@ def main():
 
         plugin_root = Path(plugin_root_env)
         if not plugin_root.exists():
-            sys.stderr.write(f"ERROR: Plugin root does not exist: {plugin_root}\n")
+            sys.stderr.write(
+                "ERROR: Plugin root does not exist: " + str(plugin_root) + "\n"
+            )
             sys.exit(1)
 
         # Merge .gitignore first (special handling)

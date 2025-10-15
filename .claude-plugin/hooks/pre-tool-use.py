@@ -67,7 +67,7 @@ def log_result(success, context_path):
                 "error": "logging_failed",
                 "reason": str(e)[:100],  # Truncate error message
             }
-            sys.stderr.write(f"HOOK_LOG_ERROR: {json.dumps(fallback_log)}\n")
+            sys.stderr.write("HOOK_LOG_ERROR: " + json.dumps(fallback_log) + "\n")
         except:
             pass  # Ultimate fallback - truly silent only if stderr also fails
 
@@ -135,7 +135,10 @@ def main():
         log_result(False, context_path)
         # Log error for observability
         try:
-            sys.stderr.write(f"HOOK_ERROR: Failed to read {context_path}: {str(e)}\n")
+            error_msg = (
+                "HOOK_ERROR: Failed to read " + str(context_path) + ": " + str(e)
+            )
+            sys.stderr.write(error_msg + "\n")
         except:
             pass
         print(
