@@ -214,7 +214,7 @@ Claude Code integra con GitHub CLI:
 1. "Analiza PR #210"     → Claude usa gh para datos
 2. Claude presenta evaluación crítica
 3. "Corrige X e Y"       → Aplica solo fixes confirmados
-4. Claude commitea con /git-github:commit
+4. Claude commitea con /ai-framework:git-github:commit
 ```
 
 ---
@@ -245,7 +245,7 @@ git commit -m "checkpoint: antes de refactor X"
 ### Uso de Ecosistema
 
 **Agentes especializados**: @agents-guide.md (45 agentes)
-**Comandos disponibles**: @commands-guide.md (22 comandos)
+**Comandos disponibles**: @commands-guide.md (24 comandos)
 **Workflows completos**: @ai-first-workflow.md
 
 ---
@@ -290,4 +290,4 @@ Tab (activar razonamiento)
 
 ---
 
-_Última actualización: 2025-10-06 | Claude Code Pro-Tips_
+_Última actualización: 2025-10-14 | Claude Code Pro-Tips_

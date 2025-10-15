@@ -350,4 +350,4 @@ Idiomatic Ruby code with metaprogramming, Rails patterns, performance optimizati
 
 ---
 
-_Última actualización: 2025-10-06 | 45 agentes documentados_
+_Última actualización: 2025-10-14 | 45 agentes documentados_

@@ -42,7 +42,7 @@ export default defineConfig({
         items: [
           { text: "Inicio Rápido", link: "/docs/quickstart" },
           { text: "MCP Servers", link: "/docs/mcp-servers" },
-          { text: "Tips Pro", link: "/docs/claude-code-pro-tips" },
+          { text: "Pro Tips", link: "/docs/claude-code-pro-tips" },
         ],
       },
       {
@@ -54,6 +54,7 @@ export default defineConfig({
         items: [
           { text: "Comandos", link: "/docs/commands-guide" },
           { text: "Agentes", link: "/docs/agents-guide" },
+          { text: "Changelog", link: "/docs/changelog" },
         ],
       },
     ],

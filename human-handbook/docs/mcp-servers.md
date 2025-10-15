@@ -100,4 +100,4 @@ Para explorar servidores disponibles:
 
 ---
 
-_Última actualización: 2025-10-13 | 2 servers instalados_
+_Última actualización: 2025-10-14 | 2 servers instalados_

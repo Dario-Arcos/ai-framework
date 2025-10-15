@@ -113,3 +113,8 @@ blob-report/
 drivers/
 .auth/
 *.auth.json
+
+# VitePress auto-generated files
+human-handbook/.vitepress/dist/
+human-handbook/.vitepress/cache/
+human-handbook/docs/changelog.md
