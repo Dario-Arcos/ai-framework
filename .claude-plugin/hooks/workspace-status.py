@@ -64,11 +64,11 @@ def build_output_message(settings, context_exists=False):
     if context_exists:
         lines.append("📋 **Project Context:** Configurado")
         lines.append(
-            "💡 Mantenlo actualizado: /utils:project-init (si el proyecto evolucionó)\n"
+            "💡 Mantenlo actualizado: /ai-framework:utils:project-init (si el proyecto evolucionó)\n"
         )
     else:
         lines.append("📋 **Project Context:** No configurado")
-        lines.append("⚡ Configúralo ahora: /utils:project-init\n")
+        lines.append("⚡ Configúralo ahora: /ai-framework:utils:project-init\n")
 
     # Step 5: Workflow protocol
     if not is_worktree:
