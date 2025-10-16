@@ -55,11 +55,19 @@ GitHub (Delivery Layer)
 
 ---
 
-## El Workflow SDD (7 Pasos Core)
+## El Workflow SDD (6 Pasos Core + 2 Opcionales)
 
 ::: info Philosophy
 Cada paso previene problema específico que cuesta horas. No es burocracia - es speedup.
 :::
+
+**Comandos Opcionales:**
+
+| Comando     | Cuándo                    | Propósito                                                    | ROI                              |
+| ----------- | ------------------------- | ------------------------------------------------------------ | -------------------------------- |
+| `analyze`   | Entre tasks e implement   | Valida consistencia entre spec/plan/tasks                    | Alto para features complejas     |
+| `checklist` | Entre analyze e implement | Quality gate para requirements (unit tests for requirements) | Alto para requirements complejos |
+| `sync`      | Después de implement      | Documenta en GitHub lo construido                            | Solo si usas PRP workflow        |
 
 ### 1. Specify → Spec Técnica
 
@@ -122,29 +130,7 @@ Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
 
 ---
 
-### 5. Agent Assignment → Parallel Optimization
-
-```bash
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks"
-```
-
-**Cuándo vale la pena:**
-
-```
-Sin assignment:   210 min sequential
-Con assignment:    75 min parallel (3 streams)
-Speedup: 2.8x
-```
-
-**Rule of thumb:**
-
-- 1-4 tasks: Skip (overhead > benefit)
-- 5-10 tasks: Use (good ROI)
-- 10+ tasks: Definitely (massive speedup)
-
----
-
-### 6. Analyze → Consistency Check (Optional)
+### 5. Analyze → Consistency Check (Optional)
 
 ```bash
 /ai-framework:SDD-cycle:speckit.analyze
@@ -157,7 +143,37 @@ Valida spec ↔ plan ↔ tasks consistency. Detecta gaps temprano.
 
 ---
 
-### 7. Implement → TDD + Execution
+### 5.5. Checklist → Quality Gate (Optional)
+
+```bash
+/ai-framework:SDD-cycle:speckit.checklist "UX requirements quality"
+```
+
+Genera "unit tests for requirements". Valida que tus requirements estén bien escritos.
+
+**¿Qué valida?**
+
+- ✅ Requirements completos (no falta información)
+- ✅ Requirements claros (no ambigüedades)
+- ✅ Requirements consistentes (no contradicciones)
+- ❌ NO valida que el código funcione
+
+**Workflow:**
+
+```
+analyze → checklist (genera preguntas) → TÚ marcas checkboxes → implement (bloquea si incomplete)
+```
+
+**Por qué ANTES de implement:**
+
+Detectas requirements malos ANTES de codear. Corriges spec. Evitas re-work.
+
+**Skip si:** Requirements ultra-claros, feature simple.
+**Use si:** Requirements complejos, múltiples stakeholders, áreas de riesgo.
+
+---
+
+### 6. Implement → TDD + Execution
 
 ```bash
 /ai-framework:SDD-cycle:speckit.implement
@@ -174,6 +190,28 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ---
 
+### 7. Sync → GitHub Documentation (Optional)
+
+```bash
+/ai-framework:SDD-cycle:speckit.sync <parent_issue_number>
+```
+
+Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent issue.
+
+**Cuándo ejecutar:** DESPUÉS de implementación completa y validada.
+
+**Por qué después de implementar:**
+
+- GitHub issue documenta lo que SÍ construiste (no especulación)
+- Spec + Plan + Tasks son 100% accurate con código final
+- Stakeholders ven resultados, no work-in-progress
+- Zero necesidad de re-sync
+
+**Skip si:** No usas PRP workflow, feature interna sin stakeholders.
+**Use si:** Feature con PRP parent issue, documentación para stakeholders.
+
+---
+
 ## Con PRP o Sin PRP?
 
 ### Con PRP (Business-Driven)
@@ -184,7 +222,8 @@ Con framework: Test → Fail → Code → Pass (predecible)
 /ai-framework:PRP-cycle:prp-new "feature-name"
 /ai-framework:PRP-cycle:prp-sync "feature-name"
 /ai-framework:SDD-cycle:speckit.specify --from-issue &lt;number&gt;
-# → Continue steps 2-7 normalmente
+# → Continue steps 2-6 normalmente
+# → Al final: speckit.sync (documenta en GitHub)
 ```
 
 **Benefit:** Business y Tech separated pero linked.
@@ -197,7 +236,8 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ```bash
 /ai-framework:SDD-cycle:speckit.specify "fix race condition"
-# → Continue steps 2-7 normalmente
+# → Continue steps 2-6 normalmente
+# → Skip sync (no PRP parent issue)
 ```
 
 **Benefit:** Faster start, no business overhead.
@@ -212,7 +252,7 @@ Con framework: Test → Fail → Code → Pass (predecible)
 specify → clarify → plan → tasks → implement → commit → pr
 ```
 
-**Skip:** agent-assignment, analyze (overhead > benefit)
+**Skip:** analyze (overhead > benefit para size S)
 **Time:** 5-10 min
 
 ---
@@ -220,11 +260,11 @@ specify → clarify → plan → tasks → implement → commit → pr
 ### Size M (≤250 LOC): Full Workflow
 
 ```bash
-specify → clarify → plan → tasks → agent-assignment → analyze → implement → commit → pr
+specify → clarify → plan → tasks → [analyze] → [checklist] → implement → commit → pr
 ```
 
-**Include:** agent-assignment (5+ tasks), analyze (validation)
-**Time:** 15-45 min (2-3x faster con agent-assignment)
+**Opcionales recomendados:** analyze (consistency), checklist (quality gate)
+**Time:** 15-45 min
 
 ---
 
@@ -234,8 +274,8 @@ specify → clarify → plan → tasks → agent-assignment → analyze → impl
 worktree:create → understand → specify → clarify → plan → tasks → implement → commit → pr → cleanup
 ```
 
-**Skip:** agent-assignment (speed matters)
-**Benefit:** Trabajo principal untouched
+**Skip opcionales:** analyze, checklist, sync (prioridad = speed)
+**Benefit:** Trabajo principal untouched, fix rápido
 
 ---
 
@@ -251,12 +291,6 @@ worktree:create → understand → specify → clarify → plan → tasks → im
 
 ```
 ¿Work in progress que no quieres interrumpir? → YES: worktree | NO: branch
-```
-
-**¿Agent Assignment?**
-
-```
-Tasks count: 1-4 → Skip | 5-10 → Use | 10+ → Definitely
 ```
 
 ---
@@ -280,9 +314,6 @@ Start simple (branch). Upgrade a worktree cuando needs isolation.
 **Clarify Strategy:**
 Answer questions even if obvious. 2 min ahora > 2 hours later.
 
-**Agent Assignment:**
-Exception - si todas tasks touch mismo file, assignment no ayuda (sequential anyway).
-
 **Security Review:**
 `/ai-framework:git-github:pr` auto-runs security review. Blocks PR si HIGH vulnerability found.
 
@@ -300,6 +331,37 @@ Exception - si todas tasks touch mismo file, assignment no ayuda (sequential any
 
 ---
 
+## Herramienta Opcional: Agent Strategy Advisor
+
+::: tip Planificación Consultiva
+Si no estás seguro qué agentes usar para una tarea compleja, puedes consultar al `agent-strategy-advisor`:
+
+```bash
+/ai-framework:Task agent-strategy-advisor "Analiza mi tasks.md y recomienda agentes"
+```
+
+**Este agente NO ejecuta tareas**, solo analiza y recomienda:
+
+- Qué agentes usar para qué trabajo
+- Cuándo usar agentes vs. main Claude
+- ROI realista de paralelización
+- Estrategia de ejecución con justificación
+
+**Úsalo cuando**:
+
+- Planeas trabajo complejo y no sabes qué agentes usar
+- Quieres aprender el ecosistema de agentes
+- Necesitas justificación de estrategia para tu equipo
+
+**No lo uses cuando**:
+
+- Ya sabes qué agentes necesitas
+- Trabajo simple (<80 LOC)
+- Necesitas ejecución inmediata (no planificación)
+  :::
+
+---
+
 ::: info Última Actualización
-**Fecha**: 2025-10-15 | **Ecosistema**: PRP-SDD-GitHub
+**Fecha**: 2025-10-16 | **Ecosistema**: PRP-SDD-GitHub
 :::
