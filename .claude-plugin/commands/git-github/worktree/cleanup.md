@@ -9,17 +9,6 @@ description: Safe removal of specific worktrees with ownership validation and di
 
 All "show", "display", "output" instructions = normal Claude text output, NOT bash echo. Use bash tools ONLY for git operations, file system queries, data processing.
 
-## Shell Syntax (macOS/zsh)
-
-**Negation**: `! [[ condition ]]` (outside brackets)
-**Command substitution**: Backticks `` `...` ``
-**Error suppression**: `2>/dev/null`
-
-```bash
-# ❌ WRONG: [[ ! "$var" =~ pattern ]]
-# ✅ CORRECT: ! [[ "$var" =~ pattern ]]
-```
-
 ## Usage
 
 ```bash
@@ -61,8 +50,10 @@ Lists available worktrees with suggested commands.
 
 **2c. Current directory validation:**
 
-- Execute validation from section 3
-- If matches current directory: skip with error
+- Get current directory canonical path: `realpath "$(pwd)" 2>/dev/null`
+- Get target worktree path from `git worktree list --porcelain` matching target name
+- Get target canonical path: `realpath "$target_path" 2>/dev/null`
+- Compare paths: if match, skip with "❌ No puedes eliminar worktree actual"
 
 **2d. Existence validation:**
 
@@ -71,69 +62,37 @@ Lists available worktrees with suggested commands.
 
 **2e. Ownership validation:**
 
-- Verify ownership using section 4 logic
-- If not user's: skip with "No es tu worktree"
+- Get worktree owner: `stat -f %Su "$path" 2>/dev/null || stat -c %U "$path" 2>/dev/null` (cross-platform)
+- Compare with current user: `whoami`
+- If not match: skip with "No es tu worktree"
 
 **2f. Clean state validation:**
 
 - Verify: `git status --porcelain` in worktree
 - If not clean: skip with problem message
 
-### 3. Current directory validation (CRITICAL SECURITY)
-
-- Get: `current_dir="\`realpath \"\`pwd\`\" 2>/dev/null\`"`
-- If fails: error "❌ Error: No se pudo resolver directorio actual" and terminate
-- Get worktree target path:
-  ```
-  git worktree list --porcelain | awk -v target="$target" '
-      /^worktree / {
-          path = substr($0, 10)
-          split(path, parts, "/")
-          dir_name = parts[length(parts)]
-          if (dir_name == target) { print path; exit }
-      }
-  '
-  ```
-- If target not found: continue (handled by other validation)
-- Get: `target_path="\`realpath \"$target_path\" 2>/dev/null\`"`
-- If fails: error "❌ Error: No se pudo resolver path del worktree target" and skip
-- Execute: `[ "$current_dir" = "$target_path" ] && echo "match" || echo "no_match"`
-- If output is "match":
-  - Error: "❌ Error: No puedes eliminar el worktree donde estás actualmente"
-  - Show current location and solution
-  - Skip with warning
-
-### 4. Cross-platform compatibility
-
-Get file owner and compare:
-
-- Execute: `echo "$OSTYPE" | grep -Eq '^darwin' && stat -f %Su "$path" 2>/dev/null || stat -c %U "$path" 2>/dev/null`
-- Capture owner in variable
-- Execute: `[ "$owner" = "\`whoami\`" ] && echo "match" || echo "no_match"`
-- If output is "no_match": skip with "No es tu worktree"
-
-### 5. User confirmation
+### 3. User confirmation
 
 - Output summary of valid targets (normal text)
 - Ask: "¿Confirmas la eliminación? Responde 'ELIMINAR' para proceder:"
 - WAIT for user response
 - If response != "ELIMINAR": show cancellation and terminate
-- If response == "ELIMINAR": proceed to step 6
+- If response == "ELIMINAR": proceed to step 4
 
-### 6. Dual atomic cleanup
+### 4. Dual atomic cleanup
 
 For each confirmed target:
 
 - Remove worktree: `git worktree remove "$target"`
 - Remove local branch: `git branch -D "$branch_name"`
 
-### 7. Logging and final cleanup
+### 5. Logging and final cleanup
 
 - Log operation in JSONL format
 - Execute: `git remote prune origin`
 - Show results report
 
-### 8. Update current branch
+### 6. Update current branch
 
 - Execute: `git pull`
 - If fails: warning "⚠️ No se pudo actualizar desde remoto" but continue
@@ -143,34 +102,28 @@ For each confirmed target:
 
 **Phase 1: Discovery**
 
-- Get: `current_canonical="\`realpath \"\`pwd\`\" 2>/dev/null\`"`
+- Get current directory: `current_canonical="\`realpath \"\`pwd\`\" 2>/dev/null\`"`
 - If fails: error and terminate
-- Process worktrees:
+- Get current user: `current_user="\`whoami\`"`
+- Process worktrees using simplified pipeline:
 
-  ```
-  git worktree list --porcelain | awk -v current_canonical="$current_canonical" -v current_user="\`whoami\`" -v ostype="$OSTYPE" '
-      /^worktree / {
-          path = substr($0, 10)
-          cmd = "realpath \"" path "\" 2>/dev/null"
-          cmd | getline canonical
-          close(cmd)
+  ```bash
+  git worktree list --porcelain | awk '/^worktree / {print substr($0, 10)}' | while read -r path; do
+      # Get canonical path
+      canonical=\`realpath "$path" 2>/dev/null\`
+      [ -z "$canonical" ] && continue
 
-          if (canonical == current_canonical) next
+      # Skip current directory
+      [ "$canonical" = "$current_canonical" ] && continue
 
-          if (ostype ~ /^darwin/) {
-              stat_cmd = "stat -f %Su \"" path "\" 2>/dev/null"
-          } else {
-              stat_cmd = "stat -c %U \"" path "\" 2>/dev/null"
-          }
-          stat_cmd | getline owner
-          close(stat_cmd)
+      # Get owner (cross-platform)
+      owner=\`stat -f %Su "$path" 2>/dev/null || stat -c %U "$path" 2>/dev/null\`
 
-          if (owner == current_user) {
-              split(path, parts, "/")
-              print parts[length(parts)]
-          }
-      }
-  '
+      # Only list user's worktrees
+      if [ "$owner" = "$current_user" ]; then
+          basename "$path"
+      fi
+  done
   ```
 
   - For each result: add to numbered list
