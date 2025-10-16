@@ -472,7 +472,7 @@ A good advisory meets these standards:
 
 ---
 
-**Version**: 2.0.0 (Transformed from agent-assignment-analyzer)
+**Version**: 2.0.0
 **Purpose**: Strategic planning advisor (not automatic executor)
 **Use When**: Planning complex work, learning agent ecosystem, uncertain which agent to use
 **Don't Use When**: Need automatic execution (use main Claude with tasks.md instead)
