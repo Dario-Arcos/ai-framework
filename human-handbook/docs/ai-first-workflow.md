@@ -193,7 +193,7 @@ Con framework: Test → Fail → Code → Pass (predecible)
 ### 7. Sync → GitHub Documentation (Optional)
 
 ```bash
-/ai-framework:SDD-cycle:speckit.sync <parent_issue_number>
+/ai-framework:SDD-cycle:speckit.sync {parent_issue_number}
 ```
 
 Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent issue.
@@ -221,7 +221,7 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 ```bash
 /ai-framework:PRP-cycle:prp-new "feature-name"
 /ai-framework:PRP-cycle:prp-sync "feature-name"
-/ai-framework:SDD-cycle:speckit.specify --from-issue <number>
+/ai-framework:SDD-cycle:speckit.specify --from-issue {number}
 # → Continue steps 2-6 normalmente
 # → Al final: speckit.sync (documenta en GitHub)
 ```
