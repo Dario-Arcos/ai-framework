@@ -1,437 +1,305 @@
 # Workflow AI-First
 
-_Guía del ecosistema PRP → SDD → GitHub_
+::: tip Un principo que lo rige todo
+Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesitan los usuarios. El framework guía esa conversación hasta código production-ready.
+:::
 
 ---
 
-## 🎯 Arquitectura del Ecosistema
-
-El ecosistema opera en 3 capas integradas:
+## 🎯 El Ecosistema en 3 Capas
 
 ```
-📋 PRP-cycle (Business Layer)
+📋 PRP (Business Layer)
    ↓ Define WHAT to build
-🏗️ SDD-cycle (Engineering Layer)
+🏗️ SDD (Engineering Layer)
    ↓ Define HOW to build
-🔄 git-github (Delivery Layer)
-   ↓ Tracks and delivers
+🔄 GitHub (Delivery Layer)
+   ↓ Track & deliver
 ```
 
-### Flujo Completo
+**Por qué estas capas:**
 
-```mermaid
-graph TD
-    A[PRP: Business Requirements] --> B[SDD: Technical Specification]
-    B --> C[SDD: Clarification]
-    C --> D[SDD: Implementation Plan]
-    D --> E[SDD: Executable Tasks]
-    E --> F[SDD: Agent Assignment - CRÍTICO]
-    F --> G[SDD: Cross-Artifact Analysis]
-    G --> H[SDD: Automated Implementation]
-    H --> I[SDD: Quality Checklists - Optional]
-    I --> J[SDD: Sync to GitHub - Optional]
-    J --> K[GitHub: PR + Review]
-    K --> L[GitHub: Merge + Changelog]
-```
+- **PRP**: Stakeholders hablan business (no tech stack)
+- **SDD**: Engineers convierten a implementation plan testeable
+- **GitHub**: Team tracks progress, not just code
 
 ---
 
-## 📦 Setup de Desarrollo
+## 🎨 Primera Decisión: ¿Branch o Worktree?
 
-### Branch vs Worktree: ¿Cuál usar?
+### Branch Simple
 
-**Branch (MISMO directorio)** - Más simple, desarrollo secuencial:
-
-```bash
-/ai-framework:SDD-cycle:speckit.specify "implement OAuth authentication"
-# → Crea branch: 001-implement-oauth
-# → Crea spec: specs/001-implement-oauth/spec.md
-# → Hace checkout de la branch (MISMO directorio)
-```
-
-**Worktree (directorio AISLADO)** - Más seguro, trabajo paralelo:
+**Cuándo:** Una feature a la vez, desarrollo lineal.
 
 ```bash
-/ai-framework:git-github:worktree:create "implement OAuth authentication" main
-# → Crea worktree: ../worktree-implement-oauth/
-# → Crea branch: worktree-implement-oauth
-# → Abre IDE en nueva ventana
-# ⚠️ CRÍTICO: En nueva ventana del IDE:
-#    1. Abrir terminal integrado (Cmd+`)
-#    2. Verificar: pwd → debe mostrar ../worktree-XXX/
-#    3. Iniciar nueva sesión Claude: claude
+/ai-framework:SDD-cycle:speckit.specify "feature"
+# → Branch en mismo directorio
 ```
 
-**Cuándo usar cada uno**:
-
-| Escenario                        | Recomendación              | Razón                                          |
-| -------------------------------- | -------------------------- | ---------------------------------------------- |
-| Feature única, desarrollo lineal | `speckit.specify` (branch) | Más simple, sin overhead de worktrees          |
-| Múltiples features en paralelo   | `worktree:create`          | Aislamiento completo, sesiones independientes  |
-| Bug fix urgente                  | `worktree:create`          | No interrumpe trabajo en progreso              |
-| Experimentación/POC              | `worktree:create`          | Fácil descarte sin afectar workspace principal |
-
-**Verificación obligatoria** (solo worktrees):
-
-```bash
-pwd          # DEBE mostrar: ../worktree-XXX/
-git branch   # DEBE mostrar: rama de feature (NO main/develop)
-```
+**Trade-off:** Cambiar de feature requiere commit/stash.
 
 ---
 
-## 🔄 Workflows
+### Worktree Aislado
 
-### Con PRP (features de negocio)
+**Cuándo:** Múltiples features paralelas, bug fix urgente, experimentación.
 
 ```bash
-# === PRP (Business) ===
-/ai-framework:PRP-cycle:prp-new <feature_name>
-# → Brainstorming interactivo, genera PRP minimalista (50-100 líneas)
-# → Archivo: .claude/prps/<feature_name>/prp.md
+/ai-framework:git-github:worktree:create "feature" main
+# → Directorio separado, nueva ventana IDE
+```
 
-/ai-framework:PRP-cycle:prp-sync <feature_name>
-# → Crea parent issue en GitHub
-# → Actualiza frontmatter con github_synced
-# → Opción: --milestone <number> para asignar a milestone existente
+**Post-setup:** En nueva ventana: `Cmd+\``, verify `pwd`, run `claude`
 
-# === SDD (Engineering - SECUENCIAL OBLIGATORIO) ===
-/ai-framework:SDD-cycle:speckit.specify --from-issue <issue_number>
-# → Crea spec.md técnica desde GitHub issue
-# → Crea branch en MISMO directorio (NO worktree)
-# → Valida spec con checklist
-#
-# Si prefieres worktree aislado (RECOMENDADO para trabajo paralelo):
-# 1. Crear worktree primero: /ai-framework:git-github:worktree:create "feature name" main
-# 2. En nueva ventana IDE: /ai-framework:SDD-cycle:speckit.specify --from-issue <issue_number>
+**Benefit:** Workspace principal intacto.
 
+---
+
+## 🔄 El Workflow SDD (7 Pasos Core)
+
+::: info Philosophy
+Cada paso previene problema específico que cuesta horas. No es burocracia - es speedup.
+:::
+
+### 1. Specify → Spec Técnica
+
+```bash
+/ai-framework:SDD-cycle:speckit.specify "add OAuth auth"
+```
+
+Convierte descripción en spec estructurada. Output: `specs/001-feature/spec.md`
+
+---
+
+### 2. Clarify → Detectar Ambigüedades
+
+```bash
 /ai-framework:SDD-cycle:speckit.clarify
-# OBLIGATORIO - Detecta ambigüedades (max 5 preguntas)
-# → Actualiza spec.md con clarifications
-# → Resuelve [NEEDS CLARIFICATION] markers
+```
 
+**Por qué importa - Ejemplo:**
+
+```
+Spec: "Add user authentication"
+
+Sin clarify:
+- Dev 1: Email/password
+- Dev 2: OAuth
+- Dev 3: SSO
+→ 3 implementations, hours de meetings, refactor
+
+Con clarify:
+Claude: "¿Qué auth methods?"
+You: "OAuth"
+→ 1 implementation correcta, zero refactor
+```
+
+**ROI:** 2 minutos save 4 horas. Nunca skip este paso.
+
+---
+
+### 3. Plan → Design Artifacts
+
+```bash
 /ai-framework:SDD-cycle:speckit.plan
-# → Genera research.md (decisiones técnicas)
-# → Genera data-model.md (entidades y relaciones)
-# → Genera contracts/ (API/GraphQL schemas)
-# → Genera quickstart.md (escenarios de integración)
-# → Actualiza contexto del agente
+```
 
+Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
+
+**Benefit:** Everyone trabaja con mismo data model. No "oh, asumí que User tenía este field".
+
+---
+
+### 4. Tasks → Implementation Breakdown
+
+```bash
 /ai-framework:SDD-cycle:speckit.tasks
-# → Genera tasks.md con dependency ordering
-# → Organiza por user stories (P1, P2, P3...)
-# → Marca tasks paralelizables [P]
-# → Incluye tests solo si especificado en spec
+```
 
-# === PASO CRÍTICO: Agent Assignment ===
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
-# → Analiza task types (API, frontend, DB, tests)
-# → Asigna agents especializados (backend-architect, frontend-developer, etc.)
-# → Detecta file dependencies (mismo archivo = secuencial)
-# → Genera parallel execution plan
-# → Output: Tabla de streams paralelos con agents
-# → Speedup potencial: 3-10x
-# ⚠️ RECOMENDADO para features con 5+ tasks
+Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
 
+**Benefit:** No más "¿qué hago ahora?" Cada task es self-contained.
+
+---
+
+### 5. Agent Assignment → Parallel Optimization
+
+```bash
+/ai-framework:Task agent-assignment-analyzer "Analyze tasks"
+```
+
+**Cuándo vale la pena:**
+
+```
+Sin assignment:   210 min sequential
+Con assignment:    75 min parallel (3 streams)
+Speedup: 2.8x
+```
+
+**Rule of thumb:**
+
+- 1-4 tasks: Skip (overhead > benefit)
+- 5-10 tasks: Use (good ROI)
+- 10+ tasks: Definitely (massive speedup)
+
+---
+
+### 6. Analyze → Consistency Check (Optional)
+
+```bash
 /ai-framework:SDD-cycle:speckit.analyze
-# → Valida consistencia cross-artifact
-# → Detecta duplicaciones, ambigüedades, gaps
-# → Verifica compliance con constitution
-# → Genera reporte de findings (CRITICAL/HIGH/MEDIUM/LOW)
+```
 
+Valida spec ↔ plan ↔ tasks consistency. Detecta gaps temprano.
+
+**Skip si:** Feature simple (1-4 tasks).
+**Use si:** Feature compleja (10+ tasks).
+
+---
+
+### 7. Implement → TDD + Execution
+
+```bash
 /ai-framework:SDD-cycle:speckit.implement
-# → Ejecuta tasks.md con agents asignados (TDD + parallelization)
-# → Marca tasks completadas [X]
-# → Actualiza progress tracking
-
-/ai-framework:SDD-cycle:speckit.sync <parent_issue_number>
-# → Sincroniza spec.md + plan.md + tasks.md a GitHub
-# → Crea child issue vinculado a parent PRP
-# → RECOMENDADO: Después de implementación completa
-# → Documenta lo que fue construido (no lo planeado)
-
-# === Delivery ===
-/ai-framework:git-github:commit "all changes"
-/ai-framework:git-github:pr develop
-# → Security review automático (BLOCKING)
 ```
 
-### Sin PRP (desarrollo directo)
+Ejecuta tasks con TDD enforcement, assigned agents, parallel execution.
 
-#### Opción 1: Branch simple (MISMO directorio)
+**Por qué TDD es natural aquí:**
 
-```bash
-# === SDD (Engineering - SECUENCIAL OBLIGATORIO) ===
-/ai-framework:utils:understand    # Mapea arquitectura existente
-/ai-framework:SDD-cycle:speckit.specify "Implement OAuth authentication"
-# → Crea branch 001-implement-oauth en MISMO directorio
-/ai-framework:SDD-cycle:speckit.clarify   # OBLIGATORIO
-/ai-framework:SDD-cycle:speckit.plan      # Genera research.md, data-model.md, contracts/, quickstart.md
-/ai-framework:SDD-cycle:speckit.tasks     # Genera tasks.md
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"  # CASI MANDATORIO
-/ai-framework:SDD-cycle:speckit.analyze   # Valida consistencia (opcional)
-/ai-framework:SDD-cycle:speckit.implement # Ejecuta tasks.md con agents asignados
-
-# === Delivery ===
-/ai-framework:git-github:commit "all changes"
-/ai-framework:git-github:pr develop
 ```
-
-#### Opción 2: Worktree aislado (RECOMENDADO)
-
-```bash
-# === Setup Worktree ===
-/ai-framework:git-github:worktree:create "implement OAuth authentication" main
-# → Abre IDE en nueva ventana
-# ⚠️ En nueva ventana: abrir terminal (Cmd+`) y continuar aquí
-
-# === SDD (Engineering - SECUENCIAL OBLIGATORIO) ===
-/ai-framework:utils:understand    # Mapea arquitectura existente
-/ai-framework:SDD-cycle:speckit.specify "Implement OAuth authentication"
-/ai-framework:SDD-cycle:speckit.clarify   # OBLIGATORIO
-/ai-framework:SDD-cycle:speckit.plan      # Genera research.md, data-model.md, contracts/, quickstart.md
-/ai-framework:SDD-cycle:speckit.tasks     # Genera tasks.md
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"  # CASI MANDATORIO
-/ai-framework:SDD-cycle:speckit.analyze   # Valida consistencia (opcional)
-/ai-framework:SDD-cycle:speckit.implement # Ejecuta tasks.md con agents asignados
-
-# === Delivery ===
-/ai-framework:git-github:commit "all changes"
-/ai-framework:git-github:pr develop
-```
-
-### Bug Fix Urgente
-
-#### Con Worktree (RECOMENDADO - no interrumpe trabajo actual)
-
-```bash
-# === Setup Worktree ===
-/ai-framework:git-github:worktree:create "fix payment bug" main
-# → Abre IDE en nueva ventana
-# ⚠️ Verificar en nueva ventana: pwd debe mostrar ../worktree-fix-payment-bug/
-
-# === Implementation ===
-/ai-framework:utils:understand "specific problem"
-/ai-framework:SDD-cycle:speckit.specify "fix bug description"
-/ai-framework:SDD-cycle:speckit.clarify   # OBLIGATORIO
-/ai-framework:SDD-cycle:speckit.plan
-/ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"  # CASI MANDATORIO
-/ai-framework:SDD-cycle:speckit.analyze   # Opcional
-/ai-framework:SDD-cycle:speckit.implement
-
-# === Delivery ===
-/ai-framework:git-github:commit "fix: description"
-/ai-framework:git-github:pr main
-```
-
-#### Sin Worktree (si no hay trabajo en progreso)
-
-```bash
-# === Setup Branch ===
-/ai-framework:SDD-cycle:speckit.specify "fix payment bug"
-# → Crea branch en MISMO directorio
-
-# === Implementation ===
-/ai-framework:utils:understand "specific problem"
-/ai-framework:SDD-cycle:speckit.clarify   # OBLIGATORIO
-/ai-framework:SDD-cycle:speckit.plan
-/ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"  # CASI MANDATORIO
-/ai-framework:SDD-cycle:speckit.analyze   # Opcional
-/ai-framework:SDD-cycle:speckit.implement
-
-# === Delivery ===
-/ai-framework:git-github:commit "fix: description"
-/ai-framework:git-github:pr main
+Sin framework: Write → Hope → Debug → Fix (unpredictable)
+Con framework: Test → Fail → Code → Pass (predecible)
 ```
 
 ---
 
-## 🔍 Checklists & Quality Gates
+## 🎭 Con PRP o Sin PRP?
 
-### Generación de Checklists (POST-Implementation)
+### Con PRP (Business-Driven)
 
-```bash
-# DESPUÉS de /ai-framework:SDD-cycle:speckit.implement (validación post-implementación)
-/ai-framework:SDD-cycle:speckit.checklist "UX requirements quality review"
-# → Genera: checklists/ux.md
-# → "Unit tests for English" - valida calidad de implementación
-
-/ai-framework:SDD-cycle:speckit.checklist "API contract completeness"
-# → Genera: checklists/api.md
-```
-
-**Tipos comunes**:
-
-- `ux.md` - UI/UX implementation quality
-- `api.md` - API contracts completeness
-- `security.md` - Security implementation coverage
-- `performance.md` - Performance criteria compliance
-
-**⚠️ CAMBIO IMPORTANTE**: `checklist` se ejecuta DESPUÉS de `implement` para validar calidad de la implementación, NO antes.
-
----
-
-## 🔍 Findings & Agentes
-
-### Después del PR
-
-Security review automático genera findings por severidad:
-
-- **CRITICAL**: Security vulnerabilities, architectural violations
-- **HIGH**: Technical debt, missing error handling
-- **MEDIUM**: Code quality, optimization opportunities
-
-### Resolución
+**Cuándo:** Feature needs stakeholder buy-in.
 
 ```bash
-# 1. Analizar
-/ai-framework:git-github:issue-manager <pr_number>
-
-# 2. Resolver (manual o delegar a agente especialista)
-/agent:security-reviewer        # Security audit
-/agent:performance-engineer     # Performance optimization
-
-# 3. Actualizar
-/ai-framework:git-github:commit "fix: resolve findings"
-git push
+/ai-framework:PRP-cycle:prp-new "feature-name"
+/ai-framework:PRP-cycle:prp-sync "feature-name"
+/ai-framework:SDD-cycle:speckit.specify --from-issue &lt;number&gt;
+# → Continue steps 2-7 normalmente
 ```
 
-### Top Agentes
-
-| Agente                  | Uso                                    |
-| ----------------------- | -------------------------------------- |
-| `security-reviewer`     | Security vulnerabilities, compliance   |
-| `performance-engineer`  | Bottlenecks, resource optimization     |
-| `code-quality-reviewer` | Technical debt prevention              |
-| `backend-architect`     | API design, service architecture       |
-| `frontend-developer`    | React/Vue components, state management |
-| `database-optimizer`    | Query optimization, schema design      |
-
-📖 Referencia completa: @agents-guide.md (45 agentes)
+**Benefit:** Business y Tech separated pero linked.
 
 ---
 
-## 🔄 Post-Merge
+### Sin PRP (Tech-Driven)
+
+**Cuándo:** Bug fixes, refactorings, internal tools.
 
 ```bash
-# 1. Changelog
-/ai-framework:utils:changelog <pr_number>
+/ai-framework:SDD-cycle:speckit.specify "fix race condition"
+# → Continue steps 2-7 normalmente
+```
 
-# 2. Cleanup worktree
-/ai-framework:git-github:worktree:cleanup <worktree_name>
-# → Triple cleanup (worktree/local/remote)
-# → Regresa automáticamente a main
+**Benefit:** Faster start, no business overhead.
 
-# 3. Docs (si necesario)
-/ai-framework:utils:docs
+---
+
+## 💡 Patterns Por Complexity
+
+### Size S (≤80 LOC): Minimal Workflow
+
+```bash
+specify → clarify → plan → tasks → implement → commit → pr
+```
+
+**Skip:** agent-assignment, analyze (overhead > benefit)
+**Time:** 5-10 min
+
+---
+
+### Size M (≤250 LOC): Full Workflow
+
+```bash
+specify → clarify → plan → tasks → agent-assignment → analyze → implement → commit → pr
+```
+
+**Include:** agent-assignment (5+ tasks), analyze (validation)
+**Time:** 15-45 min (2-3x faster con agent-assignment)
+
+---
+
+### Hotfix: Rapid + Isolated
+
+```bash
+worktree:create → understand → specify → clarify → plan → tasks → implement → commit → pr → cleanup
+```
+
+**Skip:** agent-assignment (speed matters)
+**Benefit:** Trabajo principal untouched
+
+---
+
+## 🧭 Decision Trees
+
+**¿PRP?**
+
+```
+¿Stakeholder approval needed? → YES: Use PRP | NO: Skip to SDD
+```
+
+**¿Worktree?**
+
+```
+¿Work in progress que no quieres interrumpir? → YES: worktree | NO: branch
+```
+
+**¿Agent Assignment?**
+
+```
+Tasks count: 1-4 → Skip | 5-10 → Use | 10+ → Definitely
 ```
 
 ---
 
-## 💡 Tips
+## 🎬 Post-Merge
 
-### DO
-
-- ✅ Usar `/ai-framework:SDD-cycle:speckit.clarify` SIEMPRE
-- ✅ Generar checklists para features complejas
-- ✅ Security review antes de PR (automático con `/ai-framework:git-github:pr`)
-- ✅ Un PR por worktree
-- ✅ Commits semánticos: `fix: Closes #77`
-- ✅ Cleanup worktrees post-merge
-- ✅ Sync spec DESPUÉS de implementación completa
-
-### DON'T
-
-- ❌ Saltarse `/ai-framework:SDD-cycle:speckit.clarify`
-- ❌ Múltiples PRs para una feature
-- ❌ Desarrollar en main/develop directamente
-- ❌ Mergear sin security review aprobado
-- ❌ Cambiar de rama dentro de worktree (crear nuevo worktree)
-- ❌ Sync spec antes de completar implementación
-
-### Selección de Workflow
-
-**PRP-cycle**: Features con stakeholders de negocio, aprobación de producto
-**SDD-cycle directo**: Bug fixes, refactorings, features técnicas
-
-### Selección de Aislamiento
-
-**Branch simple** (`speckit.specify`): Desarrollo lineal, una feature a la vez, sin interrupciones
-**Worktree aislado** (`worktree:create`): Trabajo paralelo, múltiples features, bug fixes urgentes, experimentación
-
----
-
-## 📚 Referencia Rápida
-
-### PRP-cycle (Business Layer)
-
-| Comando                            | Propósito                               |
-| ---------------------------------- | --------------------------------------- |
-| `/ai-framework:PRP-cycle:prp-new`  | Crear PRP minimalista (50-100 líneas)   |
-| `/ai-framework:PRP-cycle:prp-sync` | Sincronizar PRP a GitHub Issue (parent) |
-
-### SDD-cycle (Engineering Layer - SECUENCIAL OBLIGATORIO)
-
-| Orden | Comando                                        | Propósito                                                     |
-| ----- | ---------------------------------------------- | ------------------------------------------------------------- |
-| 1     | `/ai-framework:SDD-cycle:speckit.specify`      | Crear especificación técnica                                  |
-| 2     | `/ai-framework:SDD-cycle:speckit.clarify`      | Clarificar ambigüedades (OBLIGATORIO)                         |
-| 3     | `/ai-framework:SDD-cycle:speckit.plan`         | Generar research.md, data-model.md, contracts/, quickstart.md |
-| 4     | `/ai-framework:SDD-cycle:speckit.tasks`        | Generar tasks.md con dependency ordering                      |
-| 5     | **Agent Assignment** (via Task tool)           | Asignar agents especializados (CASI MANDATORIO)               |
-| 6     | `/ai-framework:SDD-cycle:speckit.analyze`      | Validación cross-artifact (opcional)                          |
-| 7     | `/ai-framework:SDD-cycle:speckit.implement`    | Ejecutar tasks.md con TDD + agents paralelos                  |
-| 8     | `/ai-framework:SDD-cycle:speckit.checklist`    | Generar checklist de calidad (POST-implementation, opcional)  |
-| 9     | `/ai-framework:SDD-cycle:speckit.sync`         | Sincronizar spec a GitHub (opcional, DESPUÉS de implement)    |
-| -     | `/ai-framework:SDD-cycle:speckit.constitution` | Actualizar constitución (requiere autorización)               |
-
-### git-github (Delivery Layer)
-
-| Comando                                     | Propósito                              |
-| ------------------------------------------- | -------------------------------------- |
-| `/ai-framework:git-github:worktree:create`  | Crear worktree aislado                 |
-| `/ai-framework:git-github:worktree:cleanup` | Cleanup triple (worktree/local/remote) |
-| `/ai-framework:git-github:commit`           | Commits semánticos agrupados           |
-| `/ai-framework:git-github:pr`               | Crear PR con security review           |
-| `/ai-framework:git-github:cleanup`          | Post-merge cleanup workflow            |
-
-### utils (Utilidades)
-
-| Comando                             | Propósito                                 |
-| ----------------------------------- | ----------------------------------------- |
-| `/ai-framework:utils:understand`    | Mapeo de arquitectura existente           |
-| `/ai-framework:utils:changelog`     | Actualizar CHANGELOG.md                   |
-| `/ai-framework:utils:docs`          | Análisis y actualización de documentación |
-| `/ai-framework:utils:deep-research` | Investigación profesional sistemática     |
-
----
-
-## 🎯 Orden de Ejecución SDD-cycle (CRÍTICO)
-
-**Secuencia obligatoria** para evitar inconsistencias:
-
-```
-1. specify                    → Crea spec.md técnica
-2. clarify                    → Resuelve ambigüedades (NUNCA saltarse)
-3. plan                       → Genera design artifacts
-4. tasks                      → Genera implementation tasks
-5. agent-assignment-analyzer  → Asigna agents especializados para ejecución paralela (CRÍTICO)
-6. analyze                    → Valida consistency cross-artifact (opcional pero recomendado)
-7. implement                  → Ejecuta tasks con TDD y agents asignados
-8. checklist                  → (Opcional) Genera quality checklists POST-implementación
-9. sync                       → (Opcional) Sincroniza a GitHub DESPUÉS de implementar
+```bash
+/ai-framework:utils:changelog      # Auto-detect merged PRs
+/ai-framework:git-github:cleanup   # Delete branch, sync base
 ```
 
-**⚠️ NUNCA cambiar el orden** - cada paso depende de los anteriores.
-
-**PASO CRÍTICO FALTANTE**: `agent-assignment-analyzer` (paso 5)
-
-- **Propósito**: Analiza tasks.md y asigna sub-agents especializados para ejecución paralela óptima
-- **Por qué es crítico**: Speedup 3-10x, aprovecha contexto individual de cada agent, minimiza conflictos
-- **Cuándo usar**: Features con 5+ tasks o tasks que tocan múltiples dominios (backend + frontend + DB)
+Si usaste worktree, cleanup regresa automáticamente a main.
 
 ---
 
-_Última actualización: 2025-10-14 | Ecosistema PRP-SDD-GitHub | 24 comandos_
+## 🎨 Best Practices
+
+**Workflow Selection:**
+Start simple (branch). Upgrade a worktree cuando needs isolation.
+
+**Clarify Strategy:**
+Answer questions even if obvious. 2 min ahora > 2 hours later.
+
+**Agent Assignment:**
+Exception - si todas tasks touch mismo file, assignment no ayuda (sequential anyway).
+
+**Security Review:**
+`/ai-framework:git-github:pr` auto-runs security review. Blocks PR si HIGH vulnerability found.
+
+**Commit Strategy:**
+`commit "all changes"` auto-groups por categoría. Better que 1 giant mixed commit.
+
+---
+
+## 📚 Para Profundizar
+
+- [Commands Guide](./commands-guide.md) — 24 comandos, usage, options
+- [Agents Guide](./agents-guide.md) — 45 agents, cuándo usar
+- [MCP Servers](./mcp-servers.md) — Playwright, Shadcn
+- [Pro Tips](./claude-code-pro-tips.md) — Advanced patterns
+
+---
+
+::: info Última Actualización
+**Fecha**: 2025-10-15 | **Ecosistema**: PRP-SDD-GitHub
+:::

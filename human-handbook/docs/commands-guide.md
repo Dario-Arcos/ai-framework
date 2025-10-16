@@ -1,6 +1,25 @@
 # Guía de Comandos Claude Code
 
-**24 comandos disponibles** organizados por flujo de desarrollo
+::: tip Navegación Rápida
+Usa esta guía para ejecutar comandos de forma eficiente. Los comandos están diseñados para ejecutarse secuencialmente siguiendo workflows específicos.
+:::
+
+_24 comandos disponibles organizados por flujo de desarrollo_
+
+---
+
+## 📊 Resumen Ejecutivo
+
+| Categoría                                                           | Comandos | Flujo Típico                           |
+| ------------------------------------------------------------------- | -------- | -------------------------------------- |
+| 🎯 [Ciclo PRP (Business Layer)](#🎯-ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
+| 🏗️ [Ciclo SDD (Engineering Layer)](#🏗️-ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
+| 🔄 [Git & GitHub](#🔄-git-github)                                   | 5        | Commit → PR → Cleanup                  |
+| 🛠️ [Utilidades](#🛠️-utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
+
+::: tip Orden Recomendado
+Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#🎯-workflows-completos) para la secuencia.
+:::
 
 ---
 
@@ -8,50 +27,129 @@
 
 ### `/ai-framework:PRP-cycle:prp-new`
 
+
 Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructurado, minimalista (50-100 líneas), business-focused.
 
+**Usage:**
+
 ```bash
-/ai-framework:PRP-cycle:prp-new <feature_name>
+/ai-framework:PRP-cycle:prp-new &lt;feature_name&gt;
 
 # Ejemplo
 /ai-framework:PRP-cycle:prp-new user-authentication
 ```
 
-**Output**: `.claude/prps/<feature_name>/prp.md`
+**Output:** `.claude/prps/&lt;feature_name&gt;/prp.md`
 
-**Cuándo usar**: Planificación de nueva feature desde cero con stakeholders de negocio.
+**Design Philosophy (Steve Jobs Principles):**
+
+- **"Simplicity is the ultimate sophistication"**
+- PRP describe WHAT y WHY, no HOW
+- Target: 50-100 líneas (vs típico 300+ líneas)
+- Say NO a implementation details (stack, architecture, config)
+- Focus en user value y business outcomes
+
+**PRP Structure (Minimalista):**
+
+1. **Problem Statement** (5-10 líneas) - Formato estructurado AI-parseable
+2. **User Impact** (10-20 líneas) - Primary users, user journey, pain points
+3. **Success Criteria** (5-10 líneas) - Quantitative + Qualitative con checkboxes
+4. **Constraints** (5-10 líneas) - Budget, timeline, team, compliance, complexity budget
+5. **Out of Scope (V1)** (5-10 líneas) - Explícitamente list what we're NOT building
+
+**Discovery & Context Questions:**
+
+- **Problem**: ¿Qué problema específico estamos resolviendo? ¿Por qué ahora?
+- **Users**: ¿Quién experimenta este problema? ¿Personas primarias?
+- **Impact**: ¿Qué pasa si NO resolvemos esto?
+- **Success**: ¿Cómo medimos si esto funciona?
+- **Constraints**: ¿Budget, timeline, compliance requirements?
+- **Scope**: ¿Qué NO estamos building en V1?
+
+**Quality Checks:**
+
+- [ ] Total length: 50-100 líneas (excluding frontmatter)
+- [ ] No implementation details (no stack, config, architecture)
+- [ ] Problem statement usa structured format con fields
+- [ ] Success criteria usan checkboxes con measurement/verification methods
+- [ ] Problem y user impact crystal clear
+- [ ] Success criteria son measurable
+- [ ] Out of scope explicitly defined
+- [ ] All sections complete (no placeholder text como "TBD")
+- [ ] Written para business stakeholders (non-technical language)
+- [ ] Frontmatter includes complexity_budget y priority
+
+::: tip Cuándo usar
+Planificación de nueva feature desde cero con stakeholders de negocio.
+:::
+
+**Next Steps:** `➜ /ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt;`
 
 ---
 
 ### `/ai-framework:PRP-cycle:prp-sync`
 
+
 Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 
+**Usage:**
+
 ```bash
-/ai-framework:PRP-cycle:prp-sync <feature_name>
-/ai-framework:PRP-cycle:prp-sync <feature_name> --milestone <number>
+/ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt;
+/ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt; --milestone &lt;number&gt;
 
 # Ejemplos
 /ai-framework:PRP-cycle:prp-sync user-authentication
 /ai-framework:PRP-cycle:prp-sync user-authentication --milestone 5
 ```
 
-**Output**: GitHub Issue (parent) + actualiza frontmatter con `github_synced`
+**Output:** GitHub Issue (parent) + actualiza frontmatter con `github_synced`
 
-**Cuándo usar**: Después de aprobar PRP, para tracking en GitHub.
+**Workflow:**
+
+1. Parse arguments (feature name + optional milestone number)
+2. Validate required files exist (`.claude/prps/&lt;feature_name&gt;/prp.md`)
+3. Milestone handling:
+   - **If milestone number provided**: Use existing milestone
+   - **If no milestone**: Continue sin milestone assignment
+4. Create GitHub issue:
+   - Title: Extract desde PRP frontmatter `name` field
+   - Body: Clean PRP content sin frontmatter
+   - Labels: `prp`, `parent-issue`, `sdd`
+   - Assign to milestone si milestone number was provided
+5. Update PRP file frontmatter con `github`, `github_synced`, `milestone` (si aplica)
+6. Create GitHub mapping file (`.claude/prps/&lt;feature_name&gt;/github-mapping.md`)
+
+**Relationship to SDD Workflow:**
+
+```
+PRP.md → [prp-sync] → GitHub Parent Issue → [SDD-cycle:speckit.specify --from-issue] → Technical Spec + Sub-Issues
+```
+
+::: tip Cuándo usar
+Después de aprobar PRP, para tracking en GitHub.
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.specify --from-issue &lt;issue_number&gt;`
 
 ---
 
-## 🏗️ Ciclo SDD (Engineering Layer - SECUENCIAL OBLIGATORIO)
+## 🏗️ Ciclo SDD (Engineering Layer)
+
+::: tip Secuencia Recomendada
+Estos comandos funcionan mejor en el orden especificado. Cada paso prepara el siguiente.
+:::
 
 ### `/ai-framework:SDD-cycle:speckit.specify`
 
 Crea especificación técnica desde lenguaje natural, GitHub Issue, o PRP local.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.specify "Create authentication system"
-/ai-framework:SDD-cycle:speckit.specify --from-issue <issue_number>
-/ai-framework:SDD-cycle:speckit.specify --from-prp <feature_name>
+/ai-framework:SDD-cycle:speckit.specify --from-issue &lt;issue_number&gt;
+/ai-framework:SDD-cycle:speckit.specify --from-prp &lt;feature_name&gt;
 
 # Ejemplos
 /ai-framework:SDD-cycle:speckit.specify "Implement OAuth 2.0 with Google and GitHub providers"
@@ -59,21 +157,46 @@ Crea especificación técnica desde lenguaje natural, GitHub Issue, o PRP local.
 /ai-framework:SDD-cycle:speckit.specify --from-prp user-authentication
 ```
 
-**Output**:
+**Output:**
 
 - Crea branch: `001-feature-name` (incrementa número automáticamente)
 - Crea spec: `specs/001-feature-name/spec.md`
 - Hace checkout de la branch en MISMO directorio (NO crea worktree)
 - Valida con checklist interno
 
-**Comportamiento**:
+**Comportamiento:**
 
-- ⚠️ NO crea worktree (usa `worktree:create` si lo necesitas)
+- ⚠️ NO crea worktree (usa `/ai-framework:git-github:worktree:create` si lo necesitas)
 - ⚠️ NO abre IDE
 - ✅ Cambia a nueva branch con `git checkout -b`
 - ✅ Workspace actual cambia a la nueva branch
 
-**Cuándo usar**: Primera fase SDD - convierte requisitos en spec técnica.
+**Quick Guidelines:**
+
+- Focus en **WHAT** users need y **WHY**
+- Avoid HOW to implement (no tech stack, APIs, code structure)
+- Written para business stakeholders, not developers
+- DO NOT create any checklists embedded en el spec (separate command)
+
+**Success Criteria Guidelines (MUST be):**
+
+1. **Measurable**: Include specific metrics (time, percentage, count, rate)
+2. **Technology-agnostic**: No mention de frameworks, languages, databases, tools
+3. **User-focused**: Describe outcomes desde user/business perspective
+4. **Verifiable**: Can be tested/validated sin knowing implementation details
+
+**Clarification Handling:**
+
+- **Make informed guesses**: Use context, industry standards, common patterns
+- **Document assumptions**: Record reasonable defaults en Assumptions section
+- **Limit clarifications**: Maximum 3 [NEEDS CLARIFICATION] markers
+- **Prioritize clarifications**: scope > security/privacy > user experience > technical details
+
+::: tip Cuándo usar
+Primera fase SDD - convierte requisitos en spec técnica.
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.clarify` (recomendado - previene refactors)
 
 ---
 
@@ -81,13 +204,56 @@ Crea especificación técnica desde lenguaje natural, GitHub Issue, o PRP local.
 
 Detecta ambigüedades en spec, hace hasta 5 preguntas targeted, actualiza spec con clarifications.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.clarify
 ```
 
-**Output**: spec.md actualizada con sección `## Clarifications`
+**Output:** spec.md actualizada con sección `## Clarifications`
 
-**Cuándo usar**: OBLIGATORIO después de `/ai-framework:SDD-cycle:speckit.specify`, antes de `/ai-framework:SDD-cycle:speckit.plan`.
+**Execution Steps:**
+
+1. Run prerequisite check script para get FEATURE_DIR y FEATURE_SPEC paths
+2. Load current spec file y perform structured ambiguity & coverage scan
+3. Generate prioritized queue de candidate clarification questions (maximum 5)
+4. **Sequential questioning loop** (interactive):
+   - Present EXACTLY ONE question at a time
+   - For multiple-choice: Provide **recommended option** con reasoning + table con todas las options
+   - For short-answer: Provide **suggested answer** basado en best practices
+   - User can accept recommendation diciendo "yes" o "recommended"
+   - Record answer y move to next question
+   - Stop cuando: critical ambiguities resolved, user signals completion, o reach 5 questions
+5. **Integration after EACH accepted answer** (incremental update):
+   - Create `## Clarifications` section si no existe
+   - Append bullet: `- Q: &lt;question&gt; → A: &lt;final answer&gt;`
+   - Apply clarification a most appropriate section
+   - Save spec file AFTER cada integration (atomic overwrite)
+6. Validation after each write + final pass
+7. Write updated spec back to FEATURE_SPEC
+
+**Ambiguity Taxonomy Categories:**
+
+- Functional Scope & Behavior
+- Domain & Data Model
+- Interaction & UX Flow
+- Non-Functional Quality Attributes
+- Integration & External Dependencies
+- Edge Cases & Failure Handling
+- Constraints & Tradeoffs
+- Terminology & Consistency
+- Completion Signals
+- Misc / Placeholders
+
+::: tip Paso Recomendado
+Vale la pena los 2 minutos: `/ai-framework:SDD-cycle:speckit.clarify` detecta ambigüedades antes de implementar. ROI 100:1.
+:::
+
+::: tip Cuándo usar
+Después de `/ai-framework:SDD-cycle:speckit.specify`, antes de `/ai-framework:SDD-cycle:speckit.plan`. Previene hours de refactor.
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.plan`
 
 ---
 
@@ -95,11 +261,43 @@ Detecta ambigüedades en spec, hace hasta 5 preguntas targeted, actualiza spec c
 
 Genera artifacts de diseño: research.md, data-model.md, contracts/, quickstart.md. Actualiza contexto del agente.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.plan
 ```
 
-**Output**:
+**Phases:**
+
+**Phase 0: Outline & Research**
+
+1. Extract unknowns desde Technical Context
+2. Generate y dispatch research agents para cada unknown
+3. Consolidate findings en `research.md`:
+   - Decision: [what was chosen]
+   - Rationale: [why chosen]
+   - Alternatives considered: [what else evaluated]
+
+**Output**: research.md con all NEEDS CLARIFICATION resolved
+
+**Phase 1: Design & Contracts** (Prerequisites: research.md complete)
+
+1. Extract entities desde feature spec → `data-model.md`
+   - Entity name, fields, relationships
+   - Validation rules desde requirements
+   - State transitions si applicable
+2. Generate API contracts desde functional requirements
+   - Para cada user action → endpoint
+   - Use standard REST/GraphQL patterns
+   - Output OpenAPI/GraphQL schema a `/contracts/`
+3. Agent context update:
+   - Run `.specify/scripts/bash/update-agent-context.sh claude`
+   - Detect which AI agent is in use
+   - Update appropriate agent-specific context file
+   - Add only new technology desde current plan
+   - Preserve manual additions between markers
+
+**Output:**
 
 - `research.md` - Decisiones técnicas
 - `data-model.md` - Entidades y relaciones
@@ -107,7 +305,16 @@ Genera artifacts de diseño: research.md, data-model.md, contracts/, quickstart.
 - `quickstart.md` - Escenarios de integración
 - Agent context actualizado
 
-**Cuándo usar**: Después de spec clarificada, antes de generar tasks.
+**Key Rules:**
+
+- Use absolute paths
+- ERROR on gate failures o unresolved clarifications
+
+::: tip Cuándo usar
+Después de spec clarificada, antes de generar tasks.
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.tasks`
 
 ---
 
@@ -115,11 +322,72 @@ Genera artifacts de diseño: research.md, data-model.md, contracts/, quickstart.
 
 Genera tasks.md ejecutable con dependency ordering, organizado por user stories, marca tasks paralelizables [P].
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.tasks
 ```
 
-**Output**: `tasks.md` con:
+**Task Generation Rules:**
+
+::: tip Organización Recomendada
+Tasks organized por user story permiten independent implementation y testing. Mejor separation of concerns.
+:::
+
+**Tests son OPTIONAL**: Solo generate test tasks si explicitly requested en feature specification o si user requests TDD approach.
+
+**Checklist Format (REQUIRED):**
+
+Cada task MUST strictly seguir este formato:
+
+```text
+- [ ] [TaskID] [P?] [Story?] Description with file path
+```
+
+**Format Components:**
+
+1. **Checkbox**: ALWAYS start con `- [ ]` (markdown checkbox)
+2. **Task ID**: Sequential number (T001, T002, T003...) en execution order
+3. **[P] marker**: Include ONLY si task es parallelizable (different files, no dependencies)
+4. **[Story] label**: REQUIRED para user story phase tasks only
+   - Format: [US1], [US2], [US3] (maps a user stories desde spec.md)
+   - Setup phase: NO story label
+   - Foundational phase: NO story label
+   - User Story phases: MUST have story label
+   - Polish phase: NO story label
+5. **Description**: Clear action con exact file path
+
+**Examples:**
+
+- ✅ CORRECT: `- [ ] T001 Create project structure per implementation plan`
+- ✅ CORRECT: `- [ ] T005 [P] Implement authentication middleware in src/middleware/auth.py`
+- ✅ CORRECT: `- [ ] T012 [P] [US1] Create User model in src/models/user.py`
+- ✅ CORRECT: `- [ ] T014 [US1] Implement UserService in src/services/user_service.py`
+- ❌ WRONG: `- [ ] Create User model` (missing ID y Story label)
+- ❌ WRONG: `T001 [US1] Create model` (missing checkbox)
+
+**Task Organization:**
+
+**From User Stories (spec.md)** - PRIMARY ORGANIZATION:
+
+- Cada user story (P1, P2, P3...) gets its own phase
+- Map all related components a their story:
+  - Models needed para that story
+  - Services needed para that story
+  - Endpoints/UI needed para that story
+  - Si tests requested: Tests specific a that story
+- Mark story dependencies (most stories should be independent)
+
+**Phase Structure:**
+
+- **Phase 1**: Setup (project initialization)
+- **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
+- **Phase 3+**: User Stories en priority order (P1, P2, P3...)
+  - Within each story: Tests (si requested) → Models → Services → Endpoints → Integration
+  - Each phase should be complete, independently testable increment
+- **Final Phase**: Polish & Cross-Cutting Concerns
+
+**Output:** `tasks.md` con:
 
 - Setup phase
 - Foundational tasks (blocking prerequisites)
@@ -128,20 +396,39 @@ Genera tasks.md ejecutable con dependency ordering, organizado por user stories,
 - Parallel markers [P] donde aplique
 - Tests solo si especificado en spec
 
-**Cuándo usar**: Después de plan, antes de agent assignment.
+**Report:**
+
+- Total task count
+- Task count per user story
+- Parallel opportunities identified
+- Independent test criteria para cada story
+- Suggested MVP scope (typically just User Story 1)
+- Format validation: ALL tasks follow checklist format
+
+::: tip Cuándo usar
+Después de plan, antes de agent assignment.
+:::
+
+**Next Steps:** `➜ Agent Assignment via Task tool` (paso 5 - ver sección dedicada abajo)
 
 ---
 
-### Agent Assignment (via Task tool - PASO 5 CRÍTICO)
+### Agent Assignment (via Task tool - Paso 5)
+
+::: tip Vale la Pena
+Para features con 5+ tasks, este paso ofrece speedup 3-10x. El overhead se paga solo.
+:::
 
 Analiza tasks.md y asigna sub-agents especializados para ejecución paralela óptima.
+
+**Usage:**
 
 ```bash
 # Después de /ai-framework:SDD-cycle:speckit.tasks
 /ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
 ```
 
-**Output**:
+**Output:**
 
 - Análisis de task types (API, frontend, DB, tests, infra)
 - Asignación de agents especializados (backend-architect, frontend-developer, database-optimizer, etc.)
@@ -149,41 +436,45 @@ Analiza tasks.md y asigna sub-agents especializados para ejecución paralela óp
 - Tabla de parallel execution streams con agents asignados
 - Speedup estimation (potencial 3-10x)
 
-**Por qué es crítico**:
+**¿Por qué es crítico?**
 
 - Aprovecha contexto individual de cada sub-agent especializado
 - Minimiza conflictos de archivos mediante detección de dependencies
 - Ejecución en paralelo real (múltiples agents trabajando simultáneamente)
 - Optimiza tiempo de implementación dramáticamente
 
-**Cuándo usar**:
+**Example Output:**
 
-- **CASI MANDATORIO** para features con 5+ tasks
-- Features que tocan múltiples dominios (backend + frontend + DB)
-- Cuando se busca optimizar tiempo de implementación
-- Tasks con independencia funcional clara
-
-**Ejemplo de output**:
-
-```
+```markdown
 Stream 1 (backend-architect):
-  - Task 2.1: API endpoints [estimated: 45min]
-  - Task 2.3: Authentication middleware [estimated: 30min]
+
+- Task 2.1: API endpoints [estimated: 45min]
+- Task 2.3: Authentication middleware [estimated: 30min]
 
 Stream 2 (frontend-developer):
-  - Task 3.1: Login component [estimated: 60min]
-  - Task 3.2: Protected routes [estimated: 40min]
+
+- Task 3.1: Login component [estimated: 60min]
+- Task 3.2: Protected routes [estimated: 40min]
 
 Stream 3 (database-optimizer):
-  - Task 1.1: User schema migration [estimated: 20min]
-  - Task 1.2: Indexes and constraints [estimated: 15min]
+
+- Task 1.1: User schema migration [estimated: 20min]
+- Task 1.2: Indexes and constraints [estimated: 15min]
 
 Total sequential time: 210min
 Parallel time (3 streams): 75min
 Speedup: 2.8x
 ```
 
-**Cuándo usar**: DESPUÉS de tasks, ANTES de analyze (paso 5 del flujo SDD-cycle).
+::: tip Cuándo usar
+
+- Features con 5+ tasks (speedup 3-10x compensa overhead)
+- Features multi-domain (backend + frontend + DB)
+- Cuando optimizar tiempo de implementación
+- Tasks con independencia funcional clara
+  :::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional)
 
 ---
 
@@ -191,19 +482,56 @@ Speedup: 2.8x
 
 Análisis cross-artifact de consistency y quality. Valida spec.md + plan.md + tasks.md.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.analyze
 ```
 
-**Output**: Reporte con:
+::: warning STRICTLY READ-ONLY
+Do NOT modify any files. Output structured analysis report.
+:::
 
-- Findings por severidad (CRITICAL/HIGH/MEDIUM/LOW)
-- Coverage summary
-- Constitution alignment issues
-- Unmapped tasks
-- Métricas de calidad
+**Constitution Authority:** La project constitution (`.specify/memory/constitution.md`) es **non-negotiable**. Constitution conflicts son automáticamente CRITICAL.
 
-**Cuándo usar**: Validación pre-implementación, después de generar tasks.
+**Execution Steps:**
+
+1. **Initialize Analysis Context**: Run prerequisite check script y parse FEATURE_DIR + AVAILABLE_DOCS
+2. **Load Artifacts (Progressive Disclosure)**: Load minimal necessary context desde cada artifact
+3. **Build Semantic Models**: Create internal representations (requirements inventory, user story inventory, task coverage mapping, constitution rule set)
+4. **Detection Passes (Token-Efficient Analysis)**:
+   - **A. Duplication Detection**: Near-duplicate requirements
+   - **B. Ambiguity Detection**: Vague adjectives, unresolved placeholders
+   - **C. Underspecification**: Missing objects, missing acceptance criteria
+   - **D. Constitution Alignment**: Conflicts con MUST principles
+   - **E. Coverage Gaps**: Requirements sin tasks, tasks sin requirements
+   - **F. Inconsistency**: Terminology drift, data entity conflicts
+
+**Severity Assignment:**
+
+- **CRITICAL**: Violates constitution MUST, missing core spec artifact, requirement con zero coverage
+- **HIGH**: Duplicate/conflicting requirement, ambiguous security/performance, untestable acceptance
+- **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case
+- **LOW**: Style/wording improvements, minor redundancy
+
+**Output:** Markdown report con:
+
+- Findings table (ID, Category, Severity, Location, Summary, Recommendation)
+- Coverage Summary Table (Requirement Key, Has Task?, Task IDs, Notes)
+- Constitution Alignment Issues (si any)
+- Unmapped Tasks (si any)
+- Metrics (Total Requirements, Total Tasks, Coverage %, Ambiguity Count, etc.)
+
+**Next Actions:**
+
+- Si CRITICAL issues exist: Recommend resolving antes de `/implement`
+- Si solo LOW/MEDIUM: User may proceed, pero provide improvement suggestions
+
+::: tip Cuándo usar
+Validación pre-implementación, después de generar tasks (opcional pero recomendado).
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.implement`
 
 ---
 
@@ -211,21 +539,80 @@ Análisis cross-artifact de consistency y quality. Valida spec.md + plan.md + ta
 
 Ejecuta tasks.md con agents asignados, parallelization, specialized agents, TDD enforcement.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.implement
 ```
 
-**Workflow**:
+**Workflow:**
 
-1. Carga contexto (tasks, plan, contracts, data-model, research, quickstart, agent assignments)
-2. Valida/crea ignore files por tecnología
-3. Ejecuta tasks por fases usando agents asignados:
-   - Setup → Tests → Core → Integration → Polish
-   - Tasks paralelas se ejecutan concurrentemente con agents especializados
-4. Marca tasks completadas [X]
-5. Reporta progreso y validación final
+1. **Check checklists status** (si `FEATURE_DIR/checklists/` exists):
+   - Scan all checklist files
+   - Count: Total items, Completed items, Incomplete items
+   - Create status table
+   - **If any checklist incomplete**: STOP y ask "Do you want to proceed anyway? (yes/no)"
+   - **If all checklists complete**: Display table y proceed automáticamente
 
-**Cuándo usar**: Motor central de implementación, después de agent assignment y analyze (paso 7 del flujo SDD-cycle).
+2. **Load and analyze implementation context:**
+   - **REQUIRED**: Read tasks.md (complete task list + execution plan)
+   - **REQUIRED**: Read plan.md (tech stack, architecture, file structure)
+   - **IF EXISTS**: Read data-model.md (entities + relationships)
+   - **IF EXISTS**: Read contracts/ (API specs + test requirements)
+   - **IF EXISTS**: Read research.md (technical decisions + constraints)
+   - **IF EXISTS**: Read quickstart.md (integration scenarios)
+
+3. **Project Setup Verification**:
+   - **REQUIRED**: Create/verify ignore files basado en actual project setup:
+     - Git repository detected → create/verify `.gitignore`
+     - Dockerfile\* exists → create/verify `.dockerignore`
+     - ESLint config exists → create/verify `.eslintignore`
+     - Prettier config exists → create/verify `.prettierignore`
+     - package.json exists → create/verify `.npmignore` (if publishing)
+     - Terraform files (\*.tf) exist → create/verify `.terraformignore`
+     - Helm charts present → create/verify `.helmignore`
+   - **If ignore file already exists**: Verify y append missing critical patterns only
+   - **If ignore file missing**: Create con full pattern set para detected technology
+
+4. **Parse tasks.md structure** y extract:
+   - Task phases: Setup, Tests, Core, Integration, Polish
+   - Task dependencies: Sequential vs parallel execution rules
+   - Task details: ID, description, file paths, parallel markers [P]
+   - Execution flow: Order y dependency requirements
+
+5. **Execute implementation** following task plan:
+   - **Phase-by-phase execution**: Complete each phase antes de moving to next
+   - **Respect dependencies**: Run sequential tasks en order, parallel tasks [P] can run together
+   - **Follow TDD approach**: Execute test tasks antes de their corresponding implementation tasks
+   - **File-based coordination**: Tasks affecting same files must run sequentially
+   - **Validation checkpoints**: Verify each phase completion antes de proceeding
+
+6. **Implementation execution rules:**
+   - **Setup first**: Initialize project structure, dependencies, configuration
+   - **Tests before code**: Si need to write tests para contracts, entities, integration scenarios
+   - **Core development**: Implement models, services, CLI commands, endpoints
+   - **Integration work**: Database connections, middleware, logging, external services
+   - **Polish and validation**: Unit tests, performance optimization, documentation
+
+7. **Progress tracking** y error handling:
+   - Report progress after each completed task
+   - Halt execution si any non-parallel task fails
+   - For parallel tasks [P], continue con successful tasks, report failed ones
+   - Provide clear error messages con context para debugging
+   - **IMPORTANT**: Para completed tasks, mark as [X] en tasks file
+
+8. **Completion validation:**
+   - Verify all required tasks completed
+   - Check que implemented features match original specification
+   - Validate que tests pass y coverage meets requirements
+   - Confirm implementation follows technical plan
+   - Report final status con summary de completed work
+
+::: tip Cuándo usar
+Motor central de implementación, después de agent assignment y analyze (paso 7 del flujo SDD-cycle).
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.checklist` (opcional)
 
 ---
 
@@ -233,9 +620,11 @@ Ejecuta tasks.md con agents asignados, parallelization, specialized agents, TDD 
 
 Genera checklist customizada para validar calidad de implementación ("Unit tests for English").
 
+**Usage:**
+
 ```bash
 # DESPUÉS de /ai-framework:SDD-cycle:speckit.implement
-/ai-framework:SDD-cycle:speckit.checklist "<domain> implementation quality review"
+/ai-framework:SDD-cycle:speckit.checklist "&lt;domain&gt; implementation quality review"
 
 # Ejemplos
 /ai-framework:SDD-cycle:speckit.checklist "UX implementation quality review"
@@ -244,35 +633,147 @@ Genera checklist customizada para validar calidad de implementación ("Unit test
 /ai-framework:SDD-cycle:speckit.checklist "Performance criteria compliance"
 ```
 
-**Output**: `checklists/<domain>.md` con ítems de validación post-implementación
+::: danger CRITICAL CONCEPT
+Checklists son **UNIT TESTS FOR REQUIREMENTS WRITING** - validan quality, clarity, y completeness de requirements en given domain.
+:::
 
-**Tipos comunes**:
+**NOT for verification/testing:**
+
+- ❌ NOT "Verify the button clicks correctly"
+- ❌ NOT "Test error handling works"
+- ❌ NOT "Confirm the API returns 200"
+- ❌ NOT checking si code/implementation matches el spec
+
+**FOR requirements quality validation:**
+
+- ✅ "Are visual hierarchy requirements defined for all card types?" (completeness)
+- ✅ "Is 'prominent display' quantified with specific sizing/positioning?" (clarity)
+- ✅ "Are hover state requirements consistent across all interactive elements?" (consistency)
+- ✅ "Are accessibility requirements defined for keyboard navigation?" (coverage)
+- ✅ "Does the spec define what happens when logo image fails to load?" (edge cases)
+
+**Metaphor:** Si tu spec es code written en English, el checklist es its unit test suite. Estás testing si requirements están well-written, complete, unambiguous, y ready para implementation - NOT si implementation works.
+
+**Execution Steps:**
+
+1. **Setup**: Run prerequisite check script para get FEATURE_DIR y AVAILABLE_DOCS
+2. **Clarify intent** (dynamic): Derive hasta THREE initial contextual clarifying questions
+   - Generated desde user's phrasing + extracted signals desde spec/plan/tasks
+   - Only ask sobre information que materially changes checklist content
+   - Be skipped individually si already unambiguous en `$ARGUMENTS`
+   - Prefer precision over breadth
+3. **Understand user request**: Combine `$ARGUMENTS` + clarifying answers
+4. **Load feature context**: Read desde FEATURE_DIR (spec.md, plan.md si exists, tasks.md si exists)
+5. **Generate checklist** - Create "Unit Tests for Requirements":
+   - Create `FEATURE_DIR/checklists/` directory si no existe
+   - Generate unique checklist filename (e.g., `ux.md`, `api.md`, `security.md`)
+   - Number items sequentially starting desde CHK001
+   - Cada `/speckit.checklist` run creates NEW file (never overwrites existing checklists)
+
+**Category Structure** - Group items por requirement quality dimensions:
+
+- **Requirement Completeness** (Are all necessary requirements documented?)
+- **Requirement Clarity** (Are requirements specific y unambiguous?)
+- **Requirement Consistency** (Do requirements align sin conflicts?)
+- **Acceptance Criteria Quality** (Are success criteria measurable?)
+- **Scenario Coverage** (Are all flows/cases addressed?)
+- **Edge Case Coverage** (Are boundary conditions defined?)
+- **Non-Functional Requirements** (Performance, Security, Accessibility - are they specified?)
+- **Dependencies & Assumptions** (Are they documented y validated?)
+- **Ambiguities & Conflicts** (What needs clarification?)
+
+**Output:** `checklists/&lt;domain&gt;.md` con ítems de validación post-implementación
+
+**Tipos comunes:**
 
 - `ux.md` - UI/UX implementation quality
 - `api.md` - API contracts completeness
 - `security.md` - Security implementation coverage
 - `performance.md` - Performance criteria compliance
 
-**⚠️ CAMBIO IMPORTANTE**: `checklist` se ejecuta DESPUÉS de `implement` (paso 8) para validar calidad de la implementación completada, NO antes.
+::: warning CAMBIO IMPORTANTE
+`checklist` se ejecuta DESPUÉS de `implement` (paso 8) para validar calidad de la implementación completada, NO antes.
+:::
 
-**Cuándo usar**: (Opcional) POST-implementación para validar calidad del código generado, DESPUÉS de implement (paso 8 del flujo SDD-cycle).
+::: tip Cuándo usar
+(Opcional) POST-implementación para validar calidad del código generado, DESPUÉS de implement (paso 8 del flujo SDD-cycle).
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.sync` (opcional)
 
 ---
 
 ### `/ai-framework:SDD-cycle:speckit.sync`
 
+
 Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a parent PRP.
 
+**Usage:**
+
 ```bash
-/ai-framework:SDD-cycle:speckit.sync <parent_issue_number>
+/ai-framework:SDD-cycle:speckit.sync &lt;parent_issue_number&gt;
 
 # Ejemplo
 /ai-framework:SDD-cycle:speckit.sync 247
 ```
 
-**Output**: GitHub Issue (child) + actualiza frontmatter con `github`, `github_synced`, `parent_prd`
+::: warning IMPORTANT
+Este comando REQUIERE parent PRP issue. Specs must always be linked a PRP. Si no tienes PRP issue yet, run `/ai-framework:PRP-cycle:prp-sync` first.
+:::
 
-**Cuándo usar**: (Opcional) DESPUÉS de implementación completa - documenta lo que fue construido.
+**Execution Steps:**
+
+1. **Parse Arguments and Validate**:
+   - Parse parent issue number desde `$ARGUMENTS` (REQUIRED)
+   - Detect feature desde current branch
+   - Validate spec.md exists
+   - **Verify not already synced** (prevent duplicates):
+     - Read frontmatter desde `specs/&lt;feature&gt;/spec.md`
+     - Check si `github:` field exists
+     - Si exists: Show error con existing issue URL y STOP
+   - Validate parent issue exists via `gh issue view`
+   - Validate optional files (plan.md, tasks.md)
+
+2. **Prepare Issue Content**:
+   - Read spec artifacts (spec.md, plan.md si exists, tasks.md si exists)
+   - Strip frontmatter desde spec.md
+   - Format para GitHub Issue body:
+     - If only spec.md: Include spec content
+     - If plan.md exists: Append Implementation Plan section
+     - If tasks.md exists: Append Task Breakdown section
+   - Write formatted body a temporary file (safety para complex markdown)
+
+3. **Create GitHub Issue and Link to Parent**:
+   - Title: "Spec: &lt;feature-name&gt;" (convert kebab-case a Title Case)
+   - Body: Use `--body-file` con temporary file
+   - Labels: `spec`, `sdd`, `feature`
+   - Add comment a parent issue: "📋 Technical specification created: #&lt;spec_issue_number&gt;"
+
+4. **Update Local Spec File**: Update frontmatter con `github`, `github_synced`, `parent_prd`
+
+5. **Create GitHub Mapping File**: `specs/&lt;feature&gt;/github-mapping.md` con parent PRD, spec issue, timestamp
+
+**Timing Recommendation:**
+
+Run `/speckit.sync` AFTER implementation es complete y validated. Esto ensures:
+
+- GitHub Issue documents what was actually built (not speculation)
+- Spec + Plan + Tasks son 100% accurate con final code
+- Stakeholders see results, not work-in-progress
+- Zero need para re-sync o duplicate issues
+
+**Stakeholder View:**
+
+- Business team tracks PRP issue (parent) - high-level requirements
+- Tech team tracks Spec issue (child) - technical documentation de what was built
+- Parent-child relationship via "Parent PRP: #247" en spec body
+- Clear separation de concerns: business requirements (PRP) vs technical implementation (Spec)
+
+::: tip Cuándo usar
+(Opcional) DESPUÉS de implementación completa - documenta lo que fue construido.
+:::
+
+**Next Steps:** `➜ /ai-framework:git-github:commit` → `/ai-framework:git-github:pr`
 
 ---
 
@@ -280,131 +781,50 @@ Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a pa
 
 Crea o actualiza constitución del proyecto con principios fundamentales.
 
+**Usage:**
+
 ```bash
 /ai-framework:SDD-cycle:speckit.constitution
 ```
 
-**Output**: `.specify/memory/constitution.md` actualizada con sync impact report
+::: danger RESTRICCIÓN
+NO EJECUTAR sin autorización directa del usuario.
+:::
 
-**⚠️ RESTRICCIÓN**: NO EJECUTAR sin autorización directa del usuario.
+**Execution Flow:**
 
-**Cuándo usar**: Setup inicial o actualización de principios fundamentales.
+1. Load existing constitution template at `.specify/memory/constitution.md`
+2. Identify every placeholder token de form `[ALL_CAPS_IDENTIFIER]`
+3. Collect/derive values para placeholders:
+   - If user input supplies value, use it
+   - Otherwise infer desde existing repo context
+   - For governance dates: RATIFICATION_DATE, LAST_AMENDED_DATE
+   - CONSTITUTION_VERSION must increment según semantic versioning:
+     - MAJOR: Backward incompatible governance/principle removals o redefinitions
+     - MINOR: New principle/section added o materially expanded guidance
+     - PATCH: Clarifications, wording, typo fixes, non-semantic refinements
+4. Draft updated constitution content (replace every placeholder)
+5. Consistency propagation checklist:
+   - Read `.specify/templates/plan-template.md`
+   - Read `.specify/templates/spec-template.md`
+   - Read `.specify/templates/tasks-template.md`
+   - Read each command file en `.specify/templates/commands/*.md`
+   - Update references a principles changed
+6. Produce Sync Impact Report (prepend como HTML comment):
+   - Version change: old → new
+   - List de modified principles
+   - Added sections
+   - Removed sections
+   - Templates requiring updates (✅ updated / ⚠ pending)
+   - Follow-up TODOs
+7. Validation antes de final output
+8. Write completed constitution back a `.specify/memory/constitution.md`
 
----
+**Output:** `.specify/memory/constitution.md` actualizada con sync impact report
 
-## 📦 Gestión de Worktrees
-
-### Worktree vs Branch: Entendiendo la Diferencia
-
-**Branch (MISMO directorio)** - Simple, desarrollo secuencial:
-
-- Comando: `/ai-framework:SDD-cycle:speckit.specify`
-- Comportamiento: `git checkout -b nueva-branch` en el directorio actual
-- Workspace: El MISMO directorio cambia de rama
-- Sesión Claude: La MISMA sesión continúa
-- Casos de uso: Una feature a la vez, desarrollo lineal
-
-**Worktree (directorio AISLADO)** - Seguro, trabajo paralelo:
-
-- Comando: `/ai-framework:git-github:worktree:create`
-- Comportamiento: `git worktree add ../worktree-XXX/` con rama nueva
-- Workspace: Nuevo directorio INDEPENDIENTE del original
-- Sesión Claude: Requiere NUEVA sesión en nueva ventana IDE
-- Casos de uso: Múltiples features paralelas, bug fixes urgentes, experimentación
-
-**Matriz de Decisión:**
-
-| Necesidad                          | Usa Branch | Usa Worktree |
-| ---------------------------------- | ---------- | ------------ |
-| Desarrollo lineal (1 feature)      | ✅         | ❌           |
-| Múltiples features en paralelo     | ❌         | ✅           |
-| Bug fix urgente (no interrumpir)   | ❌         | ✅           |
-| Experimentación/POC desechable     | ❌         | ✅           |
-| Setup simple sin overhead          | ✅         | ❌           |
-| Trabajo con main/develop inestable | ❌         | ✅           |
-
-**Flujo Típico con Branches:**
-
-```bash
-# En main
-/ai-framework:SDD-cycle:speckit.specify "feature A"
-# → Ahora estás en branch 001-feature-a (MISMO directorio)
-# → Trabajas en feature A
-# → Commit + PR + Merge
-# → Regresas a main: git checkout main
-# → Repites para feature B
-```
-
-**Flujo Típico con Worktrees:**
-
-```bash
-# En main (workspace principal)
-/ai-framework:git-github:worktree:create "feature A" main
-# → IDE abre nueva ventana en ../worktree-feature-a/
-# → En nueva ventana: inicias sesión Claude
-# → Trabajas en feature A (workspace principal intacto)
-
-# MIENTRAS feature A está en progreso:
-# → En workspace principal (aún en main)
-/ai-framework:git-github:worktree:create "feature B" main
-# → IDE abre OTRA ventana en ../worktree-feature-b/
-# → Ahora tienes 2 features en paralelo sin conflictos
-```
-
----
-
-### `/ai-framework:git-github:worktree:create`
-
-Crea worktree aislado en directorio sibling con rama nueva y upstream configurado.
-
-```bash
-/ai-framework:git-github:worktree:create "<objetivo>" <parent-branch>
-
-# Ejemplos
-/ai-framework:git-github:worktree:create "implementar OAuth" main
-/ai-framework:git-github:worktree:create "fix bug pagos" develop
-```
-
-**Output**:
-
-- Crea worktree: `../worktree-<objetivo>/`
-- Crea branch: `worktree-<objetivo>` (mismo nombre que directorio)
-- Abre IDE automáticamente en nueva ventana (detecta code/cursor)
-- Valida directorio limpio antes de crear
-
-**Comportamiento**:
-
-- ✅ Crea directorio AISLADO del workspace principal
-- ✅ Abre IDE automáticamente (VS Code o Cursor)
-- ✅ Actualiza rama padre desde remoto antes de crear
-- ⚠️ Requiere iniciar nueva sesión Claude en la nueva ventana IDE
-
-**Post-creación (CRÍTICO)**:
-
-1. En la nueva ventana del IDE: Abrir terminal integrado (Cmd+\`)
-2. Verificar: `pwd` → debe mostrar `../worktree-XXX/`
-3. Iniciar nueva sesión: `claude`
-
-**Cuándo usar**:
-
-- Trabajo paralelo en múltiples features
-- Bug fixes urgentes sin interrumpir trabajo actual
-- Experimentación/POC sin afectar workspace principal
-
----
-
-### `/ai-framework:git-github:worktree:cleanup`
-
-Elimina worktrees con validación de ownership y cleanup triple (worktree/local/remote).
-
-```bash
-/ai-framework:git-github:worktree:cleanup              # Discovery mode
-/ai-framework:git-github:worktree:cleanup <worktree1>  # Cleanup específico
-```
-
-**Output**: Triple cleanup + regresa automáticamente a main
-
-**Cuándo usar**: Después de mergear PRs.
+::: tip Cuándo usar
+Setup inicial o actualización de principios fundamentales.
+:::
 
 ---
 
@@ -412,7 +832,10 @@ Elimina worktrees con validación de ownership y cleanup triple (worktree/local/
 
 ### `/ai-framework:git-github:commit`
 
+
 Commits semánticos con grouping automático por categoría.
+
+**Usage:**
 
 ```bash
 /ai-framework:git-github:commit "descripción"
@@ -423,51 +846,424 @@ Commits semánticos con grouping automático por categoría.
 /ai-framework:git-github:commit "all changes"
 ```
 
-**Output**: Commits agrupados por tipo (feat, fix, docs, test, refactor, etc.)
+**Execution Steps:**
 
-**Cuándo usar**: Después de completar cambios.
+1. **Parse Arguments and Validate Repository**:
+   - Parse commit message desde `$ARGUMENTS`
+   - Execute `git rev-parse --git-dir` para verify git repository
+   - If fails: Show error y stop
+
+2. **Analyze Repository Status and Changes**:
+   - Check repository status usando `git status --porcelain`
+   - If no changes: Show "No changes to commit" y stop
+   - Analyze change details:
+     - `git diff --cached --name-only` (staged files)
+     - `git diff --name-only` (unstaged modified files)
+     - `git ls-files --others --exclude-standard` (untracked new files)
+   - Display summary de files a be processed
+
+3. **Handle Staging Strategy**:
+   - Check si anything is staged con `git diff --cached --quiet`
+   - If nothing staged y unstaged changes exist:
+     - Stage all changes con `git add -A` (modified, new, deleted)
+   - If files already staged: Use existing staged files
+   - Display staging status
+
+4. **Classify Changed Files by Category** usando natural language processing:
+   - **config**: `.claude/*`, `*.md`, `CLAUDE.md`, configuration files
+   - **docs**: `docs/*`, `README*`, `CHANGELOG*`, documentation
+   - **security**: `scripts/*`, `*setup*`, `*security*`, security-related
+   - **test**: `*test*`, `*spec*`, `*.test.*`, testing files
+   - **main**: All other files (core functionality)
+
+5. **Determine Commit Strategy** (Single vs Multiple):
+   - Count files en cada category
+   - **Multiple commits** if: 2+ categories con 2+ files each OR any security files exist
+   - **Single commit** if: Only one significant category OR limited file changes
+
+6. **Execute Smart Commit Strategy**:
+   - **If multiple commits**: Para cada category (order: security, config, docs, test, main):
+     - Reset y stage category files only
+     - Generate appropriate commit message:
+       - **config**: "feat(config): update configuration and commands"
+       - **docs**: "docs: enhance documentation and setup guides"
+       - **security**: "security: improve security measures and validation"
+       - **test**: "test: update test suite and coverage"
+       - **main**: "feat: implement core functionality changes"
+     - Create commit
+   - **If single commit**: Use custom message o generate conventional commit message
+
+7. **Report Results**: Display recent commit history y summary
+
+**Output:** Commits agrupados por tipo (feat, fix, docs, test, refactor, etc.)
+
+::: tip Cuándo usar
+Después de completar cambios.
+:::
+
+**Next Steps:** `➜ /ai-framework:git-github:pr`
 
 ---
 
 ### `/ai-framework:git-github:pr`
 
+
 Crea PR con security review BLOCKING, push seguro y metadata completa.
 
+**Usage:**
+
 ```bash
-/ai-framework:git-github:pr <target_branch>
+/ai-framework:git-github:pr &lt;target_branch&gt;
 
 # Ejemplos
 /ai-framework:git-github:pr develop
 /ai-framework:git-github:pr main
 ```
 
-**Output**: PR en GitHub con:
+**Execution Steps:**
 
-- Summary completo
-- Test plan
-- Security review (BLOCKING)
-- CI/CD integration
+1. **Validación del target branch**:
+   - Validate argument format
+   - Execute `git fetch origin`
+   - Capture current branch
+   - Verify target branch exists
+   - Validate current ≠ target (exception: protected branches → auto-create feature branch)
+   - Verify divergence con target
 
-**Cuándo usar**: Para PRs con estándares de calidad.
+2. **Validación de sincronización de rama actual**:
+   - Check si current branch has upstream
+   - **If has upstream**: Verify not behind remote (blocks si behind)
+   - **If NO upstream**: Continue silently (new branch)
+
+3. **Operaciones en paralelo**:
+
+   **Security Review (BLOCKING):**
+   - Start `/agent:security-reviewer` para analyze changes
+   - Timeout: 80 segundos máximo
+   - **Blocking conditions**:
+     - HIGH severity findings (confidence ≥ 8.0): ALWAYS block PR creation
+     - MEDIUM severity findings (confidence ≥ 8.0): Block en production (configurable)
+   - **Success**: Sin vulnerabilidades críticas → continue
+   - **Failure**: Show findings + block PR creation + exit error
+   - **Timeout**: Show warning + create PR con SECURITY_REVIEW_TIMEOUT flag
+   - **System error**: Block PR creation + show retry instructions
+
+   **Validar PR existente:**
+   - Execute `gh pr view --json number,state,title,url`
+   - Store result para next step
+
+   **Análisis de commits:**
+   - Git data combined (mode-aware):
+     - If AUTO_CREATE_BRANCH mode: Analyze commits NOT en origin/target
+     - If NORMAL mode: Diff against target
+   - Variables preparadas: commit_count, git_data, files_data, files_changed
+
+4. **Procesar PR existente**:
+   - Si exists PR abierto: Ask "[1] Actualizar PR / [2] Crear nuevo PR"
+   - Si no exists: Continue con creation
+
+5. **Detectar tipo de rama y decidir acción**:
+
+   **SI rama protegida** (main, master, develop, staging, production, etc.):
+   - Create feature branch automática
+   - Extract primary type desde conventional commits
+   - Detect central theme desde commit scopes o frequent words
+   - Generate timestamp UTC
+   - Build branch name: `${tema_central}-${timestamp}` o `${primary_type}-improvements-${timestamp}`
+   - Create nueva rama con validation y rollback on failure
+   - Push to remote con `--set-upstream`
+
+   **SI NO rama protegida** (feature branch):
+   - Use current branch para PR
+   - Push to remote (con `--set-upstream` si needed)
+
+6. **Preparar contenido del PR**:
+   - Generate título: `{type}({scope}): {description}` basado en commits
+   - Count lines: additions + deletions
+   - Identify affected areas (project directories)
+   - Detect breaking changes (keywords: BREAKING/deprecated/removed)
+   - **IMPORTANTE**: Al numerar items usa formato SIN símbolo hash: 'Bug 1:', 'Issue 1:', 'Task 1:' (NO 'Bug #1:') para evitar auto-linking no intencional de GitHub
+   - Build PR body con sections: Summary, Changes Made, Files & Impact, Test Plan, Breaking Changes
+
+7. **Crear PR**: Execute `gh pr create --title --body --base`
+
+8. **Mostrar resultado**: PR URL + confirmation
+
+**Logging:** JSONL format en `.claude/logs/&lt;date&gt;/`:
+
+- Security review: `security.jsonl`
+- PR operations: `pr_operations.jsonl`
+
+::: tip Cuándo usar
+Para PRs con estándares de calidad.
+:::
+
+**Next Steps:** Después de merge → `/ai-framework:git-github:cleanup`
 
 ---
 
 ### `/ai-framework:git-github:cleanup`
 
-Post-merge cleanup workflow: actualiza CHANGELOG, limpia worktree, actualiza docs.
+
+Post-merge cleanup workflow: delete feature branch y sync con base branch.
+
+**Usage:**
 
 ```bash
-/ai-framework:git-github:cleanup
-
-# Workflow incluye:
-# 1. /ai-framework:utils:changelog (auto-detectar PRs mergeados)
-# 2. /ai-framework:git-github:worktree:cleanup (si aplica)
-# 3. /ai-framework:utils:docs (si necesario)
+/cleanup           # Auto-detect base branch (main/master/develop)
+/cleanup main      # Specify base branch explicitly
+/cleanup develop   # Cleanup and sync with develop
 ```
 
-**Output**: Workspace limpio + documentación actualizada
+**Execution Steps:**
 
-**Cuándo usar**: Después de merge exitoso.
+1. **Validate Current State**:
+   - Get current branch name
+   - Detect protected branches pattern
+   - If current branch es protected: Error "Ya estás en rama base" y terminate
+   - If not protected: Continue con cleanup
+
+2. **Determine Target Base Branch**:
+   - **If argument provided**: Use `$ARGUMENTS` as target base
+   - **If no argument (auto-detect)**: Try detection en order (main → master → develop)
+   - Validate target exists en origin
+
+3. **Switch to Base Branch**:
+   - Execute `git checkout $target_base`
+   - Verify success
+   - If fails: Show error y terminate
+
+4. **Delete Feature Branch**:
+   - Execute `git branch -D "$current_branch"` (force delete)
+   - Use `-D` porque user explicitly requested cleanup
+   - Show confirmation
+
+5. **Sync with Remote**:
+   - Execute `git pull origin $target_base --ff-only`
+   - Use `--ff-only` para prevent accidental merges
+   - If fails (diverged): Show rebase instructions y terminate
+   - If success: Show commits pulled
+
+6. **Cleanup Remote Branch (Optional)**:
+   - Check si feature branch exists en remote
+   - If exists: Ask "¿Eliminar rama remota? [y/N]"
+   - If yes: Execute `git push origin --delete "$current_branch"`
+   - If no: Skip
+
+7. **Final Status**:
+   - Show summary: operations, current branch, deleted branch, commits synced
+   - Verify clean state con `git status --short`
+
+**Output:** Workspace limpio + documentación actualizada
+
+::: tip Cuándo usar
+Después de merge exitoso.
+:::
+
+---
+
+## 📦 Gestión de Worktrees
+
+::: tip Worktree vs Branch: Entendiendo la Diferencia
+Ver sección detallada en documentación original que explica cuándo usar cada uno.
+:::
+
+### Matriz de Decisión
+
+| Necesidad                          | Usa Branch | Usa Worktree |
+| ---------------------------------- | ---------- | ------------ |
+| Desarrollo lineal (1 feature)      | ✅         | ❌           |
+| Múltiples features en paralelo     | ❌         | ✅           |
+| Bug fix urgente (no interrumpir)   | ❌         | ✅           |
+| Experimentación/POC desechable     | ❌         | ✅           |
+| Setup simple sin overhead          | ✅         | ❌           |
+| Trabajo con main/develop inestable | ❌         | ✅           |
+
+---
+
+### `/ai-framework:git-github:worktree:create`
+
+
+Crea worktree aislado en directorio sibling con rama nueva y upstream configurado.
+
+**Usage:**
+
+```bash
+/ai-framework:git-github:worktree:create "&lt;objetivo&gt;" &lt;parent-branch&gt;
+
+# Ejemplos
+/ai-framework:git-github:worktree:create "implementar OAuth" main
+/ai-framework:git-github:worktree:create "fix bug pagos" develop
+```
+
+**Execution Steps:**
+
+1. **Argument validation**:
+   - Count arguments (must be exactly 2)
+   - Capture first argument como `objetivo_descripcion`
+   - Capture second argument como `parent_branch`
+
+2. **Working directory validation**:
+   - Execute `git status --porcelain` para capture pending changes
+   - If output exists (uncommitted changes): Error "Directorio no limpio" y TERMINATE
+   - If no changes: Continue
+
+3. **Parent branch validation**:
+   - Execute `git show-ref --verify --quiet refs/heads/$parent_branch`
+   - If fails: Error "Branch no existe" + show available branches y TERMINATE
+   - If exists: Continue
+
+4. **Generate consistent names**:
+   - Convert `objetivo_descripcion` a valid slug: lowercase + replace non-alphanumeric con `-`
+   - Build `worktree_name`: "worktree-$objetivo_slug"
+   - Build `branch_name`: Identical a `worktree_name`
+   - Build `worktree_path`: "../$worktree_name"
+
+5. **Check for collisions**:
+   - Directory collision check: `[ -d "$worktree_path" ]`
+   - Branch collision check: `git show-ref --verify --quiet refs/heads/$branch_name`
+   - If either exists: Error y TERMINATE
+
+6. **Prepare parent branch**:
+   - Execute `git checkout "$parent_branch"`
+   - Execute `git pull origin "$parent_branch"` (update desde remote)
+   - If pull fails: Warning pero continue
+
+7. **Create worktree**:
+   - Execute `git worktree add "$worktree_path" -b "$branch_name"`
+   - If fails: Error y terminate
+
+8. **Open IDE automatically**:
+   - Detect available IDE: `which code` (VS Code) o `which cursor` (Cursor)
+   - If found: Execute `(cd "$worktree_path" && [IDE] . --new-window)`
+   - If not found: Warning "Abre manualmente"
+
+9. **Logging and final result**:
+   - Create logs directory: `.claude/logs/&lt;date&gt;/`
+   - Add JSONL entry a `worktree_operations.jsonl`
+   - Show critical instructions:
+
+**Post-creación (importante):**
+
+```
+⚠️ IDE abierto automáticamente, pero debes:
+
+PASO 1 - En la nueva ventana del IDE:
+  Abrir Terminal integrado (Cmd+` o View → Terminal)
+
+PASO 2 - Verificar directorio correcto:
+  pwd  # Debe mostrar: ../worktree-XXX/
+
+PASO 3 - Iniciar nueva sesión Claude Code:
+  claude /workflow:session-start
+
+❌ SI NO HACES ESTO: Claude seguirá trabajando en el directorio
+   anterior y NO funcionará correctamente el worktree.
+
+✅ SOLO así tendrás sesiones Claude Code paralelas funcionando.
+```
+
+**Output:**
+
+- Crea worktree: `../worktree-&lt;objetivo&gt;/`
+- Crea branch: `worktree-&lt;objetivo&gt;` (mismo nombre que directorio)
+- Abre IDE automáticamente en nueva ventana (detecta code/cursor)
+- Valida directorio limpio antes de crear
+
+::: tip Cuándo usar
+
+- Trabajo paralelo en múltiples features
+- Bug fixes urgentes sin interrumpir trabajo actual
+- Experimentación/POC sin afectar workspace principal
+  :::
+
+---
+
+### `/ai-framework:git-github:worktree:cleanup`
+
+
+Elimina worktrees con validación de ownership y cleanup triple (worktree/local/remote).
+
+**Usage:**
+
+```bash
+/ai-framework:git-github:worktree:cleanup              # Discovery mode
+/ai-framework:git-github:worktree:cleanup &lt;worktree1&gt;  # Cleanup específico
+```
+
+**Restrictions:**
+
+- Only removes worktrees/branches created por you
+- Never touches protected branches (main, develop, qa, staging, master)
+- Requires clean state (no uncommitted changes)
+
+**Discovery Mode (no arguments):**
+
+Lists available worktrees con suggested commands.
+
+**Phase 1: Discovery**
+
+- Get current canonical path
+- Process worktrees usando `git worktree list --porcelain`
+- Filter by owner (only user's worktrees)
+- Filter out current directory
+- Build numbered list
+
+**Phase 2: User Interaction**
+
+- Show numbered list: "🔍 Tus worktrees disponibles para eliminar:"
+- Ask: "Selecciona números separados por espacios (ej: 1 2) o 'todos':"
+- WAIT para user response
+- Parse input y convert a worktree names
+- Continue con cleanup flow
+
+**Cleanup Mode (with arguments):**
+
+**Per-target validations:**
+
+1. Format validation (alphanumeric + hyphens/underscores only)
+2. Protected branch validation (skip protected branches)
+3. Current directory validation (cannot delete where you are)
+4. Existence validation (verify worktree exists)
+5. Ownership validation (cross-platform compatible):
+   - macOS: `stat -f %Su "$path"`
+   - Linux: `stat -c %U "$path"`
+   - Compare con `whoami`
+6. Clean state validation (no uncommitted changes)
+
+**User Confirmation:**
+
+- Output summary de valid targets
+- Ask: "¿Confirmas la eliminación? Responde 'ELIMINAR' para proceder:"
+- WAIT para user response
+- If response != "ELIMINAR": Cancel y terminate
+- If response == "ELIMINAR": Proceed
+
+**Dual Atomic Cleanup:**
+Para cada confirmed target:
+
+- Remove worktree: `git worktree remove "$target"`
+- Remove local branch: `git branch -D "$branch_name"`
+
+**Logging and Final Cleanup:**
+
+- Log operation en JSONL format
+- Execute `git remote prune origin`
+- Show results report
+
+**Update Current Branch:**
+
+- Execute `git pull`
+- If fails: Warning pero continue
+- If success: "Updated from remote"
+
+**Output:** Triple cleanup + regresa automáticamente a main
+
+**Logging Format:** `.claude/logs/&lt;date&gt;/worktree_operations.jsonl`
+
+::: tip Cuándo usar
+Después de mergear PRs.
+:::
 
 ---
 
@@ -475,7 +1271,10 @@ Post-merge cleanup workflow: actualiza CHANGELOG, limpia worktree, actualiza doc
 
 ### `/ai-framework:utils:understand`
 
+
 Análisis comprehensivo de arquitectura, patrones y dependencies.
+
+**Usage:**
 
 ```bash
 /ai-framework:utils:understand
@@ -486,32 +1285,202 @@ Análisis comprehensivo de arquitectura, patrones y dependencies.
 /ai-framework:utils:understand "authentication module"
 ```
 
-**Output**: Mapeo completo de arquitectura existente
+**Phases:**
 
-**Cuándo usar**: SIEMPRE antes de implementar feature compleja.
+**Phase 1: Project Discovery**
+Usando native tools:
+
+- **Glob** para map entire project structure
+- **Read** key files (README, docs, configs)
+- **Grep** para identify technology patterns
+- **Read** entry points y main files
+
+Discover:
+
+- Project type y main technologies
+- Architecture patterns (MVC, microservices, etc.)
+- Directory structure y organization
+- Dependencies y external integrations
+- Build y deployment setup
+
+**Phase 2: Code Architecture Analysis**
+
+- **Entry points**: Main files, index files, app initializers
+- **Core modules**: Business logic organization
+- **Data layer**: Database, models, repositories
+- **API layer**: Routes, controllers, endpoints
+- **Frontend**: Components, views, templates
+- **Configuration**: Environment setup, constants
+- **Testing**: Test structure y coverage
+
+**Phase 3: Pattern Recognition**
+Identify established patterns:
+
+- Naming conventions para files y functions
+- Code style y formatting rules
+- Error handling approaches
+- Authentication/authorization flow
+- State management strategy
+- Communication patterns between modules
+
+**Phase 4: Dependency Mapping**
+
+- Internal dependencies between modules
+- External library usage patterns
+- Service integrations
+- API dependencies
+- Database relationships
+- Asset y resource management
+
+**Phase 5: Integration Analysis**
+Identify how components interact:
+
+- API endpoints y their consumers
+- Database queries y their callers
+- Event systems y listeners
+- Shared utilities y helpers
+- Cross-cutting concerns (logging, auth)
+
+**Output Format:**
+
+```markdown
+PROJECT OVERVIEW
+├── Architecture: [Type]
+├── Main Technologies: [List]
+├── Key Patterns: [List]
+└── Entry Point: [File]
+
+COMPONENT MAP
+├── Frontend
+│ └── [Structure]
+├── Backend
+│ └── [Structure]
+├── Database
+│ └── [Schema approach]
+└── Tests
+└── [Test strategy]
+
+INTEGRATION POINTS
+├── API Endpoints: [List]
+├── Data Flow: [Description]
+├── Dependencies: [Internal/External]
+└── Cross-cutting: [Logging, Auth, etc.]
+
+KEY INSIGHTS
+
+- [Important finding 1]
+- [Important finding 2]
+- [Unique patterns]
+- [Potential issues]
+```
+
+**When to Use:**
+
+- **MANDATORY**: New codebase, unknown architecture, major refactor (Size L)
+- **RECOMMENDED**: Multi-module changes (Size M), cross-project dependencies
+- **OPTIONAL**: Single-file fixes (Size S), well-understood areas
+
+**Success Criteria - Analysis complete cuando answerable:**
+
+- [ ] What happens cuando [core user action]?
+- [ ] Where would I add [typical feature]?
+- [ ] What breaks si I change [critical module]?
+- [ ] Can I draw data flow desde request a response?
+
+::: tip Cuándo usar
+SIEMPRE antes de implementar feature compleja.
+:::
 
 ---
 
 ### `/ai-framework:utils:three-experts`
 
+
 Panel de 3 expertos (backend/frontend/security) genera plan consensuado.
 
+**Usage:**
+
 ```bash
-/ai-framework:utils:three-experts <goal>
+/ai-framework:utils:three-experts &lt;goal&gt;
 
 # Ejemplo
 /ai-framework:utils:three-experts "Design scalable authentication system"
 ```
 
-**Output**: PLAN.md con propuestas → critique → decisión
+**Expert Panel (Fixed):**
 
-**Cuándo usar**: Features complejas que requieren múltiples perspectivas.
+Use these 3 native Claude Code agents:
+
+1. **backend-architect** → API design, data modeling, services architecture
+2. **frontend-developer** → UI components, user flows, client-side implementation
+3. **security-reviewer** → Threat modeling, compliance, security validation
+
+(_No agent discovery required - these are available en Claude Code memory_)
+
+**Workflow: 2 Rounds**
+
+**Round 1: Proposals (Independent)**
+
+Cada expert provides their perspective:
+
+**Backend Architect:**
+
+- API endpoints y contracts
+- Data model y schema
+- Service architecture y dependencies
+- Performance considerations
+
+**Frontend Developer:**
+
+- UI components y user flows
+- State management approach
+- Client-side integration patterns
+- Accessibility y UX considerations
+
+**Security Reviewer:**
+
+- Threat model y attack vectors
+- Authentication/authorization design
+- Data protection y privacy
+- Compliance requirements
+
+**Round 2: Synthesis & Decision**
+
+- Cross-review each proposal
+- Identify integration points y conflicts
+- Build consensus on unified approach
+- Define implementation priorities
+- Create final implementation plan
+
+**Output: PLAN.md Generation**
+
+Generate single artifact usando template con sections:
+
+- 🎯 OBJETIVO & SCOPE
+- 🏗️ DECISIONES TÉCNICAS (Backend, Frontend, Seguridad)
+- ✅ TAREAS CRÍTICAS
+- 🚧 CRITERIOS DE ÉXITO
+
+**Constitutional Compliance:**
+
+- **Value/Complexity**: ≥2x ratio (simple workflow, high value output)
+- **AI-First**: Fully executable por AI agents via Task tool
+- **Reuse First**: Uses existing Claude Code native agents
+- **Simplicity**: No flags, minimal configuration, focused output
+- **TDD-Ready**: Plan includes testing strategy y criteria
+
+::: tip Cuándo usar
+Features complejas que requieren múltiples perspectivas.
+:::
 
 ---
 
 ### `/ai-framework:utils:docs`
 
+
 Analiza y actualiza documentación usando specialist agents.
+
+**Usage:**
 
 ```bash
 /ai-framework:utils:docs                 # Analizar toda la docs
@@ -522,32 +1491,116 @@ Analiza y actualiza documentación usando specialist agents.
 /ai-framework:utils:docs README CHANGELOG
 ```
 
-**Output**: Documentación actualizada con análisis de calidad
+**Process:**
 
-**Cuándo usar**: Después de features o cambios importantes.
+1. **Analyze** existing documentation (README, CHANGELOG, docs/\*)
+2. **Identify** gaps y outdated content
+3. **Delegate** a documentation specialist via Task tool
+4. **Update** o create documentation as needed
+
+**Capabilities:**
+
+- Gap analysis y documentation planning
+- Content creation con project templates
+- Technical accuracy validation
+- Integration con specialist agents para complex documentation tasks
+
+**Output:** Documentación actualizada con análisis de calidad
+
+::: tip Cuándo usar
+Después de features o cambios importantes.
+:::
 
 ---
 
 ### `/ai-framework:utils:polish`
 
+
 Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mientras mejora calidad.
 
+**Usage:**
+
 ```bash
-/ai-framework:utils:polish <file_paths>
+/ai-framework:utils:polish &lt;file_paths&gt;
 
 # Ejemplo
 /ai-framework:utils:polish src/auth.ts src/components/Login.tsx
 ```
 
-**⚠️ CRÍTICO**: Preserva 100% funcionalidad mientras mejora calidad.
+::: danger CRITICAL DISCLAIMER
+**POLISHING ≠ SCOPE REDUCTION**
 
-**Cuándo usar**: Refinar contenido generado por AI.
+Este comando es para **REFINEMENT**, not **FUNCTIONAL REDUCTION**.
+:::
+
+**Mandate:** Si file serves critical user workflow (daily use, core functionality), prioritize COMPLETE PRESERVATION over optimization.
+
+**Examples of CORRECT polishing:**
+
+- Fix syntax errors, inconsistent formatting, broken links
+- Eliminate promotional language, redundant explanations
+- Standardize naming conventions, improve clarity
+- Remove duplicate information, optimize structure
+
+**Examples of INCORRECT reduction:**
+
+- Removing methodology sections desde analysis commands
+- Cutting algorithm logic para "brevity"
+- Eliminating core features para "simplify"
+- Reducing command capabilities para "efficiency"
+
+**Universal Polishing Protocol (5 Phases):**
+
+**Phase 1: Syntax & Structure Validation**
+
+1. Documentation Files (.md, .rst, .txt)
+2. Configuration Files (.json, .yaml, .env)
+3. Data Files (.csv, .sql, .xml)
+4. Code Files (any language)
+5. Scripts & Templates (.sh, .html, .css)
+
+**Phase 2: Logical Coherence Audit** 6. Information Flow 7. Configuration Logic 8. Data Integrity 9. Functional Logic 10. Template Logic
+
+**Phase 3: Consistency & Standards Enforcement** 11. Naming Conventions 12. Format Standardization 13. Language Standards 14. Cross-file Consistency 15. Professional Standards
+
+**Phase 4: Redundancy & Optimization Elimination** 16. Content Duplication 17. Unused Elements 18. Complexity Reduction 19. Performance Optimization 20. Resource Cleanup
+
+**Phase 5: Communication & Content Quality** 21. Professional Language 22. Documentation Clarity 23. Content Accuracy
+
+**Zero-Tolerance Polish Standards:**
+
+**Critical Issues (Must Fix):**
+
+1. Syntax Errors
+2. Security Vulnerabilities
+3. Broken References
+4. Data Corruption
+5. Functional Failures
+
+**High Priority Issues:**
+
+1. Inconsistent Formatting
+2. Performance Problems
+3. Clarity Issues
+4. Standard Violations
+5. Redundant Content
+
+::: tip Importante
+Preserva 100% funcionalidad mientras mejora calidad.
+:::
+
+::: tip Cuándo usar
+Refinar contenido generado por AI.
+:::
 
 ---
 
 ### `/ai-framework:utils:deep-research`
 
+
 Professional audit con metodología sistemática y multi-source validation.
+
+**Usage:**
 
 ```bash
 /ai-framework:utils:deep-research "<investigation topic>"
@@ -556,20 +1609,77 @@ Professional audit con metodología sistemática y multi-source validation.
 /ai-framework:utils:deep-research "OAuth 2.0 security best practices for microservices"
 ```
 
-**Output**: Reporte de investigación con fuentes verificadas
+**Professional Audit Protocol:**
 
-**Cuándo usar**: Investigaciones complejas, due diligence, market research.
+**Phase 1: Engagement Planning & Risk Assessment**
+
+1. Scope Definition - Establish clear investigation boundaries
+2. Risk Matrix Development - Identify key risk areas
+3. Source Strategy - Plan systematic approach a primary/secondary/tertiary sources
+4. Quality Gates - Define verification checkpoints
+
+**Phase 2: Evidence Gathering & Documentation** 5. Multi-Source Validation - Minimum 3 independent sources para material claims 6. Primary Source Priority - Government, academic, regulatory data first 7. Industry Intelligence - Consulting reports, professional analysis 8. Real-time Verification - Current data validation
+
+**Phase 3: Analytical Procedures & Verification** 9. Substantive Testing - Deep-dive analysis de core findings 10. Cross-validation Protocol - Verify claims across multiple reliable sources 11. Gap Analysis - Identify information limitations 12. Professional Judgment - Apply expert-level analytical reasoning
+
+**Source Hierarchies:**
+
+**Tier 1 (Primary - Highest Reliability):**
+
+- Government/Regulatory: .gov sites, central banks, SEC filings
+- Academic: Peer-reviewed journals, university research
+- Official Data: World Bank, IMF, OECD, WHO
+- Legal/Regulatory: Court decisions, regulatory guidance
+
+**Tier 2 (Industry Authoritative - High Reliability):**
+
+- Major Consulting: Deloitte, PwC, EY, KPMG research
+- Strategy Consulting: McKinsey Global Institute, BCG, Bain
+- Financial Intelligence: Bloomberg, Reuters, Financial Times
+- Research Firms: Gartner, Forrester, IDC
+
+**Tier 3 (Corroborative - Supporting Evidence):**
+
+- Quality Journalism: WSJ, The Economist, HBR
+- Industry Bodies: Professional associations
+- Corporate Intelligence: Annual reports, 10-K filings
+- Expert Analysis: Verified subject matter expert commentary
+
+**Anti-Hallucination Rules:**
+
+1. **Source Everything** - Every factual claim requires verifiable source con URL y date
+2. **Multiple Sources** - Material findings require minimum 3 independent confirmations
+3. **Document Conflicts** - All conflicting information must be documented
+4. **State Uncertainty** - Explicitly declare cuando evidence insufficient
+5. **Show Methods** - Document how each piece de evidence was obtained
+6. **Attribute Sources** - Never present unattributed information as fact
+
+**Deliverable Structure:**
+
+1. **Executive Summary**: Key findings con confidence levels
+2. **Methodology & Source Verification**: Complete source hierarchy used
+3. **Detailed Findings & Evidence**: Each finding con full source documentation
+4. **Risk Assessment & Recommendations**: Risk matrix con strategic recommendations
+
+**Output:** Reporte de investigación con fuentes verificadas
+
+::: tip Cuándo usar
+Investigaciones complejas, due diligence, market research.
+:::
 
 ---
 
 ### `/ai-framework:utils:changelog`
 
+
 Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta duplicados.
+
+**Usage:**
 
 ```bash
 /ai-framework:utils:changelog                    # Auto-detectar PRs faltantes
-/ai-framework:utils:changelog <pr_number>        # Single PR
-/ai-framework:utils:changelog <pr1,pr2,pr3>     # Multiple PRs
+/ai-framework:utils:changelog &lt;pr_number&gt;        # Single PR
+/ai-framework:utils:changelog &lt;pr1,pr2,pr3&gt;     # Multiple PRs
 
 # Ejemplos
 /ai-framework:utils:changelog
@@ -577,15 +1687,264 @@ Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta dupl
 /ai-framework:utils:changelog 245,246,247
 ```
 
-**Output**: CHANGELOG.md actualizado siguiendo Keep a Changelog
+**Execution Steps:**
 
-**Cuándo usar**: Después de merge.
+1. **Validación de herramientas**:
+   - Validate `gh` (GitHub CLI) installed
+   - Validate `jq` (JSON processor) installed
+   - Validate `CHANGELOG.md` exists
+
+2. **Auto-detección o parsing manual**:
+
+   **Si $ARGUMENTS vacío (auto-detección):**
+   - Get último PR documentado desde CHANGELOG
+   - Get PRs mergeados desde git log
+   - Filter solo PRs mayores al último
+   - Verify si hay PRs nuevos
+   - If no new PRs: Show "CHANGELOG está actualizado" y exit
+   - If new PRs: Show count y list
+
+   **Si $ARGUMENTS tiene contenido (modo manual):**
+   - Convert arguments a lista (compatible zsh/bash)
+   - Validate todos son números
+   - Show "Procesando PR(s)"
+
+3. **Validación de PRs en GitHub**:
+   - Para cada PR: Execute `gh pr view "$pr" --json number,state,title,url`
+   - If PR not found: Error y TERMINATE
+   - If PR not MERGED: Error y TERMINATE
+   - Show validation confirmation
+
+4. **Detección de duplicados en CHANGELOG**:
+   - Filter PRs duplicados verificando si cada PR ya exists en CHANGELOG.md
+   - Para PRs que ya existen: Show informative message y omit
+   - Para PRs nuevos: Keep en lista para processing
+   - If no PRs remain: Show message y terminate successfully
+
+5. **Actualización de CHANGELOG (Keep a Changelog format)**:
+   - Para cada PR:
+     - Get complete PR data
+     - Extract title
+     - Detect section por commit type (feat: → Added, fix: → Fixed, otros → Changed)
+     - Get current date para organization
+     - Update CHANGELOG con correct order (más recientes primero)
+   - Maintain Keep a Changelog format con entries: `- título (PR #número)`
+
+6. **Validación post-actualización**:
+   - Validate cada PR was inserted correctly
+   - Para cada PR processed: Verify pattern "(PR #número)" exists
+   - If any PR not found: Show specific error y terminate
+
+7. **Resultado final**:
+   - Show success message
+   - Show PRs agregados
+   - Show changes preview
+   - Remind to commit changes
+
+**Output:** CHANGELOG.md actualizado siguiendo Keep a Changelog
+
+::: tip Cuándo usar
+Después de merge.
+:::
+
+---
+
+### `/ai-framework:utils:project-init`
+
+
+Initialize o update project context con deep analysis y agent recommendations.
+
+**Usage:**
+
+```bash
+/ai-framework:utils:project-init
+/ai-framework:utils:project-init deep   # Force deep analysis
+```
+
+**Reuses:** `/ai-framework:utils:understand` phases 1-5 para systematic discovery
+
+**Execution Flow:**
+
+**Phase 1: Detect Existing Context**
+
+- Check si `.specify/memory/project-context.md` exists
+- If YES y no "deep" argument: Confirm overwrite
+- If YES y "deep" argument: Skip confirmation, force overwrite
+- If NO: Proceed directly
+
+**Phase 2: Deep Discovery** (Reuse understand.md logic)
+
+- Execute systematic analysis siguiendo `/utils:understand` methodology
+- Project Discovery, Code Architecture Analysis, Pattern Recognition, Dependency Mapping, Integration Analysis
+
+**Phase 3: Tech Stack Detection (Extended)**
+
+- Parse exact versions y all dependencies desde package managers
+- Node.js: Parse package.json para node_version + dependencies
+- Python: Parse requirements.txt/pyproject.toml para python_version + frameworks
+- Ruby: Parse Gemfile para ruby_version + Rails/RSpec
+- PHP: Parse composer.json para php_version + Laravel/Symfony
+- Go: Parse go.mod para go_version
+- Infrastructure: Docker, Kubernetes, Terraform, CI/CD detection
+
+**Phase 4: Agent Mapping + Gap Analysis**
+
+**A. Load Agent Registry** desde `.claude-plugin/agents/**/*.md`
+
+**B. Map Tech → Agents** (same registry como workspace-status.py):
+
+```yaml
+Core (Always):
+  - code-quality-reviewer, systematic-debugger, test-automator
+
+Languages:
+  python: [python-pro]
+  javascript: [javascript-pro]
+  typescript: [typescript-pro, frontend-developer]
+  ruby: [ruby-pro]
+  php: [php-pro]
+
+Frameworks:
+  react|nextjs: [frontend-developer]
+  fastapi|django|flask: [python-pro, backend-architect]
+  express|fastify: [javascript-pro, backend-architect]
+
+Databases:
+  postgres|mysql|mongodb: [database-optimizer, database-admin]
+
+Infrastructure:
+  docker: [deployment-engineer, devops-troubleshooter]
+  kubernetes: [kubernetes-architect, deployment-engineer]
+  terraform: [terraform-specialist, cloud-architect]
+
+APIs:
+  graphql: [graphql-architect]
+  rest|openapi: [backend-architect, api-documenter]
+```
+
+**C. Gap Detection:**
+
+- Check dependencies para unmapped tech
+- If gaps found: Display recommendation para create custom agent
+
+**Phase 5: Generate Comprehensive project-context.md** con sections:
+
+- 📦 Technology Stack (Core, Key Dependencies, Infrastructure)
+- 🏗️ Architecture (Pattern, Entry Point, Directory tree)
+- 🎨 Code Patterns (Naming Conventions, Error Handling, Testing Strategy)
+- 🤖 Recommended Agents (Core, Project-Specific)
+- 🔗 Integration Points
+- ⚠️ Potential Issues
+
+**Phase 6: Update CLAUDE.md Reference**
+
+- Check si `CLAUDE.md` already references `project-context.md`
+- If not: Add reference after Constitution section
+
+**Output:**
+
+```
+✅ Project context initialized (deep analysis)
+
+📦 Stack Detected:
+   - [Language] [version]
+   - [Framework] [version]
+   - [Database]
+
+🤖 Recommended Agents ([total]):
+   Core: [list]
+   Project-Specific: [list based on tech]
+
+📄 Generated:
+   - .specify/memory/project-context.md
+   - CLAUDE.md (reference added if missing)
+
+⚠️ Potential Issues Flagged: [list]
+
+Next: Claude ahora conoce tu proyecto en profundidad.
+```
+
+::: tip Cuándo usar
+Setup inicial, cuando architecture evoluciona.
+:::
+
+---
+
+### `/ai-framework:utils:setup-dependencies`
+
+
+Instala dependencias esenciales faltantes con platform detection.
+
+**Usage:**
+
+```bash
+/ai-framework:utils:setup-dependencies
+```
+
+**Execution Steps:**
+
+1. **Detect Platform**:
+   - Execute `uname -s`
+   - Determine: darwin (macOS) / linux / unknown
+
+2. **Dependency Registry** (single source of truth):
+
+```bash
+# Format: tool_name|installer|platforms|purpose
+DEPS=(
+    "terminal-notifier|brew|darwin|Notificaciones de tareas completadas"
+    "black|pip|all|Auto-formateo de código Python"
+    # Future additions here
+)
+```
+
+3. **Discover Missing Dependencies**:
+   - Process registry y detect faltantes
+   - Check si tool installed con `command -v "$tool"`
+   - Build list de missing tools
+
+4. **Display Status**:
+   - If all installed: "✅ Todas las dependencias ya instaladas" y exit
+   - If missing: Show list + purposes + platform
+
+5. **Confirm Installation**:
+   - Ask: "¿Proceder con la instalación? (S/n):"
+   - If NO: Show manual installation commands y exit
+   - If YES: Continue
+
+6. **Group by Installer**:
+   - Group dependencies: brew_deps, pip_deps, npm_deps
+
+7. **Install by Package Manager**:
+   - **Homebrew (macOS)**: `brew install $brew_deps`
+   - **pip (Python)**: `pip install $pip_deps` o `pip3 install $pip_deps`
+   - **npm (Node)**: `npm install -g $npm_deps`
+
+8. **Verify Installation**:
+   - Para cada tool: Verify con `command -v`
+   - Show "✅ $tool instalado" o "❌ $tool falló"
+
+9. **Report Results**:
+   - If all installed: "✅ Instalación completada"
+   - If some failed: "⚠️ Algunas instalaciones fallaron" + manual instructions
+
+**Extension Guide:**
+
+Para agregar nuevas dependencias:
+
+1. Add line al array DEPS: `"tool_name|installer|platforms|purpose"`
+2. Supported: installers (brew, pip, npm, apt), platforms (darwin, linux, all)
+3. Automáticamente detecta, agrupa, e instala
+
+::: tip Cuándo usar
+Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
+:::
 
 ---
 
 ## 🎯 Workflows Completos
 
-Ver workflows end-to-end en @ai-first-workflow.md
+### Workflow Comparison Table
 
 | Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                                 |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -594,8 +1953,13 @@ Ver workflows end-to-end en @ai-first-workflow.md
 | **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → **`agent-assignment`** → `[analyze]` → `implement` → `commit` → `pr`             |
 | **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                                          |
 
-**Comandos opcionales**: `[analyze]` `[checklist]` `[sync]`
-**Comando crítico**: **`agent-assignment`** (casi mandatorio, paso 5)
+::: tip Comandos Opcionales
+`[analyze]`, `[checklist]`, `[sync]` son opcionales
+:::
+
+::: tip Optimización Clave
+**`agent-assignment`** (paso 5) ofrece speedup 3-10x para features con 5+ tasks
+:::
 
 ---
 
@@ -603,12 +1967,25 @@ Ver workflows end-to-end en @ai-first-workflow.md
 
 ### Flujo Óptimo
 
-- **NUNCA** saltarse `/ai-framework:SDD-cycle:speckit.clarify` - detecta problemas antes de implementar (paso 2 OBLIGATORIO)
-- **CASI SIEMPRE** usar agent-assignment para features con 5+ tasks - speedup 3-10x (paso 5 CASI MANDATORIO)
-- **SIEMPRE** usar worktrees para trabajo paralelo - evita branch pollution
-- **SIEMPRE** dejar `/ai-framework:git-github:pr` ejecutar security review
-- **OPCIONAL** generar checklists DESPUÉS de implementación para validar calidad (paso 8)
-- **OPCIONAL** sync spec DESPUÉS de implementación completa (paso 9)
+::: tip Paso Valioso
+`/ai-framework:SDD-cycle:speckit.clarify` - detecta problemas antes de implementar. ROI 100:1 (2 min save 4 hours)
+:::
+
+::: tip Recomendación Fuerte
+Usar agent-assignment para features con 5+ tasks ofrece speedup 3-10x (paso 5)
+:::
+
+::: tip SIEMPRE
+
+- Usar worktrees para trabajo paralelo - evita branch pollution
+- Dejar `/ai-framework:git-github:pr` ejecutar security review
+  :::
+
+::: info OPCIONAL
+
+- Generar checklists DESPUÉS de implementación para validar calidad (paso 8)
+- Sync spec DESPUÉS de implementación completa (paso 9)
+  :::
 
 ### Comandos Pre-Production
 
@@ -624,32 +2001,19 @@ Ver workflows end-to-end en @ai-first-workflow.md
 
 ---
 
-## 🎓 Jerarquía por Frecuencia
-
-**Uso Diario** (>5x/día):
-`/ai-framework:git-github:commit` · `/ai-framework:SDD-cycle:speckit.implement`
-
-**Uso Regular** (1-3x/día):
-`/ai-framework:git-github:worktree:create` · `/ai-framework:SDD-cycle:speckit.specify` · `/ai-framework:git-github:pr` · `/ai-framework:utils:understand`
-
-**Uso Semanal**:
-`/ai-framework:SDD-cycle:speckit.clarify` · `/ai-framework:utils:changelog` · `/ai-framework:utils:docs` · `/ai-framework:SDD-cycle:speckit.tasks`
-
-**Uso Mensual/Setup**:
-`/ai-framework:PRP-cycle:prp-new` · `/ai-framework:utils:three-experts` · `/ai-framework:SDD-cycle:speckit.constitution` · `/ai-framework:utils:deep-research`
-
----
 
 ## 📊 Estadísticas del Ecosistema
 
 | Categoría      | Comandos | Notas                                |
-| -------------- | -------: | ------------------------------------ |
-| **PRP-cycle**  |        2 | Business layer                       |
-| **SDD-cycle**  |        9 | Engineering layer (orden específico) |
-| **git-github** |        5 | Delivery layer                       |
-| **utils**      |        8 | Utilidades cross-cutting             |
-| **TOTAL**      |       24 | Comandos disponibles                 |
+| -------------- | -------- | ------------------------------------ |
+| **PRP-cycle**  | 2        | Business layer                       |
+| **SDD-cycle**  | 9        | Engineering layer (orden específico) |
+| **git-github** | 5        | Delivery layer                       |
+| **utils**      | 8        | Utilidades cross-cutting             |
+| **TOTAL**      | 24       | Comandos disponibles                 |
 
 ---
 
-_Última actualización: 2025-10-14 | 24 comandos documentados | PRP-SDD-GitHub ecosystem_
+::: info Última Actualización
+**Fecha**: 2025-10-15 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Ecosystem**: PRP-SDD-GitHub
+:::

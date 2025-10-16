@@ -1,6 +1,10 @@
 # Claude Code Pro-Tips
 
-_Guía técnica para fluir naturalmente con Claude Code_
+::: tip Objetivo
+Fluir naturalmente con Claude Code usando shortcuts, thinking modes, y patterns que funcionan.
+:::
+
+---
 
 ## ⚡ Quick Reference
 
@@ -15,13 +19,15 @@ _Guía técnica para fluir naturalmente con Claude Code_
 | Revertir cambios              | `ESC ESC` o `/rewind` |
 | Cambiar modo permisos         | `Shift+Tab`           |
 
+---
+
 ## 🧠 Control de Razonamiento Extendido
 
 Sistema de razonamiento con niveles progresivos de profundidad.
 
-### Niveles
+### Cuándo Usar Cada Nivel
 
-| Nivel          | Uso                                                        |
+| Nivel          | Uso Recomendado                                            |
 | -------------- | ---------------------------------------------------------- |
 | `thinking`     | Debugging, refactoring simple, code review                 |
 | `think hard`   | Diseño de features, optimización de queries                |
@@ -36,13 +42,19 @@ Sistema de razonamiento con niveles progresivos de profundidad.
 ultrathink analiza esta optimización de performance
 ```
 
-**Toggle** - Presiona `Tab` para activar/desactivar durante sesión
+**Toggle** - Presiona `Tab` durante sesión para activar/desactivar
+
+::: tip Pattern Efectivo
+Start con nivel bajo, escala si el problema es más complejo de lo anticipado. Claude adjusts naturalmente.
+:::
+
+---
 
 ## 📁 Referencias Rápidas con @
 
 Referencia archivos o directorios sin esperar a que Claude los lea.
 
-**Sintaxis**:
+**Sintaxis:**
 
 ```text
 @src/utils/auth.js revisa esta implementación
@@ -50,13 +62,21 @@ Referencia archivos o directorios sin esperar a que Claude los lea.
 compara @src/old-auth.js con @src/new-auth.js
 ```
 
-**Ventajas**: Inmediato, preciso, eficiente con scope de git.
+**Benefits:**
+
+- Inmediato (no wait para tool calls)
+- Preciso (exact file/directory)
+- Eficiente con scope de git
+
+**Pro tip:** Usa `@` para dar context upfront. Claude lee lo que necesita cuando lo necesita.
+
+---
 
 ## ⏮️ Navegación Temporal
 
 Claude Code guarda checkpoints antes de cada edición.
 
-### Revertir
+### Revertir Cambios
 
 **`ESC ESC`** (2 veces) o **`/rewind`** abre menú con 3 opciones:
 
@@ -64,7 +84,7 @@ Claude Code guarda checkpoints antes de cada edición.
 - **Code only**: Revierte archivos, mantiene conversación
 - **Both**: Reset completo a checkpoint
 
-### Casos de Uso
+### Casos de Uso Comunes
 
 ```bash
 # Explorar alternativa
@@ -72,7 +92,7 @@ Claude Code guarda checkpoints antes de cada edición.
 ESC ESC → Code only
 [implementación B]
 
-# Recuperar error
+# Recuperar de error
 [cambios incorrectos]
 ESC ESC → Both
 
@@ -81,62 +101,71 @@ ESC ESC → Both
 ESC ESC → Conversation only
 ```
 
-**Limitaciones**: No trackea bash commands, solo sesión actual, no reemplaza git.
+**Limitaciones:** No trackea bash commands, solo sesión actual, no reemplaza git.
+
+**Pro tip:** Think de `/rewind` como "undo experimental". Git es para undo production.
 
 ---
 
 ## 🔄 Gestión de Conversaciones
 
-### La Regla del Ciclo Negativo
+### La Regla de las 3 Correcciones
 
-**Problema**: Corregir repetidamente al LLM crea ciclo negativo de retroalimentación.
+**El problema:**
+Corregir repetidamente al LLM crea ciclo negativo. Cada corrección añade "ruido" al contexto. LLM persevera en error al intentar "complacer" correcciones.
 
-**Por qué**: Contexto completo (incluyendo errores) se usa como entrada. Cada corrección añade "ruido". LLM persevera en error al intentar "complacer" correcciones.
+**La regla:**
 
-### Regla de las 3 Correcciones
-
-```text
+```
 Intento 1: Resultado incorrecto → Corregir
 Intento 2: Aún incorrecto → Corregir con más contexto
 Intento 3: Sigue incorrecto → STOP
 ```
 
-**En intento 3, no sigas corrigiendo:**
+**En intento 3, en lugar de seguir corrigiendo:**
 
 1. Usa `/rewind` si error fue reciente
 2. Inicia nueva conversación con contexto claro
 3. Reformula el problema - quizás instrucción fue ambigua
 
+**Por qué funciona:** Fresh start elimina el "ruido" acumulado. Claude procesa tu request sin bias de intentos fallidos previos.
+
+---
+
 ### Anti-Pattern: "Maldecir" al LLM
 
-❌ **No hagas**:
+❌ **No hagas:**
 
-```text
+```
 "No, eso está mal"
 "Te dije que no hicieras eso"
 "¿Por qué no entiendes?"
 ```
 
-✅ **Haz**:
+✅ **Haz:**
 
-```text
+```
 ESC ESC → Both
 [Nueva conversación]
 "Necesito implementar X. Contexto: Y. Restricciones: Z."
 ```
 
+**Por qué:** LLM no tiene "memoria emocional". Frustración en tus mensajes solo añade tokens que confunden el context.
+
+---
+
 ### Cuándo Empezar de Nuevo
 
-**Indicadores**:
+**Indicadores claros:**
 
 - 3+ correcciones sin progreso
 - LLM repite mismo error
 - Respuestas confusas o inconsistentes
 - Cambio significativo de dirección
 
-**Template para nueva conversación**:
+**Template para nueva conversación:**
 
-```text
+```
 ultrathink necesito [objetivo claro]
 
 Contexto:
@@ -154,20 +183,20 @@ Enfoque esperado:
 
 ## ⚙️ Control de Permisos
 
-4 modos de permisos:
+4 modos de permisos disponibles:
 
 | Modo                | Comportamiento                            |
 | ------------------- | ----------------------------------------- |
 | `default`           | Pide confirmación para acciones sensibles |
 | `acceptEdits`       | Auto-acepta ediciones de archivos         |
-| `bypassPermissions` | Bypass total (CI/CD)                      |
+| `bypassPermissions` | Bypass total (para CI/CD)                 |
 | `plan`              | Solo planifica, no ejecuta                |
 
 ### Cambiar Modo
 
 **`Shift+Tab`**: Cicla entre modos
 
-**Configuración persistente** en `.claude/settings.json`:
+**Configuración persistente** en `.claude/settings.local.json`:
 
 ```json
 {
@@ -181,36 +210,38 @@ Enfoque esperado:
 
 ### Casos de Uso
 
-| Contexto         | Modo                | Razón            |
+| Contexto         | Modo Recomendado    | Razón            |
 | ---------------- | ------------------- | ---------------- |
 | Desarrollo Local | `acceptEdits`       | Flujo rápido     |
 | CI/CD            | `bypassPermissions` | Automatización   |
 | Exploración      | `plan`              | Ver sin ejecutar |
 | Producción       | `default`           | Control manual   |
 
-⚠️ **Precaución**: `bypassPermissions` elimina TODAS las confirmaciones. Solo para automatización.
+::: warning Precaución
+`bypassPermissions` elimina TODAS las confirmaciones. Solo para automatización confiable.
+:::
 
 ---
 
 ## 🔍 Análisis de Pull Requests
 
-Claude Code integra con GitHub CLI:
+Claude Code integra con GitHub CLI para análisis conversacional:
 
 ```bash
-# Análisis conversacional directo
+# Natural language directo
 "Analiza el PR #210 y evalúa los hallazgos objetivamente"
 "Revisa los comentarios del PR actual y sugiere qué corregir"
 ```
 
-**Capacidades**:
+**Qué hace Claude:**
 
 - Consulta estado, comentarios, checks via `gh pr view`
 - Evalúa hallazgos críticamente (validez técnica, contexto, ROI)
 - Aplica correcciones y commitea cambios
 
-**Workflow**:
+**Workflow típico:**
 
-```text
+```
 1. "Analiza PR #210"     → Claude usa gh para datos
 2. Claude presenta evaluación crítica
 3. "Corrige X e Y"       → Aplica solo fixes confirmados
@@ -223,13 +254,17 @@ Claude Code integra con GitHub CLI:
 
 ### Validación de Contexto
 
-Antes de comandos críticos:
+Antes de comandos importantes, verifica:
 
 ```bash
 git branch    # ¿Branch correcto?
 pwd           # ¿Directorio correcto?
 git status    # ¿Cambios pendientes?
 ```
+
+**Por qué:** Previene "oh, estaba en la branch equivocada" después de 30 minutos de trabajo.
+
+---
 
 ### Checkpointing Proactivo
 
@@ -242,40 +277,48 @@ git commit -m "checkpoint: antes de refactor X"
 # Si falla: git reset --hard HEAD
 ```
 
-### Uso de Ecosistema
-
-**Agentes especializados**: @agents-guide.md (45 agentes)
-**Comandos disponibles**: @commands-guide.md (24 comandos)
-**Workflows completos**: @ai-first-workflow.md
+**Benefit:** Git checkpoint + Claude `/rewind` = doble red de seguridad.
 
 ---
 
-## 💡 Tips Finales
+## 💡 Combinaciones Poderosas
 
-### Combinaciones Poderosas
+### ultrathink + @directorio
 
-**ultrathink + @directorio**
-
-```text
+```bash
 ultrathink analiza la arquitectura de @src/core
 ```
 
-**ESC ESC + nueva conversación**
+**Por qué funciona:** Claude gets deep context upfront + razonamiento profundo = architectural insights precisos.
 
-```text
+---
+
+### ESC ESC + nueva conversación
+
+```
 [resultado no deseado]
 ESC ESC → Both
 [nueva conversación con contexto limpio]
 ```
 
-**Tab + thinking explícito**
+**Cuándo:** Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto.
 
-```text
+---
+
+### Tab + thinking explícito
+
+```
 Tab (activar razonamiento)
 "ultrathink diseña este sistema"
 ```
 
-### Flujo Natural
+**Cuándo:** Problems realmente complejos. Double thinking = Claude goes extra deep.
+
+---
+
+## 🎯 Flujo Natural Recomendado
+
+**Secuencia que funciona:**
 
 1. **Inicia con contexto** - Usa `@` para archivos relevantes
 2. **Ajusta razonamiento** - `Tab` o triggers explícitos según complejidad
@@ -283,11 +326,25 @@ Tab (activar razonamiento)
 4. **3 intentos máximo** - Después → nueva conversación
 5. **Revierte sin miedo** - `ESC ESC` es tu amigo
 
----
-
-📚 **Más guías**: @ai-first-workflow.md · @commands-guide.md · @agents-guide.md
-📖 **Docs oficiales**: [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) · [Extended Thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)
+**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 attempts no funcionan, el approach necesita cambiar, not more corrections.
 
 ---
 
-_Última actualización: 2025-10-14 | Claude Code Pro-Tips_
+## 📚 Referencias
+
+**Documentación del framework:**
+
+- [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
+- [Commands Guide](./commands-guide.md) — 24 comandos
+- [Agents Guide](./agents-guide.md) — 45 specialized agents
+
+**Docs oficiales:**
+
+- [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)
+- [Extended Thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)
+
+---
+
+::: info Última Actualización
+**Fecha**: 2025-10-15 | **Tips**: Claude Code Workflow Optimization
+:::
