@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2025-10-16
+
+### Added
+
+**Documentation Quality & Version Management** (PR #9)
+
+- VersionBadge Vue component with Pure Text Minimal design for version comparison display
+- Automated version synchronization script (sync-versions.cjs) triggered by npm version hooks
+- Version Management section in README.md documenting release workflow
+- Qualitative component descriptions replacing hardcoded counts with authoritative links
+
+### Removed
+
+**Visual Simplification** (PR #9)
+
+- Redundant GitHub release badge from hero section (replaced by VersionBadge component)
+- Decorative emojis from documentation headings and content (preserved functional: ✅❌⚠️➜)
+- Broken markdown links from feature card details in homepage
+- Hardcoded component counts throughout documentation
+
+---
+
 ## [1.1.0] - 2025-10-15
 
 ### Added
