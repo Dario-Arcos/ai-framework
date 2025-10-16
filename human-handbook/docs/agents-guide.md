@@ -10,8 +10,8 @@ _Extensa biblioteca de agentes especializados organizados por dominio y frecuenc
 
 ## Resumen Ejecutivo
 
-| Categoría                                                                   | Agentes | Uso Recomendado                                       |
-| --------------------------------------------------------------------------- | ------- | ----------------------------------------------------- |
+| Categoría                                                             | Agentes | Uso Recomendado                                       |
+| --------------------------------------------------------------------- | ------- | ----------------------------------------------------- |
 | [Architecture & System Design](#architecture-system-design)           | 8       | Diseño de APIs, arquitectura de sistemas, multi-cloud |
 | [Code Review & Security](#code-review-security)                       | 5       | Revisión de código, seguridad, edge cases             |
 | [Database Management](#database-management)                           | 2       | Optimización de BD, administración cloud              |
@@ -201,36 +201,40 @@ Experto en infraestructura cloud-native, workflows GitOps avanzados (ArgoCD/Flux
 
 ---
 
-### `agent-assignment-analyzer`
+### `agent-strategy-advisor`
 
-Especialista en análisis inteligente de tareas y selección de agentes para workflows de ejecución paralela.
+Asesor estratégico para selección inteligente de agentes y planificación de trabajo. Analiza cualquier descripción de trabajo y recomienda agents óptimos con rationale detallado.
 
-::: tip Uso Proactivo
-**Cuándo usar**: Para workflows multi-tarea que requieren distribución óptima.
+::: tip Herramienta Consultiva
+**Cuándo usar**: Planificando trabajo complejo, aprendiendo ecosistema de agentes, o incierto qué agent usar.
 :::
 
-**Protocolo de análisis:**
+**Propósito:**
 
-1. **Parse Task List**: Extraer IDs de tareas, descripciones, referencias de archivos
-2. **Identify Task Types**: Categorizar por dominio usando keywords
-3. **Extract File Dependencies**: Parsear todos los paths de archivos referenciados
-4. **Detect Parallel Markers**: Identificar tareas marcadas con [P] para ejecución paralela
+- NO ejecuta tareas (solo analiza y recomienda)
+- SÍ genera planes estratégicos consultables
+- SÍ educa sobre selección de agentes
+- SÍ analiza ROI realista
 
-**Estrategia de asignación:**
+**Input flexible:**
 
-- Setup/config → DevOps & Deployment
-- Test tasks → Testing & Debugging
-- API/Backend → Architecture & System Design
-- Frontend/UI → Architecture & System Design (técnico) o User Experience & Design (UX)
-- Database/Schema → Database Management
-- Security → Code Review & Security
+- tasks.md, free-form text, user stories, problem statements
 
-**Output estructurado:**
-| Stream | Agent Type | Tasks | Can Start | Dependencies | Files at Risk |
-|--------|------------|-------|-----------|--------------|---------------|
-| Stream A | [agent-name] | T001, T003 | Immediately | None | src/api/_.ts |
-| Stream B | [agent-name] | T002, T004 | Immediately | None | tests/_.spec.ts |
-| Stream C | [agent-name] | T005 | After Stream A | Stream A complete | src/components/\*.tsx |
+**Output:**
+
+Strategic plan con work analysis, agent recommendations, execution strategy, educational guide, honest assessment.
+
+**Usage:**
+
+```bash
+/ai-framework:Task agent-strategy-advisor "Analiza mi tasks.md y recomienda agentes"
+/ai-framework:Task agent-strategy-advisor "Build REST API with Python and PostgreSQL"
+```
+
+**Anti-Overengineering:**
+
+- S ≤ 80 LOC: Main Claude suficiente
+- Agent overhead = 5-10 min → Usar solo si ROI > 1.5x
 
 ---
 
@@ -2113,5 +2117,5 @@ SIEMPRE incluir security, performance, observability
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-15 | **Agentes Documentados**: 45 | **Categorías**: 11
+**Fecha**: 2025-10-16 | **Agentes Documentados**: 45 | **Categorías**: 11
 :::

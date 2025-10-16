@@ -264,5 +264,5 @@ export MY_API_TOKEN="actual_token"
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-15 | **Servers**: 2 instalados por default
+**Fecha**: 2025-10-16 | **Servers**: 2 instalados por default
 :::
