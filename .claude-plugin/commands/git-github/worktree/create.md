@@ -10,16 +10,16 @@ Creates worktree from specified parent branch with consistent naming.
 ## Usage
 
 ```bash
-/worktree:create "<objetivo-descripción>" <parent-branch>  # Ambos argumentos obligatorios
+/worktree:create <objetivo-descripción> <parent-branch>  # Ambos argumentos obligatorios
 ```
 
 ## Examples
 
 ```bash
-/worktree:create "implementar autenticacion OAuth" main        # → worktree-implementar-autenticacion-oauth
-/worktree:create "fix bug critico en pagos" develop            # → worktree-fix-bug-critico-en-pagos
-/worktree:create "refactor dashboard usuarios" main            # → worktree-refactor-dashboard-usuarios
-/worktree:create "add API endpoints v2" qa                     # → worktree-add-api-endpoints-v2
+/worktree:create implementar autenticacion OAuth main        # → worktree-implementar-autenticacion-oauth
+/worktree:create fix bug critico en pagos develop            # → worktree-fix-bug-critico-en-pagos
+/worktree:create refactor dashboard usuarios main            # → worktree-refactor-dashboard-usuarios
+/worktree:create add API endpoints v2 qa                     # → worktree-add-api-endpoints-v2
 ```
 
 ## Execution
@@ -28,10 +28,12 @@ When executing this command with `$ARGUMENTS`, follow these steps:
 
 ### 1. Argument validation
 
-- Count arguments in `$ARGUMENTS` using array expansion
-- Si no hay exactamente 2 argumentos, mostrar error: "❌ Error: Se requieren 2 argumentos. Uso: /worktree:create \"<objetivo>\" <parent-branch>"
-- Capture first argument as `objetivo_descripcion` and second as `parent_branch`
-- Mostrar: "Creando worktree para: <objetivo_descripcion> desde rama padre: <parent_branch>"
+- Split `$ARGUMENTS` into array using bash array expansion
+- Extract last element as `parent_branch` (e.g., using `${args[-1]}` or `${args[${#args[@]}-1]}`)
+- Extract all elements except last as `objetivo_descripcion` (e.g., using `${args[@]:0:${#args[@]}-1}`)
+- If `parent_branch` is empty: show error "❌ Error: Se requiere rama padre. Uso: /worktree:create <objetivo> <parent-branch>" and terminate
+- If `objetivo_descripcion` is empty: show error "❌ Error: Se requiere descripción del objetivo. Uso: /worktree:create <objetivo> <parent-branch>" and terminate
+- Mostrar: "Creando worktree para: $objetivo_descripcion desde rama padre: $parent_branch"
 
 ### 2. Working directory validation
 
@@ -74,9 +76,9 @@ When executing this command with `$ARGUMENTS`, follow these steps:
 
 - Execute `git checkout "$parent_branch"` to switch to parent
 - If fails, show error: "❌ Error: No se pudo cambiar a $parent_branch" and terminate
-- Execute `git pull origin "$parent_branch"` to update from remote
-- If fails, show warning: "⚠️ No se pudo actualizar $parent_branch desde remoto" but continue
-- Si exitoso, mostrar: "✓ Rama padre actualizada desde remoto"
+- Execute `git pull origin "$parent_branch" --ff-only` to update from remote
+- If fails, show error: "❌ Error: No se pudo actualizar desde remoto. Trabajar desde rama desactualizada puede causar conflictos" and terminate
+- Si exitoso, mostrar: "✓ Rama padre actualizada y lista"
 
 ### 7. Create worktree
 
@@ -84,15 +86,15 @@ When executing this command with `$ARGUMENTS`, follow these steps:
 - If command fails, show error: "❌ Error: No se pudo crear worktree" and terminate
 - Mostrar: "✅ Worktree created: $worktree_path with branch $branch_name"
 
-### 8. Open IDE automatically
+### 8. Open IDE (Optional)
 
 - Detect available IDE by executing commands in order:
   - `which code > /dev/null 2>&1` para VS Code
   - `which cursor > /dev/null 2>&1` para Cursor
-- If IDE is found, execute `(cd "$worktree_path" && [IDE_COMMAND] . --new-window)` where [IDE_COMMAND] is `code` or `cursor`
-- Si IDE se abre exitosamente, mostrar: "✅ IDE abierto en nueva ventana: $worktree_path"
-- Si no se encuentra IDE disponible, mostrar: "⚠️ No se encontró IDE compatible. Abre manualmente: [IDE] $worktree_path"
-- If fails to open IDE, show warning: "⚠️ No se pudo abrir IDE automáticamente" but continue
+- If IDE is found, execute `(cd "$worktree_path" && [IDE_COMMAND] . --new-window) &` where [IDE_COMMAND] is `code` or `cursor`
+- If successful: show "✅ IDE abierto en nueva ventana"
+- If not found or fails: show "ℹ️ Abre manualmente: [code|cursor] $worktree_path"
+- Continue regardless of IDE result
 
 ### 9. Logging and final result
 
@@ -102,26 +104,10 @@ When executing this command with `$ARGUMENTS`, follow these steps:
 - Show successful status:
 
   ```
-  ✅ Worktree created successfully:
-  - Directory: $worktree_path
-  - Branch: $branch_name (local)
-  - Rama padre: $parent_branch
-
-  ⚠️  CRÍTICO: IDE abierto automáticamente, pero debes:
-
-  PASO 1 - En la nueva ventana del IDE:
-    Abrir Terminal integrado (Cmd+` o View → Terminal)
-
-  PASO 2 - Verificar directorio correcto:
-    pwd  # Debe mostrar: $worktree_path
-
-  PASO 3 - Iniciar nueva sesión Claude Code:
-    claude /workflow:session-start
-
-  ❌ SI NO HACES ESTO: Claude seguirá trabajando en el directorio
-     anterior y NO funcionará correctamente el worktree.
-
-  ✅ SOLO así tendrás sesiones Claude Code paralelas funcionando.
+  ✅ Worktree creado y listo para usar:
+  - Directorio: $worktree_path
+  - Rama: $branch_name (local, desde $parent_branch)
+  - IDE abierto automáticamente en nueva ventana
   ```
 
 ## 📊 Logging Format Template

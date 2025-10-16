@@ -2,7 +2,7 @@
 
 **Transform any project into an AI-first development environment in 30 seconds.**
 
-Constitutional SDD governance · Extensive library of specialized agents ([see all](https://dario-arcos.github.io/ai-framework/agents-guide)) · Intelligent hooks · Zero configuration
+Constitutional SDD governance · Specialized agents · Intelligent hooks · Zero configuration
 
 ---
 
@@ -17,7 +17,7 @@ Not a collection of tools—a complete **development system** built on state-of-
 - **Persuasion Architecture** — Prompting strategies that maximize AI output quality
 - **Graph-Based Workflows** — Dependencies mapped, parallel execution optimized
 
-Implemented through extensive library of specialized agents ([see all](https://dario-arcos.github.io/ai-framework/agents-guide)), complete command suite ([see all](https://dario-arcos.github.io/ai-framework/commands-guide)), intelligent hooks, and MCP servers.
+Implemented through specialized agents, slash commands (SDD cycle is core), intelligent hooks, and MCP servers.
 
 ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
@@ -102,9 +102,10 @@ your-project/
 
 ### Plugin Components (via Claude Code)
 
-- **Specialized Agents** — 13 categories (Architecture, Security, Testing, DevOps...) ([see all](https://dario-arcos.github.io/ai-framework/agents-guide))
-- **Slash Commands** — 4 modules (SDD cycle, Git/GitHub, Utils, Docs) ([see all](https://dario-arcos.github.io/ai-framework/commands-guide))
-- **Intelligent Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
+- **Agents** — Architecture, Security, Testing, DevOps, Database, Documentation, UX/Design, Performance
+- **Commands** — SDD cycle, Git/GitHub automation, Project utilities
+- **Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
+- **MCP Servers** — Playwright (browser automation), Shadcn (UI components)
 
 ---
 
@@ -153,8 +154,8 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 
 - [Quickstart](https://dario-arcos.github.io/ai-framework/quickstart) — 15 minutes to productive
 - [MCP Servers](https://dario-arcos.github.io/ai-framework/mcp-servers) — Extend Claude Code capabilities
-- [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — Complete command suite
-- [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — Extensive library of specialized agents
+- [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — Slash commands reference
+- [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — Specialized agents catalog
 
 Constitution · Always Works™ methodology · Context engineering · Design principles
 

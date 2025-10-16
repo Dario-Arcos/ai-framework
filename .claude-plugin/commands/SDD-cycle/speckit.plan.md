@@ -37,6 +37,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
+
    ```
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
@@ -65,14 +66,18 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Use standard REST/GraphQL patterns
    - Output OpenAPI/GraphQL schema to `/contracts/`
 
-3. **Agent context update**:
+3. **Agent context update** (DISABLED):
+   <!-- DISABLED: Using static CLAUDE.md configuration instead of dynamic updates
    - Run `.specify/scripts/bash/update-agent-context.sh claude`
    - These scripts detect which AI agent is in use
    - Update the appropriate agent-specific context file
    - Add only new technology from current plan
    - Preserve manual additions between markers
+   -->
+   - SKIPPED: Project uses static CLAUDE.md with robust governance configuration
+   - To re-enable: Uncomment lines above and ensure CLAUDE.md has `## Active Technologies` and `## Recent Changes` sections
 
-**Output**: data-model.md, /contracts/*, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/\*, quickstart.md
 
 ## Key rules
 
