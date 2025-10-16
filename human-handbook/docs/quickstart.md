@@ -1,162 +1,126 @@
-# Quickstart: 15 Minutes to Productive
+# Quickstart: 30 Segundos a Productivo
 
-## Step 1: Validate System (2 min)
-
-```bash
-git clone https://github.com/Dario-Arcos/ai-framework.git
-cd ai-framework
-./scripts/init.sh
-```
-
-**System checks:** Claude Code CLI, Git, Python, GitHub CLI, Node.js, formatters, notifications.
-
-**Troubleshooting:** The script provides exact installation links for missing dependencies.
-
-**Full dependency list:** Ver README.md del repositorio (sección Prerequisites)
+::: tip Objetivo
+Instalar el framework y ejecutar tu primera feature en 5 minutos.
+:::
 
 ---
 
-## Step 2: Configure (5 min)
+## ⚡ Instalación (30 segundos)
 
-### GitHub CLI Authentication
+### Paso 1: Install Plugin
 
 ```bash
-gh auth login
+/plugin marketplace add Dario-Arcos/ai-framework
+/plugin install ai-framework@ai-framework
 ```
 
-### MCP Servers Setup
+### Paso 2: Start en Tu Proyecto
 
 ```bash
-cp .mcp.json.example .mcp.json
-```
-
-Enables Playwright (browser testing) and Shadcn (UI components).
-
-### Verification
-
-```bash
-./scripts/init.sh  # All checks should pass with ✓
-```
-
----
-
-## Step 3: Deploy (3 min)
-
-### Single Project Deployment
-
-```bash
-cp -r .claude/ /path/to/your/project/
 cd /path/to/your/project
 claude
 ```
 
+::: tip Auto-Install
+El framework se auto-instala en la primera sesión.
+:::
+
+### Paso 3: Restart Claude Code
+
+::: warning Importante
+Sal y reabre Claude Code para cargar el framework. Este paso es necesario para que comandos y agentes estén disponibles.
+:::
+
+**Done.** 30 segundos.
+
 ---
 
-## Step 4: First Session (5 min)
+## 🔧 Post-Instalación (2 minutos)
 
-### Map Codebase Context
+### Initialize Project Context
+
+```bash
+/ai-framework:utils:project-init
+```
+
+Analiza tu codebase y configura agent recommendations.
+
+**Output esperado:**
 
 ```
-/ai-framework:utils:understand
+✅ Project context initialized
+
+📦 Stack Detected: [Tu tech stack]
+🤖 Recommended Agents: [Agents para tu proyecto]
+📄 Generated: .specify/memory/project-context.md
 ```
 
-**Purpose:** Claude analyzes your entire codebase architecture, preventing hours of refactoring later.
+### Install Dependencies (Opcional)
 
-### Complete Feature Implementation
-
-**Opción A: Branch simple** (desarrollo lineal)
-
+```bash
+/ai-framework:utils:setup-dependencies
 ```
-/ai-framework:SDD-cycle:speckit.specify "add input validation to registration form"
-# → Crea branch 001-add-input-validation en MISMO directorio
+
+Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
+
+---
+
+## 🎯 Primera Feature (5 minutos)
+
+### Quick Path
+
+```bash
+/ai-framework:SDD-cycle:speckit.specify "add user email validation"
 /ai-framework:SDD-cycle:speckit.clarify
 /ai-framework:SDD-cycle:speckit.plan
 /ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
-/ai-framework:SDD-cycle:speckit.analyze
 /ai-framework:SDD-cycle:speckit.implement
 ```
 
-**Opción B: Worktree aislado** (trabajo paralelo, RECOMENDADO)
+::: tip Recomendación Importante
+El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que toma.
+:::
 
-```
-/ai-framework:git-github:worktree:create "add input validation to registration form" main
-# → Abre IDE en nueva ventana
-# ⚠️ En nueva ventana: Cmd+` para abrir terminal, luego:
-pwd  # Verificar: debe mostrar ../worktree-add-input-validation/
-claude  # Iniciar nueva sesión Claude
+### Create PR
 
-# Continuar con SDD workflow (ORDEN CORRECTO):
-/ai-framework:SDD-cycle:speckit.specify "add input validation to registration form"
-/ai-framework:SDD-cycle:speckit.clarify
-/ai-framework:SDD-cycle:speckit.plan
-/ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
-/ai-framework:SDD-cycle:speckit.analyze
-/ai-framework:SDD-cycle:speckit.implement
-```
-
-**Workflow (ORDEN CORRECTO):** Specification → Clarification → Planning → Task generation → **Agent Assignment (CRÍTICO)** → Cross-artifact analysis → TDD-enforced implementation with specialized agents.
-
-### Create Production-Ready PR
-
-```
-/ai-framework:git-github:commit "feat: add registration validation"
+```bash
+/ai-framework:git-github:commit "feat: add email validation"
 /ai-framework:git-github:pr develop
 ```
 
-**Output:** Security-reviewed PR with comprehensive description, test plan, and CI/CD integration.
+Security review automático ejecuta antes de crear PR.
 
 ---
 
-## Common Issues
+## ❓ Troubleshooting
 
-| Problem                   | Solution                                           |
-| ------------------------- | -------------------------------------------------- |
-| Claude unresponsive       | `claude --reset-config`                            |
-| GitHub CLI authentication | `gh auth logout && gh auth login`                  |
-| MCP servers not working   | Verify `.mcp.json` exists, restart Claude CLI      |
-| Init script fails         | `chmod +x scripts/init.sh && bash scripts/init.sh` |
-| Missing notifications     | Check system notification permissions              |
+| Issue                    | Solution                                    |
+| ------------------------ | ------------------------------------------- |
+| **Comandos no visibles** | Restart Claude Code                         |
+| **Hooks no ejecutan**    | Verify Python 3.8+: `python3 --version`     |
+| **Plugin not appearing** | `/plugin list` — debe aparecer ai-framework |
 
 ---
 
-## Next Steps
+## 📚 Next Steps
 
-1. **[ai-first-workflow.md](ai-first-workflow.md)** - Complete PRP → SDD → GitHub ecosystem
-2. **[commands-guide.md](commands-guide.md)** - 24 documented commands
-3. **[agents-guide.md](agents-guide.md)** - 45 specialized agents
-4. **[claude-code-pro-tips.md](claude-code-pro-tips.md)** - Expert workflow patterns
+**Documentación completa:**
 
----
+- [Commands Guide](./commands-guide.md) — 24 comandos documentados
+- [Agents Guide](./agents-guide.md) — 45 specialized agents
+- [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
+- [MCP Servers](./mcp-servers.md) — Extend capabilities
 
-## Learning Path
+**Requirements:**
 
-**Week 1: Foundation**
-
-- Setup environment
-- Master `/ai-framework:utils:session-start` and `/ai-framework:utils:understand`
-
-**Week 2: Development Cycle**
-
-- Complete SDD workflow (ORDEN CORRECTO: specify → clarify → plan → tasks → agent-assignment → analyze → implement)
-- Practice `/ai-framework:SDD-cycle:speckit.specify`, `/ai-framework:SDD-cycle:speckit.clarify`, agent-assignment (via Task tool), `/ai-framework:SDD-cycle:speckit.implement`
-- Master parallel execution with specialized agents
-
-**Week 3: Version Control**
-
-- GitHub operations
-- Master `/ai-framework:git-github:commit`, `/ai-framework:git-github:pr`, `/ai-framework:git-github:worktree:*`
-
-**Week 4+: Advanced**
-
-- Specialized agents
-- Multi-agent coordination
+- ✅ [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/installation) (required)
+- ✅ [Git](https://git-scm.com/downloads) (required)
+- ✅ [Python 3.8+](https://www.python.org/downloads/) (required)
+- ⚠️ [GitHub CLI](https://cli.github.com/) (recommended para git/github commands)
 
 ---
 
-**Need assistance?** Run `claude "Help me with [issue]"` for setup, debugging, and workflow guidance.
-
----
-
-_Última actualización: 2025-10-14_
+::: info Última Actualización
+**Fecha**: 2025-10-15 | **Version**: 1.0.0
+:::

@@ -1,14 +1,24 @@
 /**
  * AI Framework Brand Colors - Custom Theme
- * Technical Authority: Black + GitHub Blue
+ * Monochrome Power: Pure Authority, Zero BS
  */
 
+/* ===== SMOOTH SCROLLING UX ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Offset for fixed header when scrolling to anchors */
+:target {
+  scroll-margin-top: 80px;
+}
+
 :root {
-  /* ===== BRAND COLORS (GitHub Blue) ===== */
-  --vp-c-brand-1: #1F6FEB;
-  --vp-c-brand-2: #0969DA;
-  --vp-c-brand-3: #1F6FEB;
-  --vp-c-brand-soft: #DFF6FF;
+  /* ===== BRAND COLORS (Monochrome Power) ===== */
+  --vp-c-brand-1: #18181B; /* Zinc-900 black */
+  --vp-c-brand-2: #09090B; /* Zinc-950 deeper */
+  --vp-c-brand-3: #52525B; /* Zinc-600 charcoal */
+  --vp-c-brand-soft: #E4E4E7;
 
   /* ===== BACKGROUNDS (Light Mode) ===== */
   --vp-c-bg: #FFFFFF;
@@ -51,21 +61,63 @@
   --vp-c-divider: #30363D;
   --vp-c-border: #30363D;
 
-  /* ===== BRAND (GitHub Blue in Dark) ===== */
-  --vp-c-brand-1: #58A6FF;
-  --vp-c-brand-2: #1F6FEB;
-  --vp-c-brand-soft: #0D2636;
+  /* ===== BRAND (Monochrome Power Dark Mode) ===== */
+  --vp-c-brand-1: #FAFAFA; /* Zinc-50 white */
+  --vp-c-brand-2: #E4E4E7; /* Zinc-200 lighter */
+  --vp-c-brand-3: #A1A1AA; /* Zinc-400 mid-gray */
+  --vp-c-brand-soft: #27272A;
 }
 
-/* ===== BUTTON OVERRIDES ===== */
+/* ===== BUTTON OVERRIDES - MONOCHROME POWER ===== */
 .VPButton.brand {
-  background-color: var(--vp-c-brand-1);
-  border-color: var(--vp-c-brand-1);
+  background: linear-gradient(135deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Subtle shine effect on hover */
+.VPButton.brand::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.VPButton.brand:hover::before {
+  left: 100%;
 }
 
 .VPButton.brand:hover {
-  background-color: var(--vp-c-brand-2);
-  border-color: var(--vp-c-brand-2);
+  background: linear-gradient(135deg, var(--vp-c-brand-2) 0%, var(--vp-c-brand-3) 100%);
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(24, 24, 27, 0.25);
+}
+
+.VPButton.brand:active {
+  transform: scale(0.98);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode button inversion */
+.dark .VPButton.brand {
+  color: #18181B;
+}
+
+.dark .VPButton.brand:hover {
+  box-shadow: 0 4px 16px rgba(250, 250, 250, 0.2);
+}
+
+.dark .VPButton.brand::before {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
 }
 
 /* ===== LINK COLORS ===== */
@@ -78,9 +130,21 @@
   color: var(--vp-c-brand-2);
 }
 
-/* ===== HOME PAGE BRAND ACCENT ===== */
-.VPHero .name {
-  background: linear-gradient(120deg, var(--vp-c-brand-1) 30%, var(--vp-c-brand-3));
+/* ===== HOME PAGE BRAND ACCENT - MONOCHROME POWER ===== */
+.VPHero .name,
+.VPHero .text {
+  background: linear-gradient(120deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+/* Dark mode hero text - inverted gradient */
+.dark .VPHero .name,
+.dark .VPHero .text {
+  background: linear-gradient(120deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
