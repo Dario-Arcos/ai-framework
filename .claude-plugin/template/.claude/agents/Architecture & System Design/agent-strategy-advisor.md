@@ -84,8 +84,8 @@ Extract from input:
 
 **Discovery Protocol**:
 
-1. Use `Glob` tool: `.claude-plugin/agents/*/` to discover categories
-2. For each category: `.claude-plugin/agents/{category}/*.md` to find agents
+1. Use `Glob` tool: `.claude/agents/*/` to discover categories
+2. For each category: `.claude/agents/{category}/*.md` to find agents
 3. Extract agent names (remove `.md` extension)
 4. Read agent frontmatter for specializations
 5. Map work → categories → specific agents
