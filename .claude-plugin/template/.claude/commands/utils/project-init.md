@@ -149,13 +149,13 @@ fi
 
 **A. Load Agent Registry**
 
-Read all agents from `.claude-plugin/agents/**/*.md`:
+Read all agents from `.claude/agents/**/*.md`:
 
 ```bash
 # Extract agent metadata
 agents=""
 
-for category_dir in .claude-plugin/agents/*/; do
+for category_dir in .claude/agents/*/; do
     category=`basename "$category_dir"`
 
     for agent_file in "$category_dir"*.md; do
