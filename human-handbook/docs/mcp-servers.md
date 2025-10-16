@@ -17,8 +17,8 @@ AI Framework incluye por defecto:
 
 **Por qué estos:**
 
-- **playwright**: Essential para testing automation y design review
-- **shadcn**: Acelera UI development con component library integration
+- **playwright**: Esencial para automatización de pruebas y revisión de diseño
+- **shadcn**: Acelera desarrollo de UI con integración de biblioteca de componentes
 
 Más servidores se agregarán según evolucione el ecosistema.
 
@@ -30,7 +30,7 @@ Más servidores se agregarán según evolucione el ecosistema.
 
 El plugin usa `.claude/settings.local.json` que tiene **mayor precedencia** que otros settings files:
 
-```
+```text
 PRECEDENCIA (mayor → menor):
 1. Enterprise managed policies     (no aplica al plugin)
 2. Command line arguments          (no aplica al plugin)
@@ -119,7 +119,7 @@ claude
 - `context7` — Documentation search
 - `brave-search` — Web search capabilities
 
-**Pro tip:** Start con los 2 incluidos (playwright, shadcn). Agrega más según needs específicas de tu proyecto.
+**Pro tip:** Comienza con los 2 incluidos (playwright, shadcn). Agrega más según necesidades específicas de tu proyecto.
 
 ---
 
@@ -212,7 +212,7 @@ claude
 
 ## 💡 Best Practices
 
-### Start Minimal
+### Comienza de Forma Minimalista
 
 Incluye solo servers que realmente usas. Cada server adicional:
 
@@ -220,7 +220,7 @@ Incluye solo servers que realmente usas. Cada server adicional:
 - Aumenta startup time
 - Añade complejidad a debugging
 
-**Pattern:** Start con 2-3 servers, agrega más cuando hits clara necesidad.
+**Patrón:** Comienza con 2-3 servers, agrega más cuando tengas clara necesidad.
 
 ---
 

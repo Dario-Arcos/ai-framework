@@ -8,7 +8,7 @@ Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesit
 
 ## El Ecosistema en 3 Capas
 
-```
+```text
 PRP (Business Layer)
    ↓ Define WHAT to build
 SDD (Engineering Layer)
@@ -87,7 +87,7 @@ Convierte descripción en spec estructurada. Output: `specs/001-feature/spec.md`
 
 **Por qué importa - Ejemplo:**
 
-```
+```text
 Spec: "Add user authentication"
 
 Sin clarify:
@@ -160,7 +160,7 @@ Genera "unit tests for requirements". Valida que tus requirements estén bien es
 
 **Workflow:**
 
-```
+```text
 analyze → checklist (genera preguntas) → TÚ marcas checkboxes → implement (bloquea si incomplete)
 ```
 
@@ -216,12 +216,12 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 
 ### Con PRP (Business-Driven)
 
-**Cuándo:** Feature needs stakeholder buy-in.
+**Cuándo:** La feature necesita aprobación de stakeholders.
 
 ```bash
 /ai-framework:PRP-cycle:prp-new "feature-name"
 /ai-framework:PRP-cycle:prp-sync "feature-name"
-/ai-framework:SDD-cycle:speckit.specify --from-issue &lt;number&gt;
+/ai-framework:SDD-cycle:speckit.specify --from-issue <number>
 # → Continue steps 2-6 normalmente
 # → Al final: speckit.sync (documenta en GitHub)
 ```
@@ -309,7 +309,7 @@ Si usaste worktree, cleanup regresa automáticamente a main.
 ## Best Practices
 
 **Workflow Selection:**
-Start simple (branch). Upgrade a worktree cuando needs isolation.
+Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamiento.
 
 **Clarify Strategy:**
 Answer questions even if obvious. 2 min ahora > 2 hours later.

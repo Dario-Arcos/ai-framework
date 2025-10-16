@@ -15,7 +15,7 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 /plugin install ai-framework@ai-framework
 ```
 
-### Paso 2: Start en Tu Proyecto
+### Paso 2: Comienza en Tu Proyecto
 
 ```bash
 cd /path/to/your/project
@@ -44,11 +44,11 @@ Sal y reabre Claude Code para cargar el framework. Este paso es necesario para q
 /ai-framework:utils:project-init
 ```
 
-Analiza tu codebase y configura agent recommendations.
+Analiza tu codebase y configura recomendaciones de agentes.
 
 **Output esperado:**
 
-```
+```text
 ✅ Project context initialized
 
 Stack Detected: [Tu tech stack]
