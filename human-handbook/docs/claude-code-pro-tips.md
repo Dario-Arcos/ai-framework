@@ -6,7 +6,7 @@ Fluir naturalmente con Claude Code usando shortcuts, thinking modes, y patterns 
 
 ---
 
-## ⚡ Quick Reference
+## Quick Reference
 
 | Acción                        | Comando/Atajo         |
 | ----------------------------- | --------------------- |
@@ -50,7 +50,7 @@ Start con nivel bajo, escala si el problema es más complejo de lo anticipado. C
 
 ---
 
-## 📁 Referencias Rápidas con @
+## Referencias Rápidas con @
 
 Referencia archivos o directorios sin esperar a que Claude los lea.
 
@@ -107,7 +107,7 @@ ESC ESC → Conversation only
 
 ---
 
-## 🔄 Gestión de Conversaciones
+## Gestión de Conversaciones
 
 ### La Regla de las 3 Correcciones
 
@@ -181,7 +181,7 @@ Enfoque esperado:
 
 ---
 
-## ⚙️ Control de Permisos
+## Control de Permisos
 
 4 modos de permisos disponibles:
 
@@ -223,7 +223,7 @@ Enfoque esperado:
 
 ---
 
-## 🔍 Análisis de Pull Requests
+## Análisis de Pull Requests
 
 Claude Code integra con GitHub CLI para análisis conversacional:
 
@@ -250,7 +250,7 @@ Claude Code integra con GitHub CLI para análisis conversacional:
 
 ---
 
-## 🚀 Workflow Optimization
+## Workflow Optimization
 
 ### Validación de Contexto
 
@@ -281,7 +281,7 @@ git commit -m "checkpoint: antes de refactor X"
 
 ---
 
-## 💡 Combinaciones Poderosas
+## Combinaciones Poderosas
 
 ### ultrathink + @directorio
 
@@ -316,7 +316,7 @@ Tab (activar razonamiento)
 
 ---
 
-## 🎯 Flujo Natural Recomendado
+## Flujo Natural Recomendado
 
 **Secuencia que funciona:**
 
@@ -330,7 +330,7 @@ Tab (activar razonamiento)
 
 ---
 
-## 📚 Referencias
+## Referencias
 
 **Documentación del framework:**
 

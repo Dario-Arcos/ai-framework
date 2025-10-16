@@ -8,22 +8,22 @@ _24 comandos disponibles organizados por flujo de desarrollo_
 
 ---
 
-## 📊 Resumen Ejecutivo
+## Resumen Ejecutivo
 
 | Categoría                                                           | Comandos | Flujo Típico                           |
 | ------------------------------------------------------------------- | -------- | -------------------------------------- |
-| 🎯 [Ciclo PRP (Business Layer)](#🎯-ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
-| 🏗️ [Ciclo SDD (Engineering Layer)](#🏗️-ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
-| 🔄 [Git & GitHub](#🔄-git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| 🛠️ [Utilidades](#🛠️-utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
+| [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
+| [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
+| [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
+| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
 
 ::: tip Orden Recomendado
-Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#🎯-workflows-completos) para la secuencia.
+Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos) para la secuencia.
 :::
 
 ---
 
-## 🎯 Ciclo PRP (Business Layer)
+## Ciclo PRP (Business Layer)
 
 ### `/ai-framework:PRP-cycle:prp-new`
 
@@ -134,7 +134,7 @@ Después de aprobar PRP, para tracking en GitHub.
 
 ---
 
-## 🏗️ Ciclo SDD (Engineering Layer)
+## Ciclo SDD (Engineering Layer)
 
 ::: tip Secuencia Recomendada
 Estos comandos funcionan mejor en el orden especificado. Cada paso prepara el siguiente.
@@ -747,7 +747,7 @@ Este comando REQUIERE parent PRP issue. Specs must always be linked a PRP. Si no
    - Title: "Spec: &lt;feature-name&gt;" (convert kebab-case a Title Case)
    - Body: Use `--body-file` con temporary file
    - Labels: `spec`, `sdd`, `feature`
-   - Add comment a parent issue: "📋 Technical specification created: #&lt;spec_issue_number&gt;"
+   - Add comment a parent issue: "Technical specification created: #&lt;spec_issue_number&gt;"
 
 4. **Update Local Spec File**: Update frontmatter con `github`, `github_synced`, `parent_prd`
 
@@ -828,7 +828,7 @@ Setup inicial o actualización de principios fundamentales.
 
 ---
 
-## 🔄 Git & GitHub
+## Git & GitHub
 
 ### `/ai-framework:git-github:commit`
 
@@ -1062,7 +1062,7 @@ Después de merge exitoso.
 
 ---
 
-## 📦 Gestión de Worktrees
+## Gestión de Worktrees
 
 ::: tip Worktree vs Branch: Entendiendo la Diferencia
 Ver sección detallada en documentación original que explica cuándo usar cada uno.
@@ -1211,7 +1211,7 @@ Lists available worktrees con suggested commands.
 
 **Phase 2: User Interaction**
 
-- Show numbered list: "🔍 Tus worktrees disponibles para eliminar:"
+- Show numbered list: "Tus worktrees disponibles para eliminar:"
 - Ask: "Selecciona números separados por espacios (ej: 1 2) o 'todos':"
 - WAIT para user response
 - Parse input y convert a worktree names
@@ -1267,7 +1267,7 @@ Después de mergear PRs.
 
 ---
 
-## 🛠️ Utilidades
+## Utilidades
 
 ### `/ai-framework:utils:understand`
 
@@ -1456,10 +1456,10 @@ Cada expert provides their perspective:
 
 Generate single artifact usando template con sections:
 
-- 🎯 OBJETIVO & SCOPE
-- 🏗️ DECISIONES TÉCNICAS (Backend, Frontend, Seguridad)
+- OBJETIVO & SCOPE
+- DECISIONES TÉCNICAS (Backend, Frontend, Seguridad)
 - ✅ TAREAS CRÍTICAS
-- 🚧 CRITERIOS DE ÉXITO
+- CRITERIOS DE ÉXITO
 
 **Constitutional Compliance:**
 
@@ -1829,11 +1829,11 @@ APIs:
 
 **Phase 5: Generate Comprehensive project-context.md** con sections:
 
-- 📦 Technology Stack (Core, Key Dependencies, Infrastructure)
-- 🏗️ Architecture (Pattern, Entry Point, Directory tree)
-- 🎨 Code Patterns (Naming Conventions, Error Handling, Testing Strategy)
-- 🤖 Recommended Agents (Core, Project-Specific)
-- 🔗 Integration Points
+- Technology Stack (Core, Key Dependencies, Infrastructure)
+- Architecture (Pattern, Entry Point, Directory tree)
+- Code Patterns (Naming Conventions, Error Handling, Testing Strategy)
+- Recommended Agents (Core, Project-Specific)
+- Integration Points
 - ⚠️ Potential Issues
 
 **Phase 6: Update CLAUDE.md Reference**
@@ -1846,16 +1846,16 @@ APIs:
 ```
 ✅ Project context initialized (deep analysis)
 
-📦 Stack Detected:
+Stack Detected:
    - [Language] [version]
    - [Framework] [version]
    - [Database]
 
-🤖 Recommended Agents ([total]):
+Recommended Agents ([total]):
    Core: [list]
    Project-Specific: [list based on tech]
 
-📄 Generated:
+Generated:
    - .specify/memory/project-context.md
    - CLAUDE.md (reference added if missing)
 
@@ -1942,7 +1942,7 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 
 ---
 
-## 🎯 Workflows Completos
+## Workflows Completos
 
 ### Workflow Comparison Table
 
@@ -1963,7 +1963,7 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 
 ---
 
-## 💡 Tips de Uso
+## Tips de Uso
 
 ### Flujo Óptimo
 
@@ -2002,7 +2002,7 @@ Usar agent-assignment para features con 5+ tasks ofrece speedup 3-10x (paso 5)
 ---
 
 
-## 📊 Estadísticas del Ecosistema
+## Estadísticas del Ecosistema
 
 | Categoría      | Comandos | Notas                                |
 | -------------- | -------- | ------------------------------------ |

@@ -4,29 +4,29 @@
 Usa esta guía para identificar el agente correcto para cada tarea. Todos los agentes están optimizados para ejecutarse de forma paralela cuando sea posible.
 :::
 
-_45 agentes especializados organizados por dominio y frecuencia de uso_
+_Extensa biblioteca de agentes especializados organizados por dominio y frecuencia de uso_
 
 ---
 
-## 📊 Resumen Ejecutivo
+## Resumen Ejecutivo
 
 | Categoría                                                                   | Agentes | Uso Recomendado                                       |
 | --------------------------------------------------------------------------- | ------- | ----------------------------------------------------- |
-| 🏗️ [Architecture & System Design](#🏗️-architecture-system-design)           | 8       | Diseño de APIs, arquitectura de sistemas, multi-cloud |
-| 🔍 [Code Review & Security](#🔍-code-review-security)                       | 5       | Revisión de código, seguridad, edge cases             |
-| 🗄️ [Database Management](#🗄️-database-management)                           | 2       | Optimización de BD, administración cloud              |
-| 🚀 [DevOps & Deployment](#🚀-devops-deployment)                             | 4       | CI/CD, GitOps, troubleshooting, DX                    |
-| 📚 [Documentation & Technical Writing](#📚-documentation-technical-writing) | 5       | Documentación técnica, APIs, tutoriales               |
-| 🚨 [Incident Response & Network](#🚨-incident-response-network)             | 2       | Respuesta a incidentes, ingeniería de redes           |
-| ⚡ [Performance & Observability](#⚡-performance-observability)             | 3       | Optimización de rendimiento, observabilidad           |
-| 🎨 [Shadcn-UI Components](#🎨-shadcn-ui-components)                         | 4       | Componentes UI con shadcn/ui                          |
-| 🧪 [Testing & Debugging](#🧪-testing-debugging)                             | 4       | TDD, testing automatizado, debugging sistemático      |
-| 🎨 [User Experience & Design](#🎨-user-experience-design)                   | 3       | UX premium, animaciones GSAP, design review           |
-| 💻 [Web & Application](#💻-web-application)                                 | 5       | TypeScript, Python, JavaScript, PHP, Ruby             |
+| [Architecture & System Design](#architecture-system-design)           | 8       | Diseño de APIs, arquitectura de sistemas, multi-cloud |
+| [Code Review & Security](#code-review-security)                       | 5       | Revisión de código, seguridad, edge cases             |
+| [Database Management](#database-management)                           | 2       | Optimización de BD, administración cloud              |
+| [DevOps & Deployment](#devops-deployment)                             | 4       | CI/CD, GitOps, troubleshooting, DX                    |
+| [Documentation & Technical Writing](#documentation-technical-writing) | 5       | Documentación técnica, APIs, tutoriales               |
+| [Incident Response & Network](#incident-response-network)             | 2       | Respuesta a incidentes, ingeniería de redes           |
+| [Performance & Observability](#performance-observability)             | 3       | Optimización de rendimiento, observabilidad           |
+| [Shadcn-UI Components](#shadcn-ui-components)                         | 4       | Componentes UI con shadcn/ui                          |
+| [Testing & Debugging](#testing-debugging)                             | 4       | TDD, testing automatizado, debugging sistemático      |
+| [User Experience & Design](#user-experience-design)                   | 3       | UX premium, animaciones GSAP, design review           |
+| [Web & Application](#web-application)                                 | 5       | TypeScript, Python, JavaScript, PHP, Ruby             |
 
 ---
 
-## 🏗️ Architecture & System Design
+## Architecture & System Design
 
 ### `backend-architect`
 
@@ -205,7 +205,6 @@ Experto en infraestructura cloud-native, workflows GitOps avanzados (ArgoCD/Flux
 
 Especialista en análisis inteligente de tareas y selección de agentes para workflows de ejecución paralela.
 
-
 ::: tip Uso Proactivo
 **Cuándo usar**: Para workflows multi-tarea que requieren distribución óptima.
 :::
@@ -235,12 +234,11 @@ Especialista en análisis inteligente de tareas y selección de agentes para wor
 
 ---
 
-## 🔍 Code Review & Security
+## Code Review & Security
 
 ### `code-quality-reviewer`
 
 Reviewer de calidad de código esencial enfocado en principios universales que previenen deuda técnica.
-
 
 ::: tip Uso Proactivo
 **Cuándo usar**: Antes de PRs, auditorías de código, validación arquitectónica.
@@ -277,9 +275,9 @@ Reviewer de calidad de código esencial enfocado en principios universales que p
 
 **Output format:**
 
-- 🚨 **CRITICAL**: Vulnerabilidades de seguridad, issues que causan inestabilidad del sistema
+- **CRITICAL**: Vulnerabilidades de seguridad, issues que causan inestabilidad del sistema
 - ⚠️ **HIGH PRIORITY**: Deuda técnica que incrementa costo de mantenimiento
-- 💡 **SUGGESTIONS**: Mejoras de legibilidad, oportunidades de optimización
+- **SUGGESTIONS**: Mejoras de legibilidad, oportunidades de optimización
 
 ---
 
@@ -400,7 +398,6 @@ Completa revisión de seguridad de los cambios pendientes en la rama actual.
 
 Especialista en seguridad de configuración enfocado en prevenir outages de producción.
 
-
 ::: tip Uso Proactivo
 **Cuándo usar**: Antes de producción, auditorías, compliance.
 :::
@@ -458,7 +455,6 @@ Numeric Change Detected:
 
 Detector especializado de edge cases críticos de producción que causan silent failures y data corruption.
 
-
 ::: tip Uso Proactivo
 **Cuándo usar**: Testing crítico, validación, escenarios de failure.
 :::
@@ -514,7 +510,7 @@ Detector especializado de edge cases críticos de producción que causan silent 
 
 ---
 
-## 🗄️ Database Management
+## Database Management
 
 ### `database-optimizer`
 
@@ -589,7 +585,7 @@ Experto en administración de bases de datos especializando en databases cloud m
 
 ---
 
-## 🚀 DevOps & Deployment
+## DevOps & Deployment
 
 ### `deployment-engineer`
 
@@ -746,7 +742,7 @@ Experto Terraform/OpenTofu especializando en automatización IaC avanzada, gesti
 
 ---
 
-## 📚 Documentation & Technical Writing
+## Documentation & Technical Writing
 
 ### `docs-architect`
 
@@ -1046,7 +1042,7 @@ Crea step-by-step tutorials y educational content desde código. Transforma conc
 
 ---
 
-## 🚨 Incident Response & Network
+## Incident Response & Network
 
 ### `incident-responder`
 
@@ -1125,7 +1121,7 @@ Experto network engineer especializando en modern cloud networking, security arc
 
 ---
 
-## ⚡ Performance & Observability
+## Performance & Observability
 
 ### `performance-engineer`
 
@@ -1265,10 +1261,9 @@ Experto web researcher usando advanced search techniques y synthesis. Domina sea
 
 ---
 
-## 🎨 Shadcn-UI Components
+## Shadcn-UI Components
 
 ### `shadcn-requirements-analyzer`
-
 
 Analiza complex UI feature requests y break down en structured shadcn component requirements. Traduce high-level design concepts en actionable component specifications.
 
@@ -1308,7 +1303,6 @@ Always create structured requirements document at `design-docs/[task-name]/requi
 
 ### `shadcn-component-researcher`
 
-
 Research shadcn/ui components para implementation, gather component details, examples, y installation commands.
 
 ::: tip Uso Proactivo
@@ -1342,7 +1336,6 @@ Research shadcn/ui components para implementation, gather component details, exa
 ---
 
 ### `shadcn-implementation-builder`
-
 
 Build production-ready UI components usando shadcn/ui con proper TypeScript, state management, y validation.
 
@@ -1397,7 +1390,6 @@ export function FeatureName(props: FeatureProps) {
 ---
 
 ### `shadcn-quick-helper`
-
 
 Rapid assistance con shadcn/ui component additions, incluyendo installation commands y basic usage examples.
 
@@ -1467,10 +1459,9 @@ return <Component prop="value">Content</Component>;
 
 ---
 
-## 🧪 Testing & Debugging
+## Testing & Debugging
 
 ### `test-automator`
-
 
 Master AI-powered test automation con modern frameworks, self-healing tests, y comprehensive quality engineering.
 
@@ -1517,7 +1508,6 @@ Master AI-powered test automation con modern frameworks, self-healing tests, y c
 ---
 
 ### `playwright-test-generator`
-
 
 AI agent para autonomous E2E test generation usando Playwright MCP visual exploration.
 
@@ -1599,7 +1589,6 @@ Step 4: Progressive Exploration
 ---
 
 ### `tdd-orchestrator`
-
 
 Master TDD orchestrator especializando en red-green-refactor discipline, multi-agent workflow coordination, y comprehensive test-driven development practices.
 
@@ -1700,10 +1689,9 @@ Debugging Assessment:
 
 ---
 
-## 🎨 User Experience & Design
+## User Experience & Design
 
 ### `premium-ux-designer`
-
 
 Elite specialist que transforma ordinary interfaces en premium, expensive-looking experiences mientras optimiza user flows.
 
@@ -1752,8 +1740,6 @@ Elite specialist que transforma ordinary interfaces en premium, expensive-lookin
 ---
 
 ### `design-review`
-
-
 
 Elite design review specialist con deep expertise en UX, visual design, accessibility, y front-end implementation.
 
@@ -1831,7 +1817,6 @@ Elite design review specialist con deep expertise en UX, visual design, accessib
 
 ### `gsap-animation-architect`
 
-
 Senior GSAP specialist para advanced animation implementations, scroll-driven experiences, y performance-optimized motion design.
 
 ::: tip Uso Proactivo
@@ -1905,7 +1890,7 @@ Always verify current GSAP documentation via WebFetch antes de implementation:
 
 ---
 
-## 💻 Web & Application
+## Web & Application
 
 ### `typescript-pro`
 
@@ -2091,7 +2076,7 @@ Write idiomatic Ruby code con metaprogramming, Rails patterns, y performance opt
 
 ---
 
-## 💡 Tips de Uso
+## Tips de Uso
 
 ### Selección de Agentes
 
