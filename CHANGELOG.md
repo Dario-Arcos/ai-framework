@@ -18,6 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version Management section in README.md documenting release workflow
 - Qualitative component descriptions replacing hardcoded counts with authoritative links
 
+**Workflow Architecture Improvements** (PR #10)
+
+- Optional commands table in ai-first-workflow.md with ROI guidance (analyze, checklist, sync)
+- Checklist section (5.5) in ai-first-workflow.md - PRE-implement quality gate
+- Sync section (7) in ai-first-workflow.md - POST-implement GitHub documentation
+- Agent-strategy-advisor as consultative planning tool
+
+### Changed
+
+**Workflow Simplification** (PR #10)
+
+- SDD workflow simplified from 7 steps to 6 core steps
+- Agent-assignment-analyzer transformed to agent-strategy-advisor (consultative, not automatic)
+- Checklist timing clarified: BEFORE implement (unit tests for requirements methodology)
+- Sync command positioned as optional POST-implement documentation step
+
 ### Removed
 
 **Visual Simplification** (PR #9)
@@ -26,6 +42,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Decorative emojis from documentation headings and content (preserved functional: ✅❌⚠️➜)
 - Broken markdown links from feature card details in homepage
 - Hardcoded component counts throughout documentation
+
+**Workflow Complexity Reduction** (PR #10)
+
+- Agent Assignment step from core SDD workflow (analysis showed negative ROI)
+- 11 spanglish instances (PRE-/POST-, cross-, multi- embedded in Spanish text)
+- Redundant Agent Assignment section from commands-guide.md (63 lines)
+- Obsolete agent-assignment references from workflow tables and tips
+
+### Fixed
+
+**Documentation Accuracy** (PR #10)
+
+- Checklist purpose clarified as "unit tests for requirements writing" (not implementation tests)
+- Spanish/English separation improved (professional terminology usage)
+- Workflow step numbering corrected across all docs
+- Constitutional compliance calculation corrected (L-size, not M-size)
 
 ---
 
