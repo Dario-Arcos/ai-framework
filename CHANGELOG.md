@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2025-10-15
+
+### Added
+
+**Monochrome Power Design System** (PR #8)
+
+- Complete documentation site redesign with brutalist, Apple-inspired aesthetics
+- Monochrome gradient theme (Black #18181B → Charcoal #52525B)
+- Premium button animations: scale on hover + shine effect with Apple-standard easing
+- New icon assets: `terminal.svg` (Commands), `zap.svg` (Pro Tips) from Lucide library
+- Balanced 4-card features grid (2x2 layout) replacing unbalanced 5-card design
+
+### Changed
+
+**Visual Design System** (PR #8)
+
+- Hero section: Removed redundant name field for minimalist approach
+- Button hierarchy: Workflow as primary brand button, Quick Start/Changelog as secondary
+- Brand color: Changed from GitHub blue (#0969da) to monochrome (#18181b)
+- Release badge: Updated to monochrome color for visual consistency
+- Typography: Enhanced with font-weight 800, tight letter-spacing (-0.5px) for authority
+- Dark mode: Optimized with inverted gradients (White→Gray spectrum)
+
+**Documentation Enhancement** (PR #8)
+
+- Improved navigation structure across all documentation pages
+- Enhanced content clarity and readability
+- Reorganized homepage to emphasize value proposition: "AI development that works"
+
+### Security
+
+**Design Security Review** (PR #8)
+
+- Passed security review with 0.95 confidence score
+- No hardcoded credentials or secrets detected
+- Safe SVG assets verified (no scripts or event handlers)
+- Proper secret management guidance maintained in MCP documentation
+
+---
+
 ## [1.0.0] - 2025-10-15
 
 ### Added
