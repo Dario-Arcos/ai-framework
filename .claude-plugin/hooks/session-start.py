@@ -191,12 +191,8 @@ def scan_template_files(template_dir):
         if item.name in [".DS_Store", "gitignore.template"]:
             continue
 
-        # Skip .specify/scripts directory (bash utilities, not synced)
-        rel_path = item.relative_to(template_dir)
-        if str(rel_path).startswith(".specify/scripts/"):
-            continue
-
         # Include all files (settings.local.json needs special handling in sync)
+        rel_path = item.relative_to(template_dir)
         files_to_sync.append(str(rel_path))
 
     return files_to_sync
