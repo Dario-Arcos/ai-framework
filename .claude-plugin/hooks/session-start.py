@@ -198,6 +198,57 @@ def scan_template_files(template_dir):
     return files_to_sync
 
 
+def sync_to_user_level(plugin_root):
+    """
+    Sync commands/ and agents/ to ~/.claude/ (user-level).
+    ALWAYS overwrite (no hash comparison).
+
+    Fixes Issue #8831: Commands not discovered in plugins
+    """
+    user_home = Path.home()
+    user_claude = user_home / ".claude"
+    user_claude.mkdir(exist_ok=True)
+
+    # Target: ~/.claude/commands/ai-framework/ and ~/.claude/agents/ai-framework/
+    commands_dir = user_claude / "commands"
+    agents_dir = user_claude / "agents"
+    commands_dir.mkdir(exist_ok=True)
+    agents_dir.mkdir(exist_ok=True)
+
+    target_cmd = commands_dir / "ai-framework"
+    target_agt = agents_dir / "ai-framework"
+
+    # Source: plugin root
+    source_cmd = plugin_root / "commands"
+    source_agt = plugin_root / "agents"
+
+    synced = []
+
+    # Sync commands
+    if source_cmd.exists():
+        try:
+            if target_cmd.exists():
+                shutil.rmtree(str(target_cmd))
+            shutil.copytree(str(source_cmd), str(target_cmd))
+            synced.append("commands")
+        except (OSError, IOError) as e:
+            msg = "WARNING: Failed to sync commands: " + str(e) + "\n"
+            sys.stderr.write(msg)
+
+    # Sync agents
+    if source_agt.exists():
+        try:
+            if target_agt.exists():
+                shutil.rmtree(str(target_agt))
+            shutil.copytree(str(source_agt), str(target_agt))
+            synced.append("agents")
+        except (OSError, IOError) as e:
+            msg = "WARNING: Failed to sync agents: " + str(e) + "\n"
+            sys.stderr.write(msg)
+
+    return synced
+
+
 def sync_all_files(plugin_root, project_dir):
     """
     Synchronize all framework files (MANDATORY_SYNC approach)
@@ -268,6 +319,9 @@ def main():
                 "ERROR: Plugin root does not exist: " + str(plugin_root) + "\n"
             )
             sys.exit(1)
+
+        # Sync commands and agents to user-level ~/.claude/
+        synced_user = sync_to_user_level(plugin_root)
 
         # Merge .gitignore first (special handling)
         gitignore_updated = merge_gitignore(plugin_root, project_dir)
