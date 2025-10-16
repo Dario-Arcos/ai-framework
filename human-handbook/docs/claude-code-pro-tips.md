@@ -45,7 +45,7 @@ ultrathink analiza esta optimización de performance
 **Toggle** - Presiona `Tab` durante sesión para activar/desactivar
 
 ::: tip Pattern Efectivo
-Start con nivel bajo, escala si el problema es más complejo de lo anticipado. Claude adjusts naturalmente.
+Comienza con nivel bajo, escala si el problema es más complejo de lo anticipado. Claude se ajusta naturalmente.
 :::
 
 ---
@@ -103,7 +103,7 @@ ESC ESC → Conversation only
 
 **Limitaciones:** No trackea bash commands, solo sesión actual, no reemplaza git.
 
-**Pro tip:** Think de `/rewind` como "undo experimental". Git es para undo production.
+**Pro tip:** Piensa en `/rewind` como "undo experimental". Git es para undo production.
 
 ---
 
@@ -326,7 +326,7 @@ Tab (activar razonamiento)
 4. **3 intentos máximo** - Después → nueva conversación
 5. **Revierte sin miedo** - `ESC ESC` es tu amigo
 
-**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 attempts no funcionan, el approach necesita cambiar, not more corrections.
+**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 intentos no funcionan, el enfoque necesita cambiar, no más correcciones.
 
 ---
 

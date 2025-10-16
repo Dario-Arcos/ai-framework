@@ -222,7 +222,7 @@ Asesor estratégico para selección inteligente de agentes y planificación de t
 
 **Output:**
 
-Strategic plan con work analysis, agent recommendations, execution strategy, educational guide, honest assessment.
+Strategic plan con work analysis, recomendaciones de agentes, execution strategy, educational guide, honest assessment.
 
 **Usage:**
 

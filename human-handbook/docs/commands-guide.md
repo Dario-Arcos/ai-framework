@@ -32,13 +32,13 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 **Usage:**
 
 ```bash
-/ai-framework:PRP-cycle:prp-new &lt;feature_name&gt;
+/ai-framework:PRP-cycle:prp-new {feature_name}
 
 # Ejemplo
 /ai-framework:PRP-cycle:prp-new user-authentication
 ```
 
-**Output:** `.claude/prps/&lt;feature_name&gt;/prp.md`
+**Output:** `.specify/prps/{feature_name}/prp.md`
 
 **Design Philosophy (Steve Jobs Principles):**
 
@@ -82,7 +82,7 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 Planificación de nueva feature desde cero con stakeholders de negocio.
 :::
 
-**Next Steps:** `➜ /ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt;`
+**Next Steps:** `➜ /ai-framework:PRP-cycle:prp-sync {feature_name}`
 
 ---
 
@@ -93,8 +93,8 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 **Usage:**
 
 ```bash
-/ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt;
-/ai-framework:PRP-cycle:prp-sync &lt;feature_name&gt; --milestone &lt;number&gt;
+/ai-framework:PRP-cycle:prp-sync {feature_name}
+/ai-framework:PRP-cycle:prp-sync {feature_name} --milestone {number}
 
 # Ejemplos
 /ai-framework:PRP-cycle:prp-sync user-authentication
@@ -106,7 +106,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 **Workflow:**
 
 1. Parse arguments (feature name + optional milestone number)
-2. Validate required files exist (`.claude/prps/&lt;feature_name&gt;/prp.md`)
+2. Validate required files exist (`.specify/prps/{feature_name}/prp.md`)
 3. Milestone handling:
    - **If milestone number provided**: Use existing milestone
    - **If no milestone**: Continue sin milestone assignment
@@ -116,7 +116,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
    - Labels: `prp`, `parent-issue`, `sdd`
    - Assign to milestone si milestone number was provided
 5. Update PRP file frontmatter con `github`, `github_synced`, `milestone` (si aplica)
-6. Create GitHub mapping file (`.claude/prps/&lt;feature_name&gt;/github-mapping.md`)
+6. Create GitHub mapping file (`.specify/prps/{feature_name}/github-mapping.md`)
 
 **Relationship to SDD Workflow:**
 
@@ -128,7 +128,7 @@ PRP.md → [prp-sync] → GitHub Parent Issue → [SDD-cycle:speckit.specify --f
 Después de aprobar PRP, para tracking en GitHub.
 :::
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.specify --from-issue &lt;issue_number&gt;`
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.specify --from-issue {issue_number}`
 
 ---
 
@@ -146,8 +146,8 @@ Crea especificación técnica desde lenguaje natural, GitHub Issue, o PRP local.
 
 ```bash
 /ai-framework:SDD-cycle:speckit.specify "Create authentication system"
-/ai-framework:SDD-cycle:speckit.specify --from-issue &lt;issue_number&gt;
-/ai-framework:SDD-cycle:speckit.specify --from-prp &lt;feature_name&gt;
+/ai-framework:SDD-cycle:speckit.specify --from-issue {issue_number}
+/ai-framework:SDD-cycle:speckit.specify --from-prp {feature_name}
 
 # Ejemplos
 /ai-framework:SDD-cycle:speckit.specify "Implement OAuth 2.0 with Google and GitHub providers"
@@ -224,7 +224,7 @@ Detecta ambigüedades en spec, hace hasta 5 preguntas targeted, actualiza spec c
    - Stop cuando: critical ambiguities resolved, user signals completion, o reach 5 questions
 5. **Integration after EACH accepted answer** (incremental update):
    - Create `## Clarifications` section si no existe
-   - Append bullet: `- Q: &lt;question&gt; → A: &lt;final answer&gt;`
+   - Append bullet: `- Q: {question} → A: {final answer}`
    - Apply clarification a most appropriate section
    - Save spec file AFTER cada integration (atomic overwrite)
 6. Validation after each write + final pass
@@ -557,7 +557,7 @@ Genera checklist customizada para validar quality de requirements ("Unit Tests f
 
 ```bash
 # DESPUÉS de /ai-framework:SDD-cycle:speckit.analyze (antes de implement)
-/ai-framework:SDD-cycle:speckit.checklist "&lt;domain&gt; requirements quality"
+/ai-framework:SDD-cycle:speckit.checklist "{domain} requirements quality"
 
 # Ejemplos
 /ai-framework:SDD-cycle:speckit.checklist "UX requirements quality"
@@ -594,7 +594,7 @@ Estás validando que tus REQUIREMENTS estén bien escritos, NO que tu implementa
 
 **Workflow Integration:**
 
-```
+```text
 specify → clarify → plan → tasks → analyze
                                       ↓
                                   checklist (genera "tests")
@@ -623,7 +623,7 @@ specify → clarify → plan → tasks → analyze
 - **Edge Case Coverage** - Are boundary conditions defined?
 - **Non-Functional Requirements** - Performance, Security, Accessibility specified?
 
-**Output:** `checklists/&lt;domain&gt;.md` para validación manual antes de implementar
+**Output:** `checklists/{domain}.md` para validación manual antes de implementar
 
 **Tipos comunes:**
 
@@ -651,7 +651,7 @@ Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a pa
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.sync &lt;parent_issue_number&gt;
+/ai-framework:SDD-cycle:speckit.sync {parent_issue_number}
 
 # Ejemplo
 /ai-framework:SDD-cycle:speckit.sync 247
@@ -663,12 +663,12 @@ Este comando REQUIERE parent PRP issue. Specs must always be linked a PRP. Si no
 
 **Execution Steps:**
 
-1. **Parse Arguments and Validate**:
-   - Parse parent issue number desde `$ARGUMENTS` (REQUIRED)
+1. **Parse Arguments and Validate**
+   - Parse parent issue number desde **$ARGUMENTS** (REQUIRED)
    - Detect feature desde current branch
    - Validate spec.md exists
    - **Verify not already synced** (prevent duplicates):
-     - Read frontmatter desde `specs/&lt;feature&gt;/spec.md`
+     - Read frontmatter desde `specs/{feature}/spec.md`
      - Check si `github:` field exists
      - Si exists: Show error con existing issue URL y STOP
    - Validate parent issue exists via `gh issue view`
@@ -684,14 +684,14 @@ Este comando REQUIERE parent PRP issue. Specs must always be linked a PRP. Si no
    - Write formatted body a temporary file (safety para complex markdown)
 
 3. **Create GitHub Issue and Link to Parent**:
-   - Title: "Spec: &lt;feature-name&gt;" (convert kebab-case a Title Case)
+   - Title: "Spec: {feature-name}" (convert kebab-case a Title Case)
    - Body: Use `--body-file` con temporary file
    - Labels: `spec`, `sdd`, `feature`
-   - Add comment a parent issue: "Technical specification created: #&lt;spec_issue_number&gt;"
+   - Add comment a parent issue: "Technical specification created: #{spec_issue_number}"
 
 4. **Update Local Spec File**: Update frontmatter con `github`, `github_synced`, `parent_prd`
 
-5. **Create GitHub Mapping File**: `specs/&lt;feature&gt;/github-mapping.md` con parent PRD, spec issue, timestamp
+5. **Create GitHub Mapping File**: `specs/{feature}/github-mapping.md` con parent PRD, spec issue, timestamp
 
 **Timing Recommendation:**
 
@@ -788,7 +788,7 @@ Commits semánticos con grouping automático por categoría.
 **Execution Steps:**
 
 1. **Parse Arguments and Validate Repository**:
-   - Parse commit message desde `$ARGUMENTS`
+   - Parse commit message desde **$ARGUMENTS**
    - Execute `git rev-parse --git-dir` para verify git repository
    - If fails: Show error y stop
 
@@ -851,7 +851,7 @@ Crea PR con security review BLOCKING, push seguro y metadata completa.
 **Usage:**
 
 ```bash
-/ai-framework:git-github:pr &lt;target_branch&gt;
+/ai-framework:git-github:pr {target_branch}
 
 # Ejemplos
 /ai-framework:git-github:pr develop
@@ -927,7 +927,7 @@ Crea PR con security review BLOCKING, push seguro y metadata completa.
 
 8. **Mostrar resultado**: PR URL + confirmation
 
-**Logging:** JSONL format en `.claude/logs/&lt;date&gt;/`:
+**Logging:** JSONL format en `.claude/logs/{date}/`:
 
 - Security review: `security.jsonl`
 - PR operations: `pr_operations.jsonl`
@@ -961,7 +961,7 @@ Post-merge cleanup workflow: delete feature branch y sync con base branch.
    - If not protected: Continue con cleanup
 
 2. **Determine Target Base Branch**:
-   - **If argument provided**: Use `$ARGUMENTS` as target base
+   - **If argument provided**: Use **$ARGUMENTS** as target base
    - **If no argument (auto-detect)**: Try detection en order (main → master → develop)
    - Validate target exists en origin
 
@@ -1025,7 +1025,7 @@ Crea worktree aislado en directorio sibling con rama nueva y upstream configurad
 **Usage:**
 
 ```bash
-/ai-framework:git-github:worktree:create "&lt;objetivo&gt;" &lt;parent-branch&gt;
+/ai-framework:git-github:worktree:create "{objetivo}" {parent-branch}
 
 # Ejemplos
 /ai-framework:git-github:worktree:create "implementar OAuth" main
@@ -1075,7 +1075,7 @@ Crea worktree aislado en directorio sibling con rama nueva y upstream configurad
    - If not found: Warning "Abre manualmente"
 
 9. **Logging and final result**:
-   - Create logs directory: `.claude/logs/&lt;date&gt;/`
+   - Create logs directory: `.claude/logs/{date}/`
    - Add JSONL entry a `worktree_operations.jsonl`
    - Show critical instructions:
 
@@ -1101,8 +1101,8 @@ PASO 3 - Iniciar nueva sesión Claude Code:
 
 **Output:**
 
-- Crea worktree: `../worktree-&lt;objetivo&gt;/`
-- Crea branch: `worktree-&lt;objetivo&gt;` (mismo nombre que directorio)
+- Crea worktree: `../worktree-{objetivo}/`
+- Crea branch: `worktree-{objetivo}` (mismo nombre que directorio)
 - Abre IDE automáticamente en nueva ventana (detecta code/cursor)
 - Valida directorio limpio antes de crear
 
@@ -1123,7 +1123,7 @@ Elimina worktrees con validación de ownership y cleanup triple (worktree/local/
 
 ```bash
 /ai-framework:git-github:worktree:cleanup              # Discovery mode
-/ai-framework:git-github:worktree:cleanup &lt;worktree1&gt;  # Cleanup específico
+/ai-framework:git-github:worktree:cleanup {worktree1}  # Cleanup específico
 ```
 
 **Restrictions:**
@@ -1194,7 +1194,7 @@ Para cada confirmed target:
 
 **Output:** Triple cleanup + regresa automáticamente a main
 
-**Logging Format:** `.claude/logs/&lt;date&gt;/worktree_operations.jsonl`
+**Logging Format:** `.claude/logs/{date}/worktree_operations.jsonl`
 
 ::: tip Cuándo usar
 Después de mergear PRs.
@@ -1334,7 +1334,7 @@ Panel de 3 expertos (backend/frontend/security) genera plan consensuado.
 **Usage:**
 
 ```bash
-/ai-framework:utils:three-experts &lt;goal&gt;
+/ai-framework:utils:three-experts {goal}
 
 # Ejemplo
 /ai-framework:utils:three-experts "Design scalable authentication system"
@@ -1452,7 +1452,7 @@ Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mient
 **Usage:**
 
 ```bash
-/ai-framework:utils:polish &lt;file_paths&gt;
+/ai-framework:utils:polish {file_paths}
 
 # Ejemplo
 /ai-framework:utils:polish src/auth.ts src/components/Login.tsx
@@ -1533,7 +1533,7 @@ Professional audit con metodología sistemática y validación de múltiples fue
 **Usage:**
 
 ```bash
-/ai-framework:utils:deep-research "<investigation topic>"
+/ai-framework:utils:deep-research "{investigation topic}"
 
 # Ejemplo
 /ai-framework:utils:deep-research "OAuth 2.0 security best practices for microservices"
@@ -1607,8 +1607,8 @@ Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta dupl
 
 ```bash
 /ai-framework:utils:changelog                    # Auto-detectar PRs faltantes
-/ai-framework:utils:changelog &lt;pr_number&gt;        # Single PR
-/ai-framework:utils:changelog &lt;pr1,pr2,pr3&gt;     # Multiple PRs
+/ai-framework:utils:changelog {pr_number}        # Single PR
+/ai-framework:utils:changelog {pr1,pr2,pr3}     # Multiple PRs
 
 # Ejemplos
 /ai-framework:utils:changelog
@@ -1680,7 +1680,7 @@ Después de merge.
 
 ### `/ai-framework:utils:project-init`
 
-Initialize o update project context con deep analysis y agent recommendations.
+Initialize o update project context con deep analysis y recomendaciones de agentes.
 
 **Usage:**
 
