@@ -8,25 +8,24 @@ _24 comandos disponibles organizados por flujo de desarrollo_
 
 ---
 
-## 📊 Resumen Ejecutivo
+## Resumen Ejecutivo
 
-| Categoría                                                           | Comandos | Flujo Típico                           |
-| ------------------------------------------------------------------- | -------- | -------------------------------------- |
-| 🎯 [Ciclo PRP (Business Layer)](#🎯-ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
-| 🏗️ [Ciclo SDD (Engineering Layer)](#🏗️-ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
-| 🔄 [Git & GitHub](#🔄-git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| 🛠️ [Utilidades](#🛠️-utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
+| Categoría                                                     | Comandos | Flujo Típico                           |
+| ------------------------------------------------------------- | -------- | -------------------------------------- |
+| [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
+| [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
+| [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
+| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
 
 ::: tip Orden Recomendado
-Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#🎯-workflows-completos) para la secuencia.
+Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos) para la secuencia.
 :::
 
 ---
 
-## 🎯 Ciclo PRP (Business Layer)
+## Ciclo PRP (Business Layer)
 
 ### `/ai-framework:PRP-cycle:prp-new`
-
 
 Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructurado, minimalista (50-100 líneas), business-focused.
 
@@ -89,7 +88,6 @@ Planificación de nueva feature desde cero con stakeholders de negocio.
 
 ### `/ai-framework:PRP-cycle:prp-sync`
 
-
 Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 
 **Usage:**
@@ -134,7 +132,7 @@ Después de aprobar PRP, para tracking en GitHub.
 
 ---
 
-## 🏗️ Ciclo SDD (Engineering Layer)
+## Ciclo SDD (Engineering Layer)
 
 ::: tip Secuencia Recomendada
 Estos comandos funcionan mejor en el orden especificado. Cada paso prepara el siguiente.
@@ -392,7 +390,7 @@ Cada task MUST strictly seguir este formato:
 - Setup phase
 - Foundational tasks (blocking prerequisites)
 - User story phases (P1, P2, P3...) con tasks independientes
-- Polish & cross-cutting phase
+- Polish & cross-cutting concerns (concerns transversales)
 - Parallel markers [P] donde aplique
 - Tests solo si especificado en spec
 
@@ -406,81 +404,16 @@ Cada task MUST strictly seguir este formato:
 - Format validation: ALL tasks follow checklist format
 
 ::: tip Cuándo usar
-Después de plan, antes de agent assignment.
+Después de plan, antes de analyze.
 :::
 
-**Next Steps:** `➜ Agent Assignment via Task tool` (paso 5 - ver sección dedicada abajo)
-
----
-
-### Agent Assignment (via Task tool - Paso 5)
-
-::: tip Vale la Pena
-Para features con 5+ tasks, este paso ofrece speedup 3-10x. El overhead se paga solo.
-:::
-
-Analiza tasks.md y asigna sub-agents especializados para ejecución paralela óptima.
-
-**Usage:**
-
-```bash
-# Después de /ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:Task agent-assignment-analyzer "Analyze tasks.md and assign specialized agents for parallel execution"
-```
-
-**Output:**
-
-- Análisis de task types (API, frontend, DB, tests, infra)
-- Asignación de agents especializados (backend-architect, frontend-developer, database-optimizer, etc.)
-- Detección de file dependencies (tasks con mismo archivo = secuenciales)
-- Tabla de parallel execution streams con agents asignados
-- Speedup estimation (potencial 3-10x)
-
-**¿Por qué es crítico?**
-
-- Aprovecha contexto individual de cada sub-agent especializado
-- Minimiza conflictos de archivos mediante detección de dependencies
-- Ejecución en paralelo real (múltiples agents trabajando simultáneamente)
-- Optimiza tiempo de implementación dramáticamente
-
-**Example Output:**
-
-```markdown
-Stream 1 (backend-architect):
-
-- Task 2.1: API endpoints [estimated: 45min]
-- Task 2.3: Authentication middleware [estimated: 30min]
-
-Stream 2 (frontend-developer):
-
-- Task 3.1: Login component [estimated: 60min]
-- Task 3.2: Protected routes [estimated: 40min]
-
-Stream 3 (database-optimizer):
-
-- Task 1.1: User schema migration [estimated: 20min]
-- Task 1.2: Indexes and constraints [estimated: 15min]
-
-Total sequential time: 210min
-Parallel time (3 streams): 75min
-Speedup: 2.8x
-```
-
-::: tip Cuándo usar
-
-- Features con 5+ tasks (speedup 3-10x compensa overhead)
-- Features multi-domain (backend + frontend + DB)
-- Cuando optimizar tiempo de implementación
-- Tasks con independencia funcional clara
-  :::
-
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional)
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional, recomendado)
 
 ---
 
 ### `/ai-framework:SDD-cycle:speckit.analyze`
 
-Análisis cross-artifact de consistency y quality. Valida spec.md + plan.md + tasks.md.
+Análisis de consistencia entre artefactos. Valida spec.md + plan.md + tasks.md.
 
 **Usage:**
 
@@ -528,10 +461,10 @@ Do NOT modify any files. Output structured analysis report.
 - Si solo LOW/MEDIUM: User may proceed, pero provide improvement suggestions
 
 ::: tip Cuándo usar
-Validación pre-implementación, después de generar tasks (opcional pero recomendado).
+Validación antes de implementar, después de generar tasks (opcional pero recomendado).
 :::
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.implement`
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.checklist` (opcional) o `➜ /ai-framework:SDD-cycle:speckit.implement`
 
 ---
 
@@ -609,102 +542,109 @@ Ejecuta tasks.md con agents asignados, parallelization, specialized agents, TDD 
    - Report final status con summary de completed work
 
 ::: tip Cuándo usar
-Motor central de implementación, después de agent assignment y analyze (paso 7 del flujo SDD-cycle).
-:::
-
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.checklist` (opcional)
-
----
-
-### `/ai-framework:SDD-cycle:speckit.checklist`
-
-Genera checklist customizada para validar calidad de implementación ("Unit tests for English").
-
-**Usage:**
-
-```bash
-# DESPUÉS de /ai-framework:SDD-cycle:speckit.implement
-/ai-framework:SDD-cycle:speckit.checklist "&lt;domain&gt; implementation quality review"
-
-# Ejemplos
-/ai-framework:SDD-cycle:speckit.checklist "UX implementation quality review"
-/ai-framework:SDD-cycle:speckit.checklist "API contract completeness"
-/ai-framework:SDD-cycle:speckit.checklist "Security implementation coverage"
-/ai-framework:SDD-cycle:speckit.checklist "Performance criteria compliance"
-```
-
-::: danger CRITICAL CONCEPT
-Checklists son **UNIT TESTS FOR REQUIREMENTS WRITING** - validan quality, clarity, y completeness de requirements en given domain.
-:::
-
-**NOT for verification/testing:**
-
-- ❌ NOT "Verify the button clicks correctly"
-- ❌ NOT "Test error handling works"
-- ❌ NOT "Confirm the API returns 200"
-- ❌ NOT checking si code/implementation matches el spec
-
-**FOR requirements quality validation:**
-
-- ✅ "Are visual hierarchy requirements defined for all card types?" (completeness)
-- ✅ "Is 'prominent display' quantified with specific sizing/positioning?" (clarity)
-- ✅ "Are hover state requirements consistent across all interactive elements?" (consistency)
-- ✅ "Are accessibility requirements defined for keyboard navigation?" (coverage)
-- ✅ "Does the spec define what happens when logo image fails to load?" (edge cases)
-
-**Metaphor:** Si tu spec es code written en English, el checklist es its unit test suite. Estás testing si requirements están well-written, complete, unambiguous, y ready para implementation - NOT si implementation works.
-
-**Execution Steps:**
-
-1. **Setup**: Run prerequisite check script para get FEATURE_DIR y AVAILABLE_DOCS
-2. **Clarify intent** (dynamic): Derive hasta THREE initial contextual clarifying questions
-   - Generated desde user's phrasing + extracted signals desde spec/plan/tasks
-   - Only ask sobre information que materially changes checklist content
-   - Be skipped individually si already unambiguous en `$ARGUMENTS`
-   - Prefer precision over breadth
-3. **Understand user request**: Combine `$ARGUMENTS` + clarifying answers
-4. **Load feature context**: Read desde FEATURE_DIR (spec.md, plan.md si exists, tasks.md si exists)
-5. **Generate checklist** - Create "Unit Tests for Requirements":
-   - Create `FEATURE_DIR/checklists/` directory si no existe
-   - Generate unique checklist filename (e.g., `ux.md`, `api.md`, `security.md`)
-   - Number items sequentially starting desde CHK001
-   - Cada `/speckit.checklist` run creates NEW file (never overwrites existing checklists)
-
-**Category Structure** - Group items por requirement quality dimensions:
-
-- **Requirement Completeness** (Are all necessary requirements documented?)
-- **Requirement Clarity** (Are requirements specific y unambiguous?)
-- **Requirement Consistency** (Do requirements align sin conflicts?)
-- **Acceptance Criteria Quality** (Are success criteria measurable?)
-- **Scenario Coverage** (Are all flows/cases addressed?)
-- **Edge Case Coverage** (Are boundary conditions defined?)
-- **Non-Functional Requirements** (Performance, Security, Accessibility - are they specified?)
-- **Dependencies & Assumptions** (Are they documented y validated?)
-- **Ambiguities & Conflicts** (What needs clarification?)
-
-**Output:** `checklists/&lt;domain&gt;.md` con ítems de validación post-implementación
-
-**Tipos comunes:**
-
-- `ux.md` - UI/UX implementation quality
-- `api.md` - API contracts completeness
-- `security.md` - Security implementation coverage
-- `performance.md` - Performance criteria compliance
-
-::: warning CAMBIO IMPORTANTE
-`checklist` se ejecuta DESPUÉS de `implement` (paso 8) para validar calidad de la implementación completada, NO antes.
-:::
-
-::: tip Cuándo usar
-(Opcional) POST-implementación para validar calidad del código generado, DESPUÉS de implement (paso 8 del flujo SDD-cycle).
+Motor central de implementación, después de analyze/checklist (paso 6 del flujo SDD-cycle).
 :::
 
 **Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.sync` (opcional)
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.sync`
+### `/ai-framework:SDD-cycle:speckit.checklist`
 
+Genera checklist customizada para validar quality de requirements ("Unit Tests for Requirements").
+
+**Usage:**
+
+```bash
+# DESPUÉS de /ai-framework:SDD-cycle:speckit.analyze (antes de implement)
+/ai-framework:SDD-cycle:speckit.checklist "&lt;domain&gt; requirements quality"
+
+# Ejemplos
+/ai-framework:SDD-cycle:speckit.checklist "UX requirements quality"
+/ai-framework:SDD-cycle:speckit.checklist "API specification completeness"
+/ai-framework:SDD-cycle:speckit.checklist "Security requirements coverage"
+/ai-framework:SDD-cycle:speckit.checklist "Performance requirements clarity"
+```
+
+::: danger CRITICAL CONCEPT (de github/spec-kit)
+Checklists son **UNIT TESTS FOR REQUIREMENTS WRITING** - validan quality, clarity, y completeness de requirements en given domain.
+
+**NO son verification tests** (esos son tests de código).
+**SON quality gates** para tus especificaciones.
+:::
+
+**Propósito Real:**
+
+Si tu spec.md es código escrito en inglés, el checklist es su unit test suite.
+Estás validando que tus REQUIREMENTS estén bien escritos, NO que tu implementación funcione.
+
+**NOT for testing implementation:**
+
+- ❌ NOT "Verify the button clicks correctly"
+- ❌ NOT "Test error handling works"
+- ❌ NOT "Confirm the API returns 200"
+
+**FOR testing requirements quality:**
+
+- ✅ "Are visual hierarchy requirements defined for all card types?" [Completeness]
+- ✅ "Is 'prominent display' quantified with sizing/positioning?" [Clarity]
+- ✅ "Are hover state requirements consistent across elements?" [Consistency]
+- ✅ "Are accessibility requirements defined for keyboard navigation?" [Coverage]
+- ✅ "Does the spec define what happens when logo fails to load?" [Edge Cases]
+
+**Workflow Integration:**
+
+```
+specify → clarify → plan → tasks → analyze
+                                      ↓
+                                  checklist (genera "tests")
+                                      ↓
+                        [TÚ marcas checkboxes revisando spec/plan]
+                                      ↓
+                                  implement
+                                      ↓
+                    (implement lee checklists, bloquea si incomplete)
+```
+
+**Por qué ANTES de implement:**
+
+1. Detectas requirements ambiguos/incompletos ANTES de implementar
+2. Corriges spec/plan con toda la información
+3. Implementas con requirements de calidad alta
+4. Evitas re-work por requirements malos
+
+**Category Structure:**
+
+- **Requirement Completeness** - Are all necessary requirements documented?
+- **Requirement Clarity** - Are requirements specific y unambiguous?
+- **Requirement Consistency** - Do requirements align sin conflicts?
+- **Acceptance Criteria Quality** - Are success criteria measurable?
+- **Scenario Coverage** - Are all flows/cases addressed?
+- **Edge Case Coverage** - Are boundary conditions defined?
+- **Non-Functional Requirements** - Performance, Security, Accessibility specified?
+
+**Output:** `checklists/&lt;domain&gt;.md` para validación manual antes de implementar
+
+**Tipos comunes:**
+
+- `ux.md` - UX requirements quality
+- `api.md` - API specification completeness
+- `security.md` - Security requirements coverage
+- `performance.md` - Performance criteria clarity
+
+::: tip Cuándo usar
+(Opcional) Después de analyze, antes de implement. Quality gate para requirements.
+:::
+
+::: warning Importante
+Después de generar checklist, DEBES marcar checkboxes manualmente revisando tu spec/plan. implement bloqueará si checklists están incomplete.
+:::
+
+**Next Steps:** Marcar checkboxes → `➜ /ai-framework:SDD-cycle:speckit.implement`
+
+---
+
+### `/ai-framework:SDD-cycle:speckit.sync`
 
 Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a parent PRP.
 
@@ -747,7 +687,7 @@ Este comando REQUIERE parent PRP issue. Specs must always be linked a PRP. Si no
    - Title: "Spec: &lt;feature-name&gt;" (convert kebab-case a Title Case)
    - Body: Use `--body-file` con temporary file
    - Labels: `spec`, `sdd`, `feature`
-   - Add comment a parent issue: "📋 Technical specification created: #&lt;spec_issue_number&gt;"
+   - Add comment a parent issue: "Technical specification created: #&lt;spec_issue_number&gt;"
 
 4. **Update Local Spec File**: Update frontmatter con `github`, `github_synced`, `parent_prd`
 
@@ -828,10 +768,9 @@ Setup inicial o actualización de principios fundamentales.
 
 ---
 
-## 🔄 Git & GitHub
+## Git & GitHub
 
 ### `/ai-framework:git-github:commit`
-
 
 Commits semánticos con grouping automático por categoría.
 
@@ -906,7 +845,6 @@ Después de completar cambios.
 ---
 
 ### `/ai-framework:git-github:pr`
-
 
 Crea PR con security review BLOCKING, push seguro y metadata completa.
 
@@ -1004,7 +942,6 @@ Para PRs con estándares de calidad.
 
 ### `/ai-framework:git-github:cleanup`
 
-
 Post-merge cleanup workflow: delete feature branch y sync con base branch.
 
 **Usage:**
@@ -1062,7 +999,7 @@ Después de merge exitoso.
 
 ---
 
-## 📦 Gestión de Worktrees
+## Gestión de Worktrees
 
 ::: tip Worktree vs Branch: Entendiendo la Diferencia
 Ver sección detallada en documentación original que explica cuándo usar cada uno.
@@ -1082,7 +1019,6 @@ Ver sección detallada en documentación original que explica cuándo usar cada 
 ---
 
 ### `/ai-framework:git-github:worktree:create`
-
 
 Crea worktree aislado en directorio sibling con rama nueva y upstream configurado.
 
@@ -1181,7 +1117,6 @@ PASO 3 - Iniciar nueva sesión Claude Code:
 
 ### `/ai-framework:git-github:worktree:cleanup`
 
-
 Elimina worktrees con validación de ownership y cleanup triple (worktree/local/remote).
 
 **Usage:**
@@ -1211,7 +1146,7 @@ Lists available worktrees con suggested commands.
 
 **Phase 2: User Interaction**
 
-- Show numbered list: "🔍 Tus worktrees disponibles para eliminar:"
+- Show numbered list: "Tus worktrees disponibles para eliminar:"
 - Ask: "Selecciona números separados por espacios (ej: 1 2) o 'todos':"
 - WAIT para user response
 - Parse input y convert a worktree names
@@ -1267,10 +1202,9 @@ Después de mergear PRs.
 
 ---
 
-## 🛠️ Utilidades
+## Utilidades
 
 ### `/ai-framework:utils:understand`
-
 
 Análisis comprehensivo de arquitectura, patrones y dependencies.
 
@@ -1377,7 +1311,7 @@ KEY INSIGHTS
 **When to Use:**
 
 - **MANDATORY**: New codebase, unknown architecture, major refactor (Size L)
-- **RECOMMENDED**: Multi-module changes (Size M), cross-project dependencies
+- **RECOMMENDED**: Cambios en múltiples módulos (Size M), dependencias entre proyectos
 - **OPTIONAL**: Single-file fixes (Size S), well-understood areas
 
 **Success Criteria - Analysis complete cuando answerable:**
@@ -1394,7 +1328,6 @@ SIEMPRE antes de implementar feature compleja.
 ---
 
 ### `/ai-framework:utils:three-experts`
-
 
 Panel de 3 expertos (backend/frontend/security) genera plan consensuado.
 
@@ -1456,10 +1389,10 @@ Cada expert provides their perspective:
 
 Generate single artifact usando template con sections:
 
-- 🎯 OBJETIVO & SCOPE
-- 🏗️ DECISIONES TÉCNICAS (Backend, Frontend, Seguridad)
+- OBJETIVO & SCOPE
+- DECISIONES TÉCNICAS (Backend, Frontend, Seguridad)
 - ✅ TAREAS CRÍTICAS
-- 🚧 CRITERIOS DE ÉXITO
+- CRITERIOS DE ÉXITO
 
 **Constitutional Compliance:**
 
@@ -1476,7 +1409,6 @@ Features complejas que requieren múltiples perspectivas.
 ---
 
 ### `/ai-framework:utils:docs`
-
 
 Analiza y actualiza documentación usando specialist agents.
 
@@ -1514,7 +1446,6 @@ Después de features o cambios importantes.
 ---
 
 ### `/ai-framework:utils:polish`
-
 
 Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mientras mejora calidad.
 
@@ -1597,8 +1528,7 @@ Refinar contenido generado por AI.
 
 ### `/ai-framework:utils:deep-research`
 
-
-Professional audit con metodología sistemática y multi-source validation.
+Professional audit con metodología sistemática y validación de múltiples fuentes.
 
 **Usage:**
 
@@ -1671,7 +1601,6 @@ Investigaciones complejas, due diligence, market research.
 
 ### `/ai-framework:utils:changelog`
 
-
 Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta duplicados.
 
 **Usage:**
@@ -1730,7 +1659,7 @@ Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta dupl
      - Update CHANGELOG con correct order (más recientes primero)
    - Maintain Keep a Changelog format con entries: `- título (PR #número)`
 
-6. **Validación post-actualización**:
+6. **Validación después de actualizar**:
    - Validate cada PR was inserted correctly
    - Para cada PR processed: Verify pattern "(PR #número)" exists
    - If any PR not found: Show specific error y terminate
@@ -1750,7 +1679,6 @@ Después de merge.
 ---
 
 ### `/ai-framework:utils:project-init`
-
 
 Initialize o update project context con deep analysis y agent recommendations.
 
@@ -1829,11 +1757,11 @@ APIs:
 
 **Phase 5: Generate Comprehensive project-context.md** con sections:
 
-- 📦 Technology Stack (Core, Key Dependencies, Infrastructure)
-- 🏗️ Architecture (Pattern, Entry Point, Directory tree)
-- 🎨 Code Patterns (Naming Conventions, Error Handling, Testing Strategy)
-- 🤖 Recommended Agents (Core, Project-Specific)
-- 🔗 Integration Points
+- Technology Stack (Core, Key Dependencies, Infrastructure)
+- Architecture (Pattern, Entry Point, Directory tree)
+- Code Patterns (Naming Conventions, Error Handling, Testing Strategy)
+- Recommended Agents (Core, Project-Specific)
+- Integration Points
 - ⚠️ Potential Issues
 
 **Phase 6: Update CLAUDE.md Reference**
@@ -1846,16 +1774,16 @@ APIs:
 ```
 ✅ Project context initialized (deep analysis)
 
-📦 Stack Detected:
+Stack Detected:
    - [Language] [version]
    - [Framework] [version]
    - [Database]
 
-🤖 Recommended Agents ([total]):
+Recommended Agents ([total]):
    Core: [list]
    Project-Specific: [list based on tech]
 
-📄 Generated:
+Generated:
    - .specify/memory/project-context.md
    - CLAUDE.md (reference added if missing)
 
@@ -1871,7 +1799,6 @@ Setup inicial, cuando architecture evoluciona.
 ---
 
 ### `/ai-framework:utils:setup-dependencies`
-
 
 Instala dependencias esenciales faltantes con platform detection.
 
@@ -1942,37 +1869,29 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 
 ---
 
-## 🎯 Workflows Completos
+## Workflows Completos
 
 ### Workflow Comparison Table
 
-| Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → **`agent-assignment`** → `[analyze]` → `implement` → `[checklist]` → `[sync]`                                       |
-| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → **`agent-assignment`** → `[analyze]` → `implement` → `[checklist]` → `[sync]` |
-| **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → **`agent-assignment`** → `[analyze]` → `implement` → `commit` → `pr`             |
-| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                                          |
+| Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                           |
+| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`     |
+| **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pr` |
+| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                     |
 
 ::: tip Comandos Opcionales
-`[analyze]`, `[checklist]`, `[sync]` son opcionales
-:::
-
-::: tip Optimización Clave
-**`agent-assignment`** (paso 5) ofrece speedup 3-10x para features con 5+ tasks
+`[analyze]`, `[checklist]`, `[sync]` son opcionales. checklist es quality gate antes de implementar.
 :::
 
 ---
 
-## 💡 Tips de Uso
+## Tips de Uso
 
 ### Flujo Óptimo
 
 ::: tip Paso Valioso
 `/ai-framework:SDD-cycle:speckit.clarify` - detecta problemas antes de implementar. ROI 100:1 (2 min save 4 hours)
-:::
-
-::: tip Recomendación Fuerte
-Usar agent-assignment para features con 5+ tasks ofrece speedup 3-10x (paso 5)
 :::
 
 ::: tip SIEMPRE
@@ -1983,8 +1902,9 @@ Usar agent-assignment para features con 5+ tasks ofrece speedup 3-10x (paso 5)
 
 ::: info OPCIONAL
 
-- Generar checklists DESPUÉS de implementación para validar calidad (paso 8)
-- Sync spec DESPUÉS de implementación completa (paso 9)
+- `analyze` - Valida consistencia entre artefactos (después de tasks, antes de implement)
+- `checklist` - Quality gate para requirements (antes de implement, genera "unit tests for requirements")
+- `sync` - Documenta en GitHub lo que fue construido (después de implement)
   :::
 
 ### Comandos Pre-Production
@@ -2001,19 +1921,18 @@ Usar agent-assignment para features con 5+ tasks ofrece speedup 3-10x (paso 5)
 
 ---
 
-
-## 📊 Estadísticas del Ecosistema
+## Estadísticas del Ecosistema
 
 | Categoría      | Comandos | Notas                                |
 | -------------- | -------- | ------------------------------------ |
 | **PRP-cycle**  | 2        | Business layer                       |
 | **SDD-cycle**  | 9        | Engineering layer (orden específico) |
 | **git-github** | 5        | Delivery layer                       |
-| **utils**      | 8        | Utilidades cross-cutting             |
+| **utils**      | 8        | Utilidades transversales             |
 | **TOTAL**      | 24       | Comandos disponibles                 |
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-15 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Ecosystem**: PRP-SDD-GitHub
+**Fecha**: 2025-10-16 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
 :::

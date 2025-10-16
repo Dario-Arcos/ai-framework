@@ -4,9 +4,6 @@ layout: home
 hero:
   text: "AI development that works"
   tagline: "Research-backed. Constitutional. Production-ready."
-  image:
-    src: https://img.shields.io/github/v/release/Dario-Arcos/ai-framework?style=for-the-badge&logo=github&logoColor=white&label=Latest&color=18181b
-    alt: Latest Release
   actions:
     - theme: brand
       text: Workflow
@@ -24,7 +21,7 @@ features:
       width: 48
       height: 48
     title: Specialized Agents
-    details: 45 agentes especializados organizados por dominio técnico
+    details: Extensa biblioteca de agentes especializados organizados por dominio técnico
     link: /docs/agents-guide
 
   - icon:
@@ -32,7 +29,7 @@ features:
       width: 48
       height: 48
     title: Commands
-    details: 24 comandos slash para workflows completos (PRP, SDD, Git/GitHub)
+    details: Completo conjunto de comandos slash para workflows completos (PRP, SDD, Git/GitHub)
     link: /docs/commands-guide
 
   - icon:

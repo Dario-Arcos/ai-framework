@@ -161,6 +161,37 @@ Constitution · Always Works™ methodology · Context engineering · Design pri
 
 ---
 
+## Version Management
+
+**Automated Version Sync**: This project uses automated version synchronization across documentation files.
+
+**Release Workflow**:
+
+```bash
+# 1. Update CHANGELOG.md with new version entry
+# 2. Run npm version command
+npm version patch   # or minor/major
+
+# Automatic actions:
+# - Updates package.json version
+# - Updates .vitepress/config.js themeConfig
+# - Updates README.md version references
+# - Validates CHANGELOG.md has entry for new version
+# - Stages changes for commit
+# - Creates git commit and tag
+```
+
+**Files Synchronized Automatically**:
+
+- `package.json` (source of truth)
+- `.vitepress/config.js` (themeConfig.version + previousVersion)
+- `README.md` (version badge)
+- Documentation homepage (via VersionBadge component)
+
+**Script Location**: `scripts/sync-versions.cjs`
+
+---
+
 ## Troubleshooting
 
 | Issue                | Solution                                     |
