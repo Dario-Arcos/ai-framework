@@ -6,7 +6,7 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 ---
 
-## ⚡ Instalación (30 segundos)
+## Instalación (30 segundos)
 
 ### Paso 1: Install Plugin
 
@@ -36,7 +36,7 @@ Sal y reabre Claude Code para cargar el framework. Este paso es necesario para q
 
 ---
 
-## 🔧 Post-Instalación (2 minutos)
+## Post-Instalación (2 minutos)
 
 ### Initialize Project Context
 
@@ -51,9 +51,9 @@ Analiza tu codebase y configura agent recommendations.
 ```
 ✅ Project context initialized
 
-📦 Stack Detected: [Tu tech stack]
-🤖 Recommended Agents: [Agents para tu proyecto]
-📄 Generated: .specify/memory/project-context.md
+Stack Detected: [Tu tech stack]
+Recommended Agents: [Agents para tu proyecto]
+Generated: .specify/memory/project-context.md
 ```
 
 ### Install Dependencies (Opcional)
@@ -66,7 +66,7 @@ Instala tools opcionales (notifications, formatters). Responde `S` para proceder
 
 ---
 
-## 🎯 Primera Feature (5 minutos)
+## Primera Feature (5 minutos)
 
 ### Quick Path
 
@@ -93,7 +93,7 @@ Security review automático ejecuta antes de crear PR.
 
 ---
 
-## ❓ Troubleshooting
+## Troubleshooting
 
 | Issue                    | Solution                                    |
 | ------------------------ | ------------------------------------------- |
@@ -103,12 +103,12 @@ Security review automático ejecuta antes de crear PR.
 
 ---
 
-## 📚 Next Steps
+## Next Steps
 
 **Documentación completa:**
 
-- [Commands Guide](./commands-guide.md) — 24 comandos documentados
-- [Agents Guide](./agents-guide.md) — 45 specialized agents
+- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos documentados ([ver todos](./commands-guide))
+- [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes especializados ([ver todos](./agents-guide))
 - [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
 - [MCP Servers](./mcp-servers.md) — Extend capabilities
 

@@ -2,7 +2,7 @@
 
 **Transform any project into an AI-first development environment in 30 seconds.**
 
-Constitutional SDD governance · 40+ specialized agents · Intelligent hooks · Zero configuration
+Constitutional SDD governance · Extensive library of specialized agents ([see all](https://dario-arcos.github.io/ai-framework/agents-guide)) · Intelligent hooks · Zero configuration
 
 ---
 
@@ -17,7 +17,7 @@ Not a collection of tools—a complete **development system** built on state-of-
 - **Persuasion Architecture** — Prompting strategies that maximize AI output quality
 - **Graph-Based Workflows** — Dependencies mapped, parallel execution optimized
 
-Implemented through 40+ specialized agents, 22 slash commands (SDD is core), 5 intelligent hooks, and MCP servers.
+Implemented through extensive library of specialized agents ([see all](https://dario-arcos.github.io/ai-framework/agents-guide)), complete command suite ([see all](https://dario-arcos.github.io/ai-framework/commands-guide)), intelligent hooks, and MCP servers.
 
 ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
@@ -102,9 +102,9 @@ your-project/
 
 ### Plugin Components (via Claude Code)
 
-- **44 Agents** — 13 categories (Architecture, Security, Testing, DevOps...)
-- **22 Commands** — 4 modules (SDD cycle, Git/GitHub, Utils, Docs)
-- **5 Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
+- **Specialized Agents** — 13 categories (Architecture, Security, Testing, DevOps...) ([see all](https://dario-arcos.github.io/ai-framework/agents-guide))
+- **Slash Commands** — 4 modules (SDD cycle, Git/GitHub, Utils, Docs) ([see all](https://dario-arcos.github.io/ai-framework/commands-guide))
+- **Intelligent Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
 
 ---
 
@@ -153,10 +153,41 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 
 - [Quickstart](https://dario-arcos.github.io/ai-framework/quickstart) — 15 minutes to productive
 - [MCP Servers](https://dario-arcos.github.io/ai-framework/mcp-servers) — Extend Claude Code capabilities
-- [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — 22 slash commands
-- [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — 44 specialized agents
+- [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — Complete command suite
+- [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — Extensive library of specialized agents
 
 Constitution · Always Works™ methodology · Context engineering · Design principles
+
+---
+
+## Version Management
+
+**Automated Version Sync**: This project uses automated version synchronization across documentation files.
+
+**Release Workflow**:
+
+```bash
+# 1. Update CHANGELOG.md with new version entry
+# 2. Run npm version command
+npm version patch   # or minor/major
+
+# Automatic actions:
+# - Updates package.json version
+# - Updates .vitepress/config.js themeConfig
+# - Updates README.md version references
+# - Validates CHANGELOG.md has entry for new version
+# - Stages changes for commit
+# - Creates git commit and tag
+```
+
+**Files Synchronized Automatically**:
+
+- `package.json` (source of truth)
+- `.vitepress/config.js` (themeConfig.version + previousVersion)
+- `README.md` (version badge)
+- Documentation homepage (via VersionBadge component)
+
+**Script Location**: `scripts/sync-versions.cjs`
 
 ---
 

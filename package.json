@@ -6,7 +6,8 @@
   "scripts": {
     "docs:dev": "test -f CHANGELOG.md && (echo '<!-- AUTO-GENERATED from CHANGELOG.md - DO NOT EDIT DIRECTLY -->\n' > human-handbook/docs/changelog.md && cat CHANGELOG.md >> human-handbook/docs/changelog.md) && vitepress dev human-handbook",
     "docs:build": "test -f CHANGELOG.md && (echo '<!-- AUTO-GENERATED from CHANGELOG.md - DO NOT EDIT DIRECTLY -->\n' > human-handbook/docs/changelog.md && cat CHANGELOG.md >> human-handbook/docs/changelog.md) && vitepress build human-handbook",
-    "docs:preview": "vitepress preview human-handbook"
+    "docs:preview": "vitepress preview human-handbook",
+    "version": "node scripts/sync-versions.cjs && git add -A"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"

@@ -6,14 +6,14 @@ Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesit
 
 ---
 
-## 🎯 El Ecosistema en 3 Capas
+## El Ecosistema en 3 Capas
 
 ```
-📋 PRP (Business Layer)
+PRP (Business Layer)
    ↓ Define WHAT to build
-🏗️ SDD (Engineering Layer)
+SDD (Engineering Layer)
    ↓ Define HOW to build
-🔄 GitHub (Delivery Layer)
+GitHub (Delivery Layer)
    ↓ Track & deliver
 ```
 
@@ -25,7 +25,7 @@ Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesit
 
 ---
 
-## 🎨 Primera Decisión: ¿Branch o Worktree?
+## Primera Decisión: ¿Branch o Worktree?
 
 ### Branch Simple
 
@@ -55,7 +55,7 @@ Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesit
 
 ---
 
-## 🔄 El Workflow SDD (7 Pasos Core)
+## El Workflow SDD (7 Pasos Core)
 
 ::: info Philosophy
 Cada paso previene problema específico que cuesta horas. No es burocracia - es speedup.
@@ -174,7 +174,7 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ---
 
-## 🎭 Con PRP o Sin PRP?
+## Con PRP o Sin PRP?
 
 ### Con PRP (Business-Driven)
 
@@ -204,7 +204,7 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ---
 
-## 💡 Patterns Por Complexity
+## Patterns Por Complexity
 
 ### Size S (≤80 LOC): Minimal Workflow
 
@@ -261,7 +261,7 @@ Tasks count: 1-4 → Skip | 5-10 → Use | 10+ → Definitely
 
 ---
 
-## 🎬 Post-Merge
+## Post-Merge
 
 ```bash
 /ai-framework:utils:changelog      # Auto-detect merged PRs
@@ -272,7 +272,7 @@ Si usaste worktree, cleanup regresa automáticamente a main.
 
 ---
 
-## 🎨 Best Practices
+## Best Practices
 
 **Workflow Selection:**
 Start simple (branch). Upgrade a worktree cuando needs isolation.
@@ -291,10 +291,10 @@ Exception - si todas tasks touch mismo file, assignment no ayuda (sequential any
 
 ---
 
-## 📚 Para Profundizar
+## Para Profundizar
 
-- [Commands Guide](./commands-guide.md) — 24 comandos, usage, options
-- [Agents Guide](./agents-guide.md) — 45 agents, cuándo usar
+- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos, usage, options
+- [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes, cuándo usar
 - [MCP Servers](./mcp-servers.md) — Playwright, Shadcn
 - [Pro Tips](./claude-code-pro-tips.md) — Advanced patterns
 
