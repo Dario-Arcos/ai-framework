@@ -3,7 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["human-handbook/**"]
+    paths:
+      - "human-handbook/**"
+      - "CHANGELOG.md"
   workflow_dispatch:
 
 permissions:
