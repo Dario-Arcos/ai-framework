@@ -110,9 +110,12 @@ function updateReadme(version) {
 
   let readme = fs.readFileSync(README_PATH, "utf8");
 
-  // Update version line near end of file (format: **Version:** X.Y.Z)
+  // Update version line and remove any suffix like "(Unreleased)"
+  // Supports full semver: X.Y.Z[-prerelease][+build]
+  // Matches: **Version:** 1.1.1 (Unreleased) → **Version:** 1.1.1
+  //          **Version:** 1.1.1-alpha.1 (Unreleased) → **Version:** 1.1.1-alpha.1
   readme = readme.replace(
-    /\*\*Version:\*\*\s+[\d.]+/g,
+    /\*\*Version:\*\*\s+[\d.]+([-+][\w.]+)?(?:\s+\([^)]+\))?/g,
     `**Version:** ${version}`,
   );
 
