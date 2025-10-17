@@ -40,7 +40,13 @@ echo "📍 $current_branch → $target_branch ($commit_count commits)"
 ### 2. Verificar PR existente
 
 ```bash
-pr_exists=$(gh pr view --json state,url 2>/dev/null)
+# Validar jq instalado
+if ! command -v jq &>/dev/null; then
+  echo "⚠️  jq no instalado, omitiendo verificación de PR existente"
+  pr_exists=""
+else
+  pr_exists=$(gh pr view --json state,url 2>/dev/null)
+fi
 
 if [ -n "$pr_exists" ] && echo "$pr_exists" | jq -e '.state == "OPEN"' >/dev/null 2>&1; then
   pr_url=$(echo "$pr_exists" | jq -r '.url')
@@ -51,7 +57,23 @@ if [ -n "$pr_exists" ] && echo "$pr_exists" | jq -e '.state == "OPEN"' >/dev/nul
 fi
 ```
 
-### 3. Pre-review de calidad (BLOQUEANTE)
+### 3. Preparar branch temporal (si es rama protegida)
+
+```bash
+PROTECTED_BRANCHES="^(main|master|develop|dev|staging|production|prod|qa)$"
+
+if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
+  branch_name="pr-$(date -u +%Y%m%d-%H%M%S)"
+
+  git checkout -b "$branch_name" || { echo "❌ Crear branch falló"; exit 1; }
+  echo "✓ Branch temporal creado: $branch_name"
+else
+  branch_name="$current_branch"
+  echo "✓ Usando branch actual: $branch_name"
+fi
+```
+
+### 4. Pre-review de calidad (BLOQUEANTE)
 
 **Claude DEBE ejecutar Task tool aquí:**
 
@@ -86,64 +108,94 @@ else
 
   case $choice in
     y|Y) echo "⚠️  Creando PR con issues conocidos..." ;;
-    n|N) echo "✓ Corrige issues y reintenta: /pr $target_branch"; exit 0 ;;
-    *) echo "✓ Descartado"; exit 0 ;;
+    n|N)
+      # Rollback: eliminar branch temporal si fue creado
+      if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
+        echo "✓ Eliminando branch temporal..."
+        git checkout "$current_branch"
+        git branch -d "$branch_name" 2>/dev/null
+      fi
+      echo "✓ Corrige issues y reintenta: /pr $target_branch"
+      exit 0
+      ;;
+    *)
+      # Rollback: eliminar branch temporal si fue creado
+      if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
+        git checkout "$current_branch"
+        git branch -d "$branch_name" 2>/dev/null
+      fi
+      echo "✓ Descartado"
+      exit 0
+      ;;
   esac
 fi
 ```
 
-### 4. Preparar branch y push
+### 5. Push branch
 
 ```bash
-PROTECTED_BRANCHES="^(main|master|develop|dev|staging|production|prod|qa)$"
-
-if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
-  branch_name="pr-$(date -u +%Y%m%d-%H%M%S)"
-
-  git checkout -b "$branch_name" || { echo "❌ Crear branch falló"; exit 1; }
-
-  if ! git push origin "$branch_name" --set-upstream; then
-    echo "❌ Push falló, rollback..."
-    git checkout "$current_branch"
-    git branch -d "$branch_name" 2>/dev/null
+if ! git config "branch.$branch_name.remote" >/dev/null 2>&1; then
+  git push origin "$branch_name" --set-upstream || {
+    echo "❌ Push falló"
+    # Rollback si era branch temporal
+    if [ "$branch_name" != "$current_branch" ]; then
+      git checkout "$current_branch"
+      git branch -d "$branch_name" 2>/dev/null
+    fi
     exit 1
-  fi
-
-  echo "✓ Branch temporal: $branch_name"
+  }
 else
-  branch_name="$current_branch"
-
-  if ! git config "branch.$current_branch.remote" >/dev/null 2>&1; then
-    git push origin "$current_branch" --set-upstream
-  else
-    git push origin "$current_branch"
-  fi || { echo "❌ Push falló"; exit 1; }
+  git push origin "$branch_name" || {
+    echo "❌ Push falló"
+    exit 1
+  }
 fi
+
+echo "✓ Branch pushed: $branch_name"
 ```
 
-### 5. Crear PR
+### 6. Crear PR
 
 ```bash
 git_log=$(git log --pretty=format:'- %s' origin/$target_branch..HEAD)
 files_stat=$(git diff --shortstat origin/$target_branch..HEAD)
 pr_title=$(git log --pretty=format:'%s' origin/$target_branch..HEAD | head -1)
 
-quality_section=""
-[ -n "$quality_review_result" ] && quality_section="
-
-## ⚠️ Code Quality Issues
-$quality_review_result"
-
-pr_body="## Changes
+# Construir body usando HEREDOC para evitar problemas con caracteres especiales
+if [ -n "$quality_review_result" ]; then
+  pr_body=$(cat <<EOF
+## Changes
 $git_log
 
 $files_stat
-$quality_section"
+
+## ⚠️ Code Quality Issues
+$quality_review_result
+EOF
+)
+else
+  pr_body=$(cat <<EOF
+## Changes
+$git_log
+
+$files_stat
+EOF
+)
+fi
 
 echo "🚀 Creando PR..."
 
 pr_url=$(gh pr create --title "$pr_title" --body "$pr_body" --base "$target_branch" 2>&1 | grep -oE 'https://[^ ]+')
-[ -z "$pr_url" ] && { echo "❌ gh pr create falló"; exit 1; }
+
+if [ -z "$pr_url" ]; then
+  echo "❌ gh pr create falló"
+  # Rollback: eliminar branch temporal si fue creado
+  if [ "$branch_name" != "$current_branch" ]; then
+    git checkout "$current_branch"
+    git branch -d "$branch_name" 2>/dev/null
+  fi
+  exit 1
+fi
 
 echo "✅ PR creado: $pr_url"
 [ -n "$quality_review_result" ] && echo "⚠️  Contiene quality issues documentados"
@@ -153,4 +205,7 @@ echo "✅ PR creado: $pr_url"
 
 - Pre-review bloqueante con `code-quality-reviewer`
 - Auto-update si PR ya existe
-- Branch temporal si estás en rama protegida
+- Branch temporal CREADO ANTES del review (permite correcciones)
+- Rollback completo si usuario cancela o falla
+- HEREDOC para pr_body (maneja caracteres especiales)
+- Validación de jq antes de usar
