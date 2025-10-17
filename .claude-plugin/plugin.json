@@ -1,6 +1,6 @@
 {
   "name": "ai-framework",
-  "description": "Constitutional AI-first development framework with 45 specialized agents, 22 workflow commands, and intelligent hooks",
+  "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
   "version": "1.1.1",
   "author": {
     "name": "Dario Arcos"
