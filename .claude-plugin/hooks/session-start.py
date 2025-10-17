@@ -8,7 +8,6 @@ import os
 import sys
 import shutil
 import filecmp
-import hashlib
 from pathlib import Path
 
 
@@ -215,21 +214,6 @@ def sync_all_files(plugin_root, project_dir):
 
         if not template_file.exists():
             continue
-
-        # Special handling: preserve user's customized settings
-        # Use hash comparison to detect ANY modification (not size-based)
-        if "settings.local.json" in rel_path:
-            if user_file.exists():
-                try:
-                    # Compare file hashes to detect customization
-                    user_hash = hashlib.sha256(user_file.read_bytes()).hexdigest()
-                    template_hash = hashlib.sha256(
-                        template_file.read_bytes()
-                    ).hexdigest()
-                    if user_hash != template_hash:
-                        continue  # Preserve customized settings
-                except (OSError, IOError):
-                    pass  # If comparison fails, proceed with copy
 
         try:
             user_file.parent.mkdir(parents=True, exist_ok=True)
