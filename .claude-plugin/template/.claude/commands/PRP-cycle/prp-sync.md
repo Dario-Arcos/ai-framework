@@ -23,7 +23,6 @@ $ARGUMENTS
 **IMPORTANT:** Before executing this command, read and follow:
 
 - `.claude/rules/datetime.md` - For getting real current date/time
-- `.claude/rules/github-operations.md` - For GitHub CLI operations
 
 ## Instructions
 
@@ -67,6 +66,15 @@ If PRP file missing, show error and stop.
 - Body: Clean PRP content without frontmatter
 - Labels: `prp`, `parent-issue`, `sdd`
 - Assign to milestone only if milestone number was provided
+
+```bash
+# Create issue with natural language processing (Claude handles gh CLI syntax)
+gh issue create \
+  --title "<title>" \
+  --body "<body_content>" \
+  --label prp,parent-issue,sdd \
+  [--milestone <milestone_number>]  # Only if milestone provided
+```
 
 ### 4. Update PRP File
 

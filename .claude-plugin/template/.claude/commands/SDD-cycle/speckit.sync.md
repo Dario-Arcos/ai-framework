@@ -24,7 +24,6 @@ $ARGUMENTS
 **IMPORTANT:** Before executing this command, read and follow:
 
 - `.claude/rules/datetime.md` - For getting real current date/time
-- `.claude/rules/github-operations.md` - For GitHub CLI operations
 
 ## Instructions
 
