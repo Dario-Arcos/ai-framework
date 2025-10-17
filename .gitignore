@@ -26,8 +26,8 @@
 # ============================================================================
 
 # Hook databases (notifications, tracking)
-/.claude-plugin/hooks/*.db
-/.claude-plugin/hooks/__pycache__/
+/hooks/*.db
+/hooks/__pycache__/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
