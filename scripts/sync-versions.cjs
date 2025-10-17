@@ -73,7 +73,6 @@ function extractPreviousVersion(currentVersion) {
     return currentVersion;
   }
 
-  // First match is the most recent version, second is previous
   if (matches.length === 1) {
     console.warn(
       `[sync-versions] ⚠️  Only one version in CHANGELOG.md - using current version as previousVersion`,
@@ -81,7 +80,7 @@ function extractPreviousVersion(currentVersion) {
     return currentVersion;
   }
 
-  return matches[1][1]; // Second version entry
+  return matches[1][1];
 }
 
 function updateConfigJS(version, previousVersion) {
@@ -91,10 +90,7 @@ function updateConfigJS(version, previousVersion) {
 
   let config = fs.readFileSync(CONFIG_JS_PATH, "utf8");
 
-  // Update version property
   config = config.replace(/version:\s*["'][\d.]+["']/, `version: "${version}"`);
-
-  // Update previousVersion property
   config = config.replace(
     /previousVersion:\s*["'][\d.]+["']/,
     `previousVersion: "${previousVersion}"`,
@@ -110,10 +106,7 @@ function updateReadme(version) {
 
   let readme = fs.readFileSync(README_PATH, "utf8");
 
-  // Update version line and remove any suffix like "(Unreleased)"
-  // Supports full semver: X.Y.Z[-prerelease][+build]
-  // Matches: **Version:** 1.1.1 (Unreleased) → **Version:** 1.1.1
-  //          **Version:** 1.1.1-alpha.1 (Unreleased) → **Version:** 1.1.1-alpha.1
+  // Update version, remove suffix, support semver
   readme = readme.replace(
     /\*\*Version:\*\*\s+[\d.]+([-+][\w.]+)?(?:\s+\([^)]+\))?/g,
     `**Version:** ${version}`,
