@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+**Plugin Architecture Refactoring** (PR #12)
+
+- Unified agents/commands synchronization to template-based pattern
+- Breaking change: New sync mechanism for framework updates
+
+**General Framework Updates** (PR #11)
+
+- Critical fixes and general improvements across the framework
+
 **Workflow Simplification** (PR #10)
 
 - SDD workflow simplified from 7 steps to 6 core steps
@@ -51,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Obsolete agent-assignment references from workflow tables and tips
 
 ### Fixed
+
+**VitePress Documentation** (PR #13)
+
+- Resolved VitePress Vue parser errors in placeholder syntax
+- Fixed documentation build compatibility issues
 
 **Documentation Accuracy** (PR #10)
 
