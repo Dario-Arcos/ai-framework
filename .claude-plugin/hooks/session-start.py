@@ -178,21 +178,54 @@ def merge_gitignore(plugin_root, project_dir):
         return False
 
 
+def remove_template_suffix(path_str):
+    """
+    Remove .template suffix from path components.
+
+    Examples:
+        .claude.template/ → .claude/
+        CLAUDE.md.template → CLAUDE.md
+        .mcp.json.template → .mcp.json
+    """
+    parts = Path(path_str).parts
+    new_parts = []
+
+    for part in parts:
+        if part.endswith(".template"):
+            # Remove .template suffix
+            new_parts.append(part[:-9])  # len(".template") = 9
+        else:
+            new_parts.append(part)
+
+    return str(Path(*new_parts)) if new_parts else path_str
+
+
 def scan_template_files(template_dir):
-    """Scan template directory and return list of files to sync."""
+    """
+    Scan template directory and return list of (template_path, target_path) tuples.
+    Template files with .template suffix are mapped to their final names.
+    """
     files_to_sync = []
 
     for item in template_dir.rglob("*"):
         if not item.is_file():
             continue
 
-        # Skip excluded files
-        if item.name in [".DS_Store", "gitignore.template"]:
+        # Skip system files
+        if item.name in [".DS_Store"]:
             continue
 
-        # Include all files (settings.local.json needs special handling in sync)
+        # Skip gitignore.template (handled separately)
+        if item.name == "gitignore.template":
+            continue
+
         rel_path = item.relative_to(template_dir)
-        files_to_sync.append(str(rel_path))
+        rel_path_str = str(rel_path)
+
+        # Transform .template paths to their final names
+        target_path_str = remove_template_suffix(rel_path_str)
+
+        files_to_sync.append((rel_path_str, target_path_str))
 
     return files_to_sync
 
@@ -206,11 +239,11 @@ def sync_all_files(plugin_root, project_dir):
     updated = []
 
     # Dynamically discover all template files to sync
-    mandatory_files = scan_template_files(template_dir)
+    file_mappings = scan_template_files(template_dir)
 
-    for rel_path in mandatory_files:
-        template_file = template_dir / rel_path
-        user_file = project_dir / rel_path
+    for template_path, target_path in file_mappings:
+        template_file = template_dir / template_path
+        user_file = project_dir / target_path
 
         if not template_file.exists():
             continue
@@ -226,10 +259,10 @@ def sync_all_files(plugin_root, project_dir):
 
             # Copy (create or update)
             shutil.copy2(template_file, user_file)
-            updated.append(rel_path)
+            updated.append(target_path)
         except (OSError, IOError) as e:
             sys.stderr.write(
-                "WARNING: Failed to sync " + rel_path + ": " + str(e) + "\n"
+                "WARNING: Failed to sync " + target_path + ": " + str(e) + "\n"
             )
 
     return updated
