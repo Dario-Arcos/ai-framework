@@ -1,229 +1,250 @@
-# Changelog
+# Historial de Cambios
 
-All notable changes to AI Framework will be documented in this file.
+Todos los cambios importantes de AI Framework se documentan en este archivo.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
+y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
+
+---
+
+## [No Publicado]
+
+### Añadido
+
+- Mejoras de CI/CD: Workflow de GitHub Pages ahora se dispara automáticamente con cambios en CHANGELOG.md
 
 ---
 
 ## [1.1.1] - 2025-10-16
 
-### Added
+### Añadido
 
-**Documentation Quality & Version Management** (PR #9)
+**Gestión Automática de Versiones**
 
-- VersionBadge Vue component with Pure Text Minimal design for version comparison display
-- Automated version synchronization script (sync-versions.cjs) triggered by npm version hooks
-- Version Management section in README.md documenting release workflow
-- Qualitative component descriptions replacing hardcoded counts with authoritative links
+Ahora puedes actualizar la versión del framework en todos los archivos con un solo comando:
 
-**Workflow Architecture Improvements** (PR #10)
+- Ejecuta `npm version patch` (o `minor`/`major`) y automáticamente se sincronizan: package.json, documentación VitePress, README, y badges visuales
+- Nuevo componente de comparación de versiones en la documentación (muestra versión actual vs anterior)
+- Validación automática: el script verifica que exista entrada en CHANGELOG antes de crear la versión
+- Documentación del flujo completo en README → sección "Version Management"
 
-- Optional commands table in ai-first-workflow.md with ROI guidance (analyze, checklist, sync)
-- Checklist section (5.5) in ai-first-workflow.md - PRE-implement quality gate
-- Sync section (7) in ai-first-workflow.md - POST-implement GitHub documentation
-- Agent-strategy-advisor as consultative planning tool
+**Comandos Opcionales para Optimizar tu Workflow**
 
-### Changed
+Tres nuevos comandos opcionales con guía de cuándo usarlos:
 
-**Plugin Architecture Refactoring** (PR #12)
+- `/analyze`: Análisis de consistencia entre spec, plan y tasks (ejecutar después de generar tasks)
+- `/checklist`: Genera lista de verificación PRE-implementación basada en tus requerimientos
+- `/sync`: Publica tu especificación como issue en GitHub vinculado al PRP padre (POST-implementación)
+- **Modo consulta**: Usa `agent-strategy-advisor` para obtener recomendaciones de agentes antes de ejecutar
 
-- Unified agents/commands synchronization to template-based pattern
-- Breaking change: New sync mechanism for framework updates
+### Cambiado
 
-**General Framework Updates** (PR #11)
+**⚠️ Cambio Importante: Sincronización Automática de Agentes y Comandos**
 
-- Critical fixes and general improvements across the framework
+Los agentes y comandos del framework ahora se actualizan automáticamente desde templates centralizados:
 
-**Workflow Simplification** (PR #10)
+- **Qué significa para ti**: Recibirás actualizaciones de agentes/comandos sin perder tus configuraciones personalizadas
+- **Acción requerida**: Después de actualizar el plugin, reinicia Claude Code para cargar los cambios
+- **Breaking change**: Si personalizaste archivos en `.claude/agents/` o `.claude/commands/`, respáldalos antes de actualizar
 
-- SDD workflow simplified from 7 steps to 6 core steps
-- Agent-assignment-analyzer transformed to agent-strategy-advisor (consultative, not automatic)
-- Checklist timing clarified: BEFORE implement (unit tests for requirements methodology)
-- Sync command positioned as optional POST-implement documentation step
+**Mejoras Generales del Framework**
 
-### Removed
+Actualizaciones críticas de estabilidad y correcciones varias que mejoran la experiencia general del framework.
 
-**Visual Simplification** (PR #9)
+**Workflow SDD Simplificado (6 Pasos)**
 
-- Redundant GitHub release badge from hero section (replaced by VersionBadge component)
-- Decorative emojis from documentation headings and content (preserved functional: ✅❌⚠️➜)
-- Broken markdown links from feature card details in homepage
-- Hardcoded component counts throughout documentation
+El workflow principal se redujo de 7 a 6 pasos:
 
-**Workflow Complexity Reduction** (PR #10)
+- **Eliminado**: Paso obligatorio de "Agent Assignment" (análisis demostró ROI negativo)
+- **Transformado**: `agent-assignment-analyzer` → `agent-strategy-advisor` (ahora consultivo, no automático)
+- **Reposicionado**: Checklist ahora es PRE-implementación (valida especificaciones, no código)
+- **Clarificado**: Comando `/sync` es opcional, para documentación POST-implementación en GitHub
 
-- Agent Assignment step from core SDD workflow (analysis showed negative ROI)
-- 11 spanglish instances (PRE-/POST-, cross-, multi- embedded in Spanish text)
-- Redundant Agent Assignment section from commands-guide.md (63 lines)
-- Obsolete agent-assignment references from workflow tables and tips
+**Resultado**: Menos fricción, mayor flexibilidad, mismo nivel de calidad.
 
-### Fixed
+### Eliminado
 
-**VitePress Documentation** (PR #13)
+**Simplificación Visual de la Documentación**
 
-- Resolved VitePress Vue parser errors in placeholder syntax
-- Fixed documentation build compatibility issues
+Eliminamos elementos redundantes para mejorar la claridad:
 
-**Documentation Accuracy** (PR #10)
+- Badge de release duplicado en homepage (ahora integrado en componente VersionBadge)
+- Emojis decorativos en docs (conservados solo funcionales: ✅❌⚠️➜)
+- Links rotos en tarjetas de features
+- Referencias hardcodeadas a números de componentes (ahora enlaces autoritativos)
 
-- Checklist purpose clarified as "unit tests for requirements writing" (not implementation tests)
-- Spanish/English separation improved (professional terminology usage)
-- Workflow step numbering corrected across all docs
-- Constitutional compliance calculation corrected (L-size, not M-size)
+**Reducción de Complejidad en Workflow**
+
+- 63 líneas de documentación obsoleta sobre "Agent Assignment"
+- 11 instancias de spanglish en documentación (PRE-/POST-, cross-, multi-)
+- Referencias obsoletas a `agent-assignment-analyzer` en tablas y tips
+
+### Arreglado
+
+**Documentación VitePress**
+
+- Resueltos errores de parsing de Vue causados por sintaxis de placeholders
+- Corregidos problemas de compatibilidad que impedían build de documentación
+- Documentación ahora compila sin warnings
+
+**Precisión en Documentación del Workflow**
+
+- Clarificado propósito de checklist: "tests unitarios de la especificación" (no tests de implementación)
+- Mejorada separación español/inglés (terminología profesional consistente)
+- Corregida numeración de pasos del workflow en todos los archivos
+- Corregido cálculo de complejidad constitucional (clasificación L-size, no M-size)
 
 ---
 
 ## [1.1.0] - 2025-10-15
 
-### Added
+### Añadido
 
-**Monochrome Power Design System** (PR #8)
+**Sistema de Diseño Monocromático Premium** (PR #8)
 
-- Complete documentation site redesign with brutalist, Apple-inspired aesthetics
-- Monochrome gradient theme (Black #18181B → Charcoal #52525B)
-- Premium button animations: scale on hover + shine effect with Apple-standard easing
-- New icon assets: `terminal.svg` (Commands), `zap.svg` (Pro Tips) from Lucide library
-- Balanced 4-card features grid (2x2 layout) replacing unbalanced 5-card design
+- Rediseño completo del sitio de documentación con estética brutalista inspirada en Apple
+- Tema monocromático con gradiente (Negro #18181B → Carbón #52525B)
+- Animaciones premium en botones: escala al hover + efecto shine con easing estándar de Apple
+- Nuevos íconos de activos: `terminal.svg` (Comandos), `zap.svg` (Pro Tips) desde librería Lucide
+- Grid de features balanceado 4-tarjetas (layout 2x2) reemplazando diseño 5-tarjetas desbalanceado
 
-### Changed
+### Cambiado
 
-**Visual Design System** (PR #8)
+**Sistema de Diseño Visual** (PR #8)
 
-- Hero section: Removed redundant name field for minimalist approach
-- Button hierarchy: Workflow as primary brand button, Quick Start/Changelog as secondary
-- Brand color: Changed from GitHub blue (#0969da) to monochrome (#18181b)
-- Release badge: Updated to monochrome color for visual consistency
-- Typography: Enhanced with font-weight 800, tight letter-spacing (-0.5px) for authority
-- Dark mode: Optimized with inverted gradients (White→Gray spectrum)
+- Sección hero: Eliminado campo de nombre redundante para enfoque minimalista
+- Jerarquía de botones: Workflow como botón primario de marca, Quick Start/Changelog como secundarios
+- Color de marca: Cambiado de azul GitHub (#0969da) a monocromático (#18181b)
+- Badge de release: Actualizado a color monocromático para consistencia visual
+- Tipografía: Mejorada con font-weight 800, letter-spacing ajustado (-0.5px) para autoridad
+- Modo oscuro: Optimizado con gradientes invertidos (espectro Blanco→Gris)
 
-**Documentation Enhancement** (PR #8)
+**Mejoras en Documentación** (PR #8)
 
-- Improved navigation structure across all documentation pages
-- Enhanced content clarity and readability
-- Reorganized homepage to emphasize value proposition: "AI development that works"
+- Estructura de navegación mejorada en todas las páginas de documentación
+- Claridad y legibilidad de contenido mejoradas
+- Homepage reorganizada para enfatizar propuesta de valor: "Desarrollo con IA que funciona"
 
-### Security
+### Seguridad
 
-**Design Security Review** (PR #8)
+**Revisión de Seguridad de Diseño** (PR #8)
 
-- Passed security review with 0.95 confidence score
-- No hardcoded credentials or secrets detected
-- Safe SVG assets verified (no scripts or event handlers)
-- Proper secret management guidance maintained in MCP documentation
+- Aprobada revisión de seguridad con score de confianza 0.95
+- Sin credenciales hardcodeadas o secretos detectados
+- Activos SVG verificados como seguros (sin scripts o event handlers)
+- Guía apropiada de gestión de secretos mantenida en documentación MCP
 
 ---
 
 ## [1.0.0] - 2025-10-15
 
-### Added
+### Añadido
 
-**Human Handbook Documentation** (GitHub Pages)
+**Documentación Human Handbook** (GitHub Pages)
 
-- Complete workflow documentation for PRP → SDD → GitHub ecosystem
-- 6 comprehensive guides: Quickstart, AI-First Workflow, Commands Guide, Agents Guide, Pro Tips, MCP Servers
-- Branch vs Worktree decision matrix with 4 usage scenarios
-- Agent-assignment-analyzer workflow step (SDD-cycle paso 5) with parallel execution examples
-- Workflow diagrams (Mermaid) for complete development cycle
-- Cross-references between all documentation files
+- Documentación completa de workflow para ecosistema PRP → SDD → GitHub
+- 6 guías completas: Quickstart, AI-First Workflow, Commands Guide, Agents Guide, Pro Tips, MCP Servers
+- Matriz de decisión Branch vs Worktree con 4 escenarios de uso
+- Paso agent-assignment-analyzer en workflow (SDD-cycle paso 5) con ejemplos de ejecución paralela
+- Diagramas de workflow (Mermaid) para ciclo completo de desarrollo
+- Referencias cruzadas entre todos los archivos de documentación
 
-**Framework Components**
+**Componentes del Framework**
 
 - 7 lifecycle hooks (Python): session-start, workspace-status, pre-tool-use, security_guard, clean_code, minimal_thinking, ccnotify
-- 24 slash commands across 4 categories: PRP-cycle (2), SDD-cycle (9), git-github (5), utils (8)
-- 45 specialized agents across 11 categories
-- Constitutional governance framework with 5 non-negotiable principles
-- Specification-Driven Development (SDD) workflow with artifact traceability
+- 24 slash commands en 4 categorías: PRP-cycle (2), SDD-cycle (9), git-github (5), utils (8)
+- 45 agentes especializados en 11 categorías
+- Framework de gobernanza constitucional con 5 principios no negociables
+- Workflow de Specification-Driven Development (SDD) con trazabilidad de artefactos
 
-### Changed
+### Cambiado
 
-**Command Syntax**
+**Sintaxis de Comandos**
 
-- Updated all command references to use full plugin namespace (`/ai-framework:category:command`)
-- Corrected PRP-cycle terminology (was PRD-cycle) throughout documentation
-- Updated command count from 22 to 24 commands across all docs
+- Actualizadas todas las referencias de comandos para usar namespace completo del plugin (`/ai-framework:category:command`)
+- Corregida terminología PRP-cycle (anteriormente PRD-cycle) en toda la documentación
+- Actualizado conteo de comandos de 22 a 24 comandos en todos los docs
 
-**SDD-Cycle Workflow**
+**Workflow SDD-Cycle**
 
-- Documented correct execution order (9 steps): specify → clarify → plan → tasks → **agent-assignment** → analyze → implement → checklist → sync
-- Added agent-assignment-analyzer as paso 5 (CRÍTICO - casi mandatorio) for parallel execution optimization
-- Moved checklist to paso 8 (POST-implementation quality validation)
-- Clarified that analyze and sync are optional but recommended
+- Documentado orden correcto de ejecución (9 pasos): specify → clarify → plan → tasks → **agent-assignment** → analyze → implement → checklist → sync
+- Agregado agent-assignment-analyzer como paso 5 (CRÍTICO - casi mandatorio) para optimización de ejecución paralela
+- Movido checklist a paso 8 (validación de calidad POST-implementación)
+- Clarificado que analyze y sync son opcionales pero recomendados
 
-### Fixed
+### Arreglado
 
-**Functional Behavior Documentation**
+**Documentación de Comportamiento Funcional**
 
-- Corrected `speckit.specify` behavior: creates branch in SAME directory (does NOT create worktree)
-- Corrected `speckit.specify` behavior: does NOT open IDE automatically
-- Clarified `worktree:create` as the ONLY command that creates isolated worktrees
-- Fixed workflow examples to show correct command behavior
-- Added explicit warnings about branch vs worktree differences
+- Corregido comportamiento de `speckit.specify`: crea branch en MISMO directorio (NO crea worktree)
+- Corregido comportamiento de `speckit.specify`: NO abre IDE automáticamente
+- Clarificado que `worktree:create` es el ÚNICO comando que crea worktrees aislados
+- Corregidos ejemplos de workflow para mostrar comportamiento correcto de comandos
+- Agregadas advertencias explícitas sobre diferencias branch vs worktree
 
-**Documentation Accuracy**
+**Precisión en Documentación**
 
-- Fixed 7 workflows with correct command sequences
-- Fixed 191 command syntax references across 4 files
-- Updated all dates to 2025-10-14
-- Corrected agent count references (45 agents, not 44)
+- Corregidos 7 workflows con secuencias correctas de comandos
+- Corregidas 191 referencias de sintaxis de comandos en 4 archivos
+- Actualizadas todas las fechas a 2025-10-14
+- Corregidas referencias de conteo de agentes (45 agentes, no 44)
 
-### Security
+### Seguridad
 
-**Preventive Security**
+**Seguridad Preventiva**
 
-- Security-first architecture with `security_guard.py` PreToolUse hook
-- 5 critical patterns blocked: hardcoded credentials, eval injection, SQL injection, command injection, path traversal
-- Security review BLOCKING in PR creation workflow
-
----
-
-**Production Status**: ✅ READY FOR RELEASE
-
-This release represents the complete, production-ready AI Framework with:
-
-- Zero-config auto-installation
-- Constitutional governance enforcement
-- 45 specialized agents
-- Complete documentation validated against source code
-- All workflows tested and executable
-
-**Breaking Changes**: None (initial release)
-
-**Migration Guide**: Not applicable (initial release)
+- Arquitectura security-first con hook PreToolUse `security_guard.py`
+- 5 patrones críticos bloqueados: credenciales hardcodeadas, inyección eval, inyección SQL, inyección de comandos, path traversal
+- Revisión de seguridad BLOQUEANTE en workflow de creación de PR
 
 ---
 
-## Release Notes Format
+**Estado de Producción**: ✅ LISTO PARA RELEASE
 
-When releasing, the `[Unreleased]` section will be replaced with:
+Este release representa el AI Framework completo y listo para producción con:
+
+- Instalación automática sin configuración
+- Aplicación de gobernanza constitucional
+- 45 agentes especializados
+- Documentación completa validada contra código fuente
+- Todos los workflows probados y ejecutables
+
+**Breaking Changes**: Ninguno (release inicial)
+
+**Guía de Migración**: No aplica (release inicial)
+
+---
+
+## Formato de Notas de Release
+
+Al publicar un release, la sección `[No Publicado]` será reemplazada con:
 
 ```
 ## [X.Y.Z] - YYYY-MM-DD
 
-### Added
-- New features
+### Añadido
+- Nuevas funcionalidades
 
-### Changed
-- Changes to existing functionality
+### Cambiado
+- Cambios en funcionalidad existente
 
-### Deprecated
-- Soon-to-be removed features
+### Obsoleto
+- Funcionalidades que pronto serán eliminadas
 
-### Removed
-- Removed features
+### Eliminado
+- Funcionalidades eliminadas
 
-### Fixed
-- Bug fixes
+### Arreglado
+- Correcciones de errores
 
-### Security
-- Security vulnerability fixes
+### Seguridad
+- Correcciones de vulnerabilidades de seguridad
 ```
 
 ---
 
-**Legend:**
+**Leyenda:**
 
-- **Major (X.0.0):** Breaking changes, major new features
-- **Minor (x.Y.0):** Backward-compatible new features
-- **Patch (x.y.Z):** Backward-compatible bug fixes
+- **Major (X.0.0):** Breaking changes, nuevas funcionalidades mayores
+- **Minor (x.Y.0):** Nuevas funcionalidades compatibles hacia atrás
+- **Patch (x.y.Z):** Correcciones de errores compatibles hacia atrás
