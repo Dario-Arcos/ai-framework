@@ -3,16 +3,10 @@
   "owner": {
     "name": "Dario Arcos"
   },
-  "metadata": {
-    "description": "AI-first development framework with constitutional governance, 45 specialized agents, 22 workflow commands, and intelligent hooks for Claude Code",
-    "version": "1.1.1"
-  },
   "plugins": [
     {
       "name": "ai-framework",
-      "description": "Constitutional AI-first development framework with TDD enforcement, complexity budgets, and multi-agent orchestration",
-      "source": "./.claude-plugin",
-      "strict": false
+      "source": "./.claude-plugin"
     }
   ]
 }

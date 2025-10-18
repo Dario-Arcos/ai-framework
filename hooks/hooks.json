@@ -5,8 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
-            "timeout": 10
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py"
           }
         ]
       }
@@ -17,8 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.py",
-            "timeout": 5
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.py"
           }
         ]
       },
@@ -27,8 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/security_guard.py",
-            "timeout": 5
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/security_guard.py"
           }
         ]
       }
@@ -39,49 +36,41 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/clean_code.py",
-            "timeout": 15
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/clean_code.py"
           }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/minimal_thinking.py",
-            "timeout": 2
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/minimal_thinking.py"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py UserPromptSubmit",
-            "timeout": 2
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py UserPromptSubmit"
           }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop",
-            "timeout": 2
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop"
           }
         ]
       }
     ],
     "Notification": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Notification",
-            "timeout": 2
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Notification"
           }
         ]
       }

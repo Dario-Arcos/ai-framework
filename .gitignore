@@ -26,8 +26,8 @@
 # ============================================================================
 
 # Hook databases (notifications, tracking)
-/.claude-plugin/hooks/*.db
-/.claude-plugin/hooks/__pycache__/
+/hooks/*.db
+/hooks/__pycache__/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
@@ -121,3 +121,7 @@ human-handbook/docs/changelog.md
 
 # macOS system files - Deep recursion (ai-framework fix)
 **/.DS_Store
+
+# ============================================================================
+# AI FRAMEWORK FILES (auto-added by ai-framework plugin)
+# ============================================================================
