@@ -36,6 +36,11 @@ FRAMEWORK_SECTION_KEYWORDS = (
     "FRAMEWORK RUNTIME",
 )
 
+# Critical files that must ALWAYS be overwritten (prevent Claude default override)
+FORCE_OVERWRITE_FILES = [
+    ".claude/settings.local.json",
+]
+
 
 def validate_project_dir(project_dir):
     """Validate project directory is safe and accessible"""
@@ -250,6 +255,12 @@ def sync_all_files(plugin_root, project_dir):
 
         try:
             user_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Force overwrite for critical framework files (timing-proof)
+            if target_path in FORCE_OVERWRITE_FILES:
+                shutil.copy2(template_file, user_file)
+                updated.append(target_path)
+                continue
 
             # If identical, skip
             if user_file.exists() and filecmp.cmp(
