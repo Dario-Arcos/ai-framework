@@ -43,7 +43,6 @@ ai-framework/
 │   │   ├── hooks.json           # Hook registration
 │   │   ├── session-start.py     # Framework installer
 │   │   ├── workspace-status.py  # Session guide
-│   │   ├── pre-tool-use.py      # Context injection for sub-agents
 │   │   ├── security_guard.py    # Security vulnerability checks
 │   │   ├── clean_code.py        # Auto-formatter
 │   │   ├── minimal_thinking.py  # Thought process optimizer
@@ -64,7 +63,7 @@ ai-framework/
 │       ├── .gitignore           # Framework file exclusions
 │       ├── .claude/
 │       │   ├── settings.local.json
-│       │   └── rules/           # always-works.md, effective-agents-guide.md, etc.
+│       │   └── rules/           # operational-excellence.md, effective-agents-guide.md, etc.
 │       └── .specify/
 │           ├── memory/          # constitution.md, design-principles.md, etc.
 │           └── templates/       # Workflow templates
@@ -110,12 +109,6 @@ Registers Python scripts to execute on Claude events:
     }
   ],
   "PreToolUse": [
-    {
-      "matcher": "Task",
-      "hooks": [
-        { "type": "command", "command": "pre-tool-use.py", "timeout": 5 }
-      ]
-    },
     {
       "matcher": "Edit|Write|MultiEdit",
       "hooks": [
@@ -173,7 +166,6 @@ Registers Python scripts to execute on Claude events:
 | --------------------- | ---------------- | -------------------------------------------------- | --------- |
 | `session-start.py`    | SessionStart     | Auto-installs framework files on first run         | ✅ Yes    |
 | `workspace-status.py` | SessionStart     | Shows session guidance (worktree, project-context) | No        |
-| `pre-tool-use.py`     | PreToolUse(Task) | Injects always-works.md into Task tool invocations | No        |
 | `security_guard.py`   | PreToolUse(Edit) | Blocks security vulnerabilities before Write       | ✅ Yes    |
 | `clean_code.py`       | PostToolUse      | Auto-formats Python files after Edit/Write         | No        |
 | `minimal_thinking.py` | UserPromptSubmit | Optimizes Claude thought process budget            | No        |
@@ -245,7 +237,7 @@ Files copied to user project on first session:
 - **CLAUDE.md**: Project configuration (references governance docs)
 - **.mcp.json**: MCP servers configuration
 - **.claude/settings.local.json**: User-specific settings
-- **.claude/rules/**: Governance files (always-works.md, effective-agents-guide.md, etc.)
+- **.claude/rules/**: Operational guidelines (operational-excellence.md, effective-agents-guide.md, etc.)
 - **.specify/memory/**: Constitutional documents (constitution.md, design-principles.md, etc.)
 
 ---
@@ -390,21 +382,26 @@ Claude auto-loads on every session (via @ reference)
 Claude knows: tech stack, patterns, recommended agents
 ```
 
-### 4. Hook → Sub-Agent Context Injection
+### 4. Sub-Agent Context Inheritance
 
-**Pattern**: pre-tool-use.py injects governance into Task tool
+**Pattern**: Sub-agents automatically inherit project context via CLAUDE.md
 
 ```
 User invokes Task tool (sub-agent)
        ↓
-PreToolUse hook triggers: pre-tool-use.py
+Sub-agent inherits full system prompt
        ↓
-Reads: .claude/rules/always-works.md
+Including: CLAUDE.md with all @ references
        ↓
-Injects content into sub-agent context
-       ↓
-Sub-agent receives governance rules automatically
+Sub-agent has access to:
+  • constitution.md
+  • operational-excellence.md
+  • product-design-principles.md
+  • project-context.md
+  • All governance documents
 ```
+
+**Note**: Previous versions used a `pre-tool-use.py` hook to inject governance rules into sub-agent prompts, but this was found to be unnecessary and redundant. Sub-agents inherit the complete project context naturally through Claude Code's Task tool implementation.
 
 ---
 
