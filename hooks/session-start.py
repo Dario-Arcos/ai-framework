@@ -60,7 +60,6 @@ CRITICAL_GITIGNORE_RULES = [
     "/specs/",
     # Framework project files (ignored by default)
     "/CLAUDE.md",
-    "/.mcp.json",
     # MCP server data directories
     "/.playwright-mcp/",
     # Hook databases (notifications, tracking)
