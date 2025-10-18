@@ -17,7 +17,7 @@
 # To version these files, comment out the lines below:
 /CLAUDE.md
 
-# Note: .mcp.json is NOT ignored (it's part of the plugin and must be tracked)
+# .mcp.json is in plugin root and IS TRACKED (defines MCP servers for plugin agents)
 
 # MCP server data directories
 /.playwright-mcp/
@@ -125,5 +125,3 @@ human-handbook/.vitepress/cache/
 # ============================================================================
 # AI FRAMEWORK FILES (auto-added by ai-framework plugin)
 # ============================================================================
-
-/.mcp.json
