@@ -50,11 +50,22 @@ ALLOWED_TEMPLATE_PATHS = [
     ".specify.template/templates/",
 ]
 
-# Critical runtime files that MUST be in .gitignore
+# Critical framework rules that MUST be in project .gitignore
+# These prevent committing framework files to user's official repository
 CRITICAL_GITIGNORE_RULES = [
-    "/.claude/logs/",
-    "/hooks/*.db",
+    # Framework internals (rules, configuration)
+    "/.claude/",
+    "/.specify/",
+    # Framework spec directories (features created by /speckit commands)
+    "/specs/",
+    # Framework project files (ignored by default)
+    "/CLAUDE.md",
+    "/.mcp.json",
+    # MCP server data directories
     "/.playwright-mcp/",
+    # Hook databases (notifications, tracking)
+    "/hooks/*.db",
+    "/hooks/__pycache__/",
 ]
 
 
