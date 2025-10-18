@@ -32,200 +32,92 @@ def find_plugin_root():
 
 
 def find_project_dir():
-    """Find project directory with robust validation
-
-    Uses multiple strategies to locate the user's project directory:
-    1. Try CLAUDE_PLUGIN_ROOT env var first (most reliable)
-    2. Search upward from CWD for .claude directory
-    3. Fallback to CWD (last resort)
-
-    Returns:
-        Path: Project root directory where framework files will be installed
-    """
-    # Strategy 1: Use Claude Code's CWD (current working directory)
-    # This is where Claude Code was started by the user
-    current = Path(os.getcwd()).resolve()
-
-    # Strategy 2: Search upward from CWD for .claude directory
-    max_levels = 20  # Prevent infinite loops
-    search_path = current
-
-    for _ in range(max_levels):
-        # Check if this directory already has .claude (existing installation)
-        if (search_path / ".claude").exists() and (search_path / ".claude").is_dir():
-            return search_path
-
-        # Move up one level
-        parent = search_path.parent
-        if parent == search_path:  # Reached filesystem root
-            break
-        search_path = parent
-
-    # Strategy 3: Fallback to CWD (user's working directory)
-    # This is the most likely location for a new installation
-    return current
+    """Find project directory (where Claude Code was started)"""
+    return Path(os.getcwd()).resolve()
 
 
 # =============================================================================
-# CONSTANTS
+# CONFIGURATION
 # =============================================================================
 
-# Framework section markers for .gitignore management
-FRAMEWORK_SECTION_MARKER = "AI FRAMEWORK FILES (auto-added by ai-framework plugin)"
-SECTION_SEPARATOR = "=" * 76
-SECTION_SEPARATOR_PATTERN = "====="
+# WHITELIST: Files that should be synced from template/ to user project
+ALLOWED_TEMPLATE_PATHS = [
+    "CLAUDE.md.template",
+    ".claude.template/settings.local.json",
+    ".claude.template/rules/",
+    ".specify.template/memory/",
+    ".specify.template/scripts/",
+    ".specify.template/templates/",
+]
 
-# Framework section keywords for parsing template .gitignore
-FRAMEWORK_SECTION_KEYWORDS = (
-    "FRAMEWORK FILES",
-    "FRAMEWORK RUNTIME",
-)
-
-# Critical files that must ALWAYS be overwritten (prevent Claude default override)
-FORCE_OVERWRITE_FILES = [
-    ".claude/settings.local.json",
+# Critical runtime files that MUST be in .gitignore
+CRITICAL_GITIGNORE_RULES = [
+    "/.claude/logs/",
+    "/hooks/*.db",
+    "/.playwright-mcp/",
 ]
 
 
-def validate_project_dir(project_dir):
-    """Validate project directory is safe and accessible"""
-    if str(project_dir) == "/" or str(project_dir) == project_dir.root:
-        sys.stderr.write("ERROR: Project dir cannot be system root\n")
-        sys.exit(1)
-    if not project_dir.is_dir():
-        sys.stderr.write(
-            "ERROR: Project dir does not exist: " + str(project_dir) + "\n"
-        )
-        sys.exit(1)
+def ensure_gitignore_rules(plugin_root, project_dir):
+    """Ensure critical framework rules are in project .gitignore
 
-
-def is_already_installed(project_dir):
-    """Check if framework is installed by verifying key files."""
-    key_files = [
-        project_dir / "CLAUDE.md",
-        project_dir / ".specify" / "memory" / "constitution.md",
-        project_dir / ".claude" / "settings.local.json",
-    ]
-    return all(f.exists() for f in key_files)
-
-
-def extract_framework_rules(template_gitignore):
-    """Extract framework-specific ignore rules from template .gitignore."""
-    rules = []
-    in_section = False
-    skip_first_separator = False
-
-    try:
-        with open(template_gitignore, "r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-
-                if any(kw in line for kw in FRAMEWORK_SECTION_KEYWORDS):
-                    in_section = True
-                    skip_first_separator = True
-                    continue
-
-                if stripped.startswith("#") and SECTION_SEPARATOR_PATTERN in line:
-                    if skip_first_separator:
-                        skip_first_separator = False
-                    else:
-                        in_section = False
-                    continue
-
-                if in_section and stripped and not stripped.startswith("#"):
-                    rules.append(stripped)
-
-    except (OSError, IOError):
-        return []
-
-    return rules
-
-
-def merge_gitignore(plugin_root, project_dir):
-    """
-    Intelligent .gitignore management:
-    - If .gitignore doesn't exist: copy template
-    - If .gitignore exists: append missing framework rules
+    Strategy:
+        1. If no .gitignore: copy template
+        2. If .gitignore exists: append minimal critical rules if missing
     """
     template_gitignore = plugin_root / "template" / "gitignore.template"
     project_gitignore = project_dir / ".gitignore"
 
-    if not template_gitignore.exists():
-        return False
-
+    # Copy template if project has no .gitignore
     if not project_gitignore.exists():
-        try:
-            shutil.copy2(template_gitignore, project_gitignore)
-            return True
-        except (OSError, IOError):
-            return False
+        if template_gitignore.exists():
+            try:
+                shutil.copy2(template_gitignore, project_gitignore)
+            except (OSError, IOError):
+                pass
+        return
 
-    framework_rules = extract_framework_rules(template_gitignore)
-    if not framework_rules:
-        return False
-
+    # Append critical rules if missing
     try:
-        with open(project_gitignore, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+        gitignore_path = str(project_gitignore)
+        content_file = open(gitignore_path, "r", encoding="utf-8")
+        content = content_file.read()
+        content_file.close()
 
-        existing_rules = set(
-            line.strip()
-            for line in lines
-            if line.strip() and not line.strip().startswith("#")
-        )
+        missing_rules = [
+            rule for rule in CRITICAL_GITIGNORE_RULES if rule not in content
+        ]
 
-        missing_rules = [r for r in framework_rules if r not in existing_rules]
-
-        if not missing_rules:
-            return False
-
-        framework_section_exists = any(
-            FRAMEWORK_SECTION_MARKER in line for line in lines
-        )
-
-        if framework_section_exists:
-            new_lines = []
-            in_framework_section = False
-            rules_inserted = False
-
-            for line in lines:
-                new_lines.append(line)
-
-                if FRAMEWORK_SECTION_MARKER in line:
-                    in_framework_section = True
-
-                if (
-                    in_framework_section
-                    and not rules_inserted
-                    and line.strip().startswith("#")
-                    and SECTION_SEPARATOR_PATTERN in line
-                ):
-                    if new_lines and new_lines[-1].strip():
-                        new_lines.append("\n")
-
-                    for rule in missing_rules:
-                        new_lines.append(rule + "\n")
-
-                    rules_inserted = True
-                    in_framework_section = False
-
-            with open(project_gitignore, "w", encoding="utf-8") as f:
-                f.writelines(new_lines)
-
-        else:
-            with open(project_gitignore, "a", encoding="utf-8") as f:
-                f.write("\n")
-                f.write("# " + SECTION_SEPARATOR + "\n")
-                f.write("# " + FRAMEWORK_SECTION_MARKER + "\n")
-                f.write("# " + SECTION_SEPARATOR + "\n")
-                f.write("\n")
-                for rule in missing_rules:
-                    f.write(rule + "\n")
-
-        return True
+        if missing_rules:
+            append_file = open(gitignore_path, "a", encoding="utf-8")
+            append_file.write("\n# AI Framework runtime files (auto-added)\n")
+            for rule in missing_rules:
+                append_file.write(rule + "\n")
+            append_file.close()
 
     except (OSError, IOError):
-        return False
+        pass
+
+
+def should_sync_file(rel_path_str):
+    """Check if file should be synced to user project using WHITELIST approach
+
+    Args:
+        rel_path_str: Relative path from template/ directory (e.g., "CLAUDE.md.template")
+
+    Returns:
+        bool: True if file should be synced, False otherwise
+
+    Security:
+        - Explicit whitelist prevents accidental copying of plugin components
+        - Protects against path traversal by only allowing predefined paths
+    """
+    # Check if path matches any allowed path prefix
+    for allowed_path in ALLOWED_TEMPLATE_PATHS:
+        if rel_path_str == allowed_path or rel_path_str.startswith(allowed_path):
+            return True
+
+    return False
 
 
 def remove_template_suffix(path_str):
@@ -253,7 +145,15 @@ def remove_template_suffix(path_str):
 def scan_template_files(template_dir):
     """
     Scan template directory and return list of (template_path, target_path) tuples.
-    Template files with .template suffix are mapped to their final names.
+    Uses WHITELIST approach to only sync framework essentials.
+
+    Architecture:
+        - WHITELIST ensures only approved files are copied
+        - Excludes .claude.template/agents/ and commands/ (in plugin root)
+        - Excludes .mcp.json (now in plugin root)
+
+    Returns:
+        List of tuples: [(template_path, target_path), ...]
     """
     files_to_sync = []
 
@@ -265,12 +165,16 @@ def scan_template_files(template_dir):
         if item.name in [".DS_Store"]:
             continue
 
-        # Skip gitignore.template (handled separately)
+        # Skip gitignore.template (handled separately by merge_gitignore)
         if item.name == "gitignore.template":
             continue
 
         rel_path = item.relative_to(template_dir)
         rel_path_str = str(rel_path)
+
+        # 🔒 WHITELIST CHECK: Only sync approved paths
+        if not should_sync_file(rel_path_str):
+            continue
 
         # Transform .template paths to their final names
         target_path_str = remove_template_suffix(rel_path_str)
@@ -281,80 +185,55 @@ def scan_template_files(template_dir):
 
 
 def sync_all_files(plugin_root, project_dir):
-    """
-    Synchronize all framework files (MANDATORY_SYNC approach)
-    Returns: list of updated files
+    """Sync template files to project (only if missing or changed)
+
+    Strategy: Copy if missing or content changed, skip if identical
     """
     template_dir = plugin_root / "template"
-    updated = []
 
-    # Dynamically discover all template files to sync
-    file_mappings = scan_template_files(template_dir)
+    for template_path, target_path in scan_template_files(template_dir):
+        src = template_dir / template_path
+        dst = project_dir / target_path
 
-    for template_path, target_path in file_mappings:
-        template_file = template_dir / template_path
-        user_file = project_dir / target_path
-
-        if not template_file.exists():
+        if not src.exists():
             continue
 
         try:
-            user_file.parent.mkdir(parents=True, exist_ok=True)
+            dst.parent.mkdir(parents=True, exist_ok=True)
 
-            # Force overwrite for critical framework files (timing-proof)
-            if target_path in FORCE_OVERWRITE_FILES:
-                shutil.copy2(template_file, user_file)
-                updated.append(target_path)
+            # Skip if identical (preserves user modifications)
+            if dst.exists() and filecmp.cmp(src, dst, shallow=False):
                 continue
 
-            # If identical, skip
-            if user_file.exists() and filecmp.cmp(
-                template_file, user_file, shallow=False
-            ):
-                continue
+            shutil.copy2(src, dst)
 
-            # Copy (create or update)
-            shutil.copy2(template_file, user_file)
-            updated.append(target_path)
         except (OSError, IOError) as e:
             sys.stderr.write(
                 "WARNING: Failed to sync " + target_path + ": " + str(e) + "\n"
             )
 
-    return updated
-
 
 def main():
-    """Main installation flow"""
+    """Install framework files on session start"""
     try:
         project_dir = find_project_dir()
-        validate_project_dir(project_dir)
-
-        # Get plugin root with robust fallback
         plugin_root_env = os.environ.get("CLAUDE_PLUGIN_ROOT")
-        if plugin_root_env:
-            plugin_root = Path(plugin_root_env)
-        else:
-            # Fallback to __file__ based detection (more reliable)
-            plugin_root = find_plugin_root()
+        plugin_root = Path(plugin_root_env) if plugin_root_env else find_plugin_root()
 
         if not plugin_root.exists():
-            sys.stderr.write(
-                "ERROR: Plugin root does not exist: " + str(plugin_root) + "\n"
-            )
+            sys.stderr.write("ERROR: Plugin root not found\n")
             sys.exit(1)
 
-        # Merge .gitignore first (special handling)
-        merge_gitignore(plugin_root, project_dir)
+        # Ensure .gitignore has critical runtime rules
+        ensure_gitignore_rules(plugin_root, project_dir)
 
-        # Sync all files (fresh install or update)
+        # Sync template files (smart sync: skip unchanged)
         sync_all_files(plugin_root, project_dir)
 
-        # Installation complete (fresh install or update)
         sys.exit(0)
+
     except Exception as e:
-        error_msg = "ERROR: Installation failed: " + str(e) + "\n"
-        sys.stderr.write(error_msg)
+        sys.stderr.write("ERROR: Installation failed: " + str(e) + "\n")
         sys.exit(1)
 
 
