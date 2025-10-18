@@ -16,11 +16,53 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ### Cambiado
 
+#### 🏗️ Arquitectura y Estructura (PR #16)
+
 - **BREAKING**: Plugin restructurado según especificación oficial de Claude Code
   - `commands/` y `agents/` movidos a plugin root (69 archivos)
   - `.claude-plugin/` solo contiene metadata (plugin.json, marketplace.json)
-- Hook architecture: todos los hooks usan path resolution confiable con `__file__`
-- Hook fallbacks: logging a stderr cuando project root no disponible
+  - Elimina jerarquía falsa, simplifica descubrimiento de comandos
+- Hook architecture: todos los hooks usan path resolution confiable con `__file__` (no `os.getcwd()`)
+- Hook fallbacks: logging a stderr cuando project root no disponible (graceful degradation)
+- `.mcp.json` removido de gitignore de usuario (evita commits inadecuados de framework)
+- Directorio `.claude.template` deprecado y removido
+
+#### 📖 Documentación Comprimida (PR #16)
+
+- **architecture.md**: 480 → 209 líneas (-56.5%)
+  - Elimina redundancias con CLAUDE.md
+  - Constitution retiene autoridad estratégica; CLAUDE.md retiene detalles tácticos
+  - Sincronización de impacto documentada en header
+- **constitution.md**: comprimido para eficiencia de tokens (v2.2.0 → v2.3.0)
+  - Artículos fundamentales preservados
+  - Detalles tácticos movidos a CLAUDE.md
+  - Elimina ~180 tokens de redundancia
+- **project-init**: optimizado para eficiencia de tokens sin perder contexto crítico
+- **operational-excellence.md**: renamed from governance guide (mayor claridad)
+
+#### 🎯 Comandos Optimizados (PR #16)
+
+- **pr.md**: 455 → 183 líneas (-60%)
+  - Dual review implementado (code quality + security review pre-launch)
+  - Audit fixes y mejoras en validaciones
+  - Separación clara de responsabilidades
+  - `/changelog` y `/release` ahora son comandos separados (antes unificados)
+- Guía de agentes efectivos (context engineering) integrada y referenciada
+- Hojas de ruta documentadas para cada comando crítico
+
+#### 🔐 Mejoras de Seguridad (PR #16)
+
+- **security_guard hook**: feedback claro y accionable para violaciones
+- **pre-tool-use hook**: rediseño para transparencia (eliminadas black boxes)
+- **clean_code hook**: transformado de black box a formato transparente y auditable
+
+#### 🚀 Características Nuevas (PR #16)
+
+- **Execution Principles** añadidos a CLAUDE.md (objectivity, minimalism, communication, planning, implementation, validation)
+- **security_guard improvements**: validaciones más granulares con mensajes de error específicos
+- Separation de `/changelog` y `/release` como comandos independientes
+  - `/changelog`: auto-detecta PRs, actualiza CHANGELOG, commitea
+  - `/release`: bump versión, crea tag, crea release GitHub
 
 ### Arreglado
 
