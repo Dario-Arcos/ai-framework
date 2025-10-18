@@ -181,22 +181,53 @@ Enfoque esperado:
 
 ---
 
-## Control de Permisos
+## Control de Permisos & Plan Mode
 
 4 modos de permisos disponibles:
 
-| Modo                | Comportamiento                            |
-| ------------------- | ----------------------------------------- |
-| `default`           | Pide confirmación para acciones sensibles |
-| `acceptEdits`       | Auto-acepta ediciones de archivos         |
-| `bypassPermissions` | Bypass total (para CI/CD)                 |
-| `plan`              | Solo planifica, no ejecuta                |
+| Modo                | Indicador | Comportamiento                            |
+| ------------------- | --------- | ----------------------------------------- |
+| `default`           | (ninguno) | Pide confirmación para acciones sensibles |
+| `acceptEdits`       | ⏵⏵        | Auto-acepta ediciones de archivos         |
+| `plan`              | ⏸        | Solo planifica, no ejecuta                |
+| `bypassPermissions` | ⏩        | Bypass total (para CI/CD)                 |
 
-### Cambiar Modo
+### Cambiar Modo Durante Sesión
 
-**`Shift+Tab`**: Cicla entre modos
+**`Shift+Tab`**: Cicla entre modos en orden
 
-**Configuración persistente** en `.claude/settings.local.json`:
+```
+Normal (ninguno) → Auto-Accept (⏵⏵) → Plan Mode (⏸) → [repite ciclo]
+```
+
+**Indicadores visuales** en CLI:
+
+- `⏸ plan mode on` → Plan Mode activo
+- `⏵⏵ accept edits on` → Auto-Accept activo
+- Sin indicador → Modo default
+
+### Plan Mode Workflow
+
+**Plan Mode** permite revisar cambios antes de ejecutar:
+
+1. **Activar**: Presiona `Shift+Tab` hasta ver `⏸ plan mode on`
+2. **Planificar**: Claude presenta plan completo sin ejecutar
+3. **Revisar**: Analizas el plan propuesto
+4. **Aprobar/Rechazar**:
+   - Si apruebas → Claude Code UI facilita cambio a bypass permissions
+   - Si rechazas → Modifica request y repite
+5. **Ejecutar**: Con bypass permissions, cambios se aplican sin interrupciones
+
+::: tip Workflow Recomendado
+Plan Mode + Bypass Permissions = Mejor de ambos mundos:
+
+- Review seguro antes de ejecutar (plan mode)
+- Ejecución fluida después de aprobar (bypass)
+  :::
+
+### Configuración Persistente
+
+En `.claude/settings.local.json`:
 
 ```json
 {
@@ -210,16 +241,144 @@ Enfoque esperado:
 
 ### Casos de Uso
 
-| Contexto         | Modo Recomendado    | Razón            |
-| ---------------- | ------------------- | ---------------- |
-| Desarrollo Local | `acceptEdits`       | Flujo rápido     |
-| CI/CD            | `bypassPermissions` | Automatización   |
-| Exploración      | `plan`              | Ver sin ejecutar |
-| Producción       | `default`           | Control manual   |
+| Contexto          | Modo Recomendado             | Razón                                  |
+| ----------------- | ---------------------------- | -------------------------------------- |
+| Desarrollo Local  | `acceptEdits`                | Flujo rápido sin confirmaciones        |
+| Cambios Complejos | `plan` → `bypassPermissions` | Review antes, ejecución fluida después |
+| Exploración       | `plan`                       | Ver sin ejecutar (dry-run)             |
+| CI/CD             | `bypassPermissions`          | Automatización total                   |
+| Producción        | `default`                    | Control manual estricto                |
 
-::: warning Precaución
-`bypassPermissions` elimina TODAS las confirmaciones. Solo para automatización confiable.
-:::
+::: warning Precaución de Seguridad
+`bypassPermissions` elimina TODAS las confirmaciones. Solo usar:
+
+- Con código trusted
+- En automatización confiable (CI/CD)
+- Después de revisar plan en plan mode
+  :::
+
+---
+
+## Sub-Agents: Invocación Explícita
+
+Claude Code puede usar sub-agents automáticamente o puedes invocarlos explícitamente cuando necesites control preciso.
+
+### Invocación Automática vs Explícita
+
+**Invocación Automática** (default):
+
+```bash
+"Revisa la seguridad de este código"
+# Claude decide automáticamente usar security-reviewer
+```
+
+**Invocación Explícita** (control manual):
+
+```bash
+"Use the security-reviewer agent to analyze this code"
+# Fuerza uso de security-reviewer específicamente
+```
+
+### Sintaxis de Invocación Explícita
+
+**Opción 1: Natural language**
+
+```bash
+"Use the {agent-name} agent to {task}"
+"Use the code-quality-reviewer agent to review changes in PR #123"
+```
+
+**Opción 2: Task tool (paralelo)**
+
+```bash
+# En tu prompt, describe que Claude debe usar Task tool:
+"Use Task tool to launch code-quality-reviewer and security-reviewer in parallel"
+```
+
+### Best Practices (Claude Docs)
+
+1. **Single Responsibility**
+   - Cada sub-agent debe tener un propósito claro y único
+   - Evita agents que hacen "todo"
+   - Ejemplo: `security-reviewer` solo seguridad, no calidad de código
+
+2. **Detailed Prompts**
+   - Provee contexto específico al invocar
+   - Incluye ejemplos y constraints
+   - Más guía = mejor performance
+
+3. **Tool Access Control**
+   - Solo da herramientas necesarias
+   - Mejora seguridad y foco
+   - Ejemplo: `docs-writer` no necesita bash access
+
+4. **Let Claude Orchestrate**
+   - Claude delega apropiadamente sin instrucción explícita
+   - Solo usa invocación explícita cuando:
+     - Necesitas garantizar uso de agent específico
+     - Quieres ejecutar múltiples agents en paralelo
+     - El task claramente beneficia de context window separado
+
+5. **Context Management**
+   - Sub-agents mantienen context separado del main agent
+   - Previene information overload
+   - Útil para tasks complejos con mucho contexto
+
+### Casos de Uso Común
+
+**Review en Paralelo** (PR workflow):
+
+```bash
+"Launch code-quality-reviewer and security-reviewer in parallel
+to review changes in current branch vs develop"
+```
+
+**Especialización Forzada**:
+
+```bash
+"Use the performance-engineer agent specifically
+to analyze this database query optimization"
+```
+
+**Research Profundo**:
+
+```bash
+"Use the web-search-specialist agent to research
+React Server Components best practices in 2025"
+```
+
+**Documentación Completa**:
+
+```bash
+"Use the api-documenter agent to generate
+OpenAPI 3.1 spec for all endpoints in src/api/"
+```
+
+### Ejecución en Paralelo
+
+Para máxima eficiencia, ejecuta agents independientes en paralelo:
+
+```bash
+# Ejemplo: PR review completo
+"I need you to:
+1. Use Task tool to launch code-quality-reviewer
+2. Use Task tool to launch security-reviewer
+Execute both in parallel, then report combined findings"
+```
+
+**Beneficios:**
+
+- Tiempo de ejecución reducido
+- Context windows independientes
+- Análisis especializado sin interferencia
+
+::: tip Cuándo Usar Invocación Explícita
+
+- **Workflows establecidos**: PR reviews, deployment checks
+- **Paralelización**: Múltiples agents independientes
+- **Control preciso**: Garantizar agent específico
+- **Context overflow**: Task muy grande para single context
+  :::
 
 ---
 
