@@ -9,6 +9,10 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+---
+
+## [1.1.2] - 2025-10-17
+
 ### Añadido
 
 - Workflow de GitHub Pages se dispara automáticamente con cambios en CHANGELOG.md
