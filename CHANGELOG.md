@@ -9,6 +9,12 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+- [Cambios futuros se documentan aquí]
+
+---
+
+## [1.3.0] - 2025-10-18
+
 ### Añadido
 
 - Path resolution robusto en todos los hooks con múltiples estrategias de fallback
