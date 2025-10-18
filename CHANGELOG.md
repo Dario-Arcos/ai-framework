@@ -9,6 +9,31 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+### Añadido
+
+- Path resolution robusto en todos los hooks con múltiples estrategias de fallback
+- Graceful degradation en hooks de logging (continúan funcionando sin project root)
+
+### Cambiado
+
+- **BREAKING**: Plugin restructurado según especificación oficial de Claude Code
+  - `commands/` y `agents/` movidos a plugin root (69 archivos)
+  - `.claude-plugin/` solo contiene metadata (plugin.json, marketplace.json)
+- Hook architecture: todos los hooks usan path resolution confiable con `__file__`
+- Hook fallbacks: logging a stderr cuando project root no disponible
+
+### Arreglado
+
+- **CRÍTICO**: Path resolution en 5 hooks (session-start, security_guard, ccnotify, minimal_thinking, pre-tool-use)
+  - ❌ Bug: `os.getcwd()` no confiable cuando Claude Code ejecuta desde diferentes directorios
+  - ❌ Bug: Logs/databases iban a ubicaciones incorrectas en proyectos anidados
+  - ✅ Fix: `find_plugin_root()` usando `__file__` (100% confiable)
+  - ✅ Fix: `find_project_root()` con búsqueda upward robusta + fallbacks
+- Bug en loop de búsqueda upward en ccnotify.py y minimal_thinking.py
+- session-start.py: fallback a `find_plugin_root()` si CLAUDE_PLUGIN_ROOT no existe
+- security_guard.py: graceful degradation (no exceptions, logging a stderr)
+- Pre-tool-use hook: arquitectura correcta (tool_input modification, no stdout context injection)
+
 ---
 
 ## [1.1.2] - 2025-10-17
