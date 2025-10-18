@@ -42,7 +42,11 @@ function main() {
     updateReadme(version);
     console.log(`[sync-versions] ✓ Updated README.md`);
 
-    // Step 5: Validate CHANGELOG.md entry exists
+    // Step 5: Sync CHANGELOG to docs
+    syncDocsChangelog();
+    console.log(`[sync-versions] ✓ Synced docs/changelog.md`);
+
+    // Step 6: Validate CHANGELOG.md entry exists
     validateChangelog(version);
     console.log(`[sync-versions] ✓ CHANGELOG.md validated`);
 
@@ -113,6 +117,19 @@ function updateReadme(version) {
   );
 
   fs.writeFileSync(README_PATH, readme, "utf8");
+}
+
+function syncDocsChangelog() {
+  const DOCS_CHANGELOG_PATH = path.join(
+    __dirname,
+    "../human-handbook/docs/changelog.md",
+  );
+
+  if (!fs.existsSync(CHANGELOG_PATH)) {
+    throw new Error(`CHANGELOG.md not found - cannot sync to docs`);
+  }
+
+  fs.copyFileSync(CHANGELOG_PATH, DOCS_CHANGELOG_PATH);
 }
 
 function validateChangelog(version) {
