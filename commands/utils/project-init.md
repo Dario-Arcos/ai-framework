@@ -1,14 +1,14 @@
 ---
-description: Initialize or update project context with deep analysis and agent recommendations
-argument-hint: "deep (optional: force deep analysis)"
+description: Generate minimal project context memory to prevent implementation failures from missing context
 allowed-tools: Read, Glob, Grep, LS, Write
 ---
 
 # Project Initialization
 
-Performs deep codebase analysis and generates project-aware configuration.
+Extracts critical project context (stack, patterns, constraints) to serve as persistent memory preventing context-related failures.
 
-**Reuses**: `/utils:understand` phases 1-5 for systematic discovery
+**Purpose**: High-signal memory for AI execution, NOT comprehensive analysis
+**Output**: ~50 lines of critical context preventing 5 common failure modes
 
 ## Execution Flow
 
@@ -16,369 +16,153 @@ Performs deep codebase analysis and generates project-aware configuration.
 
 Check if `.specify/memory/project-context.md` exists:
 
-- If YES and no "deep" argument: Confirm overwrite
-- If YES and "deep" argument: Skip confirmation, force overwrite
-- If NO: Proceed directly
+- If **YES**: Confirm with user if they want to overwrite or keep existing
+- If **NO**: Proceed directly to extraction
 
-### Phase 2: Deep Discovery (Reuse understand.md logic)
+### Phase 2: Extract Critical Memory (Selective)
 
-Execute systematic analysis following `/utils:understand` methodology:
+**2.1 Tech Stack Snapshot**
 
-**Phase 2.1: Project Discovery**
+Extract ONLY versions that prevent compatibility failures:
 
-- **Glob** to map entire project structure
-- **Read** key files: README.md, package.json, requirements.txt, Gemfile, composer.json, go.mod
-- **Grep** to identify technology patterns
-- **Read** entry points: main.js, server.js, app.py, main.py, index.php, main.go
+- **Read** package manager files: `package.json`, `requirements.txt`, `Gemfile`, `composer.json`, `go.mod`
+- **Extract**: Language version, framework version, database version
+- **Identify**: Top 5 critical dependencies (most imported/used)
 
-Discover:
+**Example output**:
 
-- Project type and main technologies
-- Architecture patterns (MVC, microservices, monolith, etc.)
-- Directory structure and organization
-- Dependencies and external integrations
-- Build and deployment setup
-
-**Phase 2.2: Code Architecture Analysis**
-
-- **Entry points**: Main files, index files, app initializers
-- **Core modules**: Business logic organization
-- **Data layer**: Database, models, repositories
-- **API layer**: Routes, controllers, endpoints
-- **Frontend**: Components, views, templates
-- **Configuration**: Environment setup, constants
-- **Testing**: Test structure and coverage
-
-**Phase 2.3: Pattern Recognition**
-
-Identify established patterns:
-
-- Naming conventions for files and functions
-- Code style and formatting rules
-- Error handling approaches
-- Authentication/authorization flow
-- State management strategy
-- Communication patterns between modules
-
-**Phase 2.4: Dependency Mapping**
-
-- Internal dependencies between modules
-- External library usage patterns
-- Service integrations
-- API dependencies
-- Database relationships
-
-**Phase 2.5: Integration Analysis**
-
-- API endpoints and their consumers
-- Database queries and their callers
-- Event systems and listeners
-- Shared utilities and helpers
-- Cross-cutting concerns (logging, auth)
-
-### Phase 3: Tech Stack Detection (Extended)
-
-Beyond quick detection, parse exact versions and all dependencies:
-
-**Package Managers:**
-
-```bash
-# Node.js
-if [ -f "package.json" ]; then
-    node_version=`node --version 2>/dev/null || echo "unknown"`
-    # Parse dependencies for frameworks, databases, tools
-fi
-
-# Python
-if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
-    python_version=`python --version 2>/dev/null || python3 --version 2>/dev/null || echo "unknown"`
-    # Parse for FastAPI, Django, Flask, SQLAlchemy, pytest, etc.
-fi
-
-# Ruby
-if [ -f "Gemfile" ]; then
-    ruby_version=`ruby --version 2>/dev/null || echo "unknown"`
-    # Parse for Rails, ActiveRecord, RSpec
-fi
-
-# PHP
-if [ -f "composer.json" ]; then
-    php_version=`php --version 2>/dev/null || echo "unknown"`
-    # Parse for Laravel, Symfony
-fi
-
-# Go
-if [ -f "go.mod" ]; then
-    go_version=`go version 2>/dev/null || echo "unknown"`
-fi
+```
+Stack: Python 3.11.2, FastAPI 0.110.0, PostgreSQL 15
+Critical deps: pydantic 2.5, sqlalchemy 2.0, redis 5.0
 ```
 
-**Infrastructure Detection:**
+**2.2 Established Patterns**
 
-```bash
-# Docker
-docker_detected=false
-if [ -f "Dockerfile" ] || [ -f "docker-compose.yml" ] || [ -f "docker-compose.yaml" ]; then
-    docker_detected=true
-fi
+Extract ONLY patterns that prevent style/convention violations:
 
-# Kubernetes
-k8s_detected=false
-if [ -d "k8s" ] || [ -d ".kube" ] || [ -f "kubernetes.yml" ]; then
-    k8s_detected=true
-fi
+- **Grep** for naming patterns: scan 5-10 files for convention (snake_case/camelCase/kebab-case)
+- **Read** 2-3 error handling examples: identify throw/raise pattern
+- **Grep** for auth implementation: find auth middleware/decorator location
+- **Identify** state management: search for Redux/Zustand/Context usage
 
-# Terraform
-terraform_detected=false
-if [ -d "terraform" ] || [ -f "main.tf" ]; then
-    terraform_detected=true
-fi
+**Example output**:
 
-# CI/CD
-ci_cd=""
-if [ -d ".github/workflows" ]; then
-    ci_cd="GitHub Actions"
-elif [ -f ".gitlab-ci.yml" ]; then
-    ci_cd="GitLab CI"
-elif [ -f "Jenkinsfile" ]; then
-    ci_cd="Jenkins"
-fi
+```
+Naming: snake_case (user_service.py)
+Errors: raise HTTPException(status_code=...)
+Auth: JWT in utils/auth.py (decorator @require_auth)
+State: Redux Toolkit (store/ directory)
 ```
 
-### Phase 4: Agent Mapping + Gap Analysis
+**2.3 Architecture Constraints**
 
-**A. Load Agent Registry**
+Extract ONLY constraints that prevent wrong implementation choices:
 
-Read all agents from `.claude/agents/**/*.md`:
+- **Read** entry point: identify main file (server.js, main.py, index.php)
+- **LS** top-level: list ONLY first-level directories (5-7 max)
+- **Grep** for API type: search for "GraphQL" OR "REST" OR "gRPC" keywords
 
-```bash
-# Extract agent metadata
-agents=""
+**Example output**:
 
-for category_dir in .claude/agents/*/; do
-    category=`basename "$category_dir"`
-
-    for agent_file in "$category_dir"*.md; do
-        if [ -f "$agent_file" ]; then
-            agent_name=`grep "^name:" "$agent_file" | head -1 | sed 's/name: *//'`
-            agent_desc=`grep "^description:" "$agent_file" | head -1 | sed 's/description: *//'`
-
-            agents="$agents\n$agent_name|$category|$agent_desc"
-        fi
-    done
-done
+```
+Entry: src/main.py
+Arch: REST API (no GraphQL)
+Structure: api/, models/, services/, utils/, tests/
 ```
 
-**B. Map Tech → Agents (Same registry as workspace-status.py)**
+### Phase 3: Generate Minimal project-context.md
 
-```yaml
-Core (Always):
-  - code-quality-reviewer
-  - systematic-debugger
-  - test-automator
+Create lightweight context document (~50 lines) using data from Phase 2:
 
-Languages:
-  python: [python-pro]
-  javascript: [javascript-pro]
-  typescript: [typescript-pro, frontend-developer]
-  ruby: [ruby-pro]
-  php: [php-pro]
-
-Frameworks:
-  react|nextjs: [frontend-developer]
-  fastapi|django|flask: [python-pro, backend-architect]
-  express|fastify: [javascript-pro, backend-architect]
-  rails: [ruby-pro, backend-architect]
-  laravel: [php-pro, backend-architect]
-
-Databases:
-  postgres|pg: [database-optimizer, database-admin]
-  mongodb|mongoose: [database-optimizer, database-admin]
-  mysql: [database-optimizer, database-admin]
-
-Infrastructure:
-  docker: [deployment-engineer, devops-troubleshooter]
-  kubernetes|k8s: [kubernetes-architect, deployment-engineer]
-  terraform: [terraform-specialist, cloud-architect]
-
-Testing:
-  pytest: [test-automator, tdd-orchestrator]
-  jest: [test-automator, tdd-orchestrator]
-  playwright: [playwright-test-generator]
-
-APIs:
-  graphql: [graphql-architect]
-  rest|openapi: [backend-architect, api-documenter]
-```
-
-**C. Gap Detection**
-
-```bash
-# Check dependencies for unmapped tech
-unmapped=""
-
-# Check Node.js dependencies
-if [ -f "package.json" ]; then
-    # Extract unique packages not in TECH_TO_AGENTS mapping
-    # Example: stripe, aws-sdk, sendgrid, etc.
-fi
-
-# Check Python dependencies
-if [ -f "requirements.txt" ]; then
-    # Example: stripe, boto3, celery, redis, etc.
-fi
-```
-
-If gaps found, display:
-
-```markdown
-## ⚠️ Missing Agents (Detected Gaps)
-
-### stripe (detected in package.json)
-
-❌ No specialized agent found for Stripe API integration
-
-**Recommendation**: Create custom agent
-
-- **Name**: `stripe-integration-expert`
-- **Category**: Web & Application
-- **Purpose**: Stripe API patterns, webhook handling, payment flows
-- **Template**: Based on existing javascript-pro structure
-
-💡 **¿Crear ahora?** (S/n):
-```
-
-### Phase 5: Generate Comprehensive project-context.md
+**Template Structure:**
 
 ```markdown
 # Project Context
 
-**Generated**: YYYY-MM-DD HH:MM | **Framework**: ai-framework v1.0
-**Analysis**: Deep | **Update**: Re-run when architecture changes
+**Stack**: [Language] [version] + [Framework] [version]
+**DB**: [Database] [version]
+**Arch**: [REST/GraphQL/Monolith/Microservices]
 
-## 📦 Technology Stack
+## Critical Dependencies
 
-### Core
+- [dep1] [version]
+- [dep2] [version]
+- [dep3] [version]
+- [dep4] [version]
+- [dep5] [version]
 
-- **Language**: [Detected language + version]
-- **Framework**: [Detected framework + version]
-- **Database**: [Detected database]
+## Established Patterns
 
-### Key Dependencies
+**Naming**: [example: snake_case / camelCase / kebab-case]
+**Errors**: [example: raise HTTPException(...) / throw new Error(...)]
+**Auth**: [example: JWT in utils/auth.py with @require_auth]
+**State**: [example: Redux Toolkit / Context API / Zustand]
 
-[List from package manager with versions]
+## Entry Point
 
-### Infrastructure
+`[file path: src/main.py / server.js / index.php]`
 
-- Docker [if detected]
-- Kubernetes [if detected]
-- CI/CD: [GitHub Actions/GitLab CI/etc]
-
-## 🏗️ Architecture
-
-**Pattern**: [MVC/Microservices/Monolith/etc from Phase 2.2]
-**Entry Point**: [File path from Phase 2.1]
-
-[Directory tree structure from Glob]
-
-## 🎨 Code Patterns
-
-### Naming Conventions
-
-- Files: [pattern from Phase 2.3]
-- Functions: [pattern from Phase 2.3]
-- Constants: [pattern from Phase 2.3]
-
-### Error Handling
-
-[Pattern from Phase 2.3]
-
-### Testing Strategy
-
-[Pattern from Phase 2.2]
-
-## 🤖 Recommended Agents
-
-### Core (Always)
-
-[List from Phase 4.B core]
-
-### Project-Specific
-
-[List from Phase 4.B mapped to detected tech]
-
-## 🔗 Integration Points
-
-[Output from Phase 2.5]
-
-## ⚠️ Potential Issues
-
-[Flagged during analysis from Phase 2]
-
----
-
-**Generated by**: /utils:project-init | **Framework**: ai-framework v1.0
+## Top-Level Structure
 ```
 
-### Phase 6: Update CLAUDE.md Reference
+[dir1]/ # [purpose]
+[dir2]/ # [purpose]
+[dir3]/ # [purpose]
+[dir4]/ # [purpose]
+[dir5]/ # [purpose]
+
+```
+
+---
+**Updated**: [YYYY-MM-DD] | Re-run when stack changes
+```
+
+### Phase 4: Update CLAUDE.md Reference
 
 Check if `CLAUDE.md` already references `project-context.md`:
 
 ```bash
 if ! grep -q "@.specify/memory/project-context.md" CLAUDE.md; then
-    # Add reference after Constitution section
+    # Add reference in Documentation References section
     # Insert:
     # **Project Context**: @.specify/memory/project-context.md
-    # - Tech stack and architecture patterns
-    # - Project-specific conventions and patterns
-    # - Recommended agents for this codebase
 fi
 ```
 
-### Phase 7: Output
+### Phase 5: Output
 
 ```
-✅ Project context initialized (deep analysis)
+✅ Project context memory created (~50 lines)
 
-📦 Stack Detected:
-   - [Language] [version]
-   - [Framework] [version]
-   - [Database]
-   - [Infrastructure tools]
+📦 Stack:
+   [Language] [version] + [Framework] [version]
+   [Database] [version]
 
-🤖 Recommended Agents ([total]):
-   Core:
-   - code-quality-reviewer
-   - systematic-debugger
-   - test-automator
-
-   Project-Specific:
-   - [agent list based on tech]
+📐 Patterns Extracted:
+   Naming: [convention]
+   Errors: [pattern]
+   Auth: [approach]
 
 📄 Generated:
-   - .specify/memory/project-context.md (comprehensive)
-   - CLAUDE.md (reference added if missing)
+   .specify/memory/project-context.md (minimal, high-signal)
+   CLAUDE.md (reference added if missing)
 
-⚠️ Potential Issues Flagged:
-   - [issue 1]
-   - [issue 2]
+💡 Context prevents 5 common failure modes:
+   1. Wrong library usage
+   2. Naming convention violations
+   3. Inconsistent error handling
+   4. Version incompatibilities
+   5. Architecture misalignment
 
-Next: Claude ahora conoce tu proyecto en profundidad.
-      Sugerirá agentes contextuales automáticamente.
+Next: Claude tiene memoria persistente del proyecto.
 ```
-
-## Extension Guide
-
-To add new tech → agent mappings:
-
-1. Edit Phase 4.B mapping registry
-2. Add tech detection in Phase 3 if needed
-3. Mapping is automatically applied
 
 ## Notes
 
-- Reuses `/utils:understand` logic to avoid duplication
-- Template-driven generation (no AI synthesis required)
-- Registry-based agent mapping (extensible)
-- Silent fail on analysis errors (non-blocking)
-- User confirmation for overwrites
+- **Purpose**: Persistent memory to prevent context-related failures
+- **Not an audit**: Extracts ONLY critical context (stack, patterns, constraints)
+- **Minimal output**: ~50 lines vs 400+ in comprehensive analysis
+- **Signal-focused**: 90% high-signal content preventing real failures
+- **Template-driven**: No AI synthesis, deterministic generation
+- **Silent fail**: Non-blocking on analysis errors
+- **User confirmation**: Always ask before overwriting existing context
