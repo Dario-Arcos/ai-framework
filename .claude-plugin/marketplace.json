@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "ai-framework",
-      "source": "./.claude-plugin"
+      "source": "./"
     }
   ]
 }
