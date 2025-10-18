@@ -1,17 +1,23 @@
 <!--
-Sync Impact Report - Constitution v2.2.0
-Version change: v2.1.2 → v2.2.0 (Remove implementation-specific content)
-Modified principles: All 5 core principles preserved
-Modified sections: Article VII §4 (Framework Alignment) - expanded to include project context compliance mandate
+Sync Impact Report - Constitution v2.3.0
+Version change: v2.2.0 → v2.3.0 (Remove redundancies with CLAUDE.md)
+Modified principles: All 5 core principles preserved - compressed to eliminate tactical detail duplication
+Modified sections:
+  - Article III §II (Value/Complexity): Removed ROI formula (→ CLAUDE.md §4)
+  - Article III §III (TDD): Removed red-green-refactor details (→ CLAUDE.md §5)
+  - Article III §IV (Complexity Budget): Removed S/M/L table (→ CLAUDE.md §3)
+  - Article III §V (Reuse): Removed ≥30% threshold details (→ CLAUDE.md §5)
 Added sections: None
-Removed sections: Article VI §2 (Language Consistency - moved to CLAUDE.md), Article IX (Technical Stack Standards - tool-specific content removed)
-Templates requiring updates: None (removed redundant and non-agnostic content)
-Follow-up TODOs: Create .claude/rules/claude-commands-shell-syntax.md with Article IX §1 content (implementation documentation)
+Removed sections:
+  - Annex (S-ROI, S-AGENT, S-SEC, S-CHECKS) - moved to operational docs
+  - Glossary (redundant with inline definitions and CLAUDE.md)
+Templates requiring updates: None
+Rationale: Eliminate ~180 tokens of redundancy between constitution.md and CLAUDE.md. Constitution retains strategic governance authority; CLAUDE.md retains tactical implementation details.
 -->
 
 # AI Framework Constitution
 
-**Version**: 2.2.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-14
+**Version**: 2.3.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-18
 
 > This Constitution is the _highest law_ of how AI Framework conceives, designs, builds, and operates digital products with and for AI. It defines purpose, rights, duties, powers, limits, due process, and amendment. Everything else—policies, playbooks, checklists—derives authority from here and is void where it conflicts.
 
@@ -65,19 +71,27 @@ Everything must be executable by advanced AI with human oversight; Humans direct
 
 ### II. Value/Complexity Ratio
 
-Value delivered must be ≥ 2x implementation complexity; Measure ROI as benefit minus complexity (both scored 1-5); Always choose highest ROI approach, tie-break toward simplicity; Guided exploration requires 2-3 approaches with explicit ROI calculation before proceeding.
+Value delivered must be ≥ 2x implementation complexity. Always choose highest ROI approach, tie-break toward simplicity. Guided exploration requires 2-3 approaches with explicit ROI calculation before proceeding.
+
+_See CLAUDE.md §4 for ROI scoring formula (benefit 1-5, complexity 1-5)._
 
 ### III. Test-First Development
 
-TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced; Contract tests before implementation always; Integration-First Testing: prefer real environments over mocks, use actual service instances; Integration tests for user stories; No implementation without failing tests first.
+TDD mandatory: Tests written → User approved → Tests fail → Then implement. Contract tests before implementation always. Integration-First Testing: prefer real environments over mocks, use actual service instances. Integration tests for user stories. No implementation without failing tests first.
+
+_See CLAUDE.md §5 for TDD loop (red → green → refactor)._
 
 ### IV. Complexity Budget
 
-Size S ≤ 80 Δ LOC, 1 file, 0 deps, ≤1% CPU/RAM; Size M ≤ 250 Δ LOC, 3 files, 1 dep, ≤3% CPU/RAM; Size L ≤ 600 Δ LOC, 5 files, 2 deps, ≤5% CPU/RAM; Where **Δ LOC = additions - deletions** (net change in lines of code); Anti-Abstraction enforcement: maximum 3 projects for initial implementation, use framework features directly, avoid unnecessary abstraction layers; Stop and ask if exceeding budget; Self-audit against metrics mandatory.
+Formal limits on implementation scope to prevent over-engineering (**Δ LOC = additions - deletions**). Anti-Abstraction enforcement: maximum 3 projects for initial implementation, use framework features directly, avoid unnecessary abstraction layers. Stop and ask if exceeding budget. Self-audit against metrics mandatory.
+
+_See CLAUDE.md §3 for size classes (S/M/L) with thresholds (lines, files, deps, CPU/RAM)._
 
 ### V. Reuse First & Simplicity
 
-Library-First Principle: Every feature MUST begin its existence as a standalone library; Reuse components before creating new abstractions; New abstraction requires ≥30% duplication justification or demonstrable future-cost reduction; Apply Einstein's principle: "Everything should be made as simple as possible, but not simpler"; List reused components explicitly.
+Library-First Principle: Every feature MUST begin its existence as a standalone library. Reuse components before creating new abstractions. New abstraction requires significant duplication (≥30%) OR demonstrable future-cost reduction. Apply Einstein's principle: "Everything should be made as simple as possible, but not simpler". List reused components explicitly.
+
+_See CLAUDE.md §5 for implementation rules (reuse first, abstraction justification threshold)._
 
 ---
 
@@ -151,27 +165,6 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 ---
 
-## Annex — Recognized Statutes
+## Ratification
 
-The following **Statutes** are _normative_ and derive authority from this Constitution:
-
-- **S-ROI** — _Value/Complexity Scorecard_: 1-5 scales; **GO ≥ 3.0**, **REWORK 2.5-2.9**, **KILL < 2.5**
-- **S-AGENT** — _AI Agent Contract Schema_: role, inputs/outputs schemas, guardrails, stop conditions, evaluation metrics
-- **S-SEC** — _Security Baseline_: secrets manager; SBOM + SCA/SAST in PR; pinned dependencies; vuln SLA: critical ≤ 72h
-- **S-CHECKS** — _PR Gate Checklist_: evidence of TDD, ROI scorecard, security reports, observability hooks
-
----
-
-## Glossary
-
-**AI-First** — Humans set intent; AI conducts work through text/JSON interfaces, with human oversight.
-**Δ LOC** — Net change in lines of code (additions - deletions).
-**Constitutional Tests** — Six mandatory checks any proposal must pass.
-**Complexity Budget** — Formal limits on implementation scope to prevent over-engineering.
-**ROI** — Return on Investment calculated as benefit minus complexity (both scored 1-5).
-
----
-
-### Ratification
-
-By adopting this Constitution, teams and leaders acknowledge their duties and the supremacy of these Articles and Annexed Statutes. Authority flows from clear purpose; legitimacy flows from consistent practice.
+By adopting this Constitution, teams and leaders acknowledge their duties and the supremacy of these Articles. Authority flows from clear purpose; legitimacy flows from consistent practice.

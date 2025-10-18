@@ -58,20 +58,40 @@ def main():
 
         # Skip if no file path or file doesn't exist
         if not file_path or not Path(file_path).exists():
-            print(json.dumps({"status": "skipped", "reason": "no_file"}))
+            output = {
+                "systemMessage": "⏭️  Clean Code: Archivo no encontrado, formateado omitido"
+            }
+            print(json.dumps(output))
             sys.exit(0)
 
         # Get formatter for file extension
         ext = Path(file_path).suffix.lower()
         formatter = FORMATTERS.get(ext)
+        file_name = Path(file_path).name
 
         if not formatter:
-            print(json.dumps({"status": "skipped", "reason": "unsupported_ext"}))
+            # Silent skip for unsupported extensions (no molestar al usuario)
+            output = {}
+            print(json.dumps(output))
             sys.exit(0)
 
         # Check if formatter tool exists
         if not shutil.which(formatter[0]):
-            print(json.dumps({"status": "skipped", "reason": "formatter_not_found"}))
+            tool_name = formatter[0]
+            install_cmd = {
+                "npx": "npm install -g prettier",
+                "black": "pip install black",
+                "shfmt": "brew install shfmt (macOS) o go install mvdan.cc/sh/v3/cmd/shfmt@latest",
+            }.get(tool_name, f"Instalar {tool_name}")
+
+            output = {
+                "systemMessage": (
+                    f"⚠️  Clean Code: Formateador '{tool_name}' no instalado\n"
+                    f"Archivo: {file_name}\n"
+                    f"Para instalar: {install_cmd}"
+                )
+            }
+            print(json.dumps(output))
             sys.exit(0)
 
         # Run formatter (timeout 10s, capture output to suppress noise)
@@ -81,15 +101,33 @@ def main():
 
         # Report success/failure (non-blocking)
         if result.returncode == 0:
-            print(json.dumps({"status": "formatted", "tool": formatter[0]}))
+            output = {
+                "systemMessage": f"✅ Clean Code: {file_name} formateado con {formatter[0]}"
+            }
+            print(json.dumps(output))
         else:
-            print(json.dumps({"status": "error", "reason": "formatter_failed"}))
+            error_output = result.stderr.decode("utf-8", errors="ignore")[:100]
+            output = {
+                "systemMessage": (
+                    f"❌ Clean Code: Error al formatear {file_name}\n"
+                    f"Formateador: {formatter[0]}\n"
+                    f"Error: {error_output if error_output else 'código de salida ' + str(result.returncode)}"
+                )
+            }
+            print(json.dumps(output))
 
     except subprocess.TimeoutExpired:
-        print(json.dumps({"status": "error", "reason": "timeout"}))
+        output = {
+            "systemMessage": (
+                f"⏱️  Clean Code: Timeout al formatear {file_name}\n"
+                f"El formateador tardó más de 10 segundos"
+            )
+        }
+        print(json.dumps(output))
     except Exception as e:
-        # Silent fail: formatting is non-critical, never block Claude
-        print(json.dumps({"status": "error", "reason": str(e)[:50]}))
+        # Report error but don't block (formatting is non-critical)
+        output = {"systemMessage": f"⚠️  Clean Code: Error inesperado - {str(e)[:80]}"}
+        print(json.dumps(output))
 
     sys.exit(0)
 

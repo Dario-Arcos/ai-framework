@@ -1,6 +1,8 @@
-# 🎯 PROJECT GOVERNANCE FOR SUB-AGENTS
+# 🎯 OPERATIONAL EXCELLENCE GUIDE
 
-Apply these project-wide rules while using your specialized expertise.
+Apply these practical execution rules while implementing constitutional principles.
+
+> **Constitutional Foundation**: These operational guidelines implement the principles defined in `@constitution.md` Article III. Refer to the Constitution for the WHY; this document provides the HOW.
 
 ## 🎯 CORE PHILOSOPHY
 
@@ -43,14 +45,6 @@ ANY external dependency, library, framework, CLI tool, API, or SDK that you didn
 - Does this solve ONLY the stated problem?
 - Can I remove any abstraction without breaking functionality?
 - Would I bet $100 this is as simple as it can be?
-
-## ⚖️ CONSTITUTIONAL REQUIREMENTS
-
-1. **AI-First**: Everything executable by AI with human oversight
-2. **Value/Complexity**: Ratio must be ≥ 2x implementation complexity
-3. **Test-First**: TDD mandatory - Tests → Fail → Implement → Pass
-4. **Complexity Budget**: S≤80LOC, M≤250LOC, L≤600LOC (Δ LOC = additions-deletions)
-5. **Reuse First**: Library-first, avoid abstractions <30% justification
 
 ## 🚫 FORBIDDEN PHRASES
 
@@ -117,4 +111,4 @@ A developer reading over-engineered code isn't thinking "this is flexible" - the
 
 ---
 
-**CRITICAL**: Apply these governance rules to EVERY decision while executing your specialized role.
+**CRITICAL**: Apply these operational rules to EVERY decision while executing your work.

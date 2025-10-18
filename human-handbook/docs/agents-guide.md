@@ -26,6 +26,107 @@ _Extensa biblioteca de agentes especializados organizados por dominio y frecuenc
 
 ---
 
+## Invocación de Agentes
+
+Los agentes pueden ser invocados automáticamente por Claude o explícitamente por el usuario según las necesidades del workflow.
+
+### Métodos de Invocación
+
+**1. Invocación Automática** (Claude decide):
+
+```bash
+"Analiza la arquitectura de este sistema backend"
+# Claude automáticamente usa backend-architect si es apropiado
+```
+
+**2. Invocación Explícita** (usuario especifica):
+
+```bash
+"Use the backend-architect agent to design this API"
+# Garantiza uso del agent específico
+```
+
+**3. Task Tool** (para ejecución paralela):
+
+```bash
+# En tu prompt:
+"Launch code-quality-reviewer and security-reviewer agents in parallel
+using Task tool to review current changes"
+```
+
+### Sintaxis con Task Tool
+
+El Task tool permite ejecutar agents de forma explícita y controlada:
+
+```typescript
+// Sintaxis conceptual
+Task({
+  description: "Review code quality",
+  prompt: "Analyze changes in current branch vs develop. Return findings.",
+  subagent_type: "code-quality-reviewer",
+});
+```
+
+**Ejemplo práctico**:
+
+```bash
+"I need you to execute two tasks in parallel:
+1. Use Task tool with subagent_type='code-quality-reviewer'
+   to review code quality in src/api/
+2. Use Task tool with subagent_type='security-reviewer'
+   to check for security vulnerabilities
+Report combined findings when both complete"
+```
+
+### Ejecución en Paralelo
+
+Para máxima eficiencia, ejecuta agents independientes simultáneamente:
+
+**Patrón recomendado**:
+
+```bash
+# PR Review completo en paralelo
+"Launch in parallel:
+- code-quality-reviewer for code standards
+- security-reviewer for vulnerabilities
+- performance-engineer for optimization opportunities
+
+Combine all findings in single report"
+```
+
+**Beneficios:**
+
+- ⚡ Reducción de tiempo de ejecución
+- 🧠 Context windows independientes por agent
+- 🎯 Análisis especializado sin interferencia
+- 📊 Reports consolidados al final
+
+### Best Practices
+
+::: tip Cuándo Usar Cada Método
+
+**Invocación Automática** - Usar cuando:
+
+- Task es estándar y obvio
+- Confías en la orquestación de Claude
+- No necesitas paralelización
+
+**Invocación Explícita** - Usar cuando:
+
+- Necesitas garantizar agent específico
+- Workflow requiere paralelización
+- Task requiere context window separado
+- Múltiples agents deben trabajar independientemente
+  :::
+
+**Regla General**: Deja que Claude orqueste (automático) a menos que necesites control preciso (explícito) o paralelización (Task tool).
+
+### Agentes Disponibles
+
+Todos los agents listados en las secciones siguientes pueden ser invocados usando cualquiera de los métodos anteriores. Consulta la categoría específica para detalles de cada agent.
+
+---
+
 ## Architecture & System Design
 
 ### `backend-architect`
