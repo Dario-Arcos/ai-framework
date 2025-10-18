@@ -18,7 +18,6 @@
 # Framework project files (ignored by default)
 # To version these files, comment out the lines below:
 /CLAUDE.md
-/.mcp.json
 
 # MCP server data directories
 /.playwright-mcp/

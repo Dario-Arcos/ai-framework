@@ -1601,80 +1601,133 @@ Investigaciones complejas, due diligence, market research.
 
 ### `/ai-framework:utils:changelog`
 
-Actualiza CHANGELOG.md con PRs mergeados (Keep a Changelog format), detecta duplicados.
+Actualiza CHANGELOG.md con PRs mergeados desde el último release (Keep a Changelog format).
 
 **Usage:**
 
 ```bash
-/ai-framework:utils:changelog                    # Auto-detectar PRs faltantes
-/ai-framework:utils:changelog {pr_number}        # Single PR
-/ai-framework:utils:changelog {pr1,pr2,pr3}     # Multiple PRs
+/ai-framework:utils:changelog    # Auto-detectar PRs pendientes
 
-# Ejemplos
+# Ejemplo
 /ai-framework:utils:changelog
-/ai-framework:utils:changelog 247
-/ai-framework:utils:changelog 245,246,247
 ```
 
 **Execution Steps:**
 
-1. **Validación de herramientas**:
+1. **Validación de herramientas y archivos**:
    - Validate `gh` (GitHub CLI) installed
    - Validate `jq` (JSON processor) installed
-   - Validate `CHANGELOG.md` exists
+   - Validate `CHANGELOG.md` exists en raíz
+   - Validate sección `[No Publicado]` exists
 
-2. **Auto-detección o parsing manual**:
+2. **Auto-detección de PRs pendientes**:
+   - Get último PR documentado desde CHANGELOG (buscar `PR #número`)
+   - Get PRs mergeados desde git log (commits con `#número` o `Merge pull request`)
+   - Filter solo PRs posteriores al último documentado
+   - Validate PRs en GitHub usando `gh pr view`
+   - Verify estado MERGED
+   - Detect duplicados (skip si PR ya existe en CHANGELOG)
+   - If no new PRs: Show "CHANGELOG actualizado" y exit
 
-   **Si $ARGUMENTS vacío (auto-detección):**
-   - Get último PR documentado desde CHANGELOG
-   - Get PRs mergeados desde git log
-   - Filter solo PRs mayores al último
-   - Verify si hay PRs nuevos
-   - If no new PRs: Show "CHANGELOG está actualizado" y exit
-   - If new PRs: Show count y list
+3. **Actualización de CHANGELOG**:
+   - Para cada PR nuevo:
+     - Sanitizar título (prevenir injection)
+     - Limpiar prefijo de tipo (`feat:`, `fix:`, etc.)
+     - Insertar en sección `[No Publicado]` con formato: `- título (PR #número)`
+   - Maintain Keep a Changelog format
+   - Show count de PRs agregados
 
-   **Si $ARGUMENTS tiene contenido (modo manual):**
-   - Convert arguments a lista (compatible zsh/bash)
-   - Validate todos son números
-   - Show "Procesando PR(s)"
+4. **Commit automático**:
+   - Stage CHANGELOG.md
+   - Create commit: `docs: update CHANGELOG with PRs {lista}`
+   - Show success y suggest `/release` para publicar
 
-3. **Validación de PRs en GitHub**:
-   - Para cada PR: Execute `gh pr view "$pr" --json number,state,title,url`
-   - If PR not found: Error y TERMINATE
-   - If PR not MERGED: Error y TERMINATE
-   - Show validation confirmation
-
-4. **Detección de duplicados en CHANGELOG**:
-   - Filter PRs duplicados verificando si cada PR ya exists en CHANGELOG.md
-   - Para PRs que ya existen: Show informative message y omit
-   - Para PRs nuevos: Keep en lista para processing
-   - If no PRs remain: Show message y terminate successfully
-
-5. **Actualización de CHANGELOG (Keep a Changelog format)**:
-   - Para cada PR:
-     - Get complete PR data
-     - Extract title
-     - Detect section por commit type (feat: → Added, fix: → Fixed, otros → Changed)
-     - Get current date para organization
-     - Update CHANGELOG con correct order (más recientes primero)
-   - Maintain Keep a Changelog format con entries: `- título (PR #número)`
-
-6. **Validación después de actualizar**:
-   - Validate cada PR was inserted correctly
-   - Para cada PR processed: Verify pattern "(PR #número)" exists
-   - If any PR not found: Show specific error y terminate
-
-7. **Resultado final**:
-   - Show success message
-   - Show PRs agregados
-   - Show changes preview
-   - Remind to commit changes
-
-**Output:** CHANGELOG.md actualizado siguiendo Keep a Changelog
+**Output:** CHANGELOG.md actualizado + commit automático
 
 ::: tip Cuándo usar
-Después de merge.
+Después de merges para mantener CHANGELOG actualizado. Luego usar `/release` para publicar versión.
 :::
+
+**Next Steps:** `➜ /ai-framework:utils:release` (para crear nueva versión)
+
+---
+
+### `/ai-framework:utils:release`
+
+Ejecuta workflow completo de release: bump versión → actualizar CHANGELOG → sync → commit/tag → push.
+
+**Usage:**
+
+```bash
+/ai-framework:utils:release    # Workflow interactivo
+
+# Ejemplo
+/ai-framework:utils:release
+```
+
+**Pre-requisitos:**
+
+- CHANGELOG.md actualizado con `/changelog`
+- Sección `[No Publicado]` con cambios documentados
+- package.json con campo `version`
+
+**Execution Steps:**
+
+1. **Validar herramientas y archivos**:
+   - Validate `npm`, `jq` installed
+   - Validate `CHANGELOG.md` y `package.json` exist
+   - Validate sección `[No Publicado]` exists
+   - Verify `[No Publicado]` contiene cambios reales (no placeholder)
+
+2. **Preguntar tipo de release**:
+   - Show versión actual desde `package.json`
+   - Opciones interactivas:
+     - `[1] patch` - Bug fixes (X.X.X+1)
+     - `[2] minor` - New features (X.Y+1.0)
+     - `[3] major` - Breaking changes (X+1.0.0)
+     - `[4] Cancelar`
+   - Capturar elección
+
+3. **Ejecutar npm version** (auto-dispara sync):
+   - Execute `npm version [tipo]`
+   - `npm version` automáticamente:
+     - Bump version en package.json
+     - Ejecuta `scripts/sync-versions.cjs` (hook)
+     - Sincroniza: config.js, README.md, docs/changelog.md
+     - Crea commit: `chore: release vX.X.X`
+     - Crea tag: `vX.X.X`
+
+4. **Actualizar CHANGELOG con versión**:
+   - Reemplazar `[No Publicado]` con `[version] - YYYY-MM-DD`
+   - Crear nueva sección `[No Publicado]` vacía
+   - Update commit de release con CHANGELOG modificado (`git commit --amend`)
+
+5. **Verificar commit y tag**:
+   - Verify commit de release existe
+   - Verify tag `vX.X.X` creado
+   - Show detalles
+
+6. **Preguntar si push**:
+   - Show resumen: commit, tag, archivos sincronizados
+   - Opciones: `[y/N]` para push a origin con `--follow-tags`
+   - If yes: `git push origin {branch} --follow-tags`
+   - If no: Show instrucciones para push manual
+
+**Output:** Release completo (local o remoto según elección)
+
+::: tip Cuándo usar
+Después de `/changelog` cuando estés listo para publicar nueva versión.
+:::
+
+::: warning Auto-sync
+`npm version` ejecuta automáticamente `scripts/sync-versions.cjs` que sincroniza versiones en:
+
+- human-handbook/.vitepress/config.js
+- README.md
+- human-handbook/docs/changelog.md
+  :::
+
+**Next Steps:** Push con tags si no se hizo automáticamente
 
 ---
 

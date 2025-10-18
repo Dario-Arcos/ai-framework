@@ -1,6 +1,6 @@
 ---
-allowed-tools: Bash(git *, gh *, jq *, npm version *)
-description: Actualiza CHANGELOG.md con PRs pendientes y opcionalmente ejecuta release
+allowed-tools: Bash(git *, gh *, jq *)
+description: Actualiza CHANGELOG.md con PRs pendientes desde el último release
 ---
 
 # Changelog Update
@@ -10,7 +10,7 @@ Actualiza CHANGELOG.md con PRs mergeados siguiendo [Keep a Changelog](https://ke
 ## Uso
 
 ```bash
-/changelog                     # Auto-detectar PRs → actualizar → preguntar release
+/changelog                     # Auto-detectar PRs → actualizar → commit
 ```
 
 ## Ejecución
@@ -139,84 +139,8 @@ git commit -m "docs: update CHANGELOG with PRs $commit_prs" || {
 }
 
 echo "✅ CHANGELOG commiteado"
-```
-
-### 5. Preguntar por release
-
-```bash
 echo ""
-echo "¿Quieres ejecutar un release ahora?"
-echo ""
-echo "  [1] patch (1.1.1 → 1.1.2) - Bug fixes"
-echo "  [2] minor (1.1.1 → 1.2.0) - New features"
-echo "  [3] major (1.1.1 → 2.0.0) - Breaking changes"
-echo "  [4] No, solo actualizar CHANGELOG"
-echo ""
-read -p "Selecciona opción [1-4]: " choice
-
-case $choice in
-  1) release_type="patch" ;;
-  2) release_type="minor" ;;
-  3) release_type="major" ;;
-  *)
-    echo "✓ CHANGELOG actualizado sin release"
-    echo "💡 Para hacer release más tarde: /changelog"
-    exit 0
-    ;;
-esac
-
-echo "🚀 Ejecutando release $release_type..."
-
-# Validar package.json
-[[ -f package.json ]] || {
-  echo "❌ Error: package.json no encontrado"
-  exit 1
-}
-
-current_version=$(jq -r '.version // empty' package.json)
-[[ -n "$current_version" ]] || {
-  echo "❌ Error: package.json no tiene campo 'version'"
-  exit 1
-}
-
-echo "📍 Versión actual: $current_version"
-
-# Calcular nueva versión
-new_version=$(npm version "$release_type" --no-git-tag-version 2>/dev/null | tr -d 'v')
-[[ -n "$new_version" ]] || {
-  echo "❌ Error: npm version falló"
-  exit 1
-}
-
-current_date=$(date +%Y-%m-%d)
-echo "📍 Nueva versión: $new_version ($current_date)"
-
-# Reemplazar [No Publicado] con versión
-sed -i.bak "s/^## \[No Publicado\]/## [$new_version] - $current_date/" CHANGELOG.md
-
-# Crear nueva sección [No Publicado]
-header_end=$(grep -n "^---$" CHANGELOG.md | head -1 | cut -d: -f1)
-insert_line=$((header_end + 2))
-
-sed -i.bak "${insert_line}i\\
-## [No Publicado]\\
-\\
-- [Cambios futuros se documentan aquí]\\
-\\
----\\
-" CHANGELOG.md
-
-rm -f CHANGELOG.md.bak
-
-# Ejecutar npm version para sincronizar
-npm version "$new_version" --allow-same-version || {
-  echo "❌ Error: npm version falló en sincronización"
-  exit 1
-}
-
-echo "✅ Release $release_type completado: v$new_version"
-echo "📝 Commit y tag creados automáticamente"
-echo "💡 Push con: git push origin main --follow-tags"
+echo "💡 Para crear un release: /release"
 ```
 
 ## Notas
@@ -224,5 +148,5 @@ echo "💡 Push con: git push origin main --follow-tags"
 - **Auto-detección**: Detecta automáticamente PRs mergeados desde el último PR documentado
 - **Sanitización**: Títulos de PR sanitizados para prevenir inyección de comandos
 - **Commit automático**: CHANGELOG se commitea automáticamente después de actualizar
-- **Release interactivo**: El usuario decide si ejecutar release y qué tipo
 - **Duplicados**: PRs existentes se omiten automáticamente
+- **Workflow**: Después de actualizar, usar `/release` para publicar nueva versión

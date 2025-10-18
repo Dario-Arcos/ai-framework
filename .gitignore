@@ -16,7 +16,8 @@
 # Framework project files (ignored by default)
 # To version these files, comment out the lines below:
 /CLAUDE.md
-/.mcp.json
+
+# .mcp.json is in plugin root and IS TRACKED (defines MCP servers for plugin agents)
 
 # MCP server data directories
 /.playwright-mcp/
