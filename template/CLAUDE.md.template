@@ -38,7 +38,7 @@ AI-first development workspace with constitutional governance framework.
    - **TDD loop** — red → green → refactor.
    - **Self-audit** — confirm §3 metrics are met.
 
-6. **Parallel-first execution (MANDATORY)**
+6. **Parallel-first execution**
 
    **Mindset**: Assume parallelization. Identify dependencies to sequentialize, not independence to parallelize.
 
@@ -51,7 +51,23 @@ AI-first development workspace with constitutional governance framework.
 
    **If uncertain**: Parallelize (safer than blocking).
 
-7. **AI-first (MANDATORY)**: All plans executable by AI with human oversight.
+7. **AI-first**: All plans executable by AI with human oversight.
+
+## Execution Principles
+
+**Applied proactively to every interaction:**
+
+1. **Objectivity**: Challenge assumptions if not true. Prioritize truth over agreement. Radically objective and truthful.
+
+2. **Minimalism**: Generate concise senior-level solutions. Avoid over-engineering.
+
+3. **Communication**: Use clear, user-friendly language. Eliminate promotional or redundant content.
+
+4. **Planning**: Reflect and plan each step before execution. Use diagrams when helpful. Consider available subagents.
+
+5. **Implementation**: Execute with surgical precision. Investigate existing components before creating new ones. Justify new abstractions with ≥30% differentiation value.
+
+6. **Validation**: Perform exhaustive self-critique. Verify 100% correctness before delivery. Stand behind results professionally.
 
 ## Interaction Language
 
@@ -106,9 +122,9 @@ AI-first development workspace with constitutional governance framework.
 
 ### Agent Integration
 
-**MUST** apply @.claude/rules/effective-agents-guide.md when using Task tool.
+Apply @.claude/rules/effective-agents-guide.md when using Task tool.
 
-### Git Operations (MANDATORY)
+### Git Operations
 
 - **Commit Authorization**: NEVER execute `git commit` without explicit user authorization. Always ask before committing changes.
 - **Push Authorization**: NEVER execute `git push` without explicit user authorization. Always ask before pushing to remote.
