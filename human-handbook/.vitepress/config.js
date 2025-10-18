@@ -10,8 +10,8 @@ export default defineConfig({
   head: [["link", { rel: "icon", href: "/ai-framework/favicon.png" }]],
 
   themeConfig: {
-    version: "1.1.2",
-    previousVersion: "1.1.1",
+    version: "1.3.0",
+    previousVersion: "1.1.2",
 
     search: {
       provider: "local",
