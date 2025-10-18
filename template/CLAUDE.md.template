@@ -4,56 +4,61 @@ AI-first development workspace with constitutional governance framework.
 
 ## Operating Protocol
 
-"Everything should be made as simple as possible, but not simpler.”
+"Everything should be made as simple as possible, but not simpler."
 
-1. **First principle** your value is measured by the ratio **value / complexity ≥ 2**.
+1. **First principle**: Your value = ratio **value/complexity ≥ 2**.
+
 2. **Frame the problem**
 
-- Restate the goal in ≤ 3 bullet points.
-- Size class: **S** ≤ 2 h · **M** ≤ 1 day · **L** > 1 day.
+   - Restate the goal in ≤ 3 bullet points.
+   - Size class: **S** ≤ 2 h · **M** ≤ 1 day · **L** > 1 day.
 
 3. **Complexity budget**
+
    | Size | Δ LOC | New files | New deps | Δ CPU/RAM |
    |------|------:|----------:|---------:|----------:|
-   | S | ≤ 80 | ≤ 1 | 0 | ≤ 1 % |
-   | M | ≤ 250 | ≤ 3 | ≤ 1 | ≤ 3 % |
-   | L | ≤ 600 | ≤ 5 | ≤ 2 | ≤ 5 % |
+   | S    |  ≤ 80 |       ≤ 1 |        0 |     ≤ 1 % |
+   | M    | ≤ 250 |       ≤ 3 |      ≤ 1 |     ≤ 3 % |
+   | L    | ≤ 600 |       ≤ 5 |      ≤ 2 |     ≤ 5 % |
 
    **Δ LOC = additions - deletions** (net change in lines of code)
 
-_If you expect to exceed the budget: **stop and ask**._
+   **Budget exceeded?** Decompose into smaller tasks or justify exception with ROI analysis.
 
 4. **Guided exploration**
-   Propose **2-3** approaches. For each:  
-   `benefit (1-5) | complexity (1-5) | ROI = benefit − complexity`.  
+
+   Propose **2-3** approaches. For each:
+   `benefit (1-5) | complexity (1-5) | ROI = benefit − complexity`.
    Choose the highest ROI; tie-break toward the simpler one.
+
 5. **Implementation rules**
 
-- **Reuse first** — list reused components/functions.
-- **New abstraction ⇒ justification ≥ 30 % duplication or future-cost reduction.**
-- **TDD loop** — red → green → refactor.
-- **Self-audit** — confirm §3 metrics are met.
+   - **Reuse first** — list reused components/functions.
+   - **New abstraction ⇒ justification ≥ 30 % duplication or future-cost reduction.**
+   - **TDD loop** — red → green → refactor.
+   - **Self-audit** — confirm §3 metrics are met.
 
 6. **Parallel-first execution (MANDATORY)**
 
-- **Use Task tool for parallel execution** when tasks are independent.
-- **Launch multiple agents concurrently** in a single message with multiple tool uses.
-- **Examples of parallelizable tasks:**
-  - Multiple file reads/searches (Read, Grep, Glob in parallel)
-  - Independent code reviews (security + performance + quality agents)
-  - Separate feature implementations (frontend + backend agents)
-  - Multi-repo operations (clone/update repositories)
-- **When NOT to parallelize:** Sequential dependencies (must read before editing, must test before committing).
-- **Default mindset:** "Can these tasks run simultaneously?" If yes → parallel. If unsure → ask.
+   **Mindset**: Assume parallelization. Identify dependencies to sequentialize, not independence to parallelize.
 
-7. All your proposed plans and outcomes, of any kind, **MUST BE AI-first**, meaning they must be executed by an advanced AI like Claude Code and overseen and directed by a human.
+   **Rule**: Execute operations concurrently unless sequential dependency proven.
+
+   **Examples**:
+   - ✅ `Read(file1) + Read(file2) + Grep(pattern)` in single message
+   - ✅ `Task(security-review) + Task(performance-review)` in single message
+   - ❌ `Read(file) → Edit(file)` sequential (dependency exists)
+
+   **If uncertain**: Parallelize (safer than blocking).
+
+7. **AI-first (MANDATORY)**: All plans executable by AI with human oversight.
 
 ## Interaction Language
 
 1. **Always use Spanish** as the language of communication with the user
 2. **Only in the first message of a session**, show: _(You can change the interaction language by asking me whenever you want.)_
 
-## Summary instructions
+## Conversation Memory Management
 
 ### Always preserve
 
@@ -73,73 +78,24 @@ _If you expect to exceed the budget: **stop and ask**._
 
 **Essential guides for Claude Code ecosystem:**
 
-**Constitution**: @.specify/memory/constitution.md
+- **Constitution**: @.specify/memory/constitution.md
+- **Project Context**: @.specify/memory/project-context.md
+- **Operational Excellence**: @.claude/rules/operational-excellence.md
+- **Product Design Principles**: @.specify/memory/product-design-principles.md
+- **UIX Design Principles**: @.specify/memory/uix-design-principles.md
+- **Effective AI Agents**: @.claude/rules/effective-agents-guide.md
 
-- AI-first workflow principles and governance framework
-- Value/complexity ratio requirements and complexity budgets
-- Test-first development methodology (TDD mandatory)
-- Quality standards and implementation rules
-
-**Project Context**: @.specify/memory/project-context.md
-
-- Auto-detected tech stack and architecture
-- Project-specific conventions and patterns
-- Recommended agents for your codebase
-- Integration points and dependencies
-
-**Operational Excellence**: @.claude/rules/operational-excellence.md
-
-- Practical execution guidelines and implementation validation
-- Reality Check principles for ensuring code actually works
-- Forbidden phrases, testing requirements, and simplicity enforcement
-- Documentation-first gate and anti-over-engineering principles
-- Systematic approach to ensure production-ready solutions
-
-**Product Design Principles**: @.specify/memory/product-design-principles.md
-
-- Steve Jobs design philosophy: simplicity as ultimate sophistication
-- User experience first, technology second
-- Focus and saying no to 1,000 things
-- Perfection in details and obsessive craft
-- Innovation through seeing what others can't see
-
-**UIX Design Principles**: @.specify/memory/uix-design-principles.md
-
-- S-Tier SaaS dashboard design checklist (Stripe/Airbnb/Linear standards)
-- Complete design system foundation and UI component specifications
-- Module-specific design tactics for data tables, moderation, and configuration
-- CSS architecture and responsive design best practices
-
-**Effective AI Agents**: @.claude/rules/effective-agents-guide.md
-
-- Golden Rule: smallest set of high-signal tokens for desired outcome
-- System prompts: Right Altitude Principle (clear signals, flexible heuristics)
-- Tool design: decisiveness test, token efficiency, single responsibility
-- Dynamic context: just-in-time loading, progressive disclosure
-- Long-horizon strategies: compaction, note-taking, sub-agents
-- **MUST follow when creating/using agents via Task tool or sub-agent architectures**
-
-## guidelines for code review (claude bot review)
+## Code Review Guidelines
 
 - Priority: **SECURITY**, **BUG**, **RELIABILITY**, **PERFORMANCE** with production impact.
 - Ignore style/nits if they do not affect clarity or security.
 - Do not suggest repo-wide refactors outside the diff.
-
-### Project conventions
-
-- **JS/TS**: use `camelCase` names, avoid magic numbers, handle errors with `Result` or consistent `try/catch`.
-- **Testing**: do not comment on snapshots/coverage unless there are signs of real fragility.
 
 ### Exclusions
 
 - `build/`, `dist/`, `vendor/`, `**/*.lock`, assets (`*.png`/`*.jpg`/`*.svg`), `coverage/`, `snapshots/`
 
 ## Claude Code Memories
-
-### Project Operations
-
-- **Complexity Budget**: Validate against Size S/M/L metrics before exceeding scope.
-- **AI-First Principle**: All plans must be executable by AI with human oversight.
 
 ### Quality Standards
 
@@ -150,14 +106,7 @@ _If you expect to exceed the budget: **stop and ask**._
 
 ### Agent Integration
 
-- **Design Requirements**: All agents SHOULD follow @.claude/rules/effective-agents-guide.md for optimal context efficiency
-  - System prompts at "right altitude" (clear signals, not hardcoded logic)
-  - Tools with unambiguous decisiveness (human must know which tool to use)
-  - Just-in-time context loading (references, not full content)
-  - Appropriate long-horizon strategy (compaction/notes/sub-agents)
-- **Contextual Suggestions**: Suggest proactively specialists based on challenge type, never mandate usage.
-- **Orchestrator Priority**: Use `tech-lead-orchestrator` for multi-step challenges and strategic coordination.
-- **Specialist Selection**: Core specialists for quality, framework specialists for implementation.
+**MUST** apply @.claude/rules/effective-agents-guide.md when using Task tool.
 
 ### Git Operations (MANDATORY)
 
