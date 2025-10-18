@@ -217,11 +217,14 @@ quality_review_result=$(git config --local pr.temp.quality-result 2>/dev/null ||
 
 git_log=$(git log --pretty=format:'- %s' origin/$target_branch..HEAD)
 files_stat=$(git diff --shortstat origin/$target_branch..HEAD)
-pr_title=$(git log --pretty=format:'%s' origin/$target_branch..HEAD | head -1)
+# Sanitizar título para prevenir command injection
+pr_title=$(git log --pretty=format:'%s' origin/$target_branch..HEAD | head -1 | tr -d '`$')
 
-# Construir body usando HEREDOC para evitar problemas con caracteres especiales
+# Construir body usando archivo temporal para evitar shell expansion
+pr_body_file=$(mktemp)
+
 if [ -n "$quality_review_result" ]; then
-  pr_body=$(cat <<EOF
+  cat > "$pr_body_file" <<EOF
 ## Changes
 $git_log
 
@@ -230,20 +233,21 @@ $files_stat
 ## ⚠️ Code Quality Issues
 $quality_review_result
 EOF
-)
 else
-  pr_body=$(cat <<EOF
+  cat > "$pr_body_file" <<EOF
 ## Changes
 $git_log
 
 $files_stat
 EOF
-)
 fi
 
 echo "🚀 Creando PR..."
 
-pr_url=$(gh pr create --title "$pr_title" --body "$pr_body" --base "$target_branch" 2>&1 | grep -oE 'https://[^ ]+')
+pr_url=$(gh pr create --title "$pr_title" --body-file "$pr_body_file" --base "$target_branch" 2>&1 | grep -oE 'https://[^ ]+')
+
+# Limpiar archivo temporal
+rm -f "$pr_body_file"
 
 if [ -z "$pr_url" ]; then
   echo "❌ gh pr create falló"
