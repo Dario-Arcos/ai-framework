@@ -125,6 +125,3 @@ human-handbook/docs/changelog.md
 # ============================================================================
 # AI FRAMEWORK FILES (auto-added by ai-framework plugin)
 # ============================================================================
-
-/.claude-plugin/hooks/*.db
-/.claude-plugin/hooks/__pycache__/
