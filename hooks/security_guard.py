@@ -283,20 +283,42 @@ def main():
     # Block if critical security issues found
     if critical_issues:
         # Format issues for clear user feedback
-        issues_summary = "\n".join(
+        issues_list = "\n".join(
             [
-                f"  Line {issue['line']}: {issue['message']}"
+                f"  ❌ Línea {issue['line']}: {issue['message'].replace('CRITICAL: ', '')}"
                 for issue in critical_issues[:5]  # Limit to 5 for readability
             ]
         )
 
-        reason = (
-            f"SECURITY BLOCK: {len(critical_issues)} critical issue(s) detected\n"
-            f"{issues_summary}"
-        )
+        # Build clear, constructive feedback message
+        reason_parts = [
+            "🛡️ SECURITY GUARD - Operación Bloqueada (Protección Preventiva)",
+            "",
+            f"Archivo: {file_path}",
+            "",
+            f"Se {'detectó' if len(critical_issues) == 1 else 'detectaron'} {len(critical_issues)} problema{'s' if len(critical_issues) > 1 else ''} de seguridad crítico{'s' if len(critical_issues) > 1 else ''}:",
+            "",
+            issues_list,
+        ]
 
         if len(critical_issues) > 5:
-            reason += f"\n  ... and {len(critical_issues) - 5} more issue(s)"
+            reason_parts.append(
+                f"  ... y {len(critical_issues) - 5} problema{'s' if len(critical_issues) - 5 > 1 else ''} más"
+            )
+
+        reason_parts.extend(
+            [
+                "",
+                "📋 Acciones recomendadas:",
+                "  1. Revisa el código en las líneas señaladas",
+                "  2. Corrige los problemas de seguridad",
+                "  3. Vuelve a ejecutar la operación",
+                "",
+                "ℹ️  Este bloqueo es preventivo para proteger tu código. No es un error del sistema.",
+            ]
+        )
+
+        reason = "\n".join(reason_parts)
 
         print(
             json.dumps(
@@ -312,9 +334,37 @@ def main():
         sys.exit(1)  # Exit with error code to signal blocking
 
     # Allow if no critical issues (warnings are logged but don't block)
-    reason = "No critical security issues detected"
     if warnings:
-        reason += f" ({len(warnings)} warning(s) logged)"
+        # Show warnings with clear formatting
+        warnings_list = "\n".join(
+            [
+                f"  ⚠️  Línea {warning['line']}: {warning['message'].replace('WARNING: ', '')}"
+                for warning in warnings[:3]  # Limit to 3 for brevity
+            ]
+        )
+
+        reason_parts = [
+            f"✅ Operación permitida con {len(warnings)} advertencia{'s' if len(warnings) > 1 else ''} menor{'es' if len(warnings) > 1 else ''}:",
+            "",
+            warnings_list,
+        ]
+
+        if len(warnings) > 3:
+            reason_parts.append(
+                f"  ... y {len(warnings) - 3} advertencia{'s' if len(warnings) - 3 > 1 else ''} más"
+            )
+
+        reason_parts.extend(
+            [
+                "",
+                "💡 Estas advertencias no bloquean la operación pero deberían revisarse.",
+            ]
+        )
+
+        reason = "\n".join(reason_parts)
+    else:
+        # No issues at all - simple confirmation
+        reason = "✅ Sin problemas de seguridad detectados"
 
     print(
         json.dumps(
