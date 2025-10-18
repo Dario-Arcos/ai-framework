@@ -13,6 +13,26 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 - Mejoras de CI/CD: Workflow de GitHub Pages ahora se dispara automáticamente con cambios en CHANGELOG.md
 
+### Cambiado
+
+- Plugin structure: hooks/ y template/ movidos a plugin root per especificación oficial (PR #15)
+- Plugin configuration: eliminada redundancia en marketplace.json, versión sincronizada (PR #15)
+- Command workflow: pr.md ahora crea branch temporal ANTES de pre-review (permite correcciones) (PR #14, #15)
+- Template naming: archivos framework usan sufijo .template para instalación (PR #14)
+
+### Arreglado
+
+- Security: command injection risk en pr.md (sanitización de pr_title, uso de --body-file) (PR #15)
+- Reliability: persistencia de variables en pr.md usando git config (corrige fatal error) (PR #15)
+- Configuration: hooks.json formato estándar (sin matchers innecesarios en UserPromptSubmit/Stop/Notification) (PR #15)
+- Configuration: eliminados timeouts redundantes de hooks (usa default 60s) (PR #15)
+- Gitignore: rutas actualizadas para nueva estructura (/hooks/ en lugar de /.claude-plugin/hooks/) (PR #15)
+- Complexity: simplificación de commands (pr.md, changelog.md, cleanup.md, commit.md) (PR #14)
+- Documentation: resolución de errors de parser Vue en VitePress (PR #13)
+- Plugin: unificación de agents/commands a patrón template-based (PR #12)
+- Documentation: refinamiento de workflow y eliminación de agent-assignment obligatorio (PR #10, #11)
+- Documentation: mejoras de calidad y gestión de versiones (PR #9)
+
 ---
 
 ## [1.1.1] - 2025-10-16
