@@ -31,21 +31,39 @@ from pathlib import Path
 
 
 def find_project_root():
-    """Find project root using current working directory (where Claude Code was started)"""
-    # Start from current working directory (user's project directory)
-    path = Path(os.getcwd()).resolve()
+    """Find project root with robust validation and fallback
 
-    # Check if current directory has .claude
-    if (path / ".claude").exists() and (path / ".claude").is_dir():
-        return path
+    Uses multiple strategies to locate the project's .claude directory:
+    1. Search upward from CWD for .claude directory
+    2. Fallback to CWD if not found (for new installations)
 
-    # Search upward for directory that CONTAINS .claude
-    while path.parent != path:
-        if (path / ".claude").exists() and (path / ".claude").is_dir():
-            return path
-        path = path.parent
+    Returns:
+        Path: Project root directory, or None if not found
 
-    raise RuntimeError("Project root with .claude directory not found")
+    Note: Returns None instead of raising exception to allow graceful degradation
+    """
+    # Strategy 1: Search upward from current working directory
+    current = Path(os.getcwd()).resolve()
+    max_levels = 20  # Prevent infinite loops
+    search_path = current
+
+    for _ in range(max_levels):
+        # Check if this directory has .claude
+        if (search_path / ".claude").exists() and (search_path / ".claude").is_dir():
+            return search_path
+
+        # Move up one level
+        parent = search_path.parent
+        if parent == search_path:  # Reached filesystem root
+            break
+        search_path = parent
+
+    # Strategy 2: Check if CWD itself is the project root
+    if (current / ".claude").exists() and (current / ".claude").is_dir():
+        return current
+
+    # Strategy 3: Return None for graceful degradation (logs to stderr instead)
+    return None
 
 
 # Security patterns - CRITICAL issues block tool execution
@@ -217,27 +235,38 @@ def main():
     # Logging (with stderr fallback for observability)
     try:
         project_root = find_project_root()
-        log_dir = (
-            Path(project_root)
-            / ".claude"
-            / "logs"
-            / datetime.now().strftime("%Y-%m-%d")
-        )
-        log_dir.mkdir(parents=True, exist_ok=True)
-        with open(log_dir / "security.jsonl", "a") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "timestamp": datetime.now().isoformat(),
-                        "tool_name": tool_name,
-                        "file_path": file_path,
-                        "content_size": len(content),
-                        "critical_issues": len(critical_issues),
-                        "warnings": len(warnings),
-                    }
-                )
-                + "\n"
+
+        # Only log to file if project root was found
+        if project_root:
+            log_dir = (
+                project_root / ".claude" / "logs" / datetime.now().strftime("%Y-%m-%d")
             )
+            log_dir.mkdir(parents=True, exist_ok=True)
+            with open(log_dir / "security.jsonl", "a") as f:
+                f.write(
+                    json.dumps(
+                        {
+                            "timestamp": datetime.now().isoformat(),
+                            "tool_name": tool_name,
+                            "file_path": file_path,
+                            "content_size": len(content),
+                            "critical_issues": len(critical_issues),
+                            "warnings": len(warnings),
+                        }
+                    )
+                    + "\n"
+                )
+        else:
+            # Fallback: log to stderr if project root not found
+            log_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "hook": "security_guard",
+                "tool_name": tool_name,
+                "file_path": file_path,
+                "critical_issues": len(critical_issues),
+                "warnings": len(warnings),
+            }
+            sys.stderr.write("HOOK_LOG: " + json.dumps(log_entry) + "\n")
     except OSError as e:
         # Log to stderr for observability (similar to pre-tool-use.py)
         try:

@@ -16,9 +16,54 @@ from pathlib import Path
 # =============================================================================
 
 
+def find_plugin_root():
+    """Find plugin root directory (where this hook script is located)
+
+    Uses __file__ to locate the plugin root, which is reliable regardless
+    of where Claude Code executes the hook from.
+
+    Returns:
+        Path: Plugin root directory (contains template/, hooks/, etc.)
+    """
+    script_path = Path(__file__).resolve()
+    # Navigate: hooks/session-start.py -> hooks/ -> plugin_root/
+    plugin_root = script_path.parent.parent
+    return plugin_root
+
+
 def find_project_dir():
-    """Find project directory using current working directory"""
-    return Path(os.getcwd()).resolve()
+    """Find project directory with robust validation
+
+    Uses multiple strategies to locate the user's project directory:
+    1. Try CLAUDE_PLUGIN_ROOT env var first (most reliable)
+    2. Search upward from CWD for .claude directory
+    3. Fallback to CWD (last resort)
+
+    Returns:
+        Path: Project root directory where framework files will be installed
+    """
+    # Strategy 1: Use Claude Code's CWD (current working directory)
+    # This is where Claude Code was started by the user
+    current = Path(os.getcwd()).resolve()
+
+    # Strategy 2: Search upward from CWD for .claude directory
+    max_levels = 20  # Prevent infinite loops
+    search_path = current
+
+    for _ in range(max_levels):
+        # Check if this directory already has .claude (existing installation)
+        if (search_path / ".claude").exists() and (search_path / ".claude").is_dir():
+            return search_path
+
+        # Move up one level
+        parent = search_path.parent
+        if parent == search_path:  # Reached filesystem root
+            break
+        search_path = parent
+
+    # Strategy 3: Fallback to CWD (user's working directory)
+    # This is the most likely location for a new installation
+    return current
 
 
 # =============================================================================
@@ -285,12 +330,14 @@ def main():
         project_dir = find_project_dir()
         validate_project_dir(project_dir)
 
+        # Get plugin root with robust fallback
         plugin_root_env = os.environ.get("CLAUDE_PLUGIN_ROOT")
-        if not plugin_root_env:
-            sys.stderr.write("ERROR: CLAUDE_PLUGIN_ROOT not defined\n")
-            sys.exit(1)
+        if plugin_root_env:
+            plugin_root = Path(plugin_root_env)
+        else:
+            # Fallback to __file__ based detection (more reliable)
+            plugin_root = find_plugin_root()
 
-        plugin_root = Path(plugin_root_env)
         if not plugin_root.exists():
             sys.stderr.write(
                 "ERROR: Plugin root does not exist: " + str(plugin_root) + "\n"

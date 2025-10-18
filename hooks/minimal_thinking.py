@@ -28,22 +28,39 @@ from datetime import datetime
 
 
 def find_project_root():
-    """Find project root using current working directory (where Claude Code was started)"""
-    # Start from current working directory (user's project directory)
+    """Find project root with robust validation and fallback
+
+    Uses multiple strategies to locate the project's .claude directory:
+    1. Search upward from CWD for .claude directory
+    2. Check CWD itself
+    3. Return None for graceful degradation (logs to stderr instead)
+
+    Returns:
+        Path: Project root directory, or None if not found
+
+    Note: Returns None instead of raising exception to allow graceful degradation
+    """
+    # Strategy 1: Start from current working directory
     current = Path(os.getcwd()).resolve()
     max_levels = 20  # Prevent infinite loops from circular symlinks
+    search_path = current
 
-    # Check if current directory has .claude
+    # Search upward for .claude directory
+    for _ in range(max_levels):
+        if (search_path / ".claude").exists() and (search_path / ".claude").is_dir():
+            return search_path
+
+        # Move up one level
+        if search_path == search_path.parent:  # Reached filesystem root
+            break
+        search_path = search_path.parent
+
+    # Strategy 2: Check if CWD itself has .claude (in case loop didn't check)
     if (current / ".claude").exists() and (current / ".claude").is_dir():
         return current
 
-    # Search upward for directory that CONTAINS .claude
-    for _ in range(max_levels):
-        if (current / ".claude").exists() and (current / ".claude").is_dir():
-            return current
-        if current == current.parent:
-            break
-        current = current.parent
+    # Strategy 3: Return None for graceful degradation
+    # Hook will still work (injects guidelines) but won't log
     return None
 
 

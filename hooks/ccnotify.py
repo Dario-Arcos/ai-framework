@@ -23,29 +23,44 @@ class ClaudePromptTracker:
         self.init_database()
 
     def find_project_root(self):
-        """Find project root using current working directory (where Claude Code was started)"""
+        """Find project root with robust validation and fallback
+
+        Uses multiple strategies to locate the project's .claude directory:
+        1. Search upward from CWD for .claude directory
+        2. Check CWD itself
+        3. Fallback to CWD for new installations
+
+        Returns:
+            str: Project root directory path
+        """
+        # Strategy 1: Start from current working directory
         current = os.getcwd()
         max_levels = 20  # Prevent infinite loops
+        search_path = current
 
-        # Check if current directory has .claude
+        # Search upward for .claude directory
+        for _ in range(max_levels):
+            claude_path = os.path.join(search_path, ".claude")
+
+            # Check if this directory has .claude
+            if os.path.exists(claude_path) and os.path.isdir(claude_path):
+                return search_path
+
+            # Move up one level
+            parent = os.path.dirname(search_path)
+            if parent == search_path:  # Reached filesystem root
+                break
+            search_path = parent
+
+        # Strategy 2: Check if CWD itself has .claude (in case loop didn't check)
         if os.path.exists(os.path.join(current, ".claude")) and os.path.isdir(
             os.path.join(current, ".claude")
         ):
             return current
 
-        # Search upward for directory that CONTAINS .claude
-        for _ in range(max_levels):
-            parent = os.path.dirname(current)
-            if parent == current:  # Reached root
-                break
-            if os.path.exists(os.path.join(current, ".claude")) and os.path.isdir(
-                os.path.join(current, ".claude")
-            ):
-                return current
-            current = parent
-
-        # Fallback to cwd if not found
-        return os.getcwd()
+        # Strategy 3: Fallback to CWD (for new installations)
+        # This ensures database and logs are created in a consistent location
+        return current
 
     def setup_logging(self):
         """Setup logging to daily logs directory in user's project"""

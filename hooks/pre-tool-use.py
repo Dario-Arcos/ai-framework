@@ -1,149 +1,137 @@
 #!/usr/bin/env python3
-"""Pre-Tool Use Hook - Always Works™ methodology injection
-Executes after Claude creates tool parameters and before processing the tool call.
-Injects validation methodology to ensure quality outcomes."""
-import sys, json, os
+"""Pre-Tool Use Hook - Task tool input modifier for project governance injection
+Executes before Task tool execution and injects always-works.md into sub-agent prompt.
+
+Architecture:
+  1. Reads tool_input JSON from stdin
+  2. Detects Task tool invocations (has subagent_type)
+  3. Modifies 'prompt' field by prepending governance rules
+  4. Outputs modified tool_input JSON to stdout
+  5. Claude Code executes Task tool with modified prompt
+"""
+import sys
+import json
 from pathlib import Path
 from datetime import datetime
 
 
-def find_project_root():
-    """Find project root using current working directory (where Claude Code was started)"""
-    # Start from current working directory (user's project directory)
-    path = Path(os.getcwd()).resolve()
+def find_plugin_root():
+    """Find plugin root directory (where this script is located)
 
-    # Check if current directory has .claude
-    if (path / ".claude").exists() and (path / ".claude").is_dir():
-        return path
+    Uses __file__ to locate the plugin root, which is reliable regardless
+    of where Claude Code executes the hook from.
+    """
+    # Use __file__ to find the plugin root (script location)
+    script_path = Path(__file__).resolve()
 
-    # Search upward for directory that CONTAINS .claude
-    while path.parent != path:
-        if (path / ".claude").exists() and (path / ".claude").is_dir():
-            return path
-        path = path.parent
+    # Navigate: hooks/pre-tool-use.py -> hooks/ -> plugin_root/
+    plugin_root = script_path.parent.parent
 
-    raise RuntimeError("Project root with .claude directory not found")
+    return plugin_root
 
 
-def log_result(success, context_path):
-    """Log project context injection result with descriptive context"""
+def log_result(success, context_path, modified=False):
+    """Log governance injection result"""
     try:
-        project_root = find_project_root()
-        log_dir = (
-            project_root / ".claude" / "logs" / datetime.now().strftime("%Y-%m-%d")
-        )
+        plugin_root = find_plugin_root()
+        log_dir = plugin_root / ".claude" / "logs" / datetime.now().strftime("%Y-%m-%d")
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate more descriptive log entry
         log_entry = {
             "timestamp": datetime.now().isoformat(),
             "hook": "pre-tool-use",
-            "action": "project_context_injection",
+            "action": "task_tool_input_modification",
             "status": "success" if success else "failed",
-            "context_injected": success,
-            "project_context_path": str(context_path) if context_path else "not_found",
+            "governance_injected": modified,
+            "governance_path": str(context_path) if context_path else "not_found",
             "content_size": (
                 context_path.stat().st_size
                 if context_path and context_path.exists()
                 else 0
             ),
-            "reason": (
-                "file_found_and_loaded"
-                if success
-                else "project_context_file_not_accessible"
-            ),
         }
 
         with open(log_dir / "pre_tool_use.jsonl", "a") as f:
             f.write(json.dumps(log_entry) + "\n")
-    except Exception as e:
-        # Fallback logging to stderr for observability
-        try:
-            import sys
-
-            fallback_log = {
-                "timestamp": datetime.now().isoformat(),
-                "hook": "pre-tool-use",
-                "error": "logging_failed",
-                "reason": str(e)[:100],  # Truncate error message
-            }
-            sys.stderr.write("HOOK_LOG_ERROR: " + json.dumps(fallback_log) + "\n")
-        except:
-            pass  # Ultimate fallback - truly silent only if stderr also fails
+    except Exception:
+        pass  # Silent failure for logging
 
 
-def is_task_tool_invocation(data):
-    """Check if this is a Task tool invocation for sub-agents"""
-    try:
-        tool_input = data.get("tool_input", {})
-        return tool_input.get("subagent_type") is not None
-    except (AttributeError, TypeError):
-        return False
+def is_task_tool(tool_input):
+    """Check if this is a Task tool invocation"""
+    return tool_input.get("subagent_type") is not None
 
 
-def find_project_context_path():
+def find_governance_path():
     """Locate always-works.md file in .claude/rules/"""
     try:
-        project_root = find_project_root()
-        context_path = project_root / ".claude" / "rules" / "always-works.md"
-        return context_path if context_path.exists() else None
+        plugin_root = find_plugin_root()
+        governance_path = plugin_root / ".claude" / "rules" / "always-works.md"
+        return governance_path if governance_path.exists() else None
     except Exception:
         return None
 
 
+def inject_governance_into_prompt(original_prompt, governance_content):
+    """Prepend governance content to original prompt"""
+    separator = "\n\n" + "=" * 80 + "\n"
+    separator += "USER REQUEST:\n"
+    separator += "=" * 80 + "\n\n"
+
+    return governance_content.strip() + separator + original_prompt
+
+
 def main():
     try:
-        # Read input with reasonable limits for hook input
-        try:
-            stdin_content = (
-                sys.stdin.read(8192) if sys.stdin.readable() else ""
-            )  # 8KB limit
-            data = json.loads(stdin_content) if stdin_content else {}
-        except (json.JSONDecodeError, MemoryError):
-            data = {}
-    except Exception:
-        data = {}
-
-    # Check if this is a Task tool invocation requiring project context
-    is_task_tool = is_task_tool_invocation(data)
-
-    # Only provide context for Task tool invocations (sub-agents)
-    if not is_task_tool:
-        # For non-Task tools, provide no context injection
-        log_result(True, None)
+        # Read tool_input JSON from stdin
+        stdin_content = sys.stdin.read(8192)  # 8KB limit
+        tool_input = json.loads(stdin_content) if stdin_content else {}
+    except (json.JSONDecodeError, MemoryError):
+        # If can't parse input, pass through unchanged
+        print(json.dumps({}))
         sys.exit(0)
 
-    # Locate and read always-works.md file for Task tools
-    context_path = find_project_context_path()
+    # Only modify Task tool invocations
+    if not is_task_tool(tool_input):
+        # Pass through unchanged for non-Task tools
+        print(json.dumps(tool_input))
+        log_result(True, None, modified=False)
+        sys.exit(0)
 
-    if not context_path or not context_path.exists():
-        log_result(False, context_path)
-        print("# Project Governance: .claude/rules/always-works.md not found")
+    # Locate governance file
+    governance_path = find_governance_path()
+
+    if not governance_path or not governance_path.exists():
+        # No governance file found, pass through unchanged
+        print(json.dumps(tool_input))
+        log_result(False, governance_path, modified=False)
         sys.exit(0)
 
     try:
-        # Read project context content
-        with open(context_path, "r", encoding="utf-8") as f:
-            content = f.read(65536)  # 64KB limit
+        # Read governance content
+        with open(governance_path, "r", encoding="utf-8") as f:
+            governance_content = f.read(65536)  # 64KB limit
 
-        # Output content for Claude Code context injection
-        print(content)
-
-        log_result(True, context_path)
-
-    except (OSError, UnicodeDecodeError) as e:
-        log_result(False, context_path)
-        # Log error for observability
-        try:
-            error_msg = (
-                "HOOK_ERROR: Failed to read " + str(context_path) + ": " + str(e)
-            )
-            sys.stderr.write(error_msg + "\n")
-        except:
-            pass
-        print(
-            f"# Project Governance: Error reading .claude/rules/always-works.md - {str(e)}"
+        # Modify the prompt field
+        original_prompt = tool_input.get("prompt", "")
+        modified_prompt = inject_governance_into_prompt(
+            original_prompt, governance_content
         )
+
+        # Create modified tool_input
+        modified_tool_input = tool_input.copy()
+        modified_tool_input["prompt"] = modified_prompt
+
+        # Output modified tool_input as JSON
+        print(json.dumps(modified_tool_input))
+
+        log_result(True, governance_path, modified=True)
+        sys.exit(0)
+
+    except (OSError, UnicodeDecodeError):
+        # Error reading governance file, pass through unchanged
+        print(json.dumps(tool_input))
+        log_result(False, governance_path, modified=False)
         sys.exit(0)
 
 
