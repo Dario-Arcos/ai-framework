@@ -35,11 +35,19 @@ commits_behind=$(git rev-list --count HEAD..origin/$target_branch 2>/dev/null ||
 
 echo "📍 $current_branch → $target_branch ($commit_count commits)"
 [ "$commits_behind" -gt 0 ] && echo "⚠️  $commits_behind commits atrás de origin/$target_branch"
+
+# Persistir variables para siguientes pasos
+git config --local pr.temp.target-branch "$target_branch"
+git config --local pr.temp.current-branch "$current_branch"
 ```
 
 ### 2. Verificar PR existente
 
 ```bash
+# Recuperar variables
+target_branch=$(git config --local pr.temp.target-branch)
+current_branch=$(git config --local pr.temp.current-branch)
+
 # Validar jq instalado
 if ! command -v jq &>/dev/null; then
   echo "⚠️  jq no instalado, omitiendo verificación de PR existente"
@@ -53,6 +61,9 @@ if [ -n "$pr_exists" ] && echo "$pr_exists" | jq -e '.state == "OPEN"' >/dev/nul
   echo "⚠️  PR abierto detectado, actualizando..."
   git push origin HEAD || { echo "❌ Push falló"; exit 1; }
   echo "✅ PR actualizado: $pr_url"
+  # Limpiar config temporal
+  git config --local --unset pr.temp.target-branch
+  git config --local --unset pr.temp.current-branch
   exit 0
 fi
 ```
@@ -60,6 +71,9 @@ fi
 ### 3. Preparar branch temporal (si es rama protegida)
 
 ```bash
+# Recuperar variables
+current_branch=$(git config --local pr.temp.current-branch)
+
 PROTECTED_BRANCHES="^(main|master|develop|dev|staging|production|prod|qa)$"
 
 if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
@@ -67,9 +81,15 @@ if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
 
   git checkout -b "$branch_name" || { echo "❌ Crear branch falló"; exit 1; }
   echo "✓ Branch temporal creado: $branch_name"
+
+  # Persistir branch_name
+  git config --local pr.temp.branch-name "$branch_name"
 else
   branch_name="$current_branch"
   echo "✓ Usando branch actual: $branch_name"
+
+  # Persistir branch_name
+  git config --local pr.temp.branch-name "$branch_name"
 fi
 ```
 
@@ -91,6 +111,12 @@ Return '✅ NO_ISSUES' if clean, otherwise list issues as:
 Capturar output en `$quality_review_result` y evaluar:
 
 ```bash
+# Recuperar variables
+target_branch=$(git config --local pr.temp.target-branch)
+current_branch=$(git config --local pr.temp.current-branch)
+branch_name=$(git config --local pr.temp.branch-name)
+PROTECTED_BRANCHES="^(main|master|develop|dev|staging|production|prod|qa)$"
+
 echo "🔍 Code quality review..."
 
 # Variable $quality_review_result disponible desde Task output
@@ -107,7 +133,11 @@ else
   read -p "¿Crear PR igual (y), corregir (n), descartar (d)? " choice
 
   case $choice in
-    y|Y) echo "⚠️  Creando PR con issues conocidos..." ;;
+    y|Y)
+      echo "⚠️  Creando PR con issues conocidos..."
+      # Persistir resultado para incluir en PR
+      git config --local pr.temp.quality-result "$quality_review_result"
+      ;;
     n|N)
       # Rollback: eliminar branch temporal si fue creado
       if echo "$current_branch" | grep -Eq "$PROTECTED_BRANCHES"; then
@@ -115,6 +145,10 @@ else
         git checkout "$current_branch"
         git branch -d "$branch_name" 2>/dev/null
       fi
+      # Limpiar config temporal
+      git config --local --unset pr.temp.target-branch 2>/dev/null
+      git config --local --unset pr.temp.current-branch 2>/dev/null
+      git config --local --unset pr.temp.branch-name 2>/dev/null
       echo "✓ Corrige issues y reintenta: /pr $target_branch"
       exit 0
       ;;
@@ -124,6 +158,10 @@ else
         git checkout "$current_branch"
         git branch -d "$branch_name" 2>/dev/null
       fi
+      # Limpiar config temporal
+      git config --local --unset pr.temp.target-branch 2>/dev/null
+      git config --local --unset pr.temp.current-branch 2>/dev/null
+      git config --local --unset pr.temp.branch-name 2>/dev/null
       echo "✓ Descartado"
       exit 0
       ;;
@@ -134,6 +172,10 @@ fi
 ### 5. Push branch
 
 ```bash
+# Recuperar variable
+branch_name=$(git config --local pr.temp.branch-name)
+current_branch=$(git config --local pr.temp.current-branch)
+
 if ! git config "branch.$branch_name.remote" >/dev/null 2>&1; then
   git push origin "$branch_name" --set-upstream || {
     echo "❌ Push falló"
@@ -142,11 +184,21 @@ if ! git config "branch.$branch_name.remote" >/dev/null 2>&1; then
       git checkout "$current_branch"
       git branch -d "$branch_name" 2>/dev/null
     fi
+    # Limpiar config temporal
+    git config --local --unset pr.temp.target-branch 2>/dev/null
+    git config --local --unset pr.temp.current-branch 2>/dev/null
+    git config --local --unset pr.temp.branch-name 2>/dev/null
+    git config --local --unset pr.temp.quality-result 2>/dev/null
     exit 1
   }
 else
   git push origin "$branch_name" || {
     echo "❌ Push falló"
+    # Limpiar config temporal
+    git config --local --unset pr.temp.target-branch 2>/dev/null
+    git config --local --unset pr.temp.current-branch 2>/dev/null
+    git config --local --unset pr.temp.branch-name 2>/dev/null
+    git config --local --unset pr.temp.quality-result 2>/dev/null
     exit 1
   }
 fi
@@ -157,6 +209,12 @@ echo "✓ Branch pushed: $branch_name"
 ### 6. Crear PR
 
 ```bash
+# Recuperar variables
+target_branch=$(git config --local pr.temp.target-branch)
+branch_name=$(git config --local pr.temp.branch-name)
+current_branch=$(git config --local pr.temp.current-branch)
+quality_review_result=$(git config --local pr.temp.quality-result 2>/dev/null || echo "")
+
 git_log=$(git log --pretty=format:'- %s' origin/$target_branch..HEAD)
 files_stat=$(git diff --shortstat origin/$target_branch..HEAD)
 pr_title=$(git log --pretty=format:'%s' origin/$target_branch..HEAD | head -1)
@@ -194,8 +252,19 @@ if [ -z "$pr_url" ]; then
     git checkout "$current_branch"
     git branch -d "$branch_name" 2>/dev/null
   fi
+  # Limpiar config temporal
+  git config --local --unset pr.temp.target-branch 2>/dev/null
+  git config --local --unset pr.temp.current-branch 2>/dev/null
+  git config --local --unset pr.temp.branch-name 2>/dev/null
+  git config --local --unset pr.temp.quality-result 2>/dev/null
   exit 1
 fi
+
+# Limpiar config temporal (éxito)
+git config --local --unset pr.temp.target-branch 2>/dev/null
+git config --local --unset pr.temp.current-branch 2>/dev/null
+git config --local --unset pr.temp.branch-name 2>/dev/null
+git config --local --unset pr.temp.quality-result 2>/dev/null
 
 echo "✅ PR creado: $pr_url"
 [ -n "$quality_review_result" ] && echo "⚠️  Contiene quality issues documentados"
@@ -206,6 +275,8 @@ echo "✅ PR creado: $pr_url"
 - Pre-review bloqueante con `code-quality-reviewer`
 - Auto-update si PR ya existe
 - Branch temporal CREADO ANTES del review (permite correcciones)
+- Variables persisten usando git config --local pr.temp.\*
 - Rollback completo si usuario cancela o falla
+- Limpieza automática de config temporal en todos los casos
 - HEREDOC para pr_body (maneja caracteres especiales)
 - Validación de jq antes de usar
