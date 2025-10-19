@@ -44,6 +44,7 @@ def find_project_dir():
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
     ".claude.template/settings.local.json",
+    ".claude.template/.mcp.json",
     ".claude.template/rules/",
     ".specify.template/memory/",
     ".specify.template/scripts/",
