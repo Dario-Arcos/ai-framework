@@ -25,6 +25,29 @@ ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
 ---
 
+## Requirements
+
+**Critical:**
+
+- **Git** 2.0+ ([download](https://git-scm.com/downloads))
+- **Claude Code CLI** 0.5.0+ ([installation](https://docs.claude.com/en/docs/claude-code/installation))
+- **Python** 3.8+ (hooks and scripts)
+
+**Essential:**
+
+- **GitHub CLI (gh)** — Git/GitHub workflows
+- **Node.js** 18+ — Documentation and MCP servers
+
+**Optional:**
+
+- **terminal-notifier** (macOS) — Desktop notifications
+- Python formatters (black, ruff, autopep8)
+- Prettier, shfmt, jq
+
+Run `/ai-framework:utils:setup-dependencies` to auto-detect and install missing tools.
+
+---
+
 ## Quick Install
 
 **Step 1: Install Claude Code CLI**
@@ -122,27 +145,6 @@ Framework enforces **5 non-negotiable principles**:
 | **Reuse First**       | Library-first, avoid abstractions <30% justification |
 
 Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
-
----
-
-## Requirements
-
-**Critical** (Required)
-
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/installation)
-- [Git](https://git-scm.com/downloads)
-- [Python 3.8+](https://www.python.org/downloads/)
-
-**Essential** (Full Functionality)
-
-- [GitHub CLI](https://cli.github.com/) — Git/GitHub commands
-- [Node.js 18+](https://nodejs.org/) — MCPs and formatters
-
-**Optional**
-
-- Python formatters: Black, Ruff, autopep8
-- Prettier (auto-installed via npx)
-- shfmt, jq
 
 ---
 
