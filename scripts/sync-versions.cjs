@@ -5,6 +5,7 @@
  * Automatically synchronizes version information across:
  * - human-handbook/.vitepress/config.js (themeConfig.version + themeConfig.previousVersion)
  * - README.md (version references)
+ * - .claude-plugin/plugin.json (plugin version)
  * - Validates CHANGELOG.md entry exists for new version
  *
  * Triggered by: npm version [major|minor|patch|prerelease]
@@ -22,6 +23,7 @@ const CONFIG_JS_PATH = path.join(
   "../human-handbook/.vitepress/config.js",
 );
 const README_PATH = path.join(__dirname, "../README.md");
+const PLUGIN_JSON_PATH = path.join(__dirname, "../.claude-plugin/plugin.json");
 
 function main() {
   try {
@@ -42,11 +44,15 @@ function main() {
     updateReadme(version);
     console.log(`[sync-versions] ✓ Updated README.md`);
 
-    // Step 5: Sync CHANGELOG to docs
+    // Step 5: Update .claude-plugin/plugin.json
+    updatePluginJSON(version);
+    console.log(`[sync-versions] ✓ Updated plugin.json`);
+
+    // Step 6: Sync CHANGELOG to docs
     syncDocsChangelog();
     console.log(`[sync-versions] ✓ Synced docs/changelog.md`);
 
-    // Step 6: Validate CHANGELOG.md entry exists
+    // Step 7: Validate CHANGELOG.md entry exists
     validateChangelog(version);
     console.log(`[sync-versions] ✓ CHANGELOG.md validated`);
 
@@ -117,6 +123,17 @@ function updateReadme(version) {
   );
 
   fs.writeFileSync(README_PATH, readme, "utf8");
+}
+
+function updatePluginJSON(version) {
+  if (!fs.existsSync(PLUGIN_JSON_PATH)) {
+    throw new Error(`plugin.json not found at ${PLUGIN_JSON_PATH}`);
+  }
+
+  const plugin = JSON.parse(fs.readFileSync(PLUGIN_JSON_PATH, "utf8"));
+  plugin.version = version;
+
+  fs.writeFileSync(PLUGIN_JSON_PATH, JSON.stringify(plugin, null, 2) + "\n", "utf8");
 }
 
 function syncDocsChangelog() {
