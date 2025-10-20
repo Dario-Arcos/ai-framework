@@ -9,9 +9,28 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+---
+
+## [1.3.1] - 2025-10-20
+
 ### Añadido
 
-- Enable Spanish language for SDD documentation (PR #17)
+- Generación de documentación SDD en español (spec.md, plan.md, tasks.md, checklist.md) (PR #17, #18)
+- Sincronización automática de develop al hacer push a main vía workflow CI (PR #18)
+- Logging estructurado en hook clean_code.py (PR #18)
+
+### Arreglado
+
+- **CRÍTICO**: Regresión en validación de --short-name en create-new-feature.sh (permite valor faltante) (PR #18)
+- Adopción de convención de sufijo .template en hook session-start (PR #18)
+- Condición de carrera en .mcp.json en hook session-start (PR #18)
+
+### Cambiado
+
+- Directorio PRPs reubicado a raíz del repositorio (mejora organizacional) (PR #18)
+- Comando changelog: eliminada lógica bash, usa instrucciones declarativas (PR #18)
+- Comando release: eliminada lógica bash, usa instrucciones declarativas (PR #18)
+- Comandos refactorizados siguiendo patrón de estructura de pr.md (PR #18)
 
 ---
 
