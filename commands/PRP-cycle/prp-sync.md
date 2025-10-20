@@ -36,7 +36,7 @@ $ARGUMENTS
 
 **Validate required files exist**:
 
-- `.claude/prps/<feature_name>/prp.md`
+- `prps/<feature_name>/prp.md`
 
 If PRP file missing, show error and stop.
 
@@ -56,7 +56,7 @@ If PRP file missing, show error and stop.
 
 **Prepare issue content**:
 
-- Read `.claude/prps/<feature_name>/prp.md`
+- Read `prps/<feature_name>/prp.md`
 - Strip the frontmatter (everything between `---` lines)
 - Use clean PRP content as issue body
 
@@ -78,7 +78,7 @@ gh issue create \
 
 ### 4. Update PRP File
 
-**Update** `.claude/prps/<feature_name>/prp.md` frontmatter with:
+**Update** `prps/<feature_name>/prp.md` frontmatter with:
 
 - `github: <issue_url>`
 - `github_synced: <current_timestamp>`
@@ -89,7 +89,7 @@ Use current timestamp in ISO format: `YYYY-MM-DDTHH:MM:SSZ`
 
 ### 5. Create GitHub Mapping File
 
-**Create** `.claude/prps/<feature_name>/github-mapping.md` with this content:
+**Create** `prps/<feature_name>/github-mapping.md` with this content:
 
 ```markdown
 # GitHub Issue Mapping
