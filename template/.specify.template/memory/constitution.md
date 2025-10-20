@@ -133,6 +133,8 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 **Section 4. Security Priority.** Security, performance, and reliability take priority over features.
 
+**Section 5. Documentation Language.** Human-facing documentation must be in Spanish. SDD artifacts (specifications, plans, tasks, research, data models, quickstarts, checklists) are Spanish. Code and AI agent instructions remain English. Technical terms (APIs, frameworks, commands) remain English as jargon within Spanish documentation.
+
 ---
 
 ## Article VII — Implementation Rules

@@ -33,13 +33,13 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
    - If invalid, tell user: "❌ Feature name must be kebab-case (lowercase letters, numbers, hyphens only). Examples: user-auth, payment-v2, notification-system"
 
 2. **Check for existing PRP:**
-   - Check if `.claude/prps/$ARGUMENTS/prp.md` already exists
+   - Check if `prps/$ARGUMENTS/prp.md` already exists
    - If it exists, ask user: "⚠️ PRP '$ARGUMENTS' already exists. Do you want to overwrite it? (yes/no)"
    - Only proceed with explicit 'yes' confirmation
    - If user says no, suggest: "Use a different name or sync existing PRP: /PRP-cycle:prp-sync $ARGUMENTS"
 
 3. **Verify directory structure:**
-   - Ensure `.claude/prps/$ARGUMENTS/` directory exists or can be created
+   - Ensure `prps/$ARGUMENTS/` directory exists or can be created
    - If cannot create, tell user: "❌ Cannot create PRP directory. Please check permissions."
 
 ## Instructions
@@ -149,7 +149,7 @@ Explicitly list what we're NOT building:
 
 ### File Format with Frontmatter
 
-Save the completed PRP to: `.claude/prps/$ARGUMENTS/prp.md` with this exact structure:
+Save the completed PRP to: `prps/$ARGUMENTS/prp.md` with this exact structure:
 
 ```markdown
 ---
@@ -218,7 +218,7 @@ Before saving the PRP, verify:
 
 After successfully creating the PRP:
 
-1. Confirm: "✅ PRP created: .claude/prps/$ARGUMENTS/prp.md"
+1. Confirm: "✅ PRP created: prps/$ARGUMENTS/prp.md"
 2. Show brief summary:
    - Problem: [One sentence]
    - Target: [Primary metric]

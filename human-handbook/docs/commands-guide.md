@@ -38,7 +38,7 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 /ai-framework:PRP-cycle:prp-new user-authentication
 ```
 
-**Output:** `.specify/prps/{feature_name}/prp.md`
+**Output:** `prps/{feature_name}/prp.md`
 
 **Design Philosophy (Steve Jobs Principles):**
 
@@ -106,7 +106,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 **Workflow:**
 
 1. Parse arguments (feature name + optional milestone number)
-2. Validate required files exist (`.specify/prps/{feature_name}/prp.md`)
+2. Validate required files exist (`prps/{feature_name}/prp.md`)
 3. Milestone handling:
    - **If milestone number provided**: Use existing milestone
    - **If no milestone**: Continue sin milestone assignment
@@ -116,7 +116,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
    - Labels: `prp`, `parent-issue`, `sdd`
    - Assign to milestone si milestone number was provided
 5. Update PRP file frontmatter con `github`, `github_synced`, `milestone` (si aplica)
-6. Create GitHub mapping file (`.specify/prps/{feature_name}/github-mapping.md`)
+6. Create GitHub mapping file (`prps/{feature_name}/github-mapping.md`)
 
 **Relationship to SDD Workflow:**
 
