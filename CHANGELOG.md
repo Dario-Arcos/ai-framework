@@ -9,7 +9,9 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Añadido
+
+- Enable Spanish language for SDD documentation (PR #17)
 
 ---
 
