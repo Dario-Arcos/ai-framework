@@ -17,7 +17,7 @@
 # To version these files, comment out the lines below:
 /CLAUDE.md
 
-# .mcp.json is in plugin root and IS TRACKED (defines MCP servers for plugin agents)
+# .mcp.json is only in template/ - gets copied to user project's .claude/ by session-start hook
 
 # MCP server data directories
 /.playwright-mcp/
