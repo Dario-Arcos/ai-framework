@@ -8,16 +8,18 @@ Constitutional SDD governance · Specialized agents · Intelligent hooks · Zero
 
 ## Why This Exists
 
-Most AI tools suggest. This framework **enforces**.
+**A system architecture designed to orchestrate AI capabilities into quality-enforced software development.**
 
-Not a collection of tools—a complete **development system** built on state-of-the-art AI engineering:
+This isn't a tool collection—it's an **orchestration architecture** where specialized agents, phase-gated workflows, constitutional rules, and intelligent hooks converge into a **system that creates systems**.
 
-- **Specification-Driven Development (SDD)** — Constitutional enforcement at every gate: Spec → Plan → Tasks → Implementation
+**Architectural Foundation:**
+
+- **Constitutional Governance** — Value/complexity ratios, TDD mandates, complexity budgets enforced at every gate
+- **Specification-Driven Development (SDD)** — Spec → Plan → Tasks → Implementation with mandatory quality checkpoints
 - **Context Engineering** — Anthropic's research on attention budgets, just-in-time loading, progressive disclosure
-- **Persuasion Architecture** — Prompting strategies that maximize AI output quality
-- **Graph-Based Workflows** — Dependencies mapped, parallel execution optimized
+- **Orchestrated Execution** — Specialized agents + slash commands + hooks + MCP servers working in concert
 
-Implemented through specialized agents, slash commands (SDD cycle is core), intelligent hooks, and MCP servers.
+**Built on state-of-the-art AI engineering principles to guarantee maximum quality output.**
 
 ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
@@ -44,8 +46,6 @@ ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 - Python formatters (black, ruff, autopep8)
 - Prettier, shfmt, jq
 
-Run `/ai-framework:utils:setup-dependencies` to auto-detect and install missing tools.
-
 ---
 
 ## Quick Install
@@ -71,10 +71,10 @@ Follow the [official installation guide](https://docs.claude.com/en/docs/claude-
 ```bash
 cd /path/to/your/project
 claude
-# Framework auto-installs on first session. Restart Claude Code to load configuration.
+# Framework auto-installs on first session
 ```
 
-**Done.** 30 seconds, zero configuration.
+**Installation complete.** See Post-Installation for configuration steps.
 
 [Official plugin documentation →](https://docs.claude.com/en/docs/claude-code/plugins)
 
@@ -92,36 +92,39 @@ Exit and reopen Claude Code to load the framework.
 /ai-framework:utils:project-init
 ```
 
-Analyzes your codebase and configures agent recommendations.
+Analyzes stack (languages, frameworks, databases), generates `project-context.md`, and configures specialized agent recommendations for your codebase.
 
-**Step 3: Install Dependencies** (Optional)
+**Step 3: Install Optional Dependencies**
 
 ```bash
 /ai-framework:utils:setup-dependencies
 ```
 
-Installs optional tools (notifications, formatters).
+Auto-detects and installs optional tools (terminal-notifier, formatters like black/ruff/prettier).
 
 ---
 
 ## What Gets Installed
 
-### Your Project Root
+### Framework Installation Structure
+
+The framework adds these files/directories to your **existing project structure**:
 
 ```
-your-project/
-├── CLAUDE.md                # Project configuration (ignored by default)
-├── .mcp.json                # MCP servers (ignored by default)
+your-project/              # Your existing project root
+├── [your existing files]  # Your code, package.json, etc.
+├── CLAUDE.md              # Project configuration (gitignored by default)
+├── .mcp.json              # MCP servers (gitignored by default)
 ├── .claude/
 │   ├── settings.local.json  # Personal configuration (max priority)
 │   └── rules/               # 5 governance files
 └── .specify/
-    ├── memory/              # Constitutional documents
+    ├── memory/              # Constitutional documents (constitution.md, project-context.md)
     ├── scripts/bash/        # Utility scripts
-    └── templates/           # Workflow templates
+    └── templates/           # Workflow templates (spec, plan, tasks)
 ```
 
-**Note:** `CLAUDE.md` and `.mcp.json` are ignored by default. To version control them, uncomment the respective lines in `.gitignore`.
+**Note:** `CLAUDE.md` and `.mcp.json` are gitignored by default. To version control them, uncomment the respective lines in `.gitignore`.
 
 ### Plugin Components (via Claude Code)
 
