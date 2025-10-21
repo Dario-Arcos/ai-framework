@@ -21,9 +21,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Run Claude Code Review
         id: claude-review
@@ -54,7 +54,7 @@ jobs:
             When evaluating complexity budget compliance:
             - Δ LOC = additions - deletions (net change, not total additions)
             - Size S: ≤ 80 Δ LOC, Size M: ≤ 250 Δ LOC, Size L: ≤ 600 Δ LOC
-            - Calculate using: git diff --numstat to get additions/deletions
+            - Calculate using: gh pr view ${{ github.event.pull_request.number }} --json additions,deletions,changedFiles
             - Example: +87 -88 = -1 Δ LOC ≤ 80 (complies with Size S)
             - Report mathematical calculation clearly in constitutional assessment
 
@@ -115,10 +115,10 @@ jobs:
             - APPROVE if no valid findings remain.
 
             FLOW
-            1) Use 'git diff origin/${{ github.event.pull_request.base.ref }}..HEAD' to analyze PR changes.
+            1) Use 'gh pr diff ${{ github.event.pull_request.number }}' to analyze PR changes.
             2) Explore codebase context: Read (CLAUDE.md, README.md), Glob (find related files), Grep (search patterns) to understand architecture, conventions, and existing patterns.
             3) Triage diff and draft findings.
             4) Self-check: drop low-confidence, cosmetic or duplicate items.
             5) Use 'gh pr comment ${{ github.event.pull_request.number }} --body \"[review content]\"' to post consolidated review with all findings."
 
-            --allowedTools "Read,Glob,Grep,Bash"
+            --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*)"
