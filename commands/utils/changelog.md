@@ -66,17 +66,35 @@ git config --local changelog.temp.last-release "$last_release"
 
 Para cada PR encontrado en paso anterior:
 
-1. Obtener metadata del PR desde GitHub usando `gh pr view`:
-   - Estado (MERGED requerido)
-   - Título del PR
+1. Obtener metadata del PR desde GitHub usando `gh pr view <número>`:
+   - Estado (MERGED requerido): `gh pr view <número> --json state`
+   - Título del PR: `gh pr view <número> --json title`
+   - **Body del PR** (descripción completa): `gh pr view <número> --json body`
+
+   **Nota técnica**: Usar formato JSON para parsing confiable, ej:
+
+   ```bash
+   gh pr view <número> --json title,body,state
+   ```
 
 2. Verificar que PR está mergeado (skip si no lo está)
 
 3. Extraer tipo convencional del título:
    - Buscar prefijo: `feat:`, `fix:`, `docs:`, `refactor:`, etc.
-   - Limpiar título removiendo prefijo y scope `(scope)`
 
-4. Mapear tipo → categoría Keep a Changelog:
+4. **Construir descripción para CHANGELOG**:
+   - **Si body existe y no está vacío**: Usar body del PR
+     - Extraer primera sección relevante (detener antes de estas secciones comunes):
+       - `## Test plan` / `## Testing`
+       - `## Checklist` / `## TODO`
+       - `## Related Issues` / `## References`
+     - Preservar bullet points y formatting del body
+     - Limpiar headers markdown de nivel 2+ (`## Título` → `Título`)
+     - Mantener énfasis (**bold**, _italic_) y estructura de bullets
+   - **Si body está vacío**: Usar título limpiado (sin prefijo/scope)
+   - **Formato final**: Descripción completa del body sin headers de sección de metadata
+
+5. Mapear tipo → categoría Keep a Changelog:
    - `feat` → **### Añadido**
    - `fix` → **### Arreglado**
    - `refactor`, `perf`, `style` → **### Cambiado**
@@ -84,9 +102,9 @@ Para cada PR encontrado en paso anterior:
    - `docs` → **### Documentación**
    - Otros → **### Cambiado** (default)
 
-5. Agrupar PRs por categoría para construir estructura del CHANGELOG
+6. Agrupar PRs por categoría para construir estructura del CHANGELOG
 
-**Output esperado**: PRs agrupados por categoría Keep a Changelog
+**Output esperado**: PRs agrupados por categoría con descripciones completas del body
 
 ## Paso 5: Generar Preview y Confirmar
 
@@ -96,15 +114,17 @@ Para cada PR encontrado en paso anterior:
    ## [No Publicado]
 
    ### Añadido
-   - Feature description (PR #123)
-   - Another feature (PR #124)
+   - Generación de documentación SDD en español (spec.md, plan.md, tasks.md) (PR #123)
+   - Sincronización automática de develop al hacer push a main vía workflow CI (PR #124)
 
    ### Arreglado
-   - Bug fix description (PR #125)
+   - **CRÍTICO**: Regresión en validación de --short-name (permite valor faltante) (PR #125)
 
    ### Cambiado
-   - Refactor description (PR #126)
+   - Directorio PRPs reubicado a raíz del repositorio (mejora organizacional) (PR #126)
    ```
+
+   **Nota**: Las descripciones provienen del body completo del PR, no solo del título
 
 2. Mostrar preview al usuario
 
@@ -131,6 +151,10 @@ Si usuario confirmó:
 4. Construir `new_string`:
    - Mantener header `## [No Publicado]`
    - Insertar categorías con PRs clasificados (solo categorías que tienen items)
+   - **Formato de entrada**: `- {descripción del body del PR} (PR #{número})`
+     - Descripción viene del body del PR (extraída en Paso 4)
+     - Preserva formatting markdown (bold, italics, bullet points si aplicable)
+     - Si PR no tiene body, usa título limpiado
    - Mantener orden: Añadido → Cambiado → Arreglado → Seguridad → Documentación
 
 5. Usar Edit tool con `old_string` y `new_string`
@@ -174,6 +198,11 @@ exit 1
 - **Bash mínimo**: Solo validaciones simples y git config
 - **Detección desde release**: No desde último PR, sino último tag
 - **Clasificación inteligente**: Tipo convencional → Keep a Changelog
+- **Body completo del PR**: Extrae descripción completa del PR (body), no solo título
+  - Preserva formatting markdown (bold, bullet points, italics)
+  - Extrae sección relevante (ignora metadata: Test plan, Checklist, References)
+  - Limpia headers markdown de nivel 2+ manteniendo contenido
+  - Fallback a título si body vacío
 - **Confirmación obligatoria**: Preview antes de modificar
 - **No commit automático**: Usuario decide cuándo commitear
 - **Workflow**: `/changelog` → revisar → `/release`
