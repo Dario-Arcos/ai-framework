@@ -77,7 +77,7 @@ html {
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Subtle shine effect on hover */
@@ -89,7 +89,7 @@ html {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .VPButton.brand:hover::before {
@@ -154,4 +154,34 @@ html {
 /* Invert feature icons in dark mode for visibility */
 .dark .VPFeature .box > img.VPImage {
   filter: invert(1);
+}
+
+/* ===== SIDEBAR SMOOTH TRANSITIONS ===== */
+.VPSidebar {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* ===== FEATURE CARDS - SUBTLE HOVER ===== */
+.VPFeature {
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+
+.VPFeature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .VPFeature:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
