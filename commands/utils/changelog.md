@@ -5,7 +5,7 @@ description: Actualiza CHANGELOG.md con PRs clasificados según Keep a Changelog
 
 # Changelog Update
 
-Actualiza `[No Publicado]` con PRs mergeados, clasificados por tipo según [Keep a Changelog](https://keepachangelog.com/).
+Actualiza `[No Publicado]` con PRs mergeados, clasificados automáticamente por conventional type y mapeados a categorías [Keep a Changelog](https://keepachangelog.com/).
 
 **Input**: Sin argumentos (detección automática desde último release)
 
@@ -21,7 +21,7 @@ Ejecutar en bash:
 
 2. Verificar archivos:
    ```bash
-   [[ -f CHANGELOG.md ]] || { echo "❌ CHANGELOG.md no encontrado"; exit 1; }
+   [ -f CHANGELOG.md ] || { echo "❌ CHANGELOG.md no encontrado"; exit 1; }
    grep -q "^## \[No Publicado\]" CHANGELOG.md || { echo "❌ Sección [No Publicado] no encontrada"; exit 1; }
    ```
 
@@ -36,8 +36,10 @@ Ejecutar en bash:
 Obtener último release tag de git para saber desde dónde buscar PRs:
 
 ```bash
-last_release=$(git describe --tags --abbrev=0 2>/dev/null)
-[[ -z "$last_release" ]] && last_release=$(git rev-list --max-parents=0 HEAD)
+last_release=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -z "$last_release" ]; then
+  last_release=$(git rev-list --max-parents=0 HEAD)
+fi
 git config --local changelog.temp.last-release "$last_release"
 ```
 
@@ -64,47 +66,89 @@ git config --local changelog.temp.last-release "$last_release"
 
 ## Paso 4: Clasificar PRs por Tipo
 
+**Estrategia**: Claude decide la mejor implementación usando herramientas disponibles (bash para gh CLI, Claude para procesamiento de texto).
+
 Para cada PR encontrado en paso anterior:
 
-1. Obtener metadata del PR desde GitHub usando `gh pr view <número>`:
-   - Estado (MERGED requerido): `gh pr view <número> --json state`
-   - Título del PR: `gh pr view <número> --json title`
-   - **Body del PR** (descripción completa): `gh pr view <número> --json body`
+1. **Obtener metadata del PR desde GitHub**:
 
-   **Nota técnica**: Usar formato JSON para parsing confiable, ej:
+   Ejecutar en bash:
 
    ```bash
-   gh pr view <número> --json title,body,state
+   # Retry logic: 3 intentos con 2s delay
+   for attempt in 1 2 3; do
+     pr_data=$(gh pr view "$pr_num" --json title,body,state 2>&1) && break
+     [ $attempt -lt 3 ] && sleep 2
+   done
+
+   # Skip si falló
+   if echo "$pr_data" | grep -qE 'error|not found'; then
+     echo "⚠️  PR #$pr_num: No encontrado, skip"
+     continue
+   fi
    ```
 
-2. Verificar que PR está mergeado (skip si no lo está)
+2. **Validar PR mergeado** (bash con jq):
 
-3. Extraer tipo convencional del título:
-   - Buscar prefijo: `feat:`, `fix:`, `docs:`, `refactor:`, etc.
+   ```bash
+   state=$(echo "$pr_data" | jq -r '.state')
+   if [ "$state" != "MERGED" ]; then
+     echo "⚠️  PR #$pr_num: No mergeado ($state), skip"
+     continue
+   fi
+   ```
 
-4. **Construir descripción para CHANGELOG**:
-   - **Si body existe y no está vacío**: Usar body del PR
-     - Extraer primera sección relevante (detener antes de estas secciones comunes):
-       - `## Test plan` / `## Testing`
-       - `## Checklist` / `## TODO`
-       - `## Related Issues` / `## References`
-     - Preservar bullet points y formatting del body
-     - Limpiar headers markdown de nivel 2+ (`## Título` → `Título`)
-     - Mantener énfasis (**bold**, _italic_) y estructura de bullets
-   - **Si body está vacío**: Usar título limpiado (sin prefijo/scope)
-   - **Formato final**: Descripción completa del body sin headers de sección de metadata
+3. **Extraer conventional type** (bash con grep):
 
-5. Mapear tipo → categoría Keep a Changelog:
-   - `feat` → **### Añadido**
-   - `fix` → **### Arreglado**
-   - `refactor`, `perf`, `style` → **### Cambiado**
-   - `security` → **### Seguridad**
-   - `docs` → **### Documentación**
-   - Otros → **### Cambiado** (default)
+   ```bash
+   title=$(echo "$pr_data" | jq -r '.title')
 
-6. Agrupar PRs por categoría para construir estructura del CHANGELOG
+   # Portable bash 3.2
+   if echo "$title" | grep -qE '^(feat|fix|docs|refactor|perf|style|security|chore|test|build|ci)[:(]'; then
+     type=$(echo "$title" | grep -oE '^[a-z]+')
+   else
+     type="other"
+   fi
+   ```
 
-**Output esperado**: PRs agrupados por categoría con descripciones completas del body
+4. **Construir descripción para CHANGELOG** (Claude procesa):
+
+   **Responsabilidad de Claude**:
+   - Extraer body del PR desde JSON: `jq -r '.body'`
+   - **Si body no está vacío** (no es `null`, `""`, o solo whitespace):
+     - Identificar primera sección relevante (contenido antes de `## Test`, `## Checklist`, etc.)
+     - Preservar markdown: bold, italic, bullets, links
+     - Remover headers de nivel 2+ manteniendo contenido (`## Título\nContenido` → `Contenido`)
+     - Condensar a 1-3 líneas si es muy largo (preservar esencia)
+   - **Si body está vacío**: Usar título sin prefijo/scope (`feat(auth): add login` → `add login`)
+
+   **Criterio de "vacío"**: `body == null || body == "" || body.trim() == ""`
+
+5. **Mapear conventional type → Keep a Changelog categoría**:
+
+   | Conventional Type           | Keep a Changelog Categoría |
+   | --------------------------- | -------------------------- |
+   | `feat`                      | **### Añadido**            |
+   | `fix`                       | **### Arreglado**          |
+   | `refactor`, `perf`, `style` | **### Cambiado**           |
+   | `security`                  | **### Seguridad**          |
+   | `docs`                      | **### Documentación**      |
+   | Otros                       | **### Cambiado** (default) |
+
+6. **Agrupar PRs por categoría** (Claude estructura):
+
+   Acumular entradas por categoría y guardar en git config:
+
+   ```bash
+   # Por cada PR procesado, agregar a categoría correspondiente
+   git config --local "changelog.temp.cat-added" "$cat_added"
+   git config --local "changelog.temp.cat-fixed" "$cat_fixed"
+   git config --local "changelog.temp.cat-changed" "$cat_changed"
+   git config --local "changelog.temp.cat-security" "$cat_security"
+   git config --local "changelog.temp.cat-docs" "$cat_docs"
+   ```
+
+**Output esperado**: PRs agrupados por categoría con descripciones procesadas del body
 
 ## Paso 5: Generar Preview y Confirmar
 
@@ -124,13 +168,11 @@ Para cada PR encontrado en paso anterior:
    - Directorio PRPs reubicado a raíz del repositorio (mejora organizacional) (PR #126)
    ```
 
-   **Nota**: Las descripciones provienen del body completo del PR, no solo del título
+2. Mostrar preview al usuario (stdout)
 
-2. Mostrar preview al usuario
-
-3. Preguntar al usuario si desea aplicar los cambios:
-   - Si confirma → continuar a paso 6
-   - Si cancela → limpiar state y salir
+3. Confirmar cambios (stdout + user input):
+   - Usuario confirma (y/yes) → continuar a paso 6
+   - Usuario cancela (n/no/cualquier otro) → limpiar state y salir
 
 **Bloqueadores**:
 
@@ -150,12 +192,12 @@ Si usuario confirmó:
 
 4. Construir `new_string`:
    - Mantener header `## [No Publicado]`
-   - Insertar categorías con PRs clasificados (solo categorías que tienen items)
-   - **Formato de entrada**: `- {descripción del body del PR} (PR #{número})`
+   - Insertar categorías con PRs clasificados (solo categorías con items)
+   - **Formato**: `- {descripción del body del PR} (PR #{número})`
      - Descripción viene del body del PR (extraída en Paso 4)
-     - Preserva formatting markdown (bold, italics, bullet points si aplicable)
+     - Preserva formatting markdown (bold, italics, bullets si aplicable)
      - Si PR no tiene body, usa título limpiado
-   - Mantener orden: Añadido → Cambiado → Arreglado → Seguridad → Documentación
+   - Orden estándar Keep a Changelog
 
 5. Usar Edit tool con `old_string` y `new_string`
 
@@ -193,16 +235,123 @@ exit 1
 
 ## Notas de Implementación
 
-- **Instrucciones declarativas**: Claude decide cómo implementar extracción y clasificación
-- **Herramientas de Claude**: Read, Edit (no sed/awk)
-- **Bash mínimo**: Solo validaciones simples y git config
-- **Detección desde release**: No desde último PR, sino último tag
-- **Clasificación inteligente**: Tipo convencional → Keep a Changelog
-- **Body completo del PR**: Extrae descripción completa del PR (body), no solo título
-  - Preserva formatting markdown (bold, bullet points, italics)
-  - Extrae sección relevante (ignora metadata: Test plan, Checklist, References)
-  - Limpia headers markdown de nivel 2+ manteniendo contenido
-  - Fallback a título si body vacío
+- **Herramientas**: Read, Edit para Claude; bash para git/gh CLI
+- **Bash 3.2 Compatible**: POSIX test `[ ]`, `grep -E`, no associative arrays
+- **Detección desde release**: No desde último PR, sino último tag git
+- **Clasificación inteligente**: Conventional type (feat, fix, docs) → Keep a Changelog categoría (Añadido, Arreglado, Documentación)
+- **Body completo del PR**: Extrae descripción del body, no solo título
+  - Claude procesa: preserva markdown (bold, bullets, italics)
+  - Stop antes de secciones: Test plan, Checklist, References
+  - Remueve headers `## ` manteniendo contenido
+  - Fallback a título limpiado si body vacío (`null`, `""`, whitespace)
+- **Error handling**: Retry logic (3 intentos) para gh CLI, skip PRs no encontrados
 - **Confirmación obligatoria**: Preview antes de modificar
 - **No commit automático**: Usuario decide cuándo commitear
 - **Workflow**: `/changelog` → revisar → `/release`
+
+## Anexo: Ejemplo End-to-End
+
+### Input: PR #123 Real
+
+**PR Metadata**:
+
+```json
+{
+  "title": "feat(sdd): generación de specs en español",
+  "state": "MERGED",
+  "body": "## Summary\n\nImplementa generación automática de documentos SDD (spec.md, plan.md, tasks.md) en idioma español.\n\n- Spec template traducido al español\n- Plan template con secciones estándar\n- Tasks con formato dependency-ordered\n\n## Test Plan\n- [x] Templates generados correctamente\n- [x] Encoding UTF-8 verificado"
+}
+```
+
+### Processing Pipeline
+
+**Paso 1**: Conventional type extraction
+
+```bash
+# Input: "feat(sdd): generación de specs en español"
+type=$(echo "$title" | grep -oE '^[a-z]+' | head -1)
+# Output: "feat"
+```
+
+**Paso 2**: Map to Keep a Changelog category
+
+```
+feat → ### Añadido
+```
+
+**Paso 3**: Body processing (Claude)
+
+```
+Input body:
+"## Summary\n\nImplementa generación automática de documentos SDD (spec.md, plan.md, tasks.md) en idioma español.\n\n- Spec template traducido al español\n- Plan template con secciones estándar\n- Tasks con formato dependency-ordered\n\n## Test Plan\n- [x] Templates generados correctamente\n- [x] Encoding UTF-8 verificado"
+
+Claude extracts:
+1. Stop at "## Test Plan" (metadata section)
+2. Remove "## Summary" header, keep content
+3. Preserve bullets and bold/italic
+
+Output description:
+"Implementa generación automática de documentos SDD (spec.md, plan.md, tasks.md) en idioma español.
+
+- Spec template traducido al español
+- Plan template con secciones estándar
+- Tasks con formato dependency-ordered"
+```
+
+**Paso 4**: Format for CHANGELOG
+
+```markdown
+- Implementa generación automática de documentos SDD (spec.md, plan.md, tasks.md) en idioma español.
+  - Spec template traducido al español
+  - Plan template con secciones estándar
+  - Tasks con formato dependency-ordered (PR #123)
+```
+
+### Output: CHANGELOG.md Updated
+
+**Antes**:
+
+```markdown
+## [No Publicado]
+
+_Sin cambios aún._
+```
+
+**Después**:
+
+```markdown
+## [No Publicado]
+
+### Añadido
+
+- Implementa generación automática de documentos SDD (spec.md, plan.md, tasks.md) en idioma español.
+  - Spec template traducido al español
+  - Plan template con secciones estándar
+  - Tasks con formato dependency-ordered (PR #123)
+```
+
+### Casos Edge
+
+**PR sin body** (body es `null` o `""`):
+
+```json
+{ "title": "fix(cli): argumento --help no funcionaba", "body": null }
+```
+
+**Resultado**: Usa título limpiado
+
+```markdown
+- argumento --help no funcionaba (PR #124)
+```
+
+**PR con body solo whitespace**:
+
+```json
+{ "title": "docs: actualizar README", "body": "   \n\n  " }
+```
+
+**Resultado**: Criterio vacío cumplido, usa título
+
+```markdown
+- actualizar README (PR #125)
+```
