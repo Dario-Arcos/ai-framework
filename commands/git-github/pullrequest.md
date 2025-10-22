@@ -80,9 +80,9 @@ Ejecutar en bash para extraer metadata:
 ```bash
 target_branch=$(git config --local pr.temp.target-branch)
 
-# 1. Extract commit logs
+# 1. Extract commit logs (usar archivo temporal para evitar truncamiento git config)
 git_log_raw=$(git log --pretty=format:'- %s' "origin/$target_branch..HEAD" --)
-git config --local pr.temp.git-log "$git_log_raw"
+echo "$git_log_raw" > .git/pr-temp-commits.txt
 
 # Get first commit for format detection and title
 first_commit=$(git log --pretty=format:'%s' "origin/$target_branch..HEAD" -- | head -1)
@@ -246,10 +246,10 @@ Ejecutar en bash:
 Ejecutar en bash:
 
 ```bash
-# 1. Retrieve metadata from git config
+# 1. Retrieve metadata from git config y archivo temporal
 target_branch=$(git config --local pr.temp.target-branch)
 commit_count=$(git config --local pr.temp.commit-count)
-git_log=$(git config --local pr.temp.git-log)
+git_log=$(cat .git/pr-temp-commits.txt)
 first_commit=$(git config --local pr.temp.first-commit)
 files_changed=$(git config --local pr.temp.files-changed)
 additions=$(git config --local pr.temp.additions)
@@ -318,6 +318,7 @@ rm "$temp_file"
 
 # 6. Cleanup
 git config --local --unset-all pr.temp
+rm -f .git/pr-temp-commits.txt
 echo "✅ PR created: $pr_url"
 ```
 
@@ -338,6 +339,7 @@ En cualquier error:
 
 ```bash
 git config --local --unset-all pr.temp 2>/dev/null
+rm -f .git/pr-temp-commits.txt 2>/dev/null
 exit 1
 ```
 
