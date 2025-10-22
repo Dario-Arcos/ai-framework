@@ -713,7 +713,7 @@ Run `/speckit.sync` AFTER implementation es complete y validated. Esto ensures:
 (Opcional) DESPUÉS de implementación completa - documenta lo que fue construido.
 :::
 
-**Next Steps:** `➜ /ai-framework:git-github:commit` → `/ai-framework:git-github:pr`
+**Next Steps:** `➜ /ai-framework:git-github:commit` → `/ai-framework:git-github:pullrequest`
 
 ---
 
@@ -772,7 +772,7 @@ Setup inicial o actualización de principios fundamentales.
 
 ### `/ai-framework:git-github:commit`
 
-Commits semánticos con grouping automático por categoría.
+Commits semánticos con grouping automático por categoría y soporte para formato corporativo.
 
 **Usage:**
 
@@ -780,10 +780,26 @@ Commits semánticos con grouping automático por categoría.
 /ai-framework:git-github:commit "descripción"
 /ai-framework:git-github:commit "all changes"
 
-# Ejemplos
+# Formato convencional
 /ai-framework:git-github:commit "feat: add OAuth authentication"
+
+# Formato corporativo (con Task ID)
+/ai-framework:git-github:commit "TRV-345 implement authentication"
+
+# Commit automático de todos los cambios
 /ai-framework:git-github:commit "all changes"
 ```
+
+**Formatos de Commit Soportados:**
+
+1. **Formato Convencional**: `type(scope): description`
+   - Ejemplo: `feat(auth): add OAuth2 support`
+   - Categorías: feat, fix, docs, test, refactor, chore, security
+
+2. **Formato Corporativo**: Cuando se detecta Task ID (ej: TRV-345, PROJ-123)
+   - Template: `Tipo|IdTarea|YYYYMMDD|Descripción`
+   - Ejemplo: `feat|TRV-345|20250122|implement authentication`
+   - Mapping automático: feat→feat, fix→fix, config→chore, docs→docs, security→fix, test→test
 
 **Execution Steps:**
 
@@ -840,23 +856,29 @@ Commits semánticos con grouping automático por categoría.
 Después de completar cambios.
 :::
 
-**Next Steps:** `➜ /ai-framework:git-github:pr`
+**Next Steps:** `➜ /ai-framework:git-github:pullrequest`
 
 ---
 
-### `/ai-framework:git-github:pr`
+### `/ai-framework:git-github:pullrequest`
 
-Crea PR con security review BLOCKING, push seguro y metadata completa.
+Crea PR con security review BLOCKING, push seguro, metadata completa y detección automática de formato de commits (convencional/corporativo).
 
 **Usage:**
 
 ```bash
-/ai-framework:git-github:pr {target_branch}
+/ai-framework:git-github:pullrequest {target_branch}
 
 # Ejemplos
-/ai-framework:git-github:pr develop
-/ai-framework:git-github:pr main
+/ai-framework:git-github:pullrequest develop
+/ai-framework:git-github:pullrequest main
 ```
+
+**Detección Automática de Formato:**
+
+- **Formato Corporativo**: Si detecta `Tipo|IdTarea|YYYYMMDD|Descripción` → preserva como PR title
+- **Formato Convencional**: Si detecta `type(scope): description` → preserva como PR title
+- Detection logic: Pattern matching `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}` = corporate, sino conventional
 
 **Execution Steps:**
 
@@ -981,17 +1003,15 @@ Post-merge cleanup workflow: delete feature branch y sync con base branch.
    - If fails (diverged): Show rebase instructions y terminate
    - If success: Show commits pulled
 
-6. **Cleanup Remote Branch (Optional)**:
-   - Check si feature branch exists en remote
-   - If exists: Ask "¿Eliminar rama remota? [y/N]"
-   - If yes: Execute `git push origin --delete "$current_branch"`
-   - If no: Skip
-
-7. **Final Status**:
+6. **Final Status**:
    - Show summary: operations, current branch, deleted branch, commits synced
    - Verify clean state con `git status --short`
 
 **Output:** Workspace limpio + documentación actualizada
+
+::: info Nota sobre Remote Branch Cleanup
+GitHub elimina automáticamente las ramas remotas cuando se hace merge del PR. No es necesario borrado manual.
+:::
 
 ::: tip Cuándo usar
 Después de merge exitoso.
@@ -1926,12 +1946,12 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 
 ### Workflow Comparison Table
 
-| Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                            |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                           |
-| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`     |
-| **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pr` |
-| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                     |
+| Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                                    |
+| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`              |
+| **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest` |
+| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                              |
 
 ::: tip Comandos Opcionales
 `[analyze]`, `[checklist]`, `[sync]` son opcionales. checklist es quality gate antes de implementar.
@@ -1950,7 +1970,7 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 ::: tip SIEMPRE
 
 - Usar worktrees para trabajo paralelo - evita branch pollution
-- Dejar `/ai-framework:git-github:pr` ejecutar security review
+- Dejar `/ai-framework:git-github:pullrequest` ejecutar security review
   :::
 
 ::: info OPCIONAL
@@ -1963,14 +1983,14 @@ Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
 ### Comandos Pre-Production
 
 1. `/ai-framework:SDD-cycle:speckit.implement` - TDD enforcement automático
-2. `/ai-framework:git-github:pr` - Security review blocking
+2. `/ai-framework:git-github:pullrequest` - Security review blocking
 3. `/ai-framework:utils:changelog` - Keep a Changelog compliance
 
 ### Parallel Execution
 
 - `/ai-framework:SDD-cycle:speckit.implement` ejecuta agents en paralelo automáticamente
 - Tasks marcadas `[P]` se ejecutan concurrentemente
-- `/ai-framework:git-github:pr` ejecuta security review en paralelo
+- `/ai-framework:git-github:pullrequest` ejecuta security review en paralelo
 
 ---
 
