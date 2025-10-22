@@ -90,9 +90,16 @@ git config --local pr.temp.first-commit "$first_commit"
 
 # 2. Extract statistics
 stats=$(git diff --shortstat "origin/$target_branch..HEAD" --)
-files_changed=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+')
-additions=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+')
-deletions=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+')
+
+if [ -z "$stats" ]; then
+  files_changed=0
+  additions=0
+  deletions=0
+else
+  files_changed=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+')
+  additions=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+')
+  deletions=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+')
+fi
 
 git config --local pr.temp.files-changed "${files_changed:-0}"
 git config --local pr.temp.additions "${additions:-0}"
@@ -100,7 +107,7 @@ git config --local pr.temp.deletions "${deletions:-0}"
 
 # 3. Detect format and extract primary type
 # Corporate format pattern: "word|CAPS-NUM|8digits|text"
-if echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|'; then
+if echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\|'; then
   commit_format="corporate"
   primary_type=$(echo "$first_commit" | cut -d'|' -f1)
 else
@@ -196,8 +203,8 @@ Ejecutar en bash:
      first_commit_clean=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/ /g')
      branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//')
 
-     # Truncate to max 30 chars if needed
-     branch_suffix=$(echo "$branch_suffix" | cut -c1-30 | sed 's/-$//')
+     # Truncate to max 39 chars (60 total - 21 overhead = 39 for suffix)
+     branch_suffix=$(echo "$branch_suffix" | cut -c1-39 | sed 's/-$//')
 
      # Fallback if empty
      if [ -z "$branch_suffix" ]; then
