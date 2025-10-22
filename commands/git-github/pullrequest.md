@@ -9,47 +9,20 @@ Workflow automatizado para crear PR con validación de calidad y seguridad.
 
 **Input**: `$ARGUMENTS` = target branch (ej: "main")
 
-## Corporate Format Detection
+## Format Detection
 
-When analyzing commits, detect if they use corporate format: `Tipo|IdTarea|YYYYMMDD|Descripción`
+Detecta automáticamente formato de commits:
 
-**If corporate format detected in first commit**:
+- **Corporate**: `Tipo|IdTarea|YYYYMMDD|Descripción` → preserva como PR title
+- **Conventional**: `type(scope): description` → preserva como PR title
 
-- Extract full format from first commit
-- Use as PR title: `Tipo|IdTarea|YYYYMMDD|Descripción`
-- Example: `feat|TRV-345|20250121|implementar autenticación`
-
-**If conventional format detected**:
-
-- Use conventional format for PR title
-- Extract type and description from first commit
-- Example: `feat(auth): add OAuth2 support`
-
-**Detection logic**:
-
-- Check if first commit matches pattern: `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}`
-- If matches: corporate format
-- Otherwise: conventional format
+Detection: Si primer commit match `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}` = corporate, sino conventional.
 
 ## Temporary Branch Naming
 
-When creating a temporary branch from protected branch (main, master, develop, staging, production), generate name:
+Cuando crea branch temporal desde protected branch (main, master, develop, staging, production):
 
-**Format**: `temp-{meaningful-keywords}-{timestamp}`
-
-**Guidelines**:
-
-- Extract 2-4 meaningful keywords from first commit subject
-- Remove stop words (the, a, an, for, to, in, on, at, by, with, from, etc.)
-- Use lowercase with hyphens
-- Timestamp format: `YYYYMMDDHHmmss`
-- Max length: 60 characters
-
-**Examples**:
-
-- "Add user authentication system" → `temp-user-authentication-system-20250121150430`
-- "Fix OAuth2 token validation" → `temp-fix-oauth2-token-20250121150430`
-- "Update API documentation for v2" → `temp-update-api-docs-v2-20250121150430`
+**Formato**: `temp-{keywords}-{timestamp}` (max 60 chars, lowercase-hyphen, timestamp: YYYYMMDDHHmmss)
 
 ## Paso 1: Validación Inicial
 
@@ -99,12 +72,6 @@ git config --local pr.temp.target-branch "$target_branch"
 git config --local pr.temp.current-branch "$current_branch"
 git config --local pr.temp.commit-count "$commit_count"
 ```
-
-**Bloqueadores**:
-
-- Sin argumentos → error
-- Branch objetivo no existe → error
-- Cero commits → error
 
 ## Paso 2: Análisis de Commits
 
@@ -349,13 +316,6 @@ echo "✅ PR created: $pr_url"
 
 **Output**: PR URL
 
-## Test Items por Tipo
-
-- **feat**: "Nueva funcionalidad probada; Tests agregados; Docs actualizada"
-- **fix**: "Bug reproducido y verificado; Tests de regresión; Staging verificado"
-- **refactor**: "Tests existentes pasan; Funcionalidad equivalente"
-- **default**: "Cambios verificados localmente; Build exitoso"
-
 ## Seguridad
 
 **Prevención de Command Injection**:
@@ -381,10 +341,7 @@ git checkout "$original_branch"
 git branch -d "$temp_branch"
 ```
 
-## Notas de Implementación
+## Notas
 
-- **Bash explícito**: Siempre usar `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh/bash
-- **Atomic commands**: Claude ejecuta cada paso con Bash tool individual
-- **No hardcodear lógica**: Instrucciones para Claude, no scripts monolíticos
-- **Git config como state**: Usar `pr.temp.*` para pasar estado entre pasos
+- **Git config state**: Usar `pr.temp.*` para pasar estado entre pasos
 - **Dual review bloqueante**: Security HIGH ≥0.8 confidence bloquea automáticamente
