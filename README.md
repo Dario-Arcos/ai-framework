@@ -181,7 +181,7 @@ Constitution · Always Works™ methodology · Context engineering · Design pri
 
 MIT License — See [LICENSE](LICENSE)
 
-**Version:** 1.3.1 | **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+**Version:** 1.4.0 | **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 Contributions welcome via [GitHub Issues](https://github.com/Dario-Arcos/ai-framework/issues)
 
