@@ -899,7 +899,7 @@ Crea PR con security review BLOCKING, push seguro, metadata completa y detecció
 
    **Security Review (BLOCKING):**
    - Start `/agent:security-reviewer` para analyze changes
-   - Timeout: 80 segundos máximo
+   - Timeout: 80 segundos máximo (balances thoroughness vs. workflow speed for typical PRs)
    - **Blocking conditions**:
      - HIGH severity findings (confidence ≥ 8.0): ALWAYS block PR creation
      - MEDIUM severity findings (confidence ≥ 8.0): Block en production (configurable)

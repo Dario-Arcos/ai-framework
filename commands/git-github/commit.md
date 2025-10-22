@@ -32,9 +32,9 @@ When a Task ID is detected in arguments (e.g., "TRV-345 implement feature"), use
 
 **Examples**:
 
-- `feat|TRV-345|20250121|implementación validación formulario`
-- `fix|BUG-287|20250121|corrección error autenticación`
-- `docs|DOC-112|20250121|actualización README módulo`
+- `feat|TRV-345|YYYYMMDD|implementación validación formulario`
+- `fix|BUG-287|YYYYMMDD|corrección error autenticación`
+- `docs|DOC-112|YYYYMMDD|actualización README módulo`
 
 **When to use**:
 
