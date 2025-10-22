@@ -9,6 +9,12 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+- [Cambios futuros se documentan aquí]
+
+---
+
+## [1.4.0] - 2025-10-22
+
 ### Añadido
 
 - Comando `/update-docs` para actualización automatizada de documentación project-agnostic (PR #20)
