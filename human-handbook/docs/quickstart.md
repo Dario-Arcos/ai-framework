@@ -86,7 +86,7 @@ El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que tom
 
 ```bash
 /ai-framework:git-github:commit "feat: add email validation"
-/ai-framework:git-github:pr develop
+/ai-framework:git-github:pullrequest develop
 ```
 
 Security review automático ejecuta antes de crear PR.

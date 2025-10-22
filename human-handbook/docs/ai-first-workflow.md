@@ -315,7 +315,7 @@ Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamient
 Answer questions even if obvious. 2 min ahora > 2 hours later.
 
 **Security Review:**
-`/ai-framework:git-github:pr` auto-runs security review. Blocks PR si HIGH vulnerability found.
+`/ai-framework:git-github:pullrequest` auto-runs security review. Blocks PR si HIGH vulnerability found.
 
 **Commit Strategy:**
 `commit "all changes"` auto-groups por categoría. Better que 1 giant mixed commit.
