@@ -103,19 +103,7 @@ Automates the common workflow after merging a PR: delete feature branch and sync
 - If success, capture number of commits pulled
 - Show: "✓ Sincronizado con origin/$target_base (+N commits)"
 
-### 6. Cleanup Remote Branch (Optional)
-
-**Check if feature branch exists in remote:**
-
-- Execute: `git branch -r | grep -q "origin/$current_branch"`
-- If exists:
-  - Show: "🧹 Rama remota detectada: origin/$current_branch"
-  - Ask: "¿Eliminar rama remota? [y/N]"
-  - If yes: `git push origin --delete "$current_branch"`
-  - If no or timeout: skip
-- If not exists: skip silently
-
-### 7. Final Status
+### 6. Final Status
 
 **Show summary:**
 
@@ -142,13 +130,12 @@ Operaciones:
 - **Base branch not found**: Clear error message with available branches
 - **Checkout fails**: Show git error and stop (don't delete branch)
 - **Pull fails (diverged)**: Show rebase instructions, don't force
-- **Remote delete fails**: Show warning but don't block (user can delete manually)
 
 ## Important Notes
 
 - Uses `-D` (force delete) for local branch since user explicitly requested cleanup
 - Uses `--ff-only` for pull to prevent accidental merges
-- Remote branch deletion is OPTIONAL (requires confirmation)
+- Remote branches are automatically deleted by GitHub when PR is merged
 - Never deletes protected branches (main, master, develop, etc.)
 - Validates all operations before executing
 - Provides clear feedback for each step

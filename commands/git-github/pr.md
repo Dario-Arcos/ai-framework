@@ -9,21 +9,96 @@ Workflow automatizado para crear PR con validación de calidad y seguridad.
 
 **Input**: `$ARGUMENTS` = target branch (ej: "main")
 
+## Corporate Format Detection
+
+When analyzing commits, detect if they use corporate format: `Tipo|IdTarea|YYYYMMDD|Descripción`
+
+**If corporate format detected in first commit**:
+
+- Extract full format from first commit
+- Use as PR title: `Tipo|IdTarea|YYYYMMDD|Descripción`
+- Example: `feat|TRV-345|20250121|implementar autenticación`
+
+**If conventional format detected**:
+
+- Use conventional format for PR title
+- Extract type and description from first commit
+- Example: `feat(auth): add OAuth2 support`
+
+**Detection logic**:
+
+- Check if first commit matches pattern: `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}`
+- If matches: corporate format
+- Otherwise: conventional format
+
+## Temporary Branch Naming
+
+When creating a temporary branch from protected branch (main, master, develop, staging, production), generate name:
+
+**Format**: `temp-{meaningful-keywords}-{timestamp}`
+
+**Guidelines**:
+
+- Extract 2-4 meaningful keywords from first commit subject
+- Remove stop words (the, a, an, for, to, in, on, at, by, with, from, etc.)
+- Use lowercase with hyphens
+- Timestamp format: `YYYYMMDDHHmmss`
+- Max length: 60 characters
+
+**Examples**:
+
+- "Add user authentication system" → `temp-user-authentication-system-20250121150430`
+- "Fix OAuth2 token validation" → `temp-fix-oauth2-token-20250121150430`
+- "Update API documentation for v2" → `temp-update-api-docs-v2-20250121150430`
+
 ## Paso 1: Validación Inicial
 
 Ejecutar en bash (usa `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh):
 
-1. Parsear `target_branch` desde `$ARGUMENTS`
-2. Validar formato: `^[a-zA-Z0-9/_-]+$` (rechazar si empieza con `--`)
-3. `git fetch origin`
-4. Verificar branch objetivo existe: `git branch -r | grep "origin/$target_branch"`
-5. Contar commits: `git rev-list --count "origin/$target_branch..HEAD" --`
-6. Guardar estado en git config:
-   ```bash
-   git config --local pr.temp.target-branch "$target_branch"
-   git config --local pr.temp.current-branch "$(git branch --show-current)"
-   git config --local pr.temp.commit-count "$commit_count"
-   ```
+```bash
+# Parse and validate target branch
+target_branch="$ARGUMENTS"
+target_branch=$(echo "$target_branch" | xargs)
+
+if [ -z "$target_branch" ]; then
+  echo "❌ Error: No target branch specified"
+  exit 1
+fi
+
+# Validate format
+if ! echo "$target_branch" | grep -Eq '^[a-zA-Z0-9/_-]+$'; then
+  echo "❌ Error: Invalid branch name format"
+  exit 1
+fi
+
+if echo "$target_branch" | grep -Eq '^--'; then
+  echo "❌ Error: Branch name cannot start with --"
+  exit 1
+fi
+
+# Fetch and validate target branch exists
+git fetch origin
+
+if ! git branch -r | grep -q "origin/$target_branch"; then
+  echo "❌ Error: Branch origin/$target_branch does not exist"
+  exit 1
+fi
+
+# Count commits
+commit_count=$(git rev-list --count "origin/$target_branch..HEAD" --)
+
+if [ "$commit_count" -eq 0 ]; then
+  echo "❌ Error: No commits to create PR"
+  exit 1
+fi
+
+# Save state
+current_branch=$(git branch --show-current)
+
+git config --local pr.temp.target-branch "$target_branch"
+git config --local pr.temp.current-branch "$current_branch"
+git config --local pr.temp.commit-count "$commit_count"
+```
 
 **Bloqueadores**:
 
@@ -35,13 +110,50 @@ Ejecutar en bash (usa `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh):
 
 Ejecutar en bash para extraer metadata:
 
-1. **Logs**: `git log --pretty=format:'- %s' "origin/$target_branch..HEAD" --`
-2. **Estadísticas**: `git diff --shortstat "origin/$target_branch..HEAD" --`
-3. **Tipo primario**: Parsear commits, contar frecuencia de `feat|fix|docs|refactor`, usar el más común
-4. **Scope**: Extraer `(scope)` de commits con `grep -oE '\([a-z-]+\)'`
-5. **Breaking changes**: `git log --pretty=format:'%B' | grep -iE 'BREAKING'`
+```bash
+target_branch=$(git config --local pr.temp.target-branch)
 
-Guardar en git config: `primary_type`, `scope`, `files_changed`, `additions`, `deletions`
+# 1. Extract commit logs
+git_log_raw=$(git log --pretty=format:'- %s' "origin/$target_branch..HEAD" --)
+git config --local pr.temp.git-log "$git_log_raw"
+
+# Get first commit for format detection and title
+first_commit=$(git log --pretty=format:'%s' "origin/$target_branch..HEAD" -- | head -1)
+git config --local pr.temp.first-commit "$first_commit"
+
+# 2. Extract statistics
+stats=$(git diff --shortstat "origin/$target_branch..HEAD" --)
+files_changed=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+')
+additions=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+')
+deletions=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+')
+
+git config --local pr.temp.files-changed "${files_changed:-0}"
+git config --local pr.temp.additions "${additions:-0}"
+git config --local pr.temp.deletions "${deletions:-0}"
+
+# 3. Detect format and extract primary type
+# Corporate format pattern: "word|CAPS-NUM|8digits|text"
+if echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|'; then
+  commit_format="corporate"
+  primary_type=$(echo "$first_commit" | cut -d'|' -f1)
+else
+  commit_format="conventional"
+  # Extract type from conventional: "type(scope): msg" or "type: msg"
+  primary_type=$(echo "$first_commit" | grep -oE '^[a-z]+' | head -1)
+  if [ -z "$primary_type" ]; then
+    primary_type="feat"
+  fi
+fi
+
+git config --local pr.temp.commit-format "$commit_format"
+git config --local pr.temp.primary-type "$primary_type"
+
+# 4. Extract breaking changes (optional)
+breaking=$(git log --pretty=format:'%B' "origin/$target_branch..HEAD" -- | grep -iE 'BREAKING' || echo "")
+if [ -n "$breaking" ]; then
+  git config --local pr.temp.breaking-changes "$breaking"
+fi
+```
 
 ## Paso 3: Reviews en Paralelo (BLOQUEANTE)
 
@@ -94,51 +206,146 @@ fi
 
 Ejecutar en bash:
 
-1. Si current branch es protegida (main|master|develop|staging|production):
-   - Crear feature branch temporal: `{scope}-{timestamp}`
-   - `git checkout -b "$new_branch"`
-   - `git push origin "$new_branch" --set-upstream`
-2. Sino:
-   - `git push origin "$current_branch"` (agregar `--set-upstream` si no tiene remote)
+1. **Check if current branch is protected**:
 
-Guardar `branch_name` en git config
+   ```bash
+   current_branch=$(git config --local pr.temp.current-branch)
+   if echo "$current_branch" | grep -Eq '^(main|master|develop|staging|production)$'; then
+     is_protected=true
+   else
+     is_protected=false
+   fi
+   ```
+
+2. **If protected branch, create temporary branch**:
+
+   ```bash
+   if [ "$is_protected" = "true" ]; then
+     first_commit=$(git config --local pr.temp.first-commit)
+     timestamp=$(date +%Y%m%d%H%M%S)
+
+     # Generate branch suffix: simple approach
+     # Convert to lowercase, remove special chars, take first 3-4 words
+     first_commit_clean=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/ /g')
+     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//')
+
+     # Truncate to max 30 chars if needed
+     branch_suffix=$(echo "$branch_suffix" | cut -c1-30 | sed 's/-$//')
+
+     # Fallback if empty
+     if [ -z "$branch_suffix" ]; then
+       branch_suffix="feature"
+     fi
+
+     temp_branch="temp-${branch_suffix}-${timestamp}"
+
+     # Validate branch doesn't exist
+     if git show-ref --verify --quiet "refs/heads/$temp_branch"; then
+       echo "❌ Branch $temp_branch already exists"
+       git config --local --unset-all pr.temp
+       exit 1
+     fi
+
+     # Create and push
+     git checkout -b "$temp_branch"
+     git push origin "$temp_branch" --set-upstream
+
+     # Save branch name
+     git config --local pr.temp.branch-name "$temp_branch"
+   else
+     # Push current branch
+     branch_to_push="$current_branch"
+
+     # Check if has upstream
+     if ! git rev-parse --abbrev-ref "$branch_to_push@{upstream}" >/dev/null 2>&1; then
+       git push origin "$branch_to_push" --set-upstream
+     else
+       git push origin "$branch_to_push"
+     fi
+
+     git config --local pr.temp.branch-name "$branch_to_push"
+   fi
+   ```
 
 ## Paso 5: Crear PR con gh CLI
 
 Ejecutar en bash:
 
-1. Obtener metadata de git config
-2. Generar título:
-   - Si primer commit ya tiene formato convencional → usar tal cual
-   - Sino → `$primary_type: $first_commit_subject`
-3. Generar body en archivo temporal:
+```bash
+# 1. Retrieve metadata from git config
+target_branch=$(git config --local pr.temp.target-branch)
+commit_count=$(git config --local pr.temp.commit-count)
+git_log=$(git config --local pr.temp.git-log)
+first_commit=$(git config --local pr.temp.first-commit)
+files_changed=$(git config --local pr.temp.files-changed)
+additions=$(git config --local pr.temp.additions)
+deletions=$(git config --local pr.temp.deletions)
+commit_format=$(git config --local pr.temp.commit-format)
+primary_type=$(git config --local pr.temp.primary-type)
+breaking=$(git config --local pr.temp.breaking-changes 2>/dev/null || echo "")
 
-   ```markdown
-   ## Summary
+# 2. Generate PR title based on format
+if [ "$commit_format" = "corporate" ]; then
+  # Preserve corporate format
+  pr_title="$first_commit"
+else
+  # Use conventional format
+  pr_title="$first_commit"
+fi
 
-   Changes based on **$primary_type** commits affecting **$files_changed** files.
+# 3. Generate test items based on primary type
+case "$primary_type" in
+  feat)
+    test_items="- [ ] Nueva funcionalidad probada
+- [ ] Tests agregados
+- [ ] Docs actualizada"
+    ;;
+  fix)
+    test_items="- [ ] Bug reproducido y verificado
+- [ ] Tests de regresión agregados
+- [ ] Staging verificado"
+    ;;
+  refactor)
+    test_items="- [ ] Tests existentes pasan
+- [ ] Funcionalidad equivalente verificada"
+    ;;
+  *)
+    test_items="- [ ] Cambios verificados localmente
+- [ ] Build exitoso"
+    ;;
+esac
 
-   ## Changes Made ($commit_count commits)
+# 4. Generate PR body
+temp_file=$(mktemp)
+cat > "$temp_file" <<EOF
+## Summary
 
-   $git_log
+Changes based on **$primary_type** commits affecting **$files_changed** files.
 
-   ## Files & Impact
+## Changes Made ($commit_count commits)
 
-   - **Files modified**: $files_changed
-   - **Lines**: +$additions -$deletions
+$git_log
 
-   ## Test Plan
+## Files & Impact
 
-   - [ ] {test_items_según_primary_type}
+- **Files modified**: $files_changed
+- **Lines**: +$additions -$deletions
 
-   ## Breaking Changes
+## Test Plan
 
-   $breaking_content
-   ```
+$test_items
 
-4. `gh pr create --title "$title" --body-file "$temp_file" --base "$target_branch"`
-5. Extraer URL del output
-6. `git config --local --unset-all pr.temp`
+$(if [ -n "$breaking" ]; then echo "## Breaking Changes"; echo "$breaking"; fi)
+EOF
+
+# 5. Create PR
+pr_url=$(gh pr create --title "$pr_title" --body-file "$temp_file" --base "$target_branch" 2>&1 | grep -oE 'https://[^ ]+')
+rm "$temp_file"
+
+# 6. Cleanup
+git config --local --unset-all pr.temp
+echo "✅ PR created: $pr_url"
+```
 
 **Output**: PR URL
 

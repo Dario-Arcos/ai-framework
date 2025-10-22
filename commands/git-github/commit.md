@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash(git *), Read, Grep, TodoWrite
 description: Intelligent git commit with automatic grouping and quality checks
-argument-hint: "commit message or 'all changes'"
+argument-hint: "[TASK-ID] message" or "all changes" (e.g., "TRV-345 implementar validación")
 ---
 
 # Smart Git Commit
@@ -11,6 +11,35 @@ Intelligently analyze and commit changes with automatic grouping and quality che
 ## User Input
 
 $ARGUMENTS
+
+## Corporate Commit Format
+
+When a Task ID is detected in arguments (e.g., "TRV-345 implement feature"), use this format:
+
+**Template**: `Tipo|IdTarea|YYYYMMDD|Descripción`
+
+**Components**:
+
+- **Tipo**: Commit type based on category
+  - config → chore
+  - docs → docs
+  - security → fix
+  - test → test
+  - main → feat
+- **IdTarea**: Task ID from arguments (e.g., TRV-345, PROJ-123)
+- **YYYYMMDD**: Current date in format YYYYMMDD (calculate with `date +%Y%m%d`)
+- **Descripción**: Brief description (max 60 characters)
+
+**Examples**:
+
+- `feat|TRV-345|20250121|implementación validación formulario`
+- `fix|BUG-287|20250121|corrección error autenticación`
+- `docs|DOC-112|20250121|actualización README módulo`
+
+**When to use**:
+
+- Use corporate format when Task ID pattern detected in arguments
+- Otherwise use conventional format: `type(scope): description`
 
 ## Instructions
 
@@ -100,19 +129,21 @@ For each category with files (in order: security, config, docs, test, main):
 
 - Execute: `git reset` to unstage all files
 - Execute: `git add <files_for_category>` to stage category files only
-- Generate appropriate commit message:
-  - **config**: "feat(config): update configuration and commands"
-  - **docs**: "docs: enhance documentation and setup guides"
-  - **security**: "security: improve security measures and validation"
-  - **test**: "test: update test suite and coverage"
-  - **main**: "feat: implement core functionality changes"
+- **Generate appropriate commit message**:
+  - If Task ID detected in arguments: Use corporate format template (see Corporate Commit Format section)
+  - Otherwise: Use conventional format (config: "feat(config): update configuration and commands", docs: "docs: enhance documentation", etc.)
+  - Map category to type as specified in Corporate Commit Format section
+  - Calculate date: `date +%Y%m%d`
 - Execute: `git commit -m "<generated_message>"` to create commit
 - Show: "✅ Committed <category>: <file_list>"
 
 **If single commit strategy**:
 
-- Use custom message from $ARGUMENTS if provided
-- Otherwise generate conventional commit message based on dominant file type
+- **Generate commit message**:
+  - If Task ID detected in arguments: Use corporate format template (see Corporate Commit Format section)
+  - Otherwise: Use conventional format or custom message from $ARGUMENTS if provided
+  - Determine type based on dominant category
+  - Calculate date: `date +%Y%m%d` (for corporate format)
 - Execute: `git commit -m "<commit_message>"` to create single commit
 - Show: "✅ Created single commit: <commit_message>"
 
