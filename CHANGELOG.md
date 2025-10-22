@@ -9,6 +9,40 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+### Añadido
+
+- Comando `/update-docs` para actualización automatizada de documentación project-agnostic (PR #20)
+- Formato corporativo de commits en comando `/commit` con detección automática de Task ID (PR #19)
+  - Template: `Tipo|IdTarea|YYYYMMDD|Descripción`
+  - Detección automática de patrones (TRV-345, PROJ-123, etc.)
+  - Fallback a conventional commits si no hay Task ID
+
+### Documentación
+
+- Sincronización de referencias al comando `pullrequest` en handbook (PR #20)
+- Guía de comandos actualizada con cambios recientes en workflow git (PR #20)
+- Ejemplos de help con placeholders de fecha en lugar de valores hardcodeados (PR #20)
+- Justificación de timeout documentada en commands-guide.md (PR #20)
+- Refinamiento de mensajería arquitectónica y flujo de instalación en README (PR #19)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: Comando `pr.md` renombrado a `pullrequest.md` (PR #20)
+- ⚠️ **BREAKING**: Eliminado `docs.md`, reemplazado por `update-docs` portable (PR #20)
+- Comando `changelog` optimizado con compatibilidad bash 3.2 (POSIX test, grep -E) (PR #20)
+- Comando `update-docs` completamente project-agnostic (sin hardcoded paths) (PR #20)
+- Workflow de review en CI migrado a GitHub CLI (PR #19)
+- Interfaz de handbook simplificada removiendo efectos sobre-diseñados (PR #19)
+
+### Arreglado
+
+- Regex portable compatible con BSD grep en `pullrequest.md` (macOS) (PR #20)
+- Límite de caracteres de branch corregido (30→39 chars) en `pullrequest.md` (PR #20)
+- Validación de stats vacíos en git diff (PR #20)
+- Extracción de body completo de PR en comando changelog (antes solo título) (PR #19)
+- Sincronización de regla `/prps/` entre template y hook session-start (PR #19)
+- Sincronización de `plugin.json` en proceso de versioning (PR #19)
+
 ---
 
 ## [1.3.1] - 2025-10-20
