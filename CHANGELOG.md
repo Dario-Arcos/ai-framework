@@ -9,7 +9,18 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Cambiado
+
+- Comando `/release` optimizado y corregido (commit actual)
+  - Reducción: 333 → 153 líneas (54% menos)
+  - Eliminadas secciones meta innecesarias (Notas de Implementación, Seguridad, Rollback)
+  - Validación corregida: permite CHANGELOG.md modificado (integración con /changelog)
+  - Confirmación real con WAIT explícito
+  - Orden corregido: CHANGELOG antes de npm version
+- Comando `/changelog` optimizado (commit actual)
+  - Reducción: 166 → 145 líneas (13% menos)
+  - Eliminadas secciones "Principios de Diseño" y "Notas" verbosas
+  - Solo 3 reglas esenciales
 
 ---
 

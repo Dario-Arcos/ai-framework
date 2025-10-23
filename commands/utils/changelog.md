@@ -137,29 +137,8 @@ Categorías modificadas:
 PRs procesados: #123, #124, #125
 ```
 
-## Principios de Diseño
+## Reglas
 
-**Simplicidad**:
-
-- Claude decide implementación (no bash scripts complejos)
-- Zero git config state management
-- Zero retry logic explícito (gh CLI es confiable)
-
-**Claridad**:
-
-- Descripciones en español, específicas
-- Template Keep a Changelog estricto
-- Usuario controla qué actualizar vía lenguaje natural
-
-**Flexibilidad**:
-
-- Argumentos en lenguaje natural
-- Claude interpreta intención
-- Adaptable a diferentes workflows
-
-## Notas
-
-- **Idioma**: Todas las entradas en español
-- **Especificidad**: Describir QUÉ cambió, no "cambios en N archivos"
-- **Breaking changes**: Destacar con ⚠️ **BREAKING**
-- **No commit automático**: Usuario decide cuándo commitear
+- Entradas en español, específicas (QUÉ cambió, no "cambios en X archivos")
+- Breaking changes con ⚠️ **BREAKING**
+- NO commitear automáticamente (usuario decide cuándo)
