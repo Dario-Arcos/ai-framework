@@ -140,115 +140,104 @@ Estos comandos funcionan mejor en el orden especificado. Cada paso prepara el si
 
 ### `/ai-framework:SDD-cycle:speckit.specify`
 
-Crea especificación técnica desde lenguaje natural, GitHub Issue, o PRP local.
+Crea especificación técnica desde descripción natural, GitHub Issue, o PRP.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.specify "Create authentication system"
-/ai-framework:SDD-cycle:speckit.specify --from-issue {issue_number}
-/ai-framework:SDD-cycle:speckit.specify --from-prp {feature_name}
+# Desde descripción natural
+/ai-framework:SDD-cycle:speckit.specify "Implement OAuth 2.0 with Google and GitHub"
 
-# Ejemplos
-/ai-framework:SDD-cycle:speckit.specify "Implement OAuth 2.0 with Google and GitHub providers"
+# Desde GitHub Issue
 /ai-framework:SDD-cycle:speckit.specify --from-issue 247
+
+# Desde PRP local
 /ai-framework:SDD-cycle:speckit.specify --from-prp user-authentication
 ```
 
-**Output:**
+**¿Qué hace?**
 
-- Crea branch: `001-feature-name` (incrementa número automáticamente)
-- Crea spec: `specs/001-feature-name/spec.md`
-- Hace checkout de la branch en MISMO directorio (NO crea worktree)
-- Valida con checklist interno
+1. **Crea Branch Automática**
+   - Nombre: `001-feature-name` (número incremental)
+   - Checkout automático (NO crea worktree)
+   - Detecta siguiente número disponible
 
-**Comportamiento:**
+2. **Genera Spec** (`specs/001-feature-name/spec.md`)
+   - Focus en WHAT y WHY (no HOW)
+   - Success criteria measurables y technology-agnostic
+   - User scenarios y acceptance tests
+   - Hace máximo 3 preguntas si algo crítico no está claro
 
-- ⚠️ NO crea worktree (usa `/ai-framework:git-github:worktree:create` si lo necesitas)
-- ⚠️ NO abre IDE
-- ✅ Cambia a nueva branch con `git checkout -b`
-- ✅ Workspace actual cambia a la nueva branch
+3. **Validación Automática**
+   - Checklist interno de calidad
+   - Detecta requirements ambiguos
+   - Marca con `[NEEDS CLARIFICATION]` si necesario (máx 3)
 
-**Quick Guidelines:**
+**Reglas de Calidad:**
 
-- Focus en **WHAT** users need y **WHY**
-- Avoid HOW to implement (no tech stack, APIs, code structure)
-- Written para business stakeholders, not developers
-- DO NOT create any checklists embedded en el spec (separate command)
+- ✅ Success criteria con métricas específicas (tiempo, %, cantidad)
+- ✅ Sin mencionar tecnologías (frameworks, DBs, APIs)
+- ✅ Escrito para stakeholders de negocio
+- ❌ No incluir detalles de implementación
 
-**Success Criteria Guidelines (MUST be):**
+**Output:** Branch nueva + spec.md + checklist de validación
 
-1. **Measurable**: Include specific metrics (time, percentage, count, rate)
-2. **Technology-agnostic**: No mention de frameworks, languages, databases, tools
-3. **User-focused**: Describe outcomes desde user/business perspective
-4. **Verifiable**: Can be tested/validated sin knowing implementation details
-
-**Clarification Handling:**
-
-- **Make informed guesses**: Use context, industry standards, common patterns
-- **Document assumptions**: Record reasonable defaults en Assumptions section
-- **Limit clarifications**: Maximum 3 [NEEDS CLARIFICATION] markers
-- **Prioritize clarifications**: scope > security/privacy > user experience > technical details
+::: warning Importante
+El comando hace checkout de la branch. Tu workspace cambia a la nueva branch automáticamente.
+:::
 
 ::: tip Cuándo usar
 Primera fase SDD - convierte requisitos en spec técnica.
 :::
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.clarify` (recomendado - previene refactors)
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.clarify` (recomendado)
 
 ---
 
 ### `/ai-framework:SDD-cycle:speckit.clarify`
 
-Detecta ambigüedades en spec, hace hasta 5 preguntas targeted, actualiza spec con clarifications.
+Detecta ambigüedades en spec y pregunta interactivamente hasta 5 clarificaciones prioritarias.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
+# Después de /speckit.specify, antes de /speckit.plan
 /ai-framework:SDD-cycle:speckit.clarify
 ```
 
-**Output:** spec.md actualizada con sección `## Clarifications`
+**¿Qué hace?**
 
-**Execution Steps:**
+1. **Escaneo de Ambigüedades**
+   - Detecta términos vagos, placeholders, requisitos incompletos
+   - Prioriza por impacto: scope > seguridad/privacidad > UX > detalles técnicos
+   - Genera máximo 5 preguntas (las más críticas)
 
-1. Run prerequisite check script para get FEATURE_DIR y FEATURE_SPEC paths
-2. Load current spec file y perform structured ambiguity & coverage scan
-3. Generate prioritized queue de candidate clarification questions (maximum 5)
-4. **Sequential questioning loop** (interactive):
-   - Present EXACTLY ONE question at a time
-   - For multiple-choice: Provide **recommended option** con reasoning + table con todas las options
-   - For short-answer: Provide **suggested answer** basado en best practices
-   - User can accept recommendation diciendo "yes" o "recommended"
-   - Record answer y move to next question
-   - Stop cuando: critical ambiguities resolved, user signals completion, o reach 5 questions
-5. **Integration after EACH accepted answer** (incremental update):
-   - Create `## Clarifications` section si no existe
-   - Append bullet: `- Q: {question} → A: {final answer}`
-   - Apply clarification a most appropriate section
-   - Save spec file AFTER cada integration (atomic overwrite)
-6. Validation after each write + final pass
-7. Write updated spec back to FEATURE_SPEC
+2. **Pregunta Interactiva** (una a la vez)
+   - **Multiple-choice**: Tabla con opciones + recomendación justificada
+   - **Short-answer**: Respuesta sugerida basada en best practices
+   - Puedes aceptar recomendación con "yes" o "recommended"
 
-**Ambiguity Taxonomy Categories:**
+3. **Actualización Incremental**
+   - Aplica cada respuesta a la sección apropiada del spec
+   - Guarda después de cada clarificación (atómico)
+   - Crea sección `## Clarifications` con historial Q&A
 
-- Functional Scope & Behavior
-- Domain & Data Model
-- Interaction & UX Flow
-- Non-Functional Quality Attributes
-- Integration & External Dependencies
-- Edge Cases & Failure Handling
-- Constraints & Tradeoffs
-- Terminology & Consistency
-- Completion Signals
-- Misc / Placeholders
+**Categorías que Detecta:**
 
-::: tip Paso Recomendado
-Vale la pena los 2 minutos: `/ai-framework:SDD-cycle:speckit.clarify` detecta ambigüedades antes de implementar. ROI 100:1.
+- Scope & Behavior incompleto
+- Data model indefinido
+- UX flows ambiguos
+- Edge cases sin definir
+- Dependencias externas sin especificar
+
+**Output:** spec.md actualizada + sección Clarifications
+
+::: tip ROI 100:1
+2 minutos de clarificaciones previenen 4 horas de refactor. SIEMPRE ejecutar antes de `/plan`.
 :::
 
 ::: tip Cuándo usar
-Después de `/ai-framework:SDD-cycle:speckit.specify`, antes de `/ai-framework:SDD-cycle:speckit.plan`. Previene hours de refactor.
+Después de `/speckit.specify`, antes de `/speckit.plan`.
 :::
 
 **Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.plan`
@@ -257,59 +246,48 @@ Después de `/ai-framework:SDD-cycle:speckit.specify`, antes de `/ai-framework:S
 
 ### `/ai-framework:SDD-cycle:speckit.plan`
 
-Genera artifacts de diseño: research.md, data-model.md, contracts/, quickstart.md. Actualiza contexto del agente.
+Genera artifacts de diseño técnico y decisiones de implementación.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
+# Después de /speckit.clarify, antes de /speckit.tasks
 /ai-framework:SDD-cycle:speckit.plan
 ```
 
-**Phases:**
+**¿Qué genera?**
 
-**Phase 0: Outline & Research**
+1. **research.md** - Decisiones técnicas
+   - Stack seleccionado (frameworks, libs, tools)
+   - Rationale de cada decisión
+   - Alternativas consideradas y descartadas
 
-1. Extract unknowns desde Technical Context
-2. Generate y dispatch research agents para cada unknown
-3. Consolidate findings en `research.md`:
-   - Decision: [what was chosen]
-   - Rationale: [why chosen]
-   - Alternatives considered: [what else evaluated]
+2. **data-model.md** - Entidades y relaciones
+   - Entities extraídas del spec
+   - Fields + validations + relationships
+   - State transitions (si aplica)
 
-**Output**: research.md con all NEEDS CLARIFICATION resolved
+3. **contracts/** - API/GraphQL schemas
+   - Un endpoint por cada user action
+   - OpenAPI o GraphQL schema
+   - Standard REST/GraphQL patterns
 
-**Phase 1: Design & Contracts** (Prerequisites: research.md complete)
+4. **quickstart.md** - Escenarios de integración
+   - Ejemplos de uso de APIs
+   - Flujos de integración
 
-1. Extract entities desde feature spec → `data-model.md`
-   - Entity name, fields, relationships
-   - Validation rules desde requirements
-   - State transitions si applicable
-2. Generate API contracts desde functional requirements
-   - Para cada user action → endpoint
-   - Use standard REST/GraphQL patterns
-   - Output OpenAPI/GraphQL schema a `/contracts/`
-3. Agent context update:
-   - Run `.specify/scripts/bash/update-agent-context.sh claude`
-   - Detect which AI agent is in use
-   - Update appropriate agent-specific context file
-   - Add only new technology desde current plan
-   - Preserve manual additions between markers
+5. **Agent Context** - Actualización automática
+   - Detecta y actualiza `.claude/` con nuevas tecnologías del plan
+   - Preserva configuraciones manuales
 
-**Output:**
+**Output:** 5 artifacts + agent context actualizado
 
-- `research.md` - Decisiones técnicas
-- `data-model.md` - Entidades y relaciones
-- `contracts/` - API/GraphQL schemas
-- `quickstart.md` - Escenarios de integración
-- Agent context actualizado
-
-**Key Rules:**
-
-- Use absolute paths
-- ERROR on gate failures o unresolved clarifications
+::: warning Prerequisito
+Todas las clarificaciones deben estar resueltas. El comando falla si encuentra `[NEEDS CLARIFICATION]` en el spec.
+:::
 
 ::: tip Cuándo usar
-Después de spec clarificada, antes de generar tasks.
+Después de `/speckit.clarify`, antes de `/speckit.tasks`.
 :::
 
 **Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.tasks`
@@ -318,96 +296,56 @@ Después de spec clarificada, antes de generar tasks.
 
 ### `/ai-framework:SDD-cycle:speckit.tasks`
 
-Genera tasks.md ejecutable con dependency ordering, organizado por user stories, marca tasks paralelizables [P].
+Genera tasks.md ejecutable, organizado por user stories, con paralelización marcada [P].
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
+# Después de /speckit.plan, antes de /speckit.implement
 /ai-framework:SDD-cycle:speckit.tasks
 ```
 
-**Task Generation Rules:**
-
-::: tip Organización Recomendada
-Tasks organized por user story permiten independent implementation y testing. Mejor separation of concerns.
-:::
-
-**Tests son OPTIONAL**: Solo generate test tasks si explicitly requested en feature specification o si user requests TDD approach.
-
-**Checklist Format (REQUIRED):**
-
-Cada task MUST strictly seguir este formato:
+**Formato de Task (OBLIGATORIO):**
 
 ```text
-- [ ] [TaskID] [P?] [Story?] Description with file path
+- [ ] T001 [P?] [US1?] Description con file path
+      ↑    ↑    ↑      ↑
+      │    │    │      └─ Descripción + ruta exacta
+      │    │    └─ User Story label (solo en fases US)
+      │    └─ [P] = Paralelizable (archivos diferentes)
+      └─ Checkbox markdown
 ```
 
-**Format Components:**
+**Ejemplos:**
 
-1. **Checkbox**: ALWAYS start con `- [ ]` (markdown checkbox)
-2. **Task ID**: Sequential number (T001, T002, T003...) en execution order
-3. **[P] marker**: Include ONLY si task es parallelizable (different files, no dependencies)
-4. **[Story] label**: REQUIRED para user story phase tasks only
-   - Format: [US1], [US2], [US3] (maps a user stories desde spec.md)
-   - Setup phase: NO story label
-   - Foundational phase: NO story label
-   - User Story phases: MUST have story label
-   - Polish phase: NO story label
-5. **Description**: Clear action con exact file path
+- ✅ `- [ ] T001 Create project structure per plan`
+- ✅ `- [ ] T005 [P] [US1] Create User model in src/models/user.py`
+- ❌ `- [ ] Create User model` (falta ID + label)
 
-**Examples:**
+**Organización por Phases:**
 
-- ✅ CORRECT: `- [ ] T001 Create project structure per implementation plan`
-- ✅ CORRECT: `- [ ] T005 [P] Implement authentication middleware in src/middleware/auth.py`
-- ✅ CORRECT: `- [ ] T012 [P] [US1] Create User model in src/models/user.py`
-- ✅ CORRECT: `- [ ] T014 [US1] Implement UserService in src/services/user_service.py`
-- ❌ WRONG: `- [ ] Create User model` (missing ID y Story label)
-- ❌ WRONG: `T001 [US1] Create model` (missing checkbox)
+1. **Setup** - Inicialización del proyecto
+2. **Foundational** - Prerequisites bloqueantes
+3. **User Stories (P1, P2, P3...)** - Por prioridad
+   - Cada story = fase independiente
+   - Tests → Models → Services → Endpoints → Integration
+4. **Polish** - Cross-cutting concerns
 
-**Task Organization:**
+**Output:** `tasks.md` + report con:
 
-**From User Stories (spec.md)** - PRIMARY ORGANIZATION:
+- Total tasks + tasks por story
+- Oportunidades de paralelización
+- MVP scope sugerido (típicamente solo US1)
 
-- Cada user story (P1, P2, P3...) gets its own phase
-- Map all related components a their story:
-  - Models needed para that story
-  - Services needed para that story
-  - Endpoints/UI needed para that story
-  - Si tests requested: Tests specific a that story
-- Mark story dependencies (most stories should be independent)
-
-**Phase Structure:**
-
-- **Phase 1**: Setup (project initialization)
-- **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
-- **Phase 3+**: User Stories en priority order (P1, P2, P3...)
-  - Within each story: Tests (si requested) → Models → Services → Endpoints → Integration
-  - Each phase should be complete, independently testable increment
-- **Final Phase**: Polish & Cross-Cutting Concerns
-
-**Output:** `tasks.md` con:
-
-- Setup phase
-- Foundational tasks (blocking prerequisites)
-- User story phases (P1, P2, P3...) con tasks independientes
-- Polish & cross-cutting concerns (concerns transversales)
-- Parallel markers [P] donde aplique
-- Tests solo si especificado en spec
-
-**Report:**
-
-- Total task count
-- Task count per user story
-- Parallel opportunities identified
-- Independent test criteria para cada story
-- Suggested MVP scope (typically just User Story 1)
-- Format validation: ALL tasks follow checklist format
-
-::: tip Cuándo usar
-Después de plan, antes de analyze.
+::: tip Tests son OPCIONALES
+Solo se generan tasks de tests si están explícitamente solicitadas en el spec o si se pide enfoque TDD.
 :::
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional, recomendado)
+::: tip Cuándo usar
+Después de `/speckit.plan`, antes de `/speckit.implement`.
+:::
+
+**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional)
 
 ---
 
@@ -470,79 +408,50 @@ Validación antes de implementar, después de generar tasks (opcional pero recom
 
 ### `/ai-framework:SDD-cycle:speckit.implement`
 
-Ejecuta tasks.md con agents asignados, parallelization, specialized agents, TDD enforcement.
+Ejecuta tasks.md fase por fase con paralelización automática y TDD enforcement.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
+# Después de /speckit.tasks (y opcionalmente /analyze + /checklist)
 /ai-framework:SDD-cycle:speckit.implement
 ```
 
-**Workflow:**
+**¿Qué hace?**
 
-1. **Check checklists status** (si `FEATURE_DIR/checklists/` exists):
-   - Scan all checklist files
-   - Count: Total items, Completed items, Incomplete items
-   - Create status table
-   - **If any checklist incomplete**: STOP y ask "Do you want to proceed anyway? (yes/no)"
-   - **If all checklists complete**: Display table y proceed automáticamente
+1. **Validación de Checklists** (si existen)
+   - Escanea `checklists/` y cuenta items completados
+   - ⚠️ Si hay incomplete: pregunta si continuar
+   - ✅ Si todos complete: procede automáticamente
 
-2. **Load and analyze implementation context:**
-   - **REQUIRED**: Read tasks.md (complete task list + execution plan)
-   - **REQUIRED**: Read plan.md (tech stack, architecture, file structure)
-   - **IF EXISTS**: Read data-model.md (entities + relationships)
-   - **IF EXISTS**: Read contracts/ (API specs + test requirements)
-   - **IF EXISTS**: Read research.md (technical decisions + constraints)
-   - **IF EXISTS**: Read quickstart.md (integration scenarios)
+2. **Carga Contexto** (artifacts del plan)
+   - tasks.md + plan.md (obligatorios)
+   - data-model.md, contracts/, research.md, quickstart.md (opcionales)
 
-3. **Project Setup Verification**:
-   - **REQUIRED**: Create/verify ignore files basado en actual project setup:
-     - Git repository detected → create/verify `.gitignore`
-     - Dockerfile\* exists → create/verify `.dockerignore`
-     - ESLint config exists → create/verify `.eslintignore`
-     - Prettier config exists → create/verify `.prettierignore`
-     - package.json exists → create/verify `.npmignore` (if publishing)
-     - Terraform files (\*.tf) exist → create/verify `.terraformignore`
-     - Helm charts present → create/verify `.helmignore`
-   - **If ignore file already exists**: Verify y append missing critical patterns only
-   - **If ignore file missing**: Create con full pattern set para detected technology
+3. **Setup Automático**
+   - Crea/verifica `.gitignore`, `.dockerignore`, etc. según stack detectado
+   - Inicializa estructura del proyecto
 
-4. **Parse tasks.md structure** y extract:
-   - Task phases: Setup, Tests, Core, Integration, Polish
-   - Task dependencies: Sequential vs parallel execution rules
-   - Task details: ID, description, file paths, parallel markers [P]
-   - Execution flow: Order y dependency requirements
+4. **Ejecución Fase por Fase**
+   - **Setup** → **Foundational** → **User Stories (P1, P2...)** → **Polish**
+   - Tasks secuenciales: ejecuta en orden
+   - Tasks `[P]`: ejecuta en paralelo
+   - TDD: tests antes de implementación (si solicitado)
+   - Marca `[X]` al completar cada task
 
-5. **Execute implementation** following task plan:
-   - **Phase-by-phase execution**: Complete each phase antes de moving to next
-   - **Respect dependencies**: Run sequential tasks en order, parallel tasks [P] can run together
-   - **Follow TDD approach**: Execute test tasks antes de their corresponding implementation tasks
-   - **File-based coordination**: Tasks affecting same files must run sequentially
-   - **Validation checkpoints**: Verify each phase completion antes de proceeding
+5. **Validación Final**
+   - Verifica que features match el spec original
+   - Confirma que tests pasan (si existen)
+   - Report de trabajo completado
 
-6. **Implementation execution rules:**
-   - **Setup first**: Initialize project structure, dependencies, configuration
-   - **Tests before code**: Si need to write tests para contracts, entities, integration scenarios
-   - **Core development**: Implement models, services, CLI commands, endpoints
-   - **Integration work**: Database connections, middleware, logging, external services
-   - **Polish and validation**: Unit tests, performance optimization, documentation
+**Output:** Implementación completa + tasks.md actualizada con `[X]`
 
-7. **Progress tracking** y error handling:
-   - Report progress after each completed task
-   - Halt execution si any non-parallel task fails
-   - For parallel tasks [P], continue con successful tasks, report failed ones
-   - Provide clear error messages con context para debugging
-   - **IMPORTANT**: Para completed tasks, mark as [X] en tasks file
-
-8. **Completion validation:**
-   - Verify all required tasks completed
-   - Check que implemented features match original specification
-   - Validate que tests pass y coverage meets requirements
-   - Confirm implementation follows technical plan
-   - Report final status con summary de completed work
+::: warning Prerequisito
+Checklists incompletos bloquean ejecución (puedes override manualmente).
+:::
 
 ::: tip Cuándo usar
-Motor central de implementación, después de analyze/checklist (paso 6 del flujo SDD-cycle).
+Motor central de implementación (paso 6 del flujo SDD-cycle).
 :::
 
 **Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.sync` (opcional)
@@ -772,113 +681,64 @@ Setup inicial o actualización de principios fundamentales.
 
 ### `/ai-framework:git-github:commit`
 
-Commits semánticos con grouping automático por categoría y soporte para formato corporativo.
+Commits semánticos con agrupación automática y soporte corporativo.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
-/ai-framework:git-github:commit "descripción"
+# 1. Formato Convencional (proyectos open source)
+/ai-framework:git-github:commit "feat(auth): add OAuth2 support"
+
+# 2. Task ID solo (tipo automático desde archivos modificados)
+/ai-framework:git-github:commit "TRV-345 implementar autenticación"
+# → feat|TRV-345|20251023|implementar autenticación
+
+# 3. Tipo + Task ID (RECOMENDADO - control total)
+/ai-framework:git-github:commit "refactor: TRV-345 mejorar módulo auth"
+# → refactor|TRV-345|20251023|mejorar módulo auth
+
+# 4. Auto-commit (cuando no tienes Task ID)
 /ai-framework:git-github:commit "all changes"
-
-# Formato convencional
-/ai-framework:git-github:commit "feat: add OAuth authentication"
-
-# Formato corporativo (con Task ID)
-/ai-framework:git-github:commit "TRV-345 implement authentication"
-
-# Commit automático de todos los cambios
-/ai-framework:git-github:commit "all changes"
+# → Genera mensaje basado en archivos modificados
 ```
 
-**Formatos de Commit Soportados:**
+**¿Qué formato usar?**
 
-1. **Formato Convencional**: `type(scope): description`
-   - Ejemplo: `feat(auth): add OAuth2 support`
-   - Categorías: feat, fix, docs, test, refactor, chore, security
+| Tu Input                          | Output del Commit                             | ¿Cuándo usarlo?                      |
+| --------------------------------- | --------------------------------------------- | ------------------------------------ |
+| `"feat: add feature"`             | `feat: add feature`                           | Proyectos sin Task IDs               |
+| `"TRV-345 descripción"`           | `feat\|TRV-345\|20251023\|descripción` (auto) | Confías en auto-detección del tipo   |
+| `"refactor: TRV-345 descripción"` | `refactor\|TRV-345\|20251023\|descripción`    | **Quieres control del tipo (mejor)** |
+| `"all changes"`                   | Auto-generado según archivos                  | Commits rápidos sin Task ID          |
 
-2. **Formato Corporativo**: Cuando se detecta Task ID (ej: TRV-345, PROJ-123)
-   - Template: `Tipo|IdTarea|YYYYMMDD|Descripción`
+::: tip Mejor Práctica
+**Usa siempre `tipo: TASK-ID descripción`** cuando tengas Task ID. Te da control total y evita sorpresas con el auto-mapping.
+:::
 
-   **Dos formas de especificar el tipo:**
+**Formato Corporativo - Template:**
 
-   a. **Auto-mapping (solo Task ID)**:
-   - Input: `"TRV-345 implementación validación formulario"`
-   - Output: `feat|TRV-345|20251023|implementación validación formulario`
-   - El tipo se mapea automáticamente desde las categorías de archivos modificados:
-     - config → chore
-     - docs → docs
-     - security → fix
-     - test → test
-     - main → feat
+```
+Tipo|TaskID|YYYYMMDD|Descripción
+├─ Tipo: feat, fix, refactor, chore, docs, test, security
+├─ TaskID: TRV-345, BUG-287, PROJ-123 (patrón: LETRAS-NÚMEROS)
+├─ Fecha: Generada automáticamente (YYYYMMDD)
+└─ Descripción: Breve resumen del cambio
+```
 
-   b. **Tipo explícito (priority override)**:
-   - Input: `"refactor: TRV-345 mejora módulo autenticación"`
-   - Output: `refactor|TRV-345|20251023|mejora módulo autenticación`
-   - El tipo explícito **sobrescribe** el auto-mapping
-   - Pattern: `type: TASK-ID description`
-   - Tipos válidos: feat, fix, refactor, chore, docs, test, security
+**Auto-mapping de Tipos (solo cuando usas caso 2):**
 
-**Tabla de Decisión - Cuándo usar cada formato:**
+- Archivos `config/`, `*.md` → `chore`
+- Archivos `docs/`, `README` → `docs`
+- Archivos `scripts/`, `*setup*` → `fix`
+- Archivos `*test*`, `*.test.*` → `test`
+- Otros archivos → `feat`
 
-| Input del Usuario                                        | Formato Detectado | Output Commit Message                                                            |
-| -------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
-| `"feat(auth): add OAuth2"`                               | Convencional      | `feat(auth): add OAuth2`                                                         |
-| `"TRV-345 implement feature"`                            | Corporativo (A)   | `feat\|TRV-345\|20251023\|implement feature` (auto-map)                          |
-| `"refactor: TRV-345 improve code"`                       | Corporativo (B)   | `refactor\|TRV-345\|20251023\|improve code` (explicit)                           |
-| `"fix: BUG-287 correct validation"`                      | Corporativo (B)   | `fix\|BUG-287\|20251023\|correct validation` (explicit)                          |
-| `"all changes"` (sin Task ID, archivos docs)             | Convencional      | `docs: enhance documentation` (auto-generado)                                    |
-| `"chore: TRV-100 update dependencies"` (archivos config) | Corporativo (B)   | `chore\|TRV-100\|20251023\|update dependencies` (explicit, ignora file category) |
+**Agrupación Inteligente:**
 
-**Execution Steps:**
+- **Multiple commits**: Si modificas 2+ categorías (config + código, docs + tests)
+- **Single commit**: Si modificas solo una categoría o pocos archivos
 
-1. **Parse Arguments and Validate Repository**:
-   - Parse commit message desde **$ARGUMENTS**
-   - Execute `git rev-parse --git-dir` para verify git repository
-   - If fails: Show error y stop
-
-2. **Analyze Repository Status and Changes**:
-   - Check repository status usando `git status --porcelain`
-   - If no changes: Show "No changes to commit" y stop
-   - Analyze change details:
-     - `git diff --cached --name-only` (staged files)
-     - `git diff --name-only` (unstaged modified files)
-     - `git ls-files --others --exclude-standard` (untracked new files)
-   - Display summary de files a be processed
-
-3. **Handle Staging Strategy**:
-   - Check si anything is staged con `git diff --cached --quiet`
-   - If nothing staged y unstaged changes exist:
-     - Stage all changes con `git add -A` (modified, new, deleted)
-   - If files already staged: Use existing staged files
-   - Display staging status
-
-4. **Classify Changed Files by Category** usando natural language processing:
-   - **config**: `.claude/*`, `*.md`, `CLAUDE.md`, configuration files
-   - **docs**: `docs/*`, `README*`, `CHANGELOG*`, documentation
-   - **security**: `scripts/*`, `*setup*`, `*security*`, security-related
-   - **test**: `*test*`, `*spec*`, `*.test.*`, testing files
-   - **main**: All other files (core functionality)
-
-5. **Determine Commit Strategy** (Single vs Multiple):
-   - Count files en cada category
-   - **Multiple commits** if: 2+ categories con 2+ files each OR any security files exist
-   - **Single commit** if: Only one significant category OR limited file changes
-
-6. **Execute Smart Commit Strategy**:
-   - **If multiple commits**: Para cada category (order: security, config, docs, test, main):
-     - Reset y stage category files only
-     - Generate appropriate commit message:
-       - **config**: "feat(config): update configuration and commands"
-       - **docs**: "docs: enhance documentation and setup guides"
-       - **security**: "security: improve security measures and validation"
-       - **test**: "test: update test suite and coverage"
-       - **main**: "feat: implement core functionality changes"
-     - Create commit
-   - **If single commit**: Use custom message o generate conventional commit message
-
-7. **Report Results**: Display recent commit history y summary
-
-**Output:** Commits agrupados por tipo (feat, fix, docs, test, refactor, etc.)
+**Output:** Commits agrupados por tipo con mensajes semánticos
 
 ::: tip Cuándo usar
 Después de completar cambios.
@@ -890,100 +750,66 @@ Después de completar cambios.
 
 ### `/ai-framework:git-github:pullrequest`
 
-Crea PR con security review BLOCKING, push seguro, metadata completa y detección automática de formato de commits (convencional/corporativo).
+Crea PR con security review automático, detección de formato corporativo y título personalizable.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
-/ai-framework:git-github:pullrequest {target_branch}
-
-# Ejemplos
-/ai-framework:git-github:pullrequest develop
+# Desde feature branch → PR a main
 /ai-framework:git-github:pullrequest main
+
+# Desde feature branch → PR a develop
+/ai-framework:git-github:pullrequest develop
+
+# Desde rama protegida (main) → Crea temp branch automática
+/ai-framework:git-github:pullrequest main
+# → Crea temp-{keywords}-{timestamp} automáticamente
 ```
 
-**Detección Automática de Formato:**
+**¿Qué hace el comando?**
 
-- **Formato Corporativo**: Si detecta `Tipo|IdTarea|YYYYMMDD|Descripción` → preserva como PR title
-- **Formato Convencional**: Si detecta `type(scope): description` → preserva como PR title
-- Detection logic: Pattern matching `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}` = corporate, sino conventional
+1. **Security Review Automático** (BLOCKING)
+   - Analiza código en busca de vulnerabilidades
+   - ❌ **BLOQUEA PR** si encuentra HIGH severity (confidence ≥ 8.0)
+   - ⏱️ Timeout: 80 segundos máximo
 
-**Execution Steps:**
+2. **Título del PR - Formato Corporativo**
+   - **Si detecta commits corporativos** (`feat|TRV-345|20251023|descripción`):
+     - **Te pregunta**: ¿Usar primer commit o título personalizado?
+     - **Opción A**: Usa primer commit como está
+     - **Opción B**: Ingresas título custom: `refactor|TRV-350|20251023|mejora auth`
+   - **Si detecta commits convencionales**: Usa primer commit directamente
 
-1. **Validación del target branch**:
-   - Validate argument format
-   - Execute `git fetch origin`
-   - Capture current branch
-   - Verify target branch exists
-   - Validate current ≠ target (exception: protected branches → auto-create feature branch)
-   - Verify divergence con target
+3. **Branch Protection Handling**
+   - **Si estás en main/master/develop**: Crea temp branch automática
+   - **Si estás en feature branch**: Usa branch actual
 
-2. **Validación de sincronización de rama actual**:
-   - Check si current branch has upstream
-   - **If has upstream**: Verify not behind remote (blocks si behind)
-   - **If NO upstream**: Continue silently (new branch)
+4. **PR Body Automático**
+   - Summary: Resumen de cambios por tipo de commit
+   - Changes Made: Lista de commits
+   - Files & Impact: Archivos modificados + líneas
+   - Test Plan: Checklist basada en tipo de cambio
+   - Breaking Changes: Si detecta BREAKING
 
-3. **Operaciones en paralelo**:
+**Validaciones Automáticas:**
 
-   **Security Review (BLOCKING):**
-   - Start `/agent:security-reviewer` para analyze changes
-   - Timeout: 80 segundos máximo (balances thoroughness vs. workflow speed for typical PRs)
-   - **Blocking conditions**:
-     - HIGH severity findings (confidence ≥ 8.0): ALWAYS block PR creation
-     - MEDIUM severity findings (confidence ≥ 8.0): Block en production (configurable)
-   - **Success**: Sin vulnerabilidades críticas → continue
-   - **Failure**: Show findings + block PR creation + exit error
-   - **Timeout**: Show warning + create PR con SECURITY_REVIEW_TIMEOUT flag
-   - **System error**: Block PR creation + show retry instructions
+- ✅ Target branch existe
+- ✅ Hay commits para PR
+- ✅ Branch no está desactualizada vs remote
+- ✅ Security review aprobado
 
-   **Validar PR existente:**
-   - Execute `gh pr view --json number,state,title,url`
-   - Store result para next step
+::: warning Security Review es BLOCKING
+Si encuentra vulnerabilidades HIGH, el comando FALLA y NO crea el PR. Debes corregir el código primero.
+:::
 
-   **Análisis de commits:**
-   - Git data combined (mode-aware):
-     - If AUTO_CREATE_BRANCH mode: Analyze commits NOT en origin/target
-     - If NORMAL mode: Diff against target
-   - Variables preparadas: commit_count, git_data, files_data, files_changed
+::: tip Título Personalizado (Formato Corporativo)
+Cuando tienes múltiples Task IDs en commits (TRV-345, BUG-287, PROJ-100), el comando te pregunta si quieres un título custom que refleje todos los cambios.
+:::
 
-4. **Procesar PR existente**:
-   - Si exists PR abierto: Ask "[1] Actualizar PR / [2] Crear nuevo PR"
-   - Si no exists: Continue con creation
-
-5. **Detectar tipo de rama y decidir acción**:
-
-   **SI rama protegida** (main, master, develop, staging, production, etc.):
-   - Create feature branch automática
-   - Extract primary type desde conventional commits
-   - Detect central theme desde commit scopes o frequent words
-   - Generate timestamp UTC
-   - Build branch name: `${tema_central}-${timestamp}` o `${primary_type}-improvements-${timestamp}`
-   - Create nueva rama con validation y rollback on failure
-   - Push to remote con `--set-upstream`
-
-   **SI NO rama protegida** (feature branch):
-   - Use current branch para PR
-   - Push to remote (con `--set-upstream` si needed)
-
-6. **Preparar contenido del PR**:
-   - Generate título: `{type}({scope}): {description}` basado en commits
-   - Count lines: additions + deletions
-   - Identify affected areas (project directories)
-   - Detect breaking changes (keywords: BREAKING/deprecated/removed)
-   - **IMPORTANTE**: Al numerar items usa formato SIN símbolo hash: 'Bug 1:', 'Issue 1:', 'Task 1:' (NO 'Bug #1:') para evitar auto-linking no intencional de GitHub
-   - Build PR body con sections: Summary, Changes Made, Files & Impact, Test Plan, Breaking Changes
-
-7. **Crear PR**: Execute `gh pr create --title --body --base`
-
-8. **Mostrar resultado**: PR URL + confirmation
-
-**Logging:** JSONL format en `.claude/logs/{date}/`:
-
-- Security review: `security.jsonl`
-- PR operations: `pr_operations.jsonl`
+**Output:** PR URL + security review report
 
 ::: tip Cuándo usar
-Para PRs con estándares de calidad.
+Después de commits finales, listo para code review.
 :::
 
 **Next Steps:** Después de merge → `/ai-framework:git-github:cleanup`
@@ -992,57 +818,42 @@ Para PRs con estándares de calidad.
 
 ### `/ai-framework:git-github:cleanup`
 
-Post-merge cleanup workflow: delete feature branch y sync con base branch.
+Limpia feature branch y sincroniza con base branch después de merge.
 
-**Usage:**
+**Casos de Uso:**
 
 ```bash
-/cleanup           # Auto-detect base branch (main/master/develop)
-/cleanup main      # Specify base branch explicitly
-/cleanup develop   # Cleanup and sync with develop
+# Auto-detect base branch
+/ai-framework:git-github:cleanup
+
+# Especificar base branch explícitamente
+/ai-framework:git-github:cleanup main
+/ai-framework:git-github:cleanup develop
 ```
 
-**Execution Steps:**
+**¿Qué hace?**
 
-1. **Validate Current State**:
-   - Get current branch name
-   - Detect protected branches pattern
-   - If current branch es protected: Error "Ya estás en rama base" y terminate
-   - If not protected: Continue con cleanup
+1. **Valida Estado Actual**
+   - ❌ Si estás en main/master/develop: Error "Ya estás en rama base"
+   - ✅ Si estás en feature branch: Continúa
 
-2. **Determine Target Base Branch**:
-   - **If argument provided**: Use **$ARGUMENTS** as target base
-   - **If no argument (auto-detect)**: Try detection en order (main → master → develop)
-   - Validate target exists en origin
+2. **Detecta Base Branch**
+   - Con argumento: usa el especificado
+   - Sin argumento: auto-detecta (main → master → develop)
 
-3. **Switch to Base Branch**:
-   - Execute `git checkout $target_base`
-   - Verify success
-   - If fails: Show error y terminate
+3. **Workflow de Limpieza**
+   - `git checkout {base}` - Cambia a base branch
+   - `git branch -D {feature}` - Elimina feature branch local
+   - `git pull origin {base} --ff-only` - Sincroniza con remote
 
-4. **Delete Feature Branch**:
-   - Execute `git branch -D "$current_branch"` (force delete)
-   - Use `-D` porque user explicitly requested cleanup
-   - Show confirmation
+**Output:** Workspace limpio en base branch + summary de operaciones
 
-5. **Sync with Remote**:
-   - Execute `git pull origin $target_base --ff-only`
-   - Use `--ff-only` para prevent accidental merges
-   - If fails (diverged): Show rebase instructions y terminate
-   - If success: Show commits pulled
-
-6. **Final Status**:
-   - Show summary: operations, current branch, deleted branch, commits synced
-   - Verify clean state con `git status --short`
-
-**Output:** Workspace limpio + documentación actualizada
-
-::: info Nota sobre Remote Branch Cleanup
-GitHub elimina automáticamente las ramas remotas cuando se hace merge del PR. No es necesario borrado manual.
+::: info Branch Remota
+GitHub elimina automáticamente la branch remota al mergear el PR. No necesitas limpiarla manualmente.
 :::
 
 ::: tip Cuándo usar
-Después de merge exitoso.
+Después de merge exitoso del PR.
 :::
 
 ---
