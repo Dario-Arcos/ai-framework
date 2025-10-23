@@ -73,7 +73,7 @@ git config --local pr.temp.current-branch "$current_branch"
 git config --local pr.temp.commit-count "$commit_count"
 ```
 
-## Paso 2: Análisis de Commits
+## Paso 2A: Análisis de Commits - Extracción de Metadata
 
 Ejecutar en bash para extraer metadata:
 
@@ -126,6 +126,65 @@ git config --local pr.temp.primary-type "$primary_type"
 breaking=$(git log --pretty=format:'%B' "origin/$target_branch..HEAD" -- | grep -iE 'BREAKING' || echo "")
 if [ -n "$breaking" ]; then
   git config --local pr.temp.breaking-changes "$breaking"
+fi
+```
+
+## Paso 2B: Selección de Título del PR (solo formato corporate)
+
+**Si `commit_format = "corporate"`**, preguntar al usuario sobre el título del PR:
+
+1. Leer valores guardados en git config:
+
+   ```bash
+   first_commit=$(git config --local pr.temp.first-commit)
+   commit_format=$(git config --local pr.temp.commit-format)
+   ```
+
+2. Si `commit_format = "corporate"`, mostrar al usuario:
+   - El primer commit detectado: `{first_commit}`
+   - Mensaje: "Este será el título del PR basado en el primer commit."
+
+3. Usar **AskUserQuestion tool** para preguntar al usuario:
+
+   **Question**: "¿Deseas usar el primer commit como título del PR o proporcionar un título personalizado?"
+
+   **Options**:
+   - **A**: "Usar primer commit" (default) — Descripción: "El PR usará: `{first_commit}`"
+   - **B**: "Título personalizado" — Descripción: "Proporcionarás un título en formato corporativo personalizado"
+
+4. Si usuario selecciona **Opción B**:
+   - Pedir input adicional: "Ingresa el título personalizado en formato: `tipo|TASK-ID|YYYYMMDD|descripción`"
+   - Ejemplo: `refactor|TRV-350|20251023|mejora sistema autenticación`
+   - Tipos válidos: feat, fix, refactor, chore, docs, test, security
+   - Proceder al Paso 2C para validar
+
+5. Si usuario selecciona **Opción A** o formato NO es corporate:
+   - Continuar al Paso 3 (sin Paso 2C)
+
+## Paso 2C: Validación y Almacenamiento de Título Personalizado
+
+**Solo ejecutar si usuario proporcionó título personalizado en Paso 2B.**
+
+Ejecutar en bash:
+
+```bash
+# Título personalizado proporcionado por usuario
+custom_title="$CUSTOM_TITLE_FROM_USER"
+
+# Validar formato corporativo: tipo|TASK-ID|YYYYMMDD|descripción
+if echo "$custom_title" | grep -Eq '^(feat|fix|refactor|chore|docs|test|security)\|[A-Z]+-[0-9]+\|[0-9]{8}\|.+$'; then
+  # Formato válido: guardar
+  git config --local pr.temp.custom-title "$custom_title"
+
+  # Extraer primary type del título personalizado
+  primary_type=$(echo "$custom_title" | cut -d'|' -f1)
+  git config --local pr.temp.primary-type "$primary_type"
+
+  echo "✅ Título personalizado guardado: $custom_title"
+else
+  echo "⚠️  Formato inválido. Usando primer commit como fallback."
+  echo "   Formato esperado: tipo|TASK-ID|YYYYMMDD|descripción"
+  echo "   Ejemplo: refactor|TRV-350|20251023|mejora autenticación"
 fi
 ```
 
@@ -259,11 +318,17 @@ primary_type=$(git config --local pr.temp.primary-type)
 breaking=$(git config --local pr.temp.breaking-changes 2>/dev/null || echo "")
 
 # 2. Generate PR title based on format
-if [ "$commit_format" = "corporate" ]; then
-  # Preserve corporate format
+# Priority: custom_title > first_commit
+custom_title=$(git config --local pr.temp.custom-title 2>/dev/null || echo "")
+
+if [ -n "$custom_title" ]; then
+  # User provided custom title (Paso 2B/2C)
+  pr_title="$custom_title"
+elif [ "$commit_format" = "corporate" ]; then
+  # Preserve corporate format from first commit
   pr_title="$first_commit"
 else
-  # Use conventional format
+  # Use conventional format from first commit
   pr_title="$first_commit"
 fi
 
@@ -317,7 +382,7 @@ pr_url=$(gh pr create --title "$pr_title" --body-file "$temp_file" --base "$targ
 rm "$temp_file"
 
 # 6. Cleanup
-git config --local --unset-all pr.temp
+git config --local --remove-section pr.temp
 rm -f .git/pr-temp-commits.txt
 echo "✅ PR created: $pr_url"
 ```
@@ -338,7 +403,7 @@ echo "✅ PR created: $pr_url"
 En cualquier error:
 
 ```bash
-git config --local --unset-all pr.temp 2>/dev/null
+git config --local --remove-section pr.temp 2>/dev/null
 rm -f .git/pr-temp-commits.txt 2>/dev/null
 exit 1
 ```
