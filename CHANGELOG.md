@@ -9,7 +9,33 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Añadido
+
+- Soporte para tipo explícito con Task ID en comando `/commit` (PR #21)
+  - Formato: `refactor: TRV-345 descripción` (tipo sobrescribe auto-mapping)
+  - Prioridad: tipo explícito > auto-mapping desde archivos
+  - Pattern detection automático: `type: TASK-ID description`
+
+### Cambiado
+
+- Título personalizable en PRs con formato corporativo (PR #21)
+  - Pregunta interactiva cuando detecta commits corporativos
+  - Opciones: usar primer commit o ingresar título custom
+  - Validación de formato corporativo con fallback
+- Documentación de comandos optimizada con formato consistente (commit 504f831)
+  - Patrón "Casos de Uso" + "¿Qué hace?" aplicado
+  - Reducción de verbosidad: 30% promedio
+  - 8 comandos optimizados (commit, pullrequest, cleanup, specify, clarify, plan, tasks, implement)
+
+### Arreglado
+
+- Detección de números de branch duplicados en entornos de equipo (PR #21)
+  - Verificación de 3 fuentes: remote branches + local branches + specs directories
+  - Previene conflictos cuando múltiples developers crean features simultáneamente
+  - Pattern matching exacto para evitar falsos positivos
+- Limpieza de git config estandarizada en `pullrequest.md` (PR #21)
+  - Cambio de `--unset-all` a `--remove-section` (4 ubicaciones)
+  - Fix consistente en todas las secciones de rollback
 
 ---
 
