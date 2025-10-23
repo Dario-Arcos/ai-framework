@@ -9,6 +9,12 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [No Publicado]
 
+- [Cambios futuros se documentan aquí]
+
+---
+
+## [1.4.1] - 2025-10-23
+
 ### Añadido
 
 - Soporte para tipo explícito con Task ID en comando `/commit` (PR #21)
