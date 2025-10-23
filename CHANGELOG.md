@@ -32,6 +32,16 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
   - Patrón "Casos de Uso" + "¿Qué hace?" aplicado
   - Reducción de verbosidad: 30% promedio
   - 8 comandos optimizados (commit, pullrequest, cleanup, specify, clarify, plan, tasks, implement)
+- Comando `/release` optimizado y corregido (commit ababbca)
+  - Reducción: 333 → 153 líneas (54% menos)
+  - Eliminadas secciones meta innecesarias (Notas de Implementación, Seguridad, Rollback)
+  - Validación corregida: permite CHANGELOG.md modificado (integración con /changelog)
+  - Confirmación real con WAIT explícito
+  - Orden corregido: CHANGELOG antes de npm version
+- Comando `/changelog` optimizado (commit ababbca)
+  - Reducción: 166 → 145 líneas (13% menos)
+  - Eliminadas secciones "Principios de Diseño" y "Notas" verbosas
+  - Solo 3 reglas esenciales
 
 ### Arreglado
 
