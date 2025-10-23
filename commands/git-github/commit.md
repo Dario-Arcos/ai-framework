@@ -20,21 +20,32 @@ When a Task ID is detected in arguments (e.g., "TRV-345 implement feature"), use
 
 **Components**:
 
-- **Tipo**: Commit type based on category
-  - config → chore
-  - docs → docs
-  - security → fix
-  - test → test
-  - main → feat
+- **Tipo**: Commit type (two sources with priority order)
+  1. **Explicit type** (highest priority): If user provides `type: TASK-ID description`
+     - Valid types: feat, fix, refactor, chore, docs, test, security
+  2. **Auto-mapped** (fallback): Based on modified file categories
+     - config → chore
+     - docs → docs
+     - security → fix
+     - test → test
+     - main → feat
 - **IdTarea**: Task ID from arguments (e.g., TRV-345, PROJ-123)
 - **YYYYMMDD**: Current date in format YYYYMMDD (calculate with `date +%Y%m%d`)
 - **Descripción**: Brief description (max 60 characters)
 
 **Examples**:
 
-- `feat|TRV-345|YYYYMMDD|implementación validación formulario`
-- `fix|BUG-287|YYYYMMDD|corrección error autenticación`
-- `docs|DOC-112|YYYYMMDD|actualización README módulo`
+Auto-mapped type (user provides only Task ID):
+
+- Input: `"TRV-345 implementación validación formulario"`
+- Output: `feat|TRV-345|20251023|implementación validación formulario` (auto-mapped from file category)
+
+Explicit type (user provides type + Task ID):
+
+- Input: `"refactor: TRV-345 mejora módulo autenticación"`
+- Output: `refactor|TRV-345|20251023|mejora módulo autenticación` (explicit type used)
+- Input: `"fix: BUG-287 corrección error autenticación"`
+- Output: `fix|BUG-287|20251023|corrección error autenticación` (explicit type used)
 
 **When to use**:
 
@@ -49,6 +60,16 @@ When a Task ID is detected in arguments (e.g., "TRV-345 implement feature"), use
 
 - **Commit message**: Extract custom commit message if provided
 - **Auto mode**: Check if "all changes" or similar auto-commit requested
+- **Explicit type with Task ID** (NEW): Detect pattern `type: TASK-ID description`
+  - Pattern: `^(feat|fix|refactor|chore|docs|test|security):\s*([A-Z]+-[0-9]+)\s+(.+)$`
+  - If match found:
+    - Store explicit_type (e.g., "refactor")
+    - Store task_id (e.g., "TRV-345")
+    - Store description (remaining text)
+    - Set flag: has_explicit_type=true
+  - If NO match, check for Task ID only: `([A-Z]+-[0-9]+)`
+    - If found: Use auto-mapping from file categories (existing behavior)
+    - Set flag: has_explicit_type=false
 - Display: "Analyzing repository for intelligent commit..."
 
 **Validate git repository**:
@@ -131,9 +152,10 @@ For each category with files (in order: security, config, docs, test, main):
 - Execute: `git add <files_for_category>` to stage category files only
 - **Generate appropriate commit message**:
   - If Task ID detected in arguments: Use corporate format template (see Corporate Commit Format section)
+    - **If has_explicit_type=true**: Use explicit_type from arguments (OVERRIDE category mapping)
+    - **If has_explicit_type=false**: Map category to type as specified in Corporate Commit Format section
+    - Calculate date: `date +%Y%m%d`
   - Otherwise: Use conventional format (config: "feat(config): update configuration and commands", docs: "docs: enhance documentation", etc.)
-  - Map category to type as specified in Corporate Commit Format section
-  - Calculate date: `date +%Y%m%d`
 - Execute: `git commit -m "<generated_message>"` to create commit
 - Show: "✅ Committed <category>: <file_list>"
 
@@ -141,9 +163,10 @@ For each category with files (in order: security, config, docs, test, main):
 
 - **Generate commit message**:
   - If Task ID detected in arguments: Use corporate format template (see Corporate Commit Format section)
+    - **If has_explicit_type=true**: Use explicit_type from arguments (OVERRIDE category mapping)
+    - **If has_explicit_type=false**: Determine type based on dominant category
+    - Calculate date: `date +%Y%m%d`
   - Otherwise: Use conventional format or custom message from $ARGUMENTS if provided
-  - Determine type based on dominant category
-  - Calculate date: `date +%Y%m%d` (for corporate format)
 - Execute: `git commit -m "<commit_message>"` to create single commit
 - Show: "✅ Created single commit: <commit_message>"
 

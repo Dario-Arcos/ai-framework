@@ -4,6 +4,7 @@ set -e
 
 JSON_MODE=false
 SHORT_NAME=""
+BRANCH_NUMBER=""
 ARGS=()
 i=1
 while [ $i -le $# ]; do
@@ -26,16 +27,37 @@ while [ $i -le $# ]; do
 		fi
 		SHORT_NAME="$next_arg"
 		;;
+	--number)
+		if [ $((i + 1)) -gt $# ]; then
+			echo 'Error: --number requires a value' >&2
+			exit 1
+		fi
+		i=$((i + 1))
+		next_arg="${!i}"
+		# Check if the next argument is another option (starts with --)
+		if [[ "$next_arg" == --* ]]; then
+			echo 'Error: --number requires a value' >&2
+			exit 1
+		fi
+		# Validate that the number is a positive integer
+		if ! [[ "$next_arg" =~ ^[0-9]+$ ]]; then
+			echo 'Error: --number must be a positive integer' >&2
+			exit 1
+		fi
+		BRANCH_NUMBER="$next_arg"
+		;;
 	--help | -h)
-		echo "Usage: $0 [--json] [--short-name <name>] <feature_description>"
+		echo "Usage: $0 [--json] [--short-name <name>] [--number <num>] <feature_description>"
 		echo ""
 		echo "Options:"
 		echo "  --json              Output in JSON format"
 		echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
+		echo "  --number <num>      Manually specify the feature number (overrides auto-detection)"
 		echo "  --help, -h          Show this help message"
 		echo ""
 		echo "Examples:"
 		echo "  $0 --short-name 'user-auth' 'Add user authentication system'"
+		echo "  $0 --number 5 --short-name 'user-auth' 'Add user authentication system'"
 		echo "  $0 'Implement OAuth2 integration for API'"
 		exit 0
 		;;
@@ -65,6 +87,54 @@ find_repo_root() {
 	return 1
 }
 
+# Check for existing branches with the same short-name across all sources
+# Returns the next available feature number
+check_existing_branches() {
+	local short_name="$1"
+	local specs_dir="$2"
+
+	# Fetch remote branches to ensure we have latest information
+	# Silent errors for non-git repositories
+	git fetch --all --prune 2>/dev/null || true
+
+	# Check remote branches with exact pattern match
+	# Pattern: refs/heads/[0-9]+-${short_name}$
+	local remote_branches=$(git ls-remote --heads origin 2>/dev/null |
+		grep -E "refs/heads/[0-9]+-${short_name}\$" || echo "")
+
+	# Check local branches with exact pattern match
+	# Pattern: ^[* ]*[0-9]+-${short_name}$
+	local local_branches=$(git branch 2>/dev/null |
+		grep -E "^[* ]*[0-9]+-${short_name}\$" || echo "")
+
+	# Check specs directories (existing logic)
+	local spec_dirs=""
+	if [ -d "$specs_dir" ]; then
+		spec_dirs=$(find "$specs_dir" -maxdepth 1 -type d -name "[0-9]*-${short_name}" 2>/dev/null || echo "")
+	fi
+
+	# Extract all numbers from the three sources and find maximum
+	local max_num=0
+	local all_numbers=$(
+		{
+			# Extract numbers from remote branches (refs/heads/001-name)
+			echo "$remote_branches" | grep -o 'refs/heads/[0-9]\+' | grep -o '[0-9]\+' || true
+			# Extract numbers from local branches (  001-name or * 001-name)
+			echo "$local_branches" | grep -o '^[* ]*[0-9]\+' | grep -o '[0-9]\+' || true
+			# Extract numbers from spec directories (/path/to/specs/001-name)
+			echo "$spec_dirs" | grep -o '/[0-9]\+-' | grep -o '[0-9]\+' || true
+		} | sort -n | tail -1
+	)
+
+	# Convert to number (handle empty case and leading zeros)
+	if [ -n "$all_numbers" ]; then
+		max_num=$((10#$all_numbers))
+	fi
+
+	# Return next available number
+	echo $((max_num + 1))
+}
+
 # Resolve repository root. Prefer git information when available, but fall back
 # to searching for repository markers so the workflow still functions in repositories that
 # were initialised with --no-git.
@@ -86,20 +156,6 @@ cd "$REPO_ROOT"
 
 SPECS_DIR="$REPO_ROOT/specs"
 mkdir -p "$SPECS_DIR"
-
-HIGHEST=0
-if [ -d "$SPECS_DIR" ]; then
-	for dir in "$SPECS_DIR"/*; do
-		[ -d "$dir" ] || continue
-		dirname=$(basename "$dir")
-		number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
-		number=$((10#$number))
-		if [ "$number" -gt "$HIGHEST" ]; then HIGHEST=$number; fi
-	done
-fi
-
-NEXT=$((HIGHEST + 1))
-FEATURE_NUM=$(printf "%03d" "$NEXT")
 
 # Function to generate branch name with stop word filtering and length filtering
 generate_branch_name() {
@@ -156,6 +212,12 @@ else
 	# Generate from description with smart filtering
 	BRANCH_SUFFIX=$(generate_branch_name "$FEATURE_DESCRIPTION")
 fi
+
+# Auto-detect next available feature number or use manually specified number
+if [ -z "$BRANCH_NUMBER" ]; then
+	BRANCH_NUMBER=$(check_existing_branches "$BRANCH_SUFFIX" "$SPECS_DIR")
+fi
+FEATURE_NUM=$(printf "%03d" "$BRANCH_NUMBER")
 
 BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
 

@@ -40,6 +40,7 @@ Given that feature description, do this:
    - Append the short-name argument to the `.specify/scripts/bash/create-new-feature.sh --json "$ARGUMENTS"` command with the 2-4 word short name you created in step 1
    - Bash: `--short-name "your-generated-short-name"`
    - PowerShell: `-ShortName "your-generated-short-name"`
+   - **Optional**: Use `--number <num>` to manually specify the feature number (see Branch Number Detection section below)
    - For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot")
    - You must only ever run this script once
    - The JSON is provided in the terminal as output - always refer to it to get the actual content you're looking for
@@ -165,6 +166,87 @@ Given that feature description, do this:
 7. Report completion with branch name, spec file path, checklist results, and readiness for the next phase (`/speckit.clarify` or `/speckit.plan`).
 
 **NOTE:** The script creates and checks out the new branch and initializes the spec file before writing.
+
+## Branch Number Detection
+
+The `create-new-feature.sh` script automatically detects the next available feature number by checking **three sources** to prevent numbering conflicts in team environments:
+
+### Detection Sources (checked in order)
+
+1. **Remote branches** (via `git ls-remote --heads origin`)
+   - Checks all branches on the remote repository (GitHub/GitLab/etc.)
+   - Ensures no conflicts with open pull requests from other team members
+   - Example: If a teammate has `001-user-auth` branch in an open PR, the script detects it even if you don't have it locally
+
+2. **Local branches** (via `git branch`)
+   - Checks branches you've created locally
+   - Catches branches you're working on but haven't pushed yet
+
+3. **Specs directories** (via `find specs/`)
+   - Verifies existing feature directories in `specs/`
+   - Fallback mechanism for non-git repositories
+
+The script **finds the highest feature number across ALL sources** for the given short-name and assigns the **next sequential number**.
+
+### Pattern Matching (Exact Match)
+
+The script uses **exact pattern matching** to prevent false positives:
+
+- ✅ **Match**: `001-user-auth` when short-name is `user-auth`
+- ❌ **No match**: `001-user-auth-system` when short-name is `user-auth`
+- ❌ **No match**: `001-user` when short-name is `user-auth`
+
+This ensures features with similar names get separate numbers:
+
+- `001-auth` (authentication feature)
+- `002-auth-system` (authentication system - different feature)
+- `003-auth-api` (authentication API - another feature)
+
+### Manual Override
+
+You can manually specify a feature number with the `--number` parameter:
+
+```bash
+# Bash
+./create-new-feature.sh --json --number 5 --short-name "user-auth" "Add authentication"
+
+# Result: Creates branch 005-user-auth regardless of existing branches
+```
+
+**When to use manual numbering:**
+
+- Working in a non-git environment (no remote branch detection available)
+- Resolving numbering conflicts manually
+- Creating features with specific numbering schemes (e.g., reserving 100-199 for infrastructure)
+- Recovering from a broken branch numbering sequence
+
+### Team Collaboration Example
+
+**Scenario**: Two developers working in parallel on different features
+
+```bash
+# Developer A (yesterday, pushed branch to origin)
+git push origin 001-payment-gateway
+
+# Developer B (today, fresh clone, doesn't have 001-payment-gateway locally)
+./create-new-feature.sh --short-name "user-settings" "Add user settings"
+
+# WITHOUT multi-source detection (OLD BEHAVIOR):
+# ❌ Script only checks local specs/ → finds nothing → assigns 001-user-settings → CONFLICT!
+
+# WITH multi-source detection (CURRENT BEHAVIOR):
+# ✅ Script checks origin → sees 001-payment-gateway → assigns 002-user-settings → NO CONFLICT!
+```
+
+This prevents the common problem where two developers independently create features with the same number, leading to merge conflicts and confusion.
+
+### Fallback Behavior
+
+If Git is not available (non-git repositories), the script:
+
+- ✅ Still works (no errors)
+- ⚠️ Only checks `specs/` directories (source 3)
+- 💡 **Recommendation**: Use `--number` parameter for manual control in non-git environments
 
 ## General Guidelines
 

@@ -798,8 +798,36 @@ Commits semánticos con grouping automático por categoría y soporte para forma
 
 2. **Formato Corporativo**: Cuando se detecta Task ID (ej: TRV-345, PROJ-123)
    - Template: `Tipo|IdTarea|YYYYMMDD|Descripción`
-   - Ejemplo: `feat|TRV-345|20250122|implement authentication`
-   - Mapping automático: feat→feat, fix→fix, config→chore, docs→docs, security→fix, test→test
+
+   **Dos formas de especificar el tipo:**
+
+   a. **Auto-mapping (solo Task ID)**:
+   - Input: `"TRV-345 implementación validación formulario"`
+   - Output: `feat|TRV-345|20251023|implementación validación formulario`
+   - El tipo se mapea automáticamente desde las categorías de archivos modificados:
+     - config → chore
+     - docs → docs
+     - security → fix
+     - test → test
+     - main → feat
+
+   b. **Tipo explícito (priority override)**:
+   - Input: `"refactor: TRV-345 mejora módulo autenticación"`
+   - Output: `refactor|TRV-345|20251023|mejora módulo autenticación`
+   - El tipo explícito **sobrescribe** el auto-mapping
+   - Pattern: `type: TASK-ID description`
+   - Tipos válidos: feat, fix, refactor, chore, docs, test, security
+
+**Tabla de Decisión - Cuándo usar cada formato:**
+
+| Input del Usuario                                        | Formato Detectado | Output Commit Message                                                            |
+| -------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `"feat(auth): add OAuth2"`                               | Convencional      | `feat(auth): add OAuth2`                                                         |
+| `"TRV-345 implement feature"`                            | Corporativo (A)   | `feat\|TRV-345\|20251023\|implement feature` (auto-map)                          |
+| `"refactor: TRV-345 improve code"`                       | Corporativo (B)   | `refactor\|TRV-345\|20251023\|improve code` (explicit)                           |
+| `"fix: BUG-287 correct validation"`                      | Corporativo (B)   | `fix\|BUG-287\|20251023\|correct validation` (explicit)                          |
+| `"all changes"` (sin Task ID, archivos docs)             | Convencional      | `docs: enhance documentation` (auto-generado)                                    |
+| `"chore: TRV-100 update dependencies"` (archivos config) | Corporativo (B)   | `chore\|TRV-100\|20251023\|update dependencies` (explicit, ignora file category) |
 
 **Execution Steps:**
 
