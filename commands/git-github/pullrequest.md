@@ -228,7 +228,7 @@ fi
 
 if [ "$has_security_critical" = "true" ]; then
   echo "❌ PR BLOQUEADO: Vulnerabilidades HIGH con confidence ≥0.8"
-  git config --local --unset-all pr.temp
+  git config --local --remove-section pr.temp 2>/dev/null
   exit 1
 fi
 ```
@@ -275,7 +275,7 @@ Ejecutar en bash:
      # Validate branch doesn't exist
      if git show-ref --verify --quiet "refs/heads/$temp_branch"; then
        echo "❌ Branch $temp_branch already exists"
-       git config --local --unset-all pr.temp
+       git config --local --remove-section pr.temp 2>/dev/null
        exit 1
      fi
 
