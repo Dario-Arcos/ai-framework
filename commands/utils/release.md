@@ -105,7 +105,7 @@ git config --local release.temp.new-version "$new_version"
 
 **Output esperado**: Tipo de release y nueva versión calculada
 
-## Paso 4: Confirmar Versión con Usuario
+## Paso 4: Confirmar con Usuario (BLOQUEANTE)
 
 1. Contar items de cambio por categoría en sección `[No Publicado]`:
    - Contar líneas que empiezan con `- ` bajo cada `###`
@@ -115,23 +115,34 @@ git config --local release.temp.new-version "$new_version"
    - Tipo de bump (major/minor/patch)
    - Cantidad de cambios por categoría
 
-3. Usar AskUserQuestion tool:
-   - **Pregunta**: `"¿Crear release v{new_version} ({release_type})?"`
-   - **Header**: `"Confirmar"`
+3. **IMPORTANTE**: Usar AskUserQuestion tool y **ESPERAR** respuesta del usuario:
+   - **Pregunta**: `"¿Crear y publicar release v{new_version} ({release_type})?"`
+   - **Header**: `"Release"`
    - **Opciones**:
-     - Label: "Sí, crear release"
-       Description: "Versión: {current} → {new} | Tipo: {type} | Cambios: {summary}"
+     - Label: "Sí, crear y publicar"
+       Description: "Versión: {current} → {new} | Tipo: {type} | Cambios: {summary} | Incluye push a GitHub"
      - Label: "No, cancelar"
-       Description: "Cancelar proceso de release"
+       Description: "Cancelar proceso de release completo"
    - **multiSelect**: false
+
+4. **WAIT para respuesta del usuario** (NO continuar automáticamente)
+
+5. Si usuario selecciona "No, cancelar":
+   ```bash
+   git config --local --remove-section release.temp 2>/dev/null
+   echo "❌ Release cancelado por el usuario"
+   exit 0
+   ```
 
 **Bloqueadores**:
 
-- Usuario selecciona "No" → limpiar state (`git config --unset-all release.temp`) y salir
+- Usuario selecciona "No" → limpiar state y salir (exit 0, no error)
 
 ## Paso 5: Actualizar CHANGELOG.md
 
-Si usuario confirmó:
+**IMPORTANTE**: Este paso debe ejecutarse ANTES de npm version (sync-versions.cjs valida que versión exista en CHANGELOG)
+
+Si usuario confirmó "Sí, crear y publicar":
 
 1. Usar Read tool para obtener contenido completo de CHANGELOG.md
 
@@ -167,112 +178,96 @@ Si usuario confirmó:
 
 Ejecutar en bash:
 
-1. Bump package.json sin crear commit/tag automático:
+```bash
+new_version=$(git config --local release.temp.new-version)
 
-   ```bash
-   npm version "$new_version" --no-git-tag-version
-   ```
+# npm version crea commit + tag automáticamente
+npm version "$new_version" -m "chore: release v%s" || {
+  echo "❌ npm version falló"
+  git config --local --remove-section release.temp 2>/dev/null
+  exit 1
+}
 
-2. Verificar bump exitoso:
+# Verificar que commit y tag se crearon
+git tag | grep -q "^v$new_version$" || {
+  echo "❌ Tag no creado"
+  exit 1
+}
 
-   ```bash
-   bumped=$(node -p "require('./package.json').version")
-   [[ "$bumped" == "$new_version" ]] || { echo "❌ Bump falló"; exit 1; }
-   ```
+echo "✅ Versión bumpeada: $new_version"
+echo "✅ Commit y tag creados"
+```
 
-3. Ejecutar sync de versiones:
+**Output esperado**:
 
-   ```bash
-   node scripts/sync-versions.cjs || { echo "❌ Sync falló"; exit 1; }
-   ```
+- package.json → 1.5.0
+- sync-versions.cjs ejecutado (config.js, README.md, docs/changelog.md sincronizados)
+- commit creado: "chore: release v1.5.0"
+- tag creado: v1.5.0
 
-4. Crear commit y tag:
-   ```bash
-   git add -A
-   git commit -m "chore: release v$new_version"
-   git tag "v$new_version"
-   ```
-
-**Output esperado**: package.json bumpeado, archivos sincronizados, commit y tag creados
-
-## Paso 7: Confirmar Publicación
-
-Usar AskUserQuestion tool:
-
-- **Pregunta**: `"¿Push a remoto y crear GitHub Release v{new_version}?"`
-- **Header**: `"Publicar"`
-- **Opciones**:
-  - Label: "Sí, publicar ahora"
-    Description: "Push commit + tag + crear GitHub Release público"
-  - Label: "No, solo local"
-    Description: "Mantener release local (push manual después)"
-- **multiSelect**: false
-
-**Bloqueadores**:
-
-- Usuario selecciona "No" → informar comandos manuales (`git push origin {branch} --follow-tags`) y salir exitosamente
-
-## Paso 8: Push y Crear GitHub Release
-
-Si usuario confirmó publicación:
-
-### 8.1 Push con Tags
+## Paso 7: Push y Crear GitHub Release
 
 Ejecutar en bash:
 
 ```bash
+new_version=$(git config --local release.temp.new-version)
 current_branch=$(git branch --show-current)
-git push origin "$current_branch" --follow-tags || { echo "❌ Push falló"; exit 1; }
+
+# Push commit + tag
+git push origin "$current_branch" --follow-tags || {
+  echo "❌ Push falló"
+  exit 1
+}
+
+echo "✅ Push completado: commit + tag v$new_version"
 ```
 
-### 8.2 Extraer Release Notes desde CHANGELOG
+## Paso 8: Extraer Release Notes y Crear GitHub Release
 
 1. Usar Read tool para leer CHANGELOG.md actualizado
 
 2. Identificar sección de la nueva versión:
    - Desde línea `## [{new_version}] - {date}`
-   - Hasta próxima línea `## [` o final de archivo
+   - Hasta próxima línea `## [` o `---`
 
 3. Extraer contenido (sin el header de versión):
    - Solo el contenido entre headers
    - Remover líneas `---` si existen
 
-4. Guardar contenido en archivo temporal:
+4. Crear archivo temporal con release notes:
+
    ```bash
    echo "$release_notes" > /tmp/release_notes_${new_version}.md
    ```
 
-### 8.3 Crear GitHub Release
+5. Crear GitHub Release:
 
-Ejecutar en bash:
+   ```bash
+   gh release create "v$new_version" \
+     --title "v$new_version" \
+     --notes-file "/tmp/release_notes_${new_version}.md" || {
+     echo "❌ GitHub Release falló"
+     rm -f "/tmp/release_notes_${new_version}.md"
+     exit 1
+   }
+   ```
 
-```bash
-gh release create "v$new_version" \
-  --title "v$new_version" \
-  --notes-file "/tmp/release_notes_${new_version}.md" || {
-  echo "❌ GitHub Release falló"
-  exit 1
-}
-rm -f "/tmp/release_notes_${new_version}.md"
-```
-
-Obtener URL del release:
-
-```bash
-gh release view "v$new_version" --json url -q .url
-```
-
-**Output esperado**: Release publicado en GitHub con notas desde CHANGELOG
+6. Obtener URL y limpiar:
+   ```bash
+   release_url=$(gh release view "v$new_version" --json url -q .url)
+   rm -f "/tmp/release_notes_${new_version}.md"
+   echo "✅ GitHub Release creado: $release_url"
+   ```
 
 ## Paso 9: Limpiar State
 
 Ejecutar en bash:
 
 ```bash
-git config --local --unset-all release.temp
+git config --local --remove-section release.temp 2>/dev/null
 ```
 
-**Output final**: `✅ Release v{new_version} completado y publicado`
+**Output final**: `✅ Release v{new_version} completado y publicado: {release_url}`
 
 ## Seguridad
 
@@ -285,31 +280,40 @@ git config --local --unset-all release.temp
 
 ## Rollback
 
-En caso de error **antes de push**:
+En caso de error **después de Paso 5 (CHANGELOG actualizado) pero antes de Paso 6 (npm version)**:
 
 ```bash
-# Revertir commit y tag
-git tag -d "v$new_version" 2>/dev/null
-git reset --hard HEAD~1 2>/dev/null
-
-# Restaurar CHANGELOG desde git
-git checkout HEAD~1 -- CHANGELOG.md
-
-# Restaurar package.json desde git
-git checkout HEAD~1 -- package.json
+# Restaurar CHANGELOG.md
+git checkout HEAD -- CHANGELOG.md
 
 # Limpiar state
-git config --local --unset-all release.temp 2>/dev/null
+git config --local --remove-section release.temp 2>/dev/null
+
+exit 1
+```
+
+En caso de error **después de Paso 6 (npm version) pero antes de Paso 7 (push)**:
+
+```bash
+# Revertir commit y tag creados por npm version
+git tag -d "v$new_version" 2>/dev/null
+git reset --hard HEAD~1
+
+# Limpiar state
+git config --local --remove-section release.temp 2>/dev/null
 rm -f /tmp/release_notes_*.md 2>/dev/null
 
 exit 1
 ```
 
-En caso de error **después de push** pero antes de GitHub Release:
+En caso de error **después de Paso 7 (push) pero antes de Paso 8 (GitHub Release)**:
 
 ```bash
-# Crear release manualmente con gh CLI
+# El commit y tag ya están en GitHub, crear release manualmente
 gh release create "v$new_version" --generate-notes
+
+# Limpiar state
+git config --local --remove-section release.temp 2>/dev/null
 ```
 
 ## Notas de Implementación
@@ -318,8 +322,9 @@ gh release create "v$new_version" --generate-notes
 - **Herramientas de Claude**: Read, Edit, AskUserQuestion (no bash complejos)
 - **Bash mínimo**: Solo validaciones simples y comandos directos (git, npm, gh)
 - **Análisis semántico**: Claude interpreta Keep a Changelog → calcula semver
-- **Doble confirmación**: Versión propuesta + publicación
-- **Atomic operations**: Commit + tag juntos, rollback si falla
+- **Confirmación ÚNICA**: Usuario confirma TODO de una vez (versión + publicación)
+- **Orden correcto**: CHANGELOG primero → npm version (para que sync-versions.cjs valide)
+- **npm version automático**: Crea commit + tag (NO usar --no-git-tag-version)
 - **State temporal**: git config para pasar datos entre pasos
 - **Workflow recomendado**:
   1. `/changelog` → actualiza [No Publicado] con PRs clasificados
