@@ -4,11 +4,9 @@
 Usa esta guía para identificar el agente correcto para cada tarea. Todos los agentes están optimizados para ejecutarse de forma paralela cuando sea posible.
 :::
 
-_Extensa biblioteca de agentes especializados organizados por dominio y frecuencia de uso_
-
 ---
 
-## Resumen Ejecutivo
+
 
 | Categoría                                                             | Agentes | Uso Recomendado                                       |
 | --------------------------------------------------------------------- | ------- | ----------------------------------------------------- |

@@ -4,11 +4,7 @@
 Usa esta guía para ejecutar comandos de forma eficiente. Los comandos están diseñados para ejecutarse secuencialmente siguiendo workflows específicos.
 :::
 
-_25 comandos disponibles organizados por flujo de desarrollo_
-
 ---
-
-## Resumen Ejecutivo
 
 | Categoría                                                     | Comandos | Flujo Típico                           |
 | ------------------------------------------------------------- | -------- | -------------------------------------- |
