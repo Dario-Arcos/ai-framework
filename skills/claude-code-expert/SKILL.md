@@ -121,11 +121,83 @@ Load the appropriate checklist:
 
 Execute validation:
 
-1. Manual review against checklist
-2. (Optional) Run scripts/validate\_[type].py
-3. Confirm 100% correctness
+1. **Run automated validators (MANDATORY)**:
+   - Commands: `scripts/validate_bash_blocks.py` + `scripts/validate_tool_invocations.py`
+   - All: `scripts/validate_[type].py`
+2. **Manual review against checklist** (semantic/logic)
+3. **Execute Step 6** (AI Logic Review - see below)
+4. Confirm 100% correctness
 
-**Only deliver when you would bet your professional reputation on correctness.**
+**Only deliver when all gates passed.**
+
+### Step 6: AI Logic Consistency Review (MANDATORY)
+
+**Execute this self-review BEFORE delivery.**
+
+#### 6.1 Load Anti-Patterns Knowledge
+
+Read [references/logic-anti-patterns.md](references/logic-anti-patterns.md) to activate pattern detection.
+
+#### 6.2 Analyze Generated Component
+
+Review the component you just created:
+
+**For Commands with Bash**:
+
+- [ ] Variables defined before use? (no AP-001)
+- [ ] Error paths include cleanup? (no AP-002, AP-006)
+- [ ] Variables quoted in bash? (no AP-003)
+- [ ] Heredocs properly scoped? (no AP-004)
+- [ ] Conditionals closed? (no AP-005)
+
+**For Commands with Tool Invocations**:
+
+- [ ] Context loaded before Task calls? (no AP-007)
+- [ ] Parallel tasks independent? (no AP-008)
+- [ ] All tools in allowed-tools? (no AP-009)
+
+**For Agents**:
+
+- [ ] Tools sufficient for instructions? (no AP-010)
+- [ ] No circular agent calls? (no AP-011)
+
+**For Hooks**:
+
+- [ ] I/O streams correct (stdout/stderr)? (no AP-012)
+- [ ] Exit codes match behavior? (no AP-013)
+
+**For MCP**:
+
+- [ ] No hardcoded secrets? (no AP-014)
+- [ ] Env vars have defaults? (no AP-015)
+
+**Cross-Component**:
+
+- [ ] Naming consistent with similar components? (no AP-016)
+- [ ] Not duplicating existing functionality? (no AP-017)
+
+#### 6.3 Self-Critique
+
+Ask yourself:
+
+> "If this fails in production, what would break?"
+> "Did I check ALL anti-patterns?"
+> "Would a senior engineer approve this without changes?"
+
+#### 6.4 Fix or Report
+
+**If ANY anti-pattern detected**:
+
+- Fix immediately
+- Re-run Step 5 validators
+- Re-execute this step
+
+**If zero anti-patterns**:
+
+- Document that logic review passed
+- Proceed to delivery
+
+**Quality gate**: "Would you bet your professional reputation on this working correctly?"
 
 ## Component-Specific Workflows
 
