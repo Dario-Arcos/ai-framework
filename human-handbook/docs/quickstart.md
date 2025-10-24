@@ -66,6 +66,20 @@ Instala tools opcionales (notifications, formatters). Responde `S` para proceder
 
 ---
 
+## Actualizar el Plugin
+
+```
+/plugin marketplace update ai-framework
+```
+
+Reinicia Claude Code después de actualizar.
+
+::: tip Importante
+Mantente actualizado para acceder a nuevos comandos, agentes y mejoras de seguridad.
+:::
+
+---
+
 ## Primera Feature (5 minutos)
 
 ### Quick Path
@@ -122,5 +136,5 @@ Security review automático ejecuta antes de crear PR.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-16 | **Version**: 1.1.1
+**Fecha**: 2025-10-23 | **Version**: 1.4.1
 :::
