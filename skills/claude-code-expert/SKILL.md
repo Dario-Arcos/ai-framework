@@ -1,6 +1,6 @@
 ---
 name: claude-code-expert
-description: Senior-level expert in creating Claude Code components (sub-agents, slash commands, hooks, MCP integrations) following official documentation and ai-framework patterns. Use when creating or modifying Claude Code plugin components.
+description: PROACTIVELY provide senior-level expertise in creating Claude Code components (sub-agents, slash commands, hooks, MCP integrations) following official documentation and ai-framework patterns when creating or modifying Claude Code plugin components.
 ---
 
 # Claude Code Expert
