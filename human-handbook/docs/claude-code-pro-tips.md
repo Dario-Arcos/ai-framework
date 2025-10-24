@@ -440,6 +440,20 @@ git commit -m "checkpoint: antes de refactor X"
 
 ---
 
+## Selección de Modelo
+
+Cambia modelo con `/model` para optimizar costos:
+
+```bash
+/model            # Ver modelos disponibles
+/model haiku      # Testing, experimentos (bajo costo)
+/model sonnet     # Producción, features reales (máxima calidad)
+```
+
+**Regla simple:** Haiku para probar, Sonnet para producción.
+
+---
+
 ## Combinaciones Poderosas
 
 ### ultrathink + @directorio
