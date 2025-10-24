@@ -4,7 +4,7 @@
 Usa esta guía para ejecutar comandos de forma eficiente. Los comandos están diseñados para ejecutarse secuencialmente siguiendo workflows específicos.
 :::
 
-_24 comandos disponibles organizados por flujo de desarrollo_
+_25 comandos disponibles organizados por flujo de desarrollo_
 
 ---
 
@@ -15,7 +15,7 @@ _24 comandos disponibles organizados por flujo de desarrollo_
 | [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
 | [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
 | [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish → Docs  |
+| [Utilidades](#utilidades)                                     | 9        | Understand → Research → Polish → Docs  |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos) para la secuencia.
@@ -1777,6 +1777,90 @@ Para agregar nuevas dependencias:
 
 ::: tip Cuándo usar
 Setup inicial, cuando GitHub CLI o otras tools no están instaladas.
+:::
+
+---
+
+### `/ai-framework:utils:cleancode-format`
+
+Formateo on-demand de archivos usando formatters apropiados (prettier, black, shfmt).
+
+**Usage:**
+
+```bash
+# Formatea archivos git modificados (default)
+/ai-framework:utils:cleancode-format
+
+# Formatea archivos específicos
+/ai-framework:utils:cleancode-format src/auth.py src/utils.ts
+
+# Formatea directorio completo
+/ai-framework:utils:cleancode-format src/
+
+# Múltiples directorios
+/ai-framework:utils:cleancode-format src/ tests/
+```
+
+**Formatters Soportados:**
+
+| Extensión                    | Formatter | Comando                |
+| ---------------------------- | --------- | ---------------------- |
+| `.js`, `.jsx`, `.ts`, `.tsx` | prettier  | `npx prettier --write` |
+| `.json`, `.md`, `.yml`       | prettier  | `npx prettier --write` |
+| `.py`                        | black     | `black --quiet`        |
+| `.sh`, `.bash`               | shfmt     | `shfmt -w`             |
+
+**Installation (requerido):**
+
+```bash
+# Prettier (requiere Node.js/npm)
+npm install -g prettier
+
+# Black (Python)
+pip install black
+
+# shfmt (Shell)
+brew install shfmt  # macOS
+# o
+go install mvdan.cc/sh/v3/cmd/shfmt@latest
+```
+
+**Comportamiento:**
+
+1. **Sin argumentos**: Detecta archivos modificados con `git diff --name-only`
+2. **Con archivos**: Formatea archivos específicos
+3. **Con directorio**: Escanea recursivamente archivos soportados
+4. **Extensiones no soportadas**: Ignoradas silenciosamente
+5. **Formatters no instalados**: Muestra instrucciones de instalación
+6. **Errores sintaxis**: Reporta error, continúa con siguientes archivos
+
+**Output Example:**
+
+```
+🔍 Analyzing files to format...
+📋 Found 3 files to format: auth.py, utils.ts, config.json
+
+✅ auth.py formatted
+✅ utils.ts formatted
+✅ config.json formatted
+
+✅ Formatting completed
+
+Success: 3 files formatted
+Errors:  0 files failed
+Skipped: 0 unsupported files
+```
+
+**Design Rationale:**
+
+Este comando reemplaza el `clean_code.py` hook automático para resolver problemas en proyectos legacy:
+
+- **Problema hook automático**: Formatea archivos completos (500 líneas) cuando modificas 1 línea
+- **Impacto**: Code reviews imposibles (ruido vs señal), git blame contaminado, merge conflicts
+- **Solución**: Control manual del desarrollador sobre cuándo formatear
+
+::: tip Cuándo usar
+Antes de commit en proyectos legacy con deuda técnica. Permite formatear selectivamente sin contaminar diffs.
 :::
 
 ---
