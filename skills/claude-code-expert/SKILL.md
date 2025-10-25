@@ -1,6 +1,6 @@
 ---
 name: claude-code-expert
-description: PROACTIVELY provide senior-level expertise in creating Claude Code components (sub-agents, slash commands, hooks, MCP integrations) following official documentation and ai-framework patterns when creating or modifying Claude Code plugin components.
+description: Create, modify, update, improve, and fix Claude Code components (sub-agents, slash commands, hooks, MCP integrations). Use when working with Claude Code plugin development or when users mention creating, building, adding, implementing, modifying, updating, improving, fixing, or enhancing commands (comando), agents (agente), hooks, or MCP servers. Activate for requests like "create a command", "quiero crear un comando", "build an agent", "add a hook", "integrate MCP", "modify agent", "fix hook". Follows official Claude Code documentation and ai-framework patterns.
 ---
 
 # Claude Code Expert
@@ -354,12 +354,8 @@ See existing components in ai-framework:
 
 ## Skill Invocation
 
-This skill activates when users request:
+This skill auto-activates when Claude detects user intent to work with Claude Code plugin components (sub-agents, slash commands, hooks, MCP integrations). No explicit invocation required.
 
-- "Create a sub-agent for X"
-- "Add a command to X"
-- "Implement a hook for X"
-- "Integrate X via MCP"
-- "Build a Claude Code component"
+**Activation mechanism**: Claude matches user requests against the skill's `description` field in YAML frontmatter. The description includes action verbs (create, modify, update, improve, fix), component types (commands, agents, hooks, MCP), and example phrases in English and Spanish.
 
-**Explicit invocation**: Not required, auto-activates based on description match.
+**Scope**: This skill is specific to Claude Code plugin development. For general skills, game development, or other domains, different skills will activate based on their descriptions.
