@@ -8,14 +8,29 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 ## Instalación (30 segundos)
 
-### Paso 1: Install Plugin
+### Paso 1: Agregar al Marketplace
 
-```bash
+```
 /plugin marketplace add Dario-Arcos/ai-framework
+```
+
+### Paso 2: Instalar Plugin
+
+```
 /plugin install ai-framework@ai-framework
 ```
 
-### Paso 2: Comienza en Tu Proyecto
+### Paso 3: Actualizar Plugin (cuando sea necesario)
+
+```
+/plugin marketplace update ai-framework
+```
+
+::: tip Importante
+Después de instalar o actualizar, reinicia Claude Code para cargar el framework.
+:::
+
+### Paso 4: Comienza en Tu Proyecto
 
 ```bash
 cd /path/to/your/project
@@ -24,12 +39,6 @@ claude
 
 ::: tip Auto-Install
 El framework se auto-instala en la primera sesión.
-:::
-
-### Paso 3: Restart Claude Code
-
-::: warning Importante
-Sal y reabre Claude Code para cargar el framework. Este paso es necesario para que comandos y agentes estén disponibles.
 :::
 
 **Done.** 30 segundos.
@@ -63,20 +72,6 @@ Generated: .specify/memory/project-context.md
 ```
 
 Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
-
----
-
-## Actualizar el Plugin
-
-```
-/plugin marketplace update ai-framework
-```
-
-Reinicia Claude Code después de actualizar.
-
-::: tip Importante
-Mantente actualizado para acceder a nuevos comandos, agentes y mejoras de seguridad.
-:::
 
 ---
 

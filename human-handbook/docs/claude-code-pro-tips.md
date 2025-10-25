@@ -1,31 +1,30 @@
 # Claude Code Pro-Tips
 
-::: tip Objetivo
-Fluir naturalmente con Claude Code usando shortcuts, thinking modes, y patterns que funcionan.
+::: tip ¿Para Qué Esta Guía?
+Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con Claude Code en desarrollo real.
 :::
 
 ---
 
 ## Quick Reference
 
-| Acción                        | Comando/Atajo         |
-| ----------------------------- | --------------------- |
-| Razonamiento básico           | `thinking`            |
-| Razonamiento profundo         | `think hard`          |
-| Razonamiento más profundo     | `think harder`        |
-| Razonamiento máximo           | `ultrathink`          |
-| Toggle razonamiento           | `Tab`                 |
-| Referencia archivo/directorio | `@path`               |
-| Revertir cambios              | `ESC ESC` o `/rewind` |
-| Cambiar modo permisos         | `Shift+Tab`           |
+| Acción                    | Comando/Atajo         |
+| ------------------------- | --------------------- |
+| Razonamiento básico       | `thinking`            |
+| Razonamiento profundo     | `think hard`          |
+| Razonamiento más profundo | `think harder`        |
+| Razonamiento máximo       | `ultrathink`          |
+| Toggle razonamiento       | `Tab`                 |
+| Referencia archivo/dir    | `@path`               |
+| Revertir cambios          | `ESC ESC` o `/rewind` |
+| Cambiar modo permisos     | `Shift+Tab`           |
+| Cambiar modelo            | `/model`              |
 
 ---
 
-## 🧠 Control de Razonamiento Extendido
+## Control de Razonamiento Extendido
 
-Sistema de razonamiento con niveles progresivos de profundidad.
-
-### Cuándo Usar Cada Nivel
+**Cuándo usar cada nivel:**
 
 | Nivel          | Uso Recomendado                                            |
 | -------------- | ---------------------------------------------------------- |
@@ -34,49 +33,33 @@ Sistema de razonamiento con niveles progresivos de profundidad.
 | `think harder` | Refactoring complejo, análisis de dependencias             |
 | `ultrathink`   | Arquitectura de sistemas, análisis de codebase desconocida |
 
-### Activación
-
-**Explícita** - Incluye trigger en prompt:
+**Activación:** Incluye trigger en prompt o presiona `Tab` durante sesión.
 
 ```bash
 ultrathink analiza esta optimización de performance
 ```
 
-**Toggle** - Presiona `Tab` durante sesión para activar/desactivar
-
 ::: tip Pattern Efectivo
-Comienza con nivel bajo, escala si el problema es más complejo de lo anticipado. Claude se ajusta naturalmente.
+Comienza con nivel bajo, escala si el problema es más complejo. Claude se ajusta naturalmente.
 :::
 
 ---
 
 ## Referencias Rápidas con @
 
-Referencia archivos o directorios sin esperar a que Claude los lea.
-
-**Sintaxis:**
-
-```text
+```bash
 @src/utils/auth.js revisa esta implementación
 @src/components analiza todos los componentes
 compara @src/old-auth.js con @src/new-auth.js
 ```
 
-**Benefits:**
-
-- Inmediato (no wait para tool calls)
-- Preciso (exact file/directory)
-- Eficiente con scope de git
-
-**Pro tip:** Usa `@` para dar context upfront. Claude lee lo que necesita cuando lo necesita.
+**Benefits:** Inmediato (no wait) · Preciso (exact file/dir) · Eficiente con scope de git
 
 ---
 
-## ⏮️ Navegación Temporal
+## Navegación Temporal (/rewind)
 
 Claude Code guarda checkpoints antes de cada edición.
-
-### Revertir Cambios
 
 **`ESC ESC`** (2 veces) o **`/rewind`** abre menú con 3 opciones:
 
@@ -84,26 +67,22 @@ Claude Code guarda checkpoints antes de cada edición.
 - **Code only**: Revierte archivos, mantiene conversación
 - **Both**: Reset completo a checkpoint
 
-### Casos de Uso Comunes
+**Casos de uso:**
 
 ```bash
 # Explorar alternativa
-[implementación A]
-ESC ESC → Code only
-[implementación B]
+[implementación A] → ESC ESC (Code only) → [implementación B]
 
 # Recuperar de error
-[cambios incorrectos]
-ESC ESC → Both
+[cambios incorrectos] → ESC ESC (Both)
 
 # Iterar features
-[versión 1]
-ESC ESC → Conversation only
+[versión 1] → ESC ESC (Conversation only)
 ```
 
-**Limitaciones:** No trackea bash commands, solo sesión actual, no reemplaza git.
-
-**Pro tip:** Piensa en `/rewind` como "undo experimental". Git es para undo production.
+::: warning Limitaciones
+No trackea bash commands · Solo sesión actual · No reemplaza git
+:::
 
 ---
 
@@ -111,24 +90,23 @@ ESC ESC → Conversation only
 
 ### La Regla de las 3 Correcciones
 
-**El problema:**
-Corregir repetidamente al LLM crea ciclo negativo. Cada corrección añade "ruido" al contexto. LLM persevera en error al intentar "complacer" correcciones.
+**El problema:** Corregir repetidamente al LLM crea ciclo negativo. Cada corrección añade ruido al contexto.
 
 **La regla:**
 
 ```
-Intento 1: Resultado incorrecto → Corregir
-Intento 2: Aún incorrecto → Corregir con más contexto
-Intento 3: Sigue incorrecto → STOP
+Intento 1: Incorrecto → Corregir
+Intento 2: Incorrecto → Corregir con más contexto
+Intento 3: Incorrecto → STOP
 ```
 
-**En intento 3, en lugar de seguir corrigiendo:**
+**En intento 3:**
 
 1. Usa `/rewind` si error fue reciente
 2. Inicia nueva conversación con contexto claro
-3. Reformula el problema - quizás instrucción fue ambigua
+3. Reformula el problema - instrucción pudo ser ambigua
 
-**Por qué funciona:** Fresh start elimina el "ruido" acumulado. Claude procesa tu request sin bias de intentos fallidos previos.
+**Por qué funciona:** Fresh start elimina ruido acumulado. Claude procesa request sin bias de intentos fallidos.
 
 ---
 
@@ -150,17 +128,17 @@ ESC ESC → Both
 "Necesito implementar X. Contexto: Y. Restricciones: Z."
 ```
 
-**Por qué:** LLM no tiene "memoria emocional". Frustración en tus mensajes solo añade tokens que confunden el context.
+**Por qué:** Frustración en mensajes solo añade tokens que confunden el context.
 
 ---
 
 ### Cuándo Empezar de Nuevo
 
-**Indicadores claros:**
+**Indicadores:**
 
 - 3+ correcciones sin progreso
 - LLM repite mismo error
-- Respuestas confusas o inconsistentes
+- Respuestas confusas/inconsistentes
 - Cambio significativo de dirección
 
 **Template para nueva conversación:**
@@ -183,7 +161,7 @@ Enfoque esperado:
 
 ## Control de Permisos & Plan Mode
 
-4 modos de permisos disponibles:
+**4 modos disponibles:**
 
 | Modo                | Indicador | Comportamiento                            |
 | ------------------- | --------- | ----------------------------------------- |
@@ -192,42 +170,21 @@ Enfoque esperado:
 | `plan`              | ⏸        | Solo planifica, no ejecuta                |
 | `bypassPermissions` | ⏩        | Bypass total (para CI/CD)                 |
 
-### Cambiar Modo Durante Sesión
+**Cambiar modo:** `Shift+Tab` cicla entre modos
 
-**`Shift+Tab`**: Cicla entre modos en orden
+**Plan Mode Workflow:**
 
-```
-Normal (ninguno) → Auto-Accept (⏵⏵) → Plan Mode (⏸) → [repite ciclo]
-```
-
-**Indicadores visuales** en CLI:
-
-- `⏸ plan mode on` → Plan Mode activo
-- `⏵⏵ accept edits on` → Auto-Accept activo
-- Sin indicador → Modo default
-
-### Plan Mode Workflow
-
-**Plan Mode** permite revisar cambios antes de ejecutar:
-
-1. **Activar**: Presiona `Shift+Tab` hasta ver `⏸ plan mode on`
-2. **Planificar**: Claude presenta plan completo sin ejecutar
-3. **Revisar**: Analizas el plan propuesto
-4. **Aprobar/Rechazar**:
-   - Si apruebas → Claude Code UI facilita cambio a bypass permissions
-   - Si rechazas → Modifica request y repite
-5. **Ejecutar**: Con bypass permissions, cambios se aplican sin interrupciones
+1. **Activar**: `Shift+Tab` hasta ver `⏸ plan mode on`
+2. **Planificar**: Claude presenta plan sin ejecutar
+3. **Revisar**: Analizas plan propuesto
+4. **Aprobar/Rechazar**: Si apruebas → cambio a bypass permissions
+5. **Ejecutar**: Cambios se aplican sin interrupciones
 
 ::: tip Workflow Recomendado
-Plan Mode + Bypass Permissions = Mejor de ambos mundos:
+Plan Mode + Bypass Permissions = Review seguro antes + ejecución fluida después
+:::
 
-- Review seguro antes de ejecutar (plan mode)
-- Ejecución fluida después de aprobar (bypass)
-  :::
-
-### Configuración Persistente
-
-En `.claude/settings.local.json`:
+**Configuración persistente en `.claude/settings.local.json`:**
 
 ```json
 {
@@ -239,164 +196,92 @@ En `.claude/settings.local.json`:
 }
 ```
 
-### Casos de Uso
+**Casos de uso:**
 
-| Contexto          | Modo Recomendado             | Razón                                  |
-| ----------------- | ---------------------------- | -------------------------------------- |
-| Desarrollo Local  | `acceptEdits`                | Flujo rápido sin confirmaciones        |
-| Cambios Complejos | `plan` → `bypassPermissions` | Review antes, ejecución fluida después |
-| Exploración       | `plan`                       | Ver sin ejecutar (dry-run)             |
-| CI/CD             | `bypassPermissions`          | Automatización total                   |
-| Producción        | `default`                    | Control manual estricto                |
+| Contexto          | Modo Recomendado             |
+| ----------------- | ---------------------------- |
+| Desarrollo Local  | `acceptEdits`                |
+| Cambios Complejos | `plan` → `bypassPermissions` |
+| Exploración       | `plan`                       |
+| CI/CD             | `bypassPermissions`          |
+| Producción        | `default`                    |
 
-::: warning Precaución de Seguridad
-`bypassPermissions` elimina TODAS las confirmaciones. Solo usar:
-
-- Con código trusted
-- En automatización confiable (CI/CD)
-- Después de revisar plan en plan mode
-  :::
+::: warning Precaución
+`bypassPermissions` elimina TODAS las confirmaciones. Solo usar con código trusted, en CI/CD, o después de revisar plan.
+:::
 
 ---
 
 ## Sub-Agents: Invocación Explícita
 
-Claude Code puede usar sub-agents automáticamente o puedes invocarlos explícitamente cuando necesites control preciso.
-
-### Invocación Automática vs Explícita
-
 **Invocación Automática** (default):
 
 ```bash
 "Revisa la seguridad de este código"
-# Claude decide automáticamente usar security-reviewer
+# Claude decide usar security-reviewer
 ```
 
 **Invocación Explícita** (control manual):
 
 ```bash
 "Use the security-reviewer agent to analyze this code"
-# Fuerza uso de security-reviewer específicamente
+# Fuerza uso de security-reviewer
 ```
 
-### Sintaxis de Invocación Explícita
-
-**Opción 1: Natural language**
+**Sintaxis:**
 
 ```bash
+# Natural language
 "Use the {agent-name} agent to {task}"
-"Use the code-quality-reviewer agent to review changes in PR #123"
-```
 
-**Opción 2: Task tool (paralelo)**
-
-```bash
-# En tu prompt, describe que Claude debe usar Task tool:
+# Task tool (paralelo)
 "Use Task tool to launch code-quality-reviewer and security-reviewer in parallel"
 ```
 
-### Best Practices (Claude Docs)
+**Best Practices:**
 
-1. **Single Responsibility**
-   - Cada sub-agent debe tener un propósito claro y único
-   - Evita agents que hacen "todo"
-   - Ejemplo: `security-reviewer` solo seguridad, no calidad de código
+1. **Single Responsibility** - Cada agent un propósito claro
+2. **Detailed Prompts** - Provee contexto específico
+3. **Tool Access Control** - Solo herramientas necesarias
+4. **Let Claude Orchestrate** - Solo invocación explícita cuando:
+   - Necesitas garantizar agent específico
+   - Quieres múltiples agents en paralelo
+   - Task beneficia de context window separado
 
-2. **Detailed Prompts**
-   - Provee contexto específico al invocar
-   - Incluye ejemplos y constraints
-   - Más guía = mejor performance
-
-3. **Tool Access Control**
-   - Solo da herramientas necesarias
-   - Mejora seguridad y foco
-   - Ejemplo: `docs-writer` no necesita bash access
-
-4. **Let Claude Orchestrate**
-   - Claude delega apropiadamente sin instrucción explícita
-   - Solo usa invocación explícita cuando:
-     - Necesitas garantizar uso de agent específico
-     - Quieres ejecutar múltiples agents en paralelo
-     - El task claramente beneficia de context window separado
-
-5. **Context Management**
-   - Sub-agents mantienen context separado del main agent
-   - Previene information overload
-   - Útil para tasks complejos con mucho contexto
-
-### Casos de Uso Común
-
-**Review en Paralelo** (PR workflow):
+**Casos de uso común:**
 
 ```bash
+# Review en paralelo (PR workflow)
 "Launch code-quality-reviewer and security-reviewer in parallel
 to review changes in current branch vs develop"
-```
 
-**Especialización Forzada**:
-
-```bash
+# Especialización forzada
 "Use the performance-engineer agent specifically
 to analyze this database query optimization"
-```
 
-**Research Profundo**:
-
-```bash
+# Research profundo
 "Use the web-search-specialist agent to research
 React Server Components best practices in 2025"
 ```
 
-**Documentación Completa**:
-
-```bash
-"Use the api-documenter agent to generate
-OpenAPI 3.1 spec for all endpoints in src/api/"
-```
-
-### Ejecución en Paralelo
-
-Para máxima eficiencia, ejecuta agents independientes en paralelo:
-
-```bash
-# Ejemplo: PR review completo
-"I need you to:
-1. Use Task tool to launch code-quality-reviewer
-2. Use Task tool to launch security-reviewer
-Execute both in parallel, then report combined findings"
-```
-
-**Beneficios:**
-
-- Tiempo de ejecución reducido
-- Context windows independientes
-- Análisis especializado sin interferencia
-
 ::: tip Cuándo Usar Invocación Explícita
 
-- **Workflows establecidos**: PR reviews, deployment checks
-- **Paralelización**: Múltiples agents independientes
-- **Control preciso**: Garantizar agent específico
-- **Context overflow**: Task muy grande para single context
+- Workflows establecidos (PR reviews, deployment checks)
+- Paralelización (múltiples agents independientes)
+- Control preciso (garantizar agent específico)
+- Context overflow (task muy grande para single context)
   :::
 
 ---
 
 ## Análisis de Pull Requests
 
-Claude Code integra con GitHub CLI para análisis conversacional:
+Claude Code integra con GitHub CLI:
 
 ```bash
-# Natural language directo
 "Analiza el PR #210 y evalúa los hallazgos objetivamente"
 "Revisa los comentarios del PR actual y sugiere qué corregir"
 ```
-
-**Qué hace Claude:**
-
-- Consulta estado, comentarios, checks via `gh pr view`
-- Evalúa hallazgos críticamente (validez técnica, contexto, ROI)
-- Aplica correcciones y commitea cambios
 
 **Workflow típico:**
 
@@ -411,9 +296,7 @@ Claude Code integra con GitHub CLI para análisis conversacional:
 
 ## Workflow Optimization
 
-### Validación de Contexto
-
-Antes de comandos importantes, verifica:
+**Validación de contexto** antes de comandos importantes:
 
 ```bash
 git branch    # ¿Branch correcto?
@@ -421,13 +304,7 @@ pwd           # ¿Directorio correcto?
 git status    # ¿Cambios pendientes?
 ```
 
-**Por qué:** Previene "oh, estaba en la branch equivocada" después de 30 minutos de trabajo.
-
----
-
-### Checkpointing Proactivo
-
-Antes de cambios grandes:
+**Checkpointing proactivo** antes de cambios grandes:
 
 ```bash
 git add .
@@ -436,42 +313,47 @@ git commit -m "checkpoint: antes de refactor X"
 # Si falla: git reset --hard HEAD
 ```
 
-**Benefit:** Git checkpoint + Claude `/rewind` = doble red de seguridad.
+**Benefit:** Git checkpoint + Claude `/rewind` = doble red de seguridad
+
+---
+
+## Selección de Modelo
+
+```bash
+/model            # Ver modelos disponibles
+/model haiku      # Testing, experimentos (bajo costo)
+/model sonnet     # Producción, features reales (máxima calidad)
+```
+
+**Regla simple:** Haiku para probar, Sonnet para producción.
 
 ---
 
 ## Combinaciones Poderosas
 
-### ultrathink + @directorio
+**ultrathink + @directorio:**
 
 ```bash
 ultrathink analiza la arquitectura de @src/core
 ```
 
-**Por qué funciona:** Claude gets deep context upfront + razonamiento profundo = architectural insights precisos.
+Claude gets deep context upfront + razonamiento profundo = architectural insights precisos
 
----
-
-### ESC ESC + nueva conversación
+**ESC ESC + nueva conversación:**
 
 ```
-[resultado no deseado]
-ESC ESC → Both
-[nueva conversación con contexto limpio]
+[resultado no deseado] → ESC ESC (Both) → [nueva conversación limpia]
 ```
 
-**Cuándo:** Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto.
+Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto
 
----
-
-### Tab + thinking explícito
+**Tab + thinking explícito:**
 
 ```
-Tab (activar razonamiento)
-"ultrathink diseña este sistema"
+Tab (activar razonamiento) + "ultrathink diseña este sistema"
 ```
 
-**Cuándo:** Problems realmente complejos. Double thinking = Claude goes extra deep.
+Problems realmente complejos. Double thinking = Claude goes extra deep
 
 ---
 
@@ -485,17 +367,17 @@ Tab (activar razonamiento)
 4. **3 intentos máximo** - Después → nueva conversación
 5. **Revierte sin miedo** - `ESC ESC` es tu amigo
 
-**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 intentos no funcionan, el enfoque necesita cambiar, no más correcciones.
+**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 intentos no funcionan, el enfoque necesita cambiar.
 
 ---
 
 ## Referencias
 
-**Documentación del framework:**
+**Framework:**
 
-- [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
-- [Commands Guide](./commands-guide.md) — 24 comandos
-- [Agents Guide](./agents-guide.md) — 45 specialized agents
+- [AI-First Workflow](./ai-first-workflow) — Workflows completos
+- [Commands Guide](./commands-guide) — 25 comandos
+- [Agents Guide](./agents-guide) — 45 specialized agents
 
 **Docs oficiales:**
 
@@ -505,5 +387,5 @@ Tab (activar razonamiento)
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-16 | **Tips**: Claude Code Workflow Optimization
+**Fecha**: 2025-10-24 | **Tips**: Claude Code Workflow Optimization
 :::
