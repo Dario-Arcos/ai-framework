@@ -1,62 +1,43 @@
 # MCP Servers
 
-::: tip Model Context Protocol
-MCP conecta Claude Code con herramientas externas: databases, APIs, browsers, documentación. Extend capabilities sin código custom.
+::: tip ¿Qué es MCP?
+Model Context Protocol conecta Claude Code con herramientas externas (databases, APIs, browsers, docs) sin escribir código custom. Extend capabilities on-demand.
 :::
 
 ---
 
-## 🔧 Servidores Incluidos
-
-AI Framework incluye por defecto:
+## Servidores Instalados
 
 | Server         | Propósito                                    | Package                          |
 | -------------- | -------------------------------------------- | -------------------------------- |
 | **playwright** | Browser automation, E2E testing, screenshots | `@playwright/mcp`                |
 | **shadcn**     | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` |
 
-**Por qué estos:**
-
-- **playwright**: Esencial para automatización de pruebas y revisión de diseño
-- **shadcn**: Acelera desarrollo de UI con integración de biblioteca de componentes
-
-Más servidores se agregarán según evolucione el ecosistema.
+**Rationale:** playwright (testing/design review) + shadcn (UI acceleration). Más servers según necesidades del proyecto.
 
 ---
 
-## ⚙️ Cómo Funciona la Configuración
+## Configuración
 
-### Precedencia de Archivos
+**Archivo clave:** `.claude/settings.local.json` (mayor precedencia)
 
-El plugin usa `.claude/settings.local.json` que tiene **mayor precedencia** que otros settings files:
-
-```text
-PRECEDENCIA (mayor → menor):
-1. Enterprise managed policies     (no aplica al plugin)
-2. Command line arguments          (no aplica al plugin)
-3. .claude/settings.local.json    ← Plugin usa ESTE (MAYOR)
-4. .claude/settings.json          ← Si creas este, es IGNORADO
-5. ~/.claude/settings.json         (global, no aplica al plugin)
-```
-
-::: tip Por Qué Importa
-Si creates `.claude/settings.json` pensando que override, **será ignorado**. El plugin ya instaló `settings.local.json` con mayor precedencia.
+::: warning Importante
+`.claude/settings.json` es ignorado si existe `.claude/settings.local.json`. Siempre edita el archivo `.local` para customizations.
 :::
 
-**Recomendación:** Siempre edita `.claude/settings.local.json` para customizations.
-
 ---
 
-## 🎯 Agregar Nuevos Servidores MCP
+## Agregar Nuevo Servidor
 
-### Paso 1: Agregar a `.mcp.json`
+**Workflow:** `.mcp.json` → `.claude/settings.local.json` → Restart
 
-Abre tu `.mcp.json` existente y agrega el nuevo servidor (ejemplo: GitHub):
+::: details Ejemplo: Agregar GitHub Server
+
+**1. Configurar en `.mcp.json`:**
 
 ```json
 {
   "mcpServers": {
-    // Tus servers existentes (playwright, shadcn)
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
@@ -66,203 +47,87 @@ Abre tu `.mcp.json` existente y agrega el nuevo servidor (ejemplo: GitHub):
 }
 ```
 
-::: warning Preserva Existentes
-No sobreescribas los servers existentes - solo agrega el nuevo.
+**2. Activar en `.claude/settings.local.json`:**
+
+```json
+{
+  "enabledMcpjsonServers": ["playwright", "shadcn", "github"]
+}
+```
+
+**3. Restart:** `Ctrl+D` → `claude`
+
 :::
 
 ---
 
-### Paso 2: Activar en Settings
+## Catálogo & Recursos
 
-Edita `.claude/settings.local.json`:
+**Registries:**
 
-```json
-{
-  "enabledMcpjsonServers": ["playwright", "shadcn", "github"],
-  "cleanupPeriodDays": 7,
-  "includeCoAuthoredBy": false,
-  "permissions": {
-    // ... resto de configuración existente
-  }
-}
-```
+- [Official MCP Servers](https://github.com/modelcontextprotocol/servers)
+- [mcpservers.org](https://mcpservers.org)
+- [Claude Code Docs](https://docs.claude.com/en/docs/claude-code/mcp)
 
-**Key:** Agrega `"github"` al array `enabledMcpjsonServers`.
+**Recomendados:** `filesystem` · `github` · `memory` · `postgres` · `context7` · `brave-search`
 
 ---
 
-### Paso 3: Reiniciar Claude Code
+## Uso con Framework
 
-```bash
-# Exit (Ctrl+D) y reiniciar
-claude
-```
+**Playwright:** Browser automation via `/agent:design-review` (screenshots automáticos)
 
-**Verificación:** Los tools del nuevo server deben aparecer disponibles.
+**Shadcn:** Component integration via `/agent:shadcn-quick-helper` (install commands)
 
 ---
 
-## 📚 Catálogo de Servidores
+## Troubleshooting
 
-**Explora servidores disponibles:**
-
-- **Official Registry:** [MCP Servers](https://github.com/modelcontextprotocol/servers)
-- **Community Hub:** [mcpservers.org](https://mcpservers.org)
-- **Claude Code Docs:** [MCP Documentation](https://docs.claude.com/en/docs/claude-code/mcp)
-
-**Recomendados para desarrollo:**
-
-- `filesystem` — Advanced file operations
-- `github` — GitHub API integration
-- `memory` — Persistent context across sessions
-- `postgres` — Database operations
-- `context7` — Documentation search
-- `brave-search` — Web search capabilities
-
-**Pro tip:** Comienza con los 2 incluidos (playwright, shadcn). Agrega más según necesidades específicas de tu proyecto.
-
----
-
-## 🎨 Uso Efectivo
-
-### Playwright (Browser Automation)
-
-**Capabilities:**
-
-- Navigate websites
-- Take screenshots
-- Fill forms
-- Click elements
-- Execute JavaScript
-- Monitor network requests
-
-**Uso típico con framework:**
-
-```bash
-# Design review de PR
-/agent:design-review
-# → Usa playwright MCP para browser automation
-# → Screenshots automáticos para visual evidence
-```
-
----
-
-### Shadcn (UI Components)
-
-**Capabilities:**
-
-- Component source code
-- Usage examples
-- Installation commands
-- Registry search
-
-**Uso típico con framework:**
-
-```bash
-# Quick component help
-/agent:shadcn-quick-helper
-# → "Need a modal" → Provides dialog component + install command
-```
-
----
-
-## 🔍 Troubleshooting
-
-### Server No Aparece
+::: details Server No Aparece
 
 **Check:**
 
-1. `enabledMcpjsonServers` incluye el server name
-2. `.mcp.json` tiene el server configurado
-3. Restart Claude Code después de cambios
+1. `enabledMcpjsonServers` incluye el nombre
+2. `.mcp.json` tiene configuración
+3. Restart después de cambios
 
-**Debug:**
+**Debug:** `cat .claude/settings.local.json | grep enabledMcpjsonServers`
 
-```bash
-# Verifica que settings se cargaron
-cat .claude/settings.local.json | grep enabledMcpjsonServers
-```
+:::
 
----
+::: details Environment Variables
 
-### Environment Variables
-
-Si server requiere env vars (como `GITHUB_TOKEN`):
-
-**Opción 1: System environment**
+**Opción 1 (recomendada):** System environment
 
 ```bash
 export GITHUB_TOKEN="your_token"
 claude
 ```
 
-**Opción 2: `.mcp.json` env**
+**Opción 2:** `.mcp.json` env (usa `${ }` placeholders)
 
 ```json
-{
-  "env": {
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-  }
-}
+{ "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" } }
 ```
 
-**Recomendación:** System environment es más seguro (no committed a git).
+:::
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
-### Comienza de Forma Minimalista
+::: tip Minimalismo
+Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agrega más solo cuando tengas necesidad clara.
+:::
 
-Incluye solo servers que realmente usas. Cada server adicional:
-
-- Consume recursos
-- Aumenta startup time
-- Añade complejidad a debugging
-
-**Patrón:** Comienza con 2-3 servers, agrega más cuando tengas clara necesidad.
+::: warning Security
+**Nunca** commits tokens en `.mcp.json`. Usa env vars del sistema con placeholders `${ }`
+:::
 
 ---
-
-### Security con Tokens
-
-**Nunca commits tokens en `.mcp.json`.**
-
-**Safe pattern:**
-
-```json
-{
-  "env": {
-    "API_TOKEN": "${MY_API_TOKEN}"
-  }
-}
-```
-
-Luego en system:
-
-```bash
-export MY_API_TOKEN="actual_token"
-```
-
-**Benefit:** `.mcp.json` can be committed safely. Token lives en environment.
-
----
-
-## 🎯 Next Steps
-
-**Experimentar:**
-
-1. Usa playwright server para browser automation
-2. Usa shadcn server para UI components
-3. Cuando necesites más capabilities, explora [mcpservers.org](https://mcpservers.org)
-
-**Contribuir:**
-
-- Found useful server? Share en [GitHub Discussions](https://github.com/Dario-Arcos/ai-framework/discussions)
-- Created custom server? Contribute via PR
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-16 | **Servers**: 2 instalados por default
+**Fecha**: 2025-10-24 | **Servers Instalados**: playwright, shadcn
 :::

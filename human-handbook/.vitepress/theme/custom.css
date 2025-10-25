@@ -1,6 +1,6 @@
 /**
  * AI Framework Brand Colors - Custom Theme
- * Monochrome Power: Pure Authority, Zero BS
+ * Base: Monochrome Power (90%) + Azul Royal Minimalista (10% strategic accents)
  */
 
 /* ===== SMOOTH SCROLLING UX ===== */
@@ -10,14 +10,34 @@ html {
 
 /* Offset for fixed header when scrolling to anchors */
 :target {
-  scroll-margin-top: 80px;
+  scroll-margin-top: var(--header-height);
 }
 
 :root {
-  /* ===== BRAND COLORS (Monochrome Power) ===== */
-  --vp-c-brand-1: #18181B; /* Zinc-900 black */
-  --vp-c-brand-2: #09090B; /* Zinc-950 deeper */
-  --vp-c-brand-3: #52525B; /* Zinc-600 charcoal */
+  /* ===== DESIGN TOKENS ===== */
+  --header-height: 80px;
+  --success-text: #1A7F37;
+
+  /* ===== TIMING FUNCTIONS ===== */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-elegant: cubic-bezier(0.25, 0.1, 0.25, 1); /* Subtle, refined motion */
+
+  /* ===== STRATEGIC COLOR PALETTE (Azul Royal Minimalista - 10% usage) ===== */
+  --royal-blue: #3423A6;        /* Primary accent - buttons, CTAs (5-7%) */
+  --lavender-blue: #7180B9;     /* Secondary - hover states (2-3%) */
+  --mint-green: #DFF3E4;        /* Highlights - success, badges (<2%) */
+  --deep-purple: #2E1760;       /* Special - gradients, premium accents (<1%) */
+
+  /* ===== RGB VALUES (for rgba() with opacity) ===== */
+  --royal-blue-rgb: 52, 35, 166;
+  --lavender-blue-rgb: 113, 128, 185;
+  --deep-purple-rgb: 46, 23, 96;
+  --success-rgb: 45, 164, 78;
+
+  /* ===== BRAND COLORS (Monochrome Base - 90%) ===== */
+  --vp-c-brand-1: #18181B;      /* Zinc-900 black */
+  --vp-c-brand-2: #09090B;      /* Zinc-950 deeper */
+  --vp-c-brand-3: #52525B;      /* Zinc-600 charcoal */
   --vp-c-brand-soft: #E4E4E7;
 
   /* ===== BACKGROUNDS (Light Mode) ===== */
@@ -35,9 +55,10 @@ html {
   --vp-c-divider: #D0D7DE;
   --vp-c-border: #D0D7DE;
 
-  /* ===== SEMANTIC COLORS ===== */
+  /* ===== SEMANTIC COLORS (Enhanced with palette) ===== */
   --vp-c-success-1: #2DA44E;
   --vp-c-success-2: #1A7F37;
+  --vp-c-success-soft: var(--mint-green);
   --vp-c-warning-1: #BF8700;
   --vp-c-warning-2: #9A6700;
   --vp-c-danger-1: #CF222E;
@@ -46,6 +67,17 @@ html {
 
 /* Dark mode */
 .dark {
+  /* ===== STRATEGIC PALETTE (Dark Mode Compatible) ===== */
+  --royal-blue: #5B4FCF;        /* Lighter for dark bg accessibility */
+  --lavender-blue: #8F9DC7;     /* Brighter for visibility */
+  --mint-green: #C8E6D0;        /* Softened for dark mode */
+  --deep-purple: #4A3785;       /* Lighter purple */
+
+  /* ===== RGB VALUES (Dark Mode) ===== */
+  --royal-blue-rgb: 91, 79, 207;
+  --lavender-blue-rgb: 143, 157, 199;
+  --deep-purple-rgb: 74, 55, 133;
+
   /* ===== BACKGROUNDS (Dark Mode) ===== */
   --vp-c-bg: #0D1117;
   --vp-c-bg-soft: #161B22;
@@ -61,26 +93,32 @@ html {
   --vp-c-divider: #30363D;
   --vp-c-border: #30363D;
 
-  /* ===== BRAND (Monochrome Power Dark Mode) ===== */
-  --vp-c-brand-1: #FAFAFA; /* Zinc-50 white */
-  --vp-c-brand-2: #E4E4E7; /* Zinc-200 lighter */
-  --vp-c-brand-3: #A1A1AA; /* Zinc-400 mid-gray */
+  /* ===== BRAND (Monochrome Base Dark Mode) ===== */
+  --vp-c-brand-1: #FAFAFA;      /* Zinc-50 white */
+  --vp-c-brand-2: #E4E4E7;      /* Zinc-200 lighter */
+  --vp-c-brand-3: #A1A1AA;      /* Zinc-400 mid-gray */
   --vp-c-brand-soft: #27272A;
 }
 
-/* ===== BUTTON OVERRIDES - MONOCHROME POWER ===== */
+/* ===== PRIMARY BUTTONS - ROYAL BLUE ACCENT (5-7% usage) ===== */
 .VPButton.brand {
-  background: linear-gradient(135deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
+  background: linear-gradient(135deg, var(--royal-blue) 0%, var(--deep-purple) 100%);
   border: none;
   color: white;
   font-weight: 600;
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Elegant refined transitions - senior-level subtlety */
+  transition: transform 0.3s var(--ease-elegant),
+              box-shadow 0.3s var(--ease-smooth),
+              background 0.25s ease;
+  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.12),
+              0 1px 2px rgba(var(--royal-blue-rgb), 0.08);
+  will-change: transform, box-shadow; /* GPU optimization for frequent hover states */
 }
 
-/* Subtle shine effect on hover */
+/* Subtle shine effect - refined */
 .VPButton.brand::before {
   content: '';
   position: absolute;
@@ -88,71 +126,127 @@ html {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,0.15),
+    transparent);
+  transition: left 0.6s var(--ease-smooth);
+}
+
+/* Subtle glow effect on hover - refined */
+.VPButton.brand::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, var(--royal-blue), var(--deep-purple));
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  filter: blur(10px);
+  transition: opacity 0.35s ease;
 }
 
 .VPButton.brand:hover::before {
   left: 100%;
 }
 
+.VPButton.brand:hover::after {
+  opacity: 0.2; /* Subtle glow, not overwhelming */
+}
+
 .VPButton.brand:hover {
-  background: linear-gradient(135deg, var(--vp-c-brand-2) 0%, var(--vp-c-brand-3) 100%);
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(24, 24, 27, 0.25);
+  background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-blue) 100%);
+  /* Micro-lift - elegant refinement (Linear/Stripe style) */
+  transform: translateY(-1px);
+  /* Refined multi-layer shadows - subtle depth */
+  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.2),
+              0 2px 6px rgba(var(--royal-blue-rgb), 0.12),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.08);
 }
 
 .VPButton.brand:active {
-  transform: scale(0.98);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(var(--royal-blue-rgb), 0.2);
+  transition: all 0.12s var(--ease-smooth);
 }
 
-/* Dark mode button inversion */
+/* Dark mode button - refined shadows */
 .dark .VPButton.brand {
-  color: #18181B;
+  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.2),
+              0 1px 2px rgba(var(--royal-blue-rgb), 0.12);
 }
 
 .dark .VPButton.brand:hover {
-  box-shadow: 0 4px 16px rgba(250, 250, 250, 0.2);
+  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.25),
+              0 2px 6px rgba(var(--royal-blue-rgb), 0.15),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.1);
 }
 
 .dark .VPButton.brand::before {
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
 }
 
-/* ===== LINK COLORS ===== */
+.dark .VPButton.brand::after {
+  background: linear-gradient(135deg, var(--royal-blue), var(--deep-purple));
+  filter: blur(10px);
+}
+
+/* ===== LINK COLORS - STRATEGIC ACCENT (2-3% usage) ===== */
 .vp-doc a {
   color: var(--vp-c-brand-1);
   text-decoration-color: var(--vp-c-brand-soft);
+  transition: color 0.25s var(--ease-smooth);
 }
 
 .vp-doc a:hover {
-  color: var(--vp-c-brand-2);
+  color: var(--lavender-blue);
+  text-decoration-color: var(--lavender-blue);
 }
 
-/* ===== HOME PAGE BRAND ACCENT - MONOCHROME POWER ===== */
+/* Hero links with royal blue accent */
+.VPHero a.VPButton.brand,
+.VPHero a:not(.VPButton) {
+  transition: color 0.25s var(--ease-smooth);
+}
+
+.VPHero a:not(.VPButton):hover {
+  color: var(--royal-blue);
+}
+
+/* ===== HERO TITLE - ROYAL BLUE GRADIENT (<1% special accent) ===== */
 .VPHero .name,
 .VPHero .text {
-  background: linear-gradient(120deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
+  background: linear-gradient(120deg, var(--royal-blue) 0%, var(--deep-purple) 50%, var(--vp-c-brand-1) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
   letter-spacing: -0.5px;
+  animation: gradient-shift 8s ease infinite;
+  background-size: 200% 200%;
+  will-change: background-position; /* Performance optimization for infinite animation */
 }
 
-/* Dark mode hero text - inverted gradient */
+/* Subtle gradient animation for premium feel */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Dark mode hero - brighter gradient */
 .dark .VPHero .name,
 .dark .VPHero .text {
-  background: linear-gradient(120deg, var(--vp-c-brand-1) 0%, var(--vp-c-brand-3) 100%);
+  background: linear-gradient(120deg, var(--royal-blue) 0%, var(--lavender-blue) 50%, var(--vp-c-brand-1) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite; /* FIX: Animation was missing in dark mode */
 }
 
 /* ===== DARK MODE ICON FIX ===== */
 /* Invert feature icons in dark mode for visibility */
-.dark .VPFeature .box > img.VPImage {
+.dark .VPFeature .box > .VPImage {
   filter: invert(1);
 }
 
@@ -161,20 +255,204 @@ html {
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
 
-/* ===== FEATURE CARDS - SUBTLE HOVER ===== */
+/* ===== FEATURE CARDS - ELEGANT ANIMATIONS (2-3% usage) ===== */
 .VPFeature {
-  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+  position: relative;
+  border: 1px solid transparent;
+  /* Refined transitions - subtle elegance */
+  transition: transform 0.3s var(--ease-elegant),
+              box-shadow 0.3s var(--ease-smooth),
+              border-color 0.3s ease;
+}
+
+/* Refined glow effect layer - very subtle */
+.VPFeature::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg,
+    rgba(var(--lavender-blue-rgb), 0.06),
+    rgba(var(--royal-blue-rgb), 0.03));
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  filter: blur(6px);
+  transition: opacity 0.3s ease;
+}
+
+/* Icon scale animation - imperceptible refinement */
+.VPFeature:hover .box .VPImage,
+.VPFeature:hover .box img {
+  transform: scale(1.03); /* Subtle 3% growth */
+  transition: transform 0.3s var(--ease-elegant);
+}
+
+.VPFeature .box .VPImage,
+.VPFeature .box img {
+  transition: transform 0.3s var(--ease-smooth);
 }
 
 .VPFeature:hover {
+  /* Micro-lift - elegant refinement (Notion/Linear style) */
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  /* Refined shadows - subtle depth perception */
+  box-shadow: 0 6px 16px rgba(var(--lavender-blue-rgb), 0.1),
+              0 3px 8px rgba(var(--royal-blue-rgb), 0.06),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.04);
+  border-color: rgba(var(--lavender-blue-rgb), 0.15);
+}
+
+.VPFeature:hover::before {
+  opacity: 0.6; /* Subtle glow presence */
+}
+
+/* Dark mode - refined glow */
+.dark .VPFeature::before {
+  background: linear-gradient(135deg,
+    rgba(var(--royal-blue-rgb), 0.08),
+    rgba(var(--lavender-blue-rgb), 0.04));
+  filter: blur(8px);
 }
 
 .dark .VPFeature:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(var(--royal-blue-rgb), 0.15),
+              0 3px 8px rgba(var(--royal-blue-rgb), 0.1),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.06);
+  border-color: rgba(var(--lavender-blue-rgb), 0.2);
 }
 
+
+/* ===== BADGES & HIGHLIGHTS - MINT GREEN ACCENT (<2% usage) ===== */
+.vp-badge.tip,
+.vp-badge.success {
+  background-color: var(--mint-green);
+  color: var(--success-text);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.25s var(--ease-smooth);
+}
+
+.vp-badge.tip:hover,
+.vp-badge.success:hover {
+  background-color: #C8E6D0;
+  box-shadow: 0 2px 6px rgba(var(--success-rgb), 0.15);
+}
+
+/* Code highlights for important callouts */
+.vp-doc code {
+  transition: background-color 0.25s var(--ease-smooth);
+}
+
+.vp-doc .tip code,
+.vp-doc .success code {
+  background-color: var(--mint-green);
+  color: var(--success-text);
+}
+
+/* Secondary button variant with lavender */
+.VPButton.alt {
+  border-color: var(--lavender-blue);
+  color: var(--lavender-blue);
+  transition: all 0.3s var(--ease-smooth);
+}
+
+.VPButton.alt:hover {
+  background-color: rgba(var(--lavender-blue-rgb), 0.08);
+  border-color: var(--royal-blue);
+  color: var(--royal-blue);
+  transform: translateY(-1px);
+}
+
+/* Focus states with royal blue - subtle & accessible */
+.vp-doc a:focus-visible,
+.VPButton:focus-visible {
+  outline: 2px solid var(--royal-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Search input - respect native VitePress focus styles */
+.VPNavBarSearch input:focus-visible,
+.VPLocalSearchBox input:focus-visible {
+  outline: none; /* VitePress handles this beautifully */
+}
+
+/* Buttons and form controls - subtle accent */
+button:focus-visible:not(.VPButton),
+textarea:focus-visible {
+  outline: 1px solid rgba(var(--royal-blue-rgb), 0.4);
+  outline-offset: 1px;
+}
+
+/* Sidebar active link with lavender accent */
+.VPSidebarItem.is-active .link {
+  color: var(--royal-blue);
+  font-weight: 600;
+}
+
+.VPSidebarItem.is-active .link:hover {
+  color: var(--lavender-blue);
+}
+
+/* ===== VERSION BADGE - ENHANCED CONTRAST ===== */
+.version-badge .version-link {
+  color: var(--vp-c-text-1);
+  font-weight: 600; /* Consistent weight for all modes */
+  text-decoration: none; /* Remove underline */
+  border-bottom: 1px solid transparent; /* Subtle hover effect */
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.version-badge .version-link:hover {
+  color: var(--royal-blue);
+  border-bottom-color: var(--royal-blue);
+}
+
+/* Dark mode - softer white instead of purple lavender */
+.dark .version-badge .version-link {
+  color: var(--vp-c-text-1); /* Use VitePress text-1 (soft white) instead of lavender */
+}
+
+.dark .version-badge .version-link:hover {
+  color: var(--lavender-blue); /* Lavender only on hover */
+  border-bottom-color: var(--lavender-blue);
+}
+
+.dark .version-badge .version-previous {
+  opacity: 0.75;
+  color: var(--vp-c-text-2);
+}
+
+/* ===== HOME PAGE LINKS - ENHANCED CONTRAST ===== */
+/* "Ver todos los recursos" link on home */
+.vp-doc h2 + p a,
+.VPHome h2 + p a {
+  color: var(--vp-c-text-1);
+  font-weight: 500; /* Consistent weight for all modes */
+  text-decoration: none; /* Remove underline */
+  border-bottom: 1px solid transparent; /* Subtle hover effect */
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.vp-doc h2 + p a:hover,
+.VPHome h2 + p a:hover {
+  color: var(--royal-blue);
+  border-bottom-color: var(--royal-blue);
+}
+
+/* Dark mode - softer white instead of purple lavender */
+.dark .vp-doc h2 + p a,
+.dark .VPHome h2 + p a {
+  color: var(--vp-c-text-1); /* Use VitePress text-1 (soft white) instead of lavender */
+}
+
+.dark .vp-doc h2 + p a:hover,
+.dark .VPHome h2 + p a:hover {
+  color: var(--lavender-blue); /* Lavender only on hover */
+  border-bottom-color: var(--lavender-blue);
+}
 
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
@@ -183,5 +461,11 @@ html {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Disable hero gradient animation for reduced motion */
+  .VPHero .name,
+  .VPHero .text {
+    animation: none;
   }
 }

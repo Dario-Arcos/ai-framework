@@ -11,19 +11,8 @@ hero:
     - theme: alt
       text: Quick Start
       link: /docs/quickstart
-    - theme: alt
-      text: Changelog
-      link: /docs/changelog
 
 features:
-  - icon:
-      src: /icons/cpu.svg
-      width: 48
-      height: 48
-    title: Specialized Agents
-    details: Extensa biblioteca de agentes especializados organizados por dominio técnico
-    link: /docs/agents-guide
-
   - icon:
       src: /icons/terminal.svg
       width: 48
@@ -33,18 +22,22 @@ features:
     link: /docs/commands-guide
 
   - icon:
-      src: /icons/plug.svg
+      src: /icons/rocket.svg
       width: 48
       height: 48
-    title: MCP Servers
-    details: Playwright y Shadcn/ui para browser testing y componentes
-    link: /docs/mcp-servers
+    title: Expert Skills
+    details: Capacidades especializadas model-invoked para workflows avanzados
+    link: /docs/skills-guide
 
   - icon:
-      src: /icons/zap.svg
+      src: /icons/cpu.svg
       width: 48
       height: 48
-    title: Pro Tips
-    details: Patterns profesionales y mejores prácticas para workflows AI-First
-    link: /docs/claude-code-pro-tips
+    title: Specialized Agents
+    details: Extensa biblioteca de agentes especializados organizados por dominio técnico
+    link: /docs/agents-guide
 ---
+
+## Recursos Adicionales
+
+[Ver todos los recursos →](/docs/quickstart)

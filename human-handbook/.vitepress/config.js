@@ -41,27 +41,28 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: "Guía Rápida",
+        text: "Guides",
         collapsed: false,
         items: [
           { text: "Inicio Rápido", link: "/docs/quickstart" },
-          { text: "MCP Servers", link: "/docs/mcp-servers" },
+          { text: "AI-First Workflow", link: "/docs/ai-first-workflow" },
           { text: "Pro Tips", link: "/docs/claude-code-pro-tips" },
         ],
       },
       {
-        text: "Workflows",
+        text: "Tools",
         collapsed: false,
-        items: [{ text: "AI-First Workflow", link: "/docs/ai-first-workflow" }],
-      },
-      {
-        text: "Referencia",
-        collapsed: true,
         items: [
           { text: "Comandos", link: "/docs/commands-guide" },
           { text: "Agentes", link: "/docs/agents-guide" },
-          { text: "Changelog", link: "/docs/changelog" },
+          { text: "Skills", link: "/docs/skills-guide" },
+          { text: "MCP Servers", link: "/docs/mcp-servers" },
         ],
+      },
+      {
+        text: "Project",
+        collapsed: false,
+        items: [{ text: "Changelog", link: "/docs/changelog" }],
       },
     ],
 
