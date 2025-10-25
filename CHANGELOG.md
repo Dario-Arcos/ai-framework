@@ -12,6 +12,53 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [2.0.0] - 2025-10-25
+
+### 🎉 Añadido
+
+**⭐ Integración de Claude Skills** (nuevo en Claude Code v2.0.20)
+
+Skills disponibles:
+
+- **algorithmic-art**: Crea arte algorítmico con p5.js usando seeded randomness
+- **claude-code-expert**: Expertise senior para crear componentes Claude Code (agents, commands, hooks, MCP)
+- **skill-creator**: Guía para crear tus propios skills personalizados
+
+_Más skills en cada actualización_
+
+**Comandos:**
+
+- `/ai-framework:utils:cleancode-format`: Formatear código manualmente (prettier, black, shfmt)
+
+### Cambiado
+
+**Handbook:**
+
+- Nueva paleta de colores Azul Royal como complemento elegante
+- Animaciones sutiles y refinadas (estilo Linear/Notion)
+- Mejor contraste en dark mode
+- Performance mejorado
+
+**Code Quality:**
+
+- Eliminadas duplicaciones en validators (código más limpio)
+- Mejor arquitectura de validación compartida
+
+### Arreglado
+
+- Animación faltante en hero (dark mode)
+- Duplicaciones de código en validators
+- Formato incorrecto en skills frontmatter
+- Focus states agresivos en buscador
+
+### Eliminado
+
+- ⚠️ **BREAKING**: Hook automático de formateo `clean_code.py`
+  - **Cómo migrar**: Usar `/ai-framework:utils:cleancode-format` cuando necesites formatear código
+  - **Por qué**: El formateo automático generaba ruido en code reviews
+
+---
+
 ## [1.4.1] - 2025-10-23
 
 ### Añadido
