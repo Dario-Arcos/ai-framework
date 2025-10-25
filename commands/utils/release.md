@@ -21,7 +21,7 @@ command -v gh >/dev/null 2>&1 || { echo "❌ gh CLI requerido"; exit 1; }
 grep -q "^## \[No Publicado\]" CHANGELOG.md || { echo "❌ [No Publicado] no encontrado"; exit 1; }
 
 # Validar que solo CHANGELOG.md esté modificado (input del workflow)
-changed_files=$(git status --porcelain | grep -v "^M  CHANGELOG.md$")
+changed_files=$(git status --porcelain | grep -v "^ M CHANGELOG.md$" | grep -v "^??")
 [[ -z "$changed_files" ]] || { echo "❌ Working tree tiene cambios además de CHANGELOG.md"; exit 1; }
 
 # Guardar versión actual
