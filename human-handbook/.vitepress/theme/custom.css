@@ -20,7 +20,7 @@ html {
 
   /* ===== TIMING FUNCTIONS ===== */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.25, 0.64, 1);
+  --ease-elegant: cubic-bezier(0.25, 0.1, 0.25, 1); /* Subtle, refined motion */
 
   /* ===== STRATEGIC COLOR PALETTE (Azul Royal Minimalista - 10% usage) ===== */
   --royal-blue: #3423A6;        /* Primary accent - buttons, CTAs (5-7%) */
@@ -109,16 +109,16 @@ html {
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
-  /* Smooth staggered transitions - silky feel */
-  transition: transform 0.55s var(--ease-bounce),
-              box-shadow 0.45s var(--ease-smooth) 0.05s,
-              background 0.4s ease;
-  box-shadow: 0 2px 8px rgba(var(--royal-blue-rgb), 0.15),
-              0 1px 3px rgba(var(--royal-blue-rgb), 0.1);
+  /* Elegant refined transitions - senior-level subtlety */
+  transition: transform 0.3s var(--ease-elegant),
+              box-shadow 0.3s var(--ease-smooth),
+              background 0.25s ease;
+  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.12),
+              0 1px 2px rgba(var(--royal-blue-rgb), 0.08);
   will-change: transform, box-shadow; /* GPU optimization for frequent hover states */
 }
 
-/* Premium shine effect - faster & more dramatic */
+/* Subtle shine effect - refined */
 .VPButton.brand::before {
   content: '';
   position: absolute;
@@ -128,12 +128,12 @@ html {
   height: 100%;
   background: linear-gradient(90deg,
     transparent,
-    rgba(255,255,255,0.3),
+    rgba(255,255,255,0.15),
     transparent);
-  transition: left 0.5s var(--ease-smooth);
+  transition: left 0.6s var(--ease-smooth);
 }
 
-/* Glow effect on hover */
+/* Subtle glow effect on hover - refined */
 .VPButton.brand::after {
   content: '';
   position: absolute;
@@ -142,8 +142,8 @@ html {
   border-radius: inherit;
   opacity: 0;
   z-index: -1;
-  filter: blur(12px);
-  transition: opacity 0.4s ease;
+  filter: blur(10px);
+  transition: opacity 0.35s ease;
 }
 
 .VPButton.brand:hover::before {
@@ -151,17 +151,17 @@ html {
 }
 
 .VPButton.brand:hover::after {
-  opacity: 0.4;
+  opacity: 0.2; /* Subtle glow, not overwhelming */
 }
 
 .VPButton.brand:hover {
   background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-blue) 100%);
-  /* Bounce lift effect */
-  transform: translateY(-2px) scale(1.03);
-  /* Multi-layer shadows for depth */
-  box-shadow: 0 8px 26px rgba(var(--royal-blue-rgb), 0.35),
-              0 4px 12px rgba(var(--royal-blue-rgb), 0.2),
-              0 1px 4px rgba(var(--royal-blue-rgb), 0.15);
+  /* Micro-lift - elegant refinement (Linear/Stripe style) */
+  transform: translateY(-1px);
+  /* Refined multi-layer shadows - subtle depth */
+  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.2),
+              0 2px 6px rgba(var(--royal-blue-rgb), 0.12),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.08);
 }
 
 .VPButton.brand:active {
@@ -170,25 +170,25 @@ html {
   transition: all 0.12s var(--ease-smooth);
 }
 
-/* Dark mode button - only shadows differ (gradient auto-adjusts via CSS variables) */
+/* Dark mode button - refined shadows */
 .dark .VPButton.brand {
-  box-shadow: 0 2px 8px rgba(var(--royal-blue-rgb), 0.25),
-              0 1px 3px rgba(var(--royal-blue-rgb), 0.15);
+  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.2),
+              0 1px 2px rgba(var(--royal-blue-rgb), 0.12);
 }
 
 .dark .VPButton.brand:hover {
-  box-shadow: 0 8px 26px rgba(var(--royal-blue-rgb), 0.4),
-              0 4px 12px rgba(var(--royal-blue-rgb), 0.25),
-              0 1px 4px rgba(var(--royal-blue-rgb), 0.2);
+  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.25),
+              0 2px 6px rgba(var(--royal-blue-rgb), 0.15),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.1);
 }
 
 .dark .VPButton.brand::before {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
 }
 
 .dark .VPButton.brand::after {
   background: linear-gradient(135deg, var(--royal-blue), var(--deep-purple));
-  filter: blur(16px);
+  filter: blur(10px);
 }
 
 /* ===== LINK COLORS - STRATEGIC ACCENT (2-3% usage) ===== */
@@ -255,70 +255,70 @@ html {
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
 
-/* ===== FEATURE CARDS - PREMIUM ANIMATIONS (2-3% usage) ===== */
+/* ===== FEATURE CARDS - ELEGANT ANIMATIONS (2-3% usage) ===== */
 .VPFeature {
   position: relative;
   border: 1px solid transparent;
-  /* Smooth staggered transitions - organic feel */
-  transition: transform 0.6s var(--ease-bounce),
-              box-shadow 0.5s var(--ease-smooth) 0.05s,
-              border-color 0.45s ease 0.02s;
+  /* Refined transitions - subtle elegance */
+  transition: transform 0.3s var(--ease-elegant),
+              box-shadow 0.3s var(--ease-smooth),
+              border-color 0.3s ease;
 }
 
-/* Subtle glow effect layer */
+/* Refined glow effect layer - very subtle */
 .VPFeature::before {
   content: '';
   position: absolute;
   inset: -1px;
   background: linear-gradient(135deg,
-    rgba(var(--lavender-blue-rgb), 0.1),
-    rgba(var(--royal-blue-rgb), 0.05));
+    rgba(var(--lavender-blue-rgb), 0.06),
+    rgba(var(--royal-blue-rgb), 0.03));
   border-radius: inherit;
   opacity: 0;
   z-index: -1;
-  filter: blur(8px);
-  transition: opacity 0.4s ease 0.1s;
+  filter: blur(6px);
+  transition: opacity 0.3s ease;
 }
 
-/* Icon scale animation - subtle */
+/* Icon scale animation - imperceptible refinement */
 .VPFeature:hover .box .VPImage,
 .VPFeature:hover .box img {
-  transform: scale(1.08);
-  transition: transform 0.5s var(--ease-bounce) 0.08s;
+  transform: scale(1.03); /* Subtle 3% growth */
+  transition: transform 0.3s var(--ease-elegant);
 }
 
 .VPFeature .box .VPImage,
 .VPFeature .box img {
-  transition: transform 0.35s var(--ease-smooth);
+  transition: transform 0.3s var(--ease-smooth);
 }
 
 .VPFeature:hover {
-  /* Bounce lift with subtle scale */
-  transform: translateY(-5px) scale(1.01);
-  /* Multi-layer shadows for organic depth */
-  box-shadow: 0 12px 32px rgba(var(--lavender-blue-rgb), 0.14),
-              0 6px 16px rgba(var(--royal-blue-rgb), 0.08),
-              0 2px 6px rgba(var(--royal-blue-rgb), 0.05);
-  border-color: rgba(var(--lavender-blue-rgb), 0.2);
+  /* Micro-lift - elegant refinement (Notion/Linear style) */
+  transform: translateY(-2px);
+  /* Refined shadows - subtle depth perception */
+  box-shadow: 0 6px 16px rgba(var(--lavender-blue-rgb), 0.1),
+              0 3px 8px rgba(var(--royal-blue-rgb), 0.06),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.04);
+  border-color: rgba(var(--lavender-blue-rgb), 0.15);
 }
 
 .VPFeature:hover::before {
-  opacity: 1;
+  opacity: 0.6; /* Subtle glow presence */
 }
 
-/* Dark mode with enhanced glow */
+/* Dark mode - refined glow */
 .dark .VPFeature::before {
   background: linear-gradient(135deg,
-    rgba(var(--royal-blue-rgb), 0.15),
-    rgba(var(--lavender-blue-rgb), 0.08));
-  filter: blur(12px);
+    rgba(var(--royal-blue-rgb), 0.08),
+    rgba(var(--lavender-blue-rgb), 0.04));
+  filter: blur(8px);
 }
 
 .dark .VPFeature:hover {
-  box-shadow: 0 12px 32px rgba(var(--royal-blue-rgb), 0.25),
-              0 6px 16px rgba(var(--royal-blue-rgb), 0.15),
-              0 2px 6px rgba(var(--royal-blue-rgb), 0.1);
-  border-color: rgba(var(--lavender-blue-rgb), 0.25);
+  box-shadow: 0 6px 16px rgba(var(--royal-blue-rgb), 0.15),
+              0 3px 8px rgba(var(--royal-blue-rgb), 0.1),
+              0 1px 3px rgba(var(--royal-blue-rgb), 0.06);
+  border-color: rgba(var(--lavender-blue-rgb), 0.2);
 }
 
 
