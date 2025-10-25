@@ -9,33 +9,7 @@ import sys
 import re
 import os
 from pathlib import Path
-
-
-def extract_frontmatter(content):
-    """Extrae frontmatter YAML del contenido markdown"""
-    pattern = r"^---\s*\n(.*?)\n---\s*\n"
-    match = re.match(pattern, content, re.DOTALL)
-    if not match:
-        return None
-    return match.group(1)
-
-
-def parse_simple_yaml(yaml_content):
-    """
-    Parser simple de YAML para frontmatter (no requiere PyYAML)
-    Solo maneja formato simple key: value
-    """
-    fields = {}
-    for line in yaml_content.split("\n"):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
-            fields[key] = value
-    return fields
+from common_validators import extract_frontmatter, parse_simple_yaml
 
 
 def validate_agent(file_path):
