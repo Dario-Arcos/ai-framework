@@ -9,7 +9,11 @@ import sys
 import re
 import os
 from pathlib import Path
-from common_validators import extract_frontmatter, parse_simple_yaml
+from common_validators import (
+    extract_frontmatter,
+    parse_simple_yaml,
+    validate_kebab_case,
+)
 
 
 def validate_agent(file_path):
@@ -47,14 +51,9 @@ def validate_agent(file_path):
     if "name" not in fields:
         errors.append("ERROR: Campo 'name' requerido en frontmatter")
     else:
-        # Validar formato de nombre
+        # Validar formato de nombre usando common validator
         name = fields["name"]
-        if not re.match(r"^[a-z0-9-]+$", name):
-            errors.append(
-                f"ERROR: 'name' debe usar snake-case (lowercase, hyphens): {name}"
-            )
-        if len(name) > 64:
-            errors.append(f"ERROR: 'name' no puede exceder 64 caracteres: {len(name)}")
+        errors.extend(validate_kebab_case(name, max_length=64))
 
     if "description" not in fields:
         errors.append("ERROR: Campo 'description' requerido en frontmatter")

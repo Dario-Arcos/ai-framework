@@ -33,11 +33,12 @@ Shell:                 shfmt -w (.sh, .bash)
 
 **For each target file:**
 
-1. Execute: `test -f <file_path>` to verify file exists
-2. Get file extension: `basename` + extract suffix
-3. Match extension against formatter mapping (Step 3)
-4. If unsupported extension: Skip silently, continue with next file
-5. Build list of valid files to format
+1. **Sanitize file path**: Ensure proper quoting for shell commands (Claude Code Bash tool handles this automatically)
+2. Execute: `test -f "<file_path>"` to verify file exists (note: quotes for paths with spaces)
+3. Get file extension: `basename` + extract suffix
+4. Match extension against formatter mapping (Step 3)
+5. If unsupported extension: Skip silently, continue with next file
+6. Build list of valid files to format
 
 **Display**: "📋 Found <N> files to format: <file1, file2, ...>"
 
@@ -67,11 +68,11 @@ Installation commands:
 **For each valid file:**
 
 1. Determine formatter command from mapping:
-   - `.js/.jsx/.ts/.tsx/.json/.md/.yml/.yaml` → `npx prettier --write <file>`
-   - `.py` → `black --quiet <file>`
-   - `.sh/.bash` → `shfmt -w <file>`
+   - `.js/.jsx/.ts/.tsx/.json/.md/.yml/.yaml` → `npx prettier --write "<file>"`
+   - `.py` → `black --quiet "<file>"`
+   - `.sh/.bash` → `shfmt -w "<file>"`
 
-2. Execute: Formatter command with 10-second timeout
+2. Execute: Formatter command with 10-second timeout (note: file paths are quoted for safety)
 
 3. Capture result:
    - **Success (exit 0)**: Display "✅ <filename> formatted"

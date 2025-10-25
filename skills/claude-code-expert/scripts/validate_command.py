@@ -8,33 +8,14 @@ Stdlib only - sin dependencias externas
 import sys
 import re
 import os
+from pathlib import Path
 
-
-def extract_frontmatter(content):
-    """Extrae frontmatter YAML del contenido markdown"""
-    pattern = r"^---\s*\n(.*?)\n---\s*\n"
-    match = re.match(pattern, content, re.DOTALL)
-    if not match:
-        return None
-    return match.group(1)
-
-
-def parse_simple_yaml(yaml_content):
-    """
-    Parser simple de YAML para frontmatter (no requiere PyYAML)
-    Solo maneja formato simple key: value
-    """
-    fields = {}
-    for line in yaml_content.split("\n"):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
-            fields[key] = value
-    return fields
+# Import shared validators to eliminate code duplication
+from common_validators import (
+    extract_frontmatter,
+    parse_simple_yaml,
+    validate_utf8_encoding,
+)
 
 
 def validate_command(file_path):
@@ -46,12 +27,14 @@ def validate_command(file_path):
     if not os.path.exists(file_path):
         return [f"ERROR: Archivo no encontrado: {file_path}"], []
 
+    # Validar UTF-8 encoding (using common validator for consistency)
+    utf8_error = validate_utf8_encoding(file_path)
+    if utf8_error:
+        return [utf8_error], []
+
     # Leer contenido
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception as e:
-        return [f"ERROR: No se pudo leer el archivo: {e}"], []
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
 
     # Extraer frontmatter (es opcional para commands, pero común)
     frontmatter_text = extract_frontmatter(content)
