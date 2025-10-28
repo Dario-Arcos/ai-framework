@@ -56,10 +56,6 @@ CRITICAL_GITIGNORE_RULES = [
     # Framework internals (rules, configuration)
     "/.claude/",
     "/.specify/",
-    # Framework spec directories (features created by /speckit commands)
-    "/specs/",
-    # Framework PRP directories (business requirements created by /PRP-cycle commands)
-    "/prps/",
     # Framework project files (ignored by default)
     "/CLAUDE.md",
     # MCP server data directories
