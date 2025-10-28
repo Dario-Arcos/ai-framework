@@ -135,6 +135,25 @@ your-project/              # Your existing project root
 
 ---
 
+## Customization
+
+**Framework provides defaults. You control overrides.**
+
+Create these files for personal customizations (auto-gitignored, never overwritten):
+
+- **`.claude/settings.local.json`** — Personal settings ([precedence](https://docs.claude.com/en/docs/claude-code/settings): local > shared)
+- **`CLAUDE.local.md`** — Personal instructions ([pattern](https://www.anthropic.com/engineering/claude-code-best-practices))
+- **`.claude/.mcp.json`** — Personal MCP servers ([precedence](https://docs.claude.com/en/docs/claude-code/mcp): local > plugin)
+
+**How it works:**
+- Framework defaults: `CLAUDE.md`, `settings.json` (from plugin)
+- Your overrides: `CLAUDE.local.md`, `settings.local.json` (optional, you create)
+- Your MCP servers: `.claude/.mcp.json` (optional, coexists with plugin MCPs)
+
+**Precedence:** Personal configs override framework defaults. No conflicts, no overwrites.
+
+---
+
 ## Core Principles
 
 Framework enforces **5 non-negotiable principles**:
