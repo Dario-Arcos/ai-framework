@@ -43,8 +43,7 @@ def find_project_dir():
 # WHITELIST: Files that should be synced from template/ to user project
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
-    ".claude.template/settings.local.json.template",
-    ".claude.template/.mcp.json.template",
+    ".claude.template/settings.json.template",
     ".claude.template/rules/",
     ".specify.template/memory/",
     ".specify.template/scripts/",
