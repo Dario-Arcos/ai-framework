@@ -1,173 +1,228 @@
 ---
-allowed-tools: Read, Edit, Write, Bash(gh), Bash(date)
-description: Push PRP to GitHub as parent issue with optional milestone assignment
+description: Sync PRP to GitHub as parent issue for SDD workflow tracking
+argument-hint: [feature-name] or [empty for auto-detect]
+allowed-tools: Read, Edit, Write, Bash(gh), Bash(date), Glob
 ---
 
 # PRP Sync
 
-Push PRP to GitHub as parent issue with optional milestone assignment.
+Sync PRP to GitHub as parent issue for SDD workflow tracking.
 
-## Usage
+## Usage Examples
 
+**Auto-detect unsynced PRP:**
 ```
-/PRP-cycle:prp-sync <feature_name>
-/PRP-cycle:prp-sync <feature_name> --milestone <number>
+/PRP-cycle:prp-sync
+```
+
+**Sync specific PRP:**
+```
+/PRP-cycle:prp-sync realtime-notifications
+```
+
+**List all PRPs:**
+```
+/PRP-cycle:prp-sync --list
 ```
 
 ## User Input
 
+```text
 $ARGUMENTS
+```
 
 ## Required Rules
 
-**IMPORTANT:** Before executing this command, read and follow:
+**IMPORTANT:** Read and follow:
 
-- `.claude/rules/datetime.md` - For getting real current date/time
+- `.claude/rules/datetime.md` - For current date/time
 
 ## Instructions
 
-### 1. Parse Arguments and Validate Files
+### Step 1: Identify PRP to Sync
 
-**Parse the arguments** from `$ARGUMENTS`:
+**1. If feature-name provided:**
+   - Use it directly
+   - Proceed to Step 2
 
-- **Feature name**: Extract the feature name (remove `--milestone <number>` if present)
-- **Milestone mode**: Check if `--milestone <number>` is provided for reuse
-- **Milestone number**: Extract number if provided
+**2. If empty arguments:**
+   - Use Glob to list `prps/*/prp.md`
+   - Read frontmatter of each PRP
+   - Filter PRPs without `github_synced` field
+   - **If 1 unsynced found**:
+     - Use automatically
+     - Show: "🔍 Auto-detected: `<feature-name>`"
+   - **If multiple unsynced found**:
+     - List with descriptions
+     - Ask: "Which PRP to sync?"
+     - Wait for selection
+   - **If none unsynced**:
+     - Show: "✅ All PRPs synced to GitHub"
+     - Stop
 
-**Validate required files exist**:
+**3. If `--list` flag:**
+   - List all PRPs with status:
+     ```
+     PRPs in prps/:
+     ✅ realtime-notifications (synced: 2025-01-15, #123)
+     ⏸️  payment-gateway (not synced)
+     ✅ user-auth (synced: 2025-01-10, #89)
+     ```
+   - Ask which to sync
+   - Wait for selection
 
-- `prps/<feature_name>/prp.md`
+**4. Store as `$FEATURE_NAME`**
 
-If PRP file missing, show error and stop.
+### Step 2: Validate PRP File
 
-### 2. Milestone Handling
+**Check file exists:**
+- Verify `prps/$FEATURE_NAME/prp.md` exists
+- If missing, show:
+  ```
+  ❌ PRP not found: prps/$FEATURE_NAME/prp.md
 
-**If milestone number provided** (format: `--milestone 5`):
+  Available PRPs:
+  [list prps/ directories]
+  ```
+- Stop if not found
 
-- Use existing milestone #5
-- Get milestone details via GitHub API
+### Step 3: Check Existing Sync
 
-**If no milestone provided**:
+**Read frontmatter:**
+- Parse `prps/$FEATURE_NAME/prp.md` frontmatter
+- Extract `name`, `description`, `github` fields
+- **If `github` field exists**:
+  - Show: "⚠️ Already synced: [URL]"
+  - Ask: "Create duplicate? (yes/no)"
+  - Stop if user says no
 
-- Continue without milestone assignment
-- Skip milestone-related operations
+### Step 4: Create GitHub Issue
 
-### 3. Create GitHub Issue
+**Prepare content:**
+1. Read `prps/$FEATURE_NAME/prp.md`
+2. Strip frontmatter (between `---` delimiters)
+3. Use clean content as body
 
-**Prepare issue content**:
-
-- Read `prps/<feature_name>/prp.md`
-- Strip the frontmatter (everything between `---` lines)
-- Use clean PRP content as issue body
-
-**Create GitHub issue**:
-
-- Title: Extract from PRP frontmatter `name` field
-- Body: Clean PRP content without frontmatter
-- Labels: `prp`, `parent-issue`, `sdd`
-- Assign to milestone only if milestone number was provided
-
+**Create issue:**
 ```bash
-# Create issue with natural language processing (Claude handles gh CLI syntax)
 gh issue create \
-  --title "<title>" \
-  --body "<body_content>" \
-  --label prp,parent-issue,sdd \
-  [--milestone <milestone_number>]  # Only if milestone provided
+  --title "PRP: $FEATURE_NAME" \
+  --body "$BODY_CONTENT" \
+  --label prp,parent-issue,sdd
 ```
 
-### 4. Update PRP File
+**Capture output:**
+- Extract issue number and URL
+- Store as `$ISSUE_NUM`, `$ISSUE_URL`
 
-**Update** `prps/<feature_name>/prp.md` frontmatter with:
+### Step 5: Update PRP Frontmatter
 
-- `github: <issue_url>`
-- `github_synced: <current_timestamp>`
-- `milestone: <milestone_number>` (only if milestone provided)
-- `milestone_url: <milestone_url>` (only if milestone provided)
+**Add fields to `prps/$FEATURE_NAME/prp.md`:**
+- `github: $ISSUE_URL`
+- `github_issue: $ISSUE_NUM`
+- `github_synced: <timestamp>`
 
-Use current timestamp in ISO format: `YYYY-MM-DDTHH:MM:SSZ`
+Use ISO format: `YYYY-MM-DDTHH:MM:SSZ`
 
-### 5. Create GitHub Mapping File
+**Implementation:**
+- Use Edit tool for surgical update
+- Preserve existing fields
+- Maintain frontmatter structure
 
-**Create** `prps/<feature_name>/github-mapping.md` with this content:
+### Step 6: Create Mapping File
+
+**Create `prps/$FEATURE_NAME/github-mapping.md`:**
 
 ```markdown
 # GitHub Issue Mapping
 
-[If milestone provided] Milestone: #<milestone_number> - <milestone_url>
-[If no milestone] No milestone assigned
-Parent Issue: #<issue_number> - <issue_url>
+Parent Issue: #$ISSUE_NUM - $FEATURE_NAME
+URL: $ISSUE_URL
 
-Note: Sub-issues will be created by SDD workflow via /SDD-cycle:specify --from-issue <issue_number>
+Sub-issues created by SDD workflow:
+/SDD-cycle:speckit.specify from Github issue $ISSUE_NUM
 
-Synced: <current_timestamp>
+Synced: <timestamp>
 ```
 
-### 6. Output Results
+### Step 7: Display Results
 
-**Display success message**:
-
+**Success message:**
 ```
 ✅ PRP synced to GitHub
-  [If milestone provided] - Milestone: #<milestone_number> - <milestone_title>
-  - Parent Issue: #<issue_number> - <feature_name>
-  [If milestone provided] - PRP issue created and assigned to milestone
-  [If no milestone] - PRP issue created (no milestone assigned)
+
+📋 Parent Issue: #$ISSUE_NUM - $FEATURE_NAME
+   URL: $ISSUE_URL
+   Labels: prp, parent-issue, sdd
 
 Next steps:
-  - Technical specification: /SDD-cycle:specify --from-issue <issue_number>
-  [If milestone provided] - View milestone: <milestone_url>
-  - View PRP issue: <issue_url>
+  • Create spec: /SDD-cycle:speckit.specify from Github issue $ISSUE_NUM
+  • View issue: $ISSUE_URL
 ```
 
 ## Error Handling
 
-- **If PRP.md not found**: Show clear error message with correct path
-- **If milestone number invalid**: Show error that milestone doesn't exist
-- **If issue creation fails**: Report what succeeded, don't rollback
-- **If file updates fail**: Report specific file and continue with others
+- **PRP not found**: Show available PRPs
+- **Already synced**: Warn and confirm before duplicate
+- **Issue creation fails**: Report error, don't rollback
+- **File update fails**: Report specific failure
 
 ## Important Notes
 
-- Trust GitHub CLI authentication (no pre-auth checks)
-- Don't pre-check for duplicates (let GitHub handle conflicts)
-- Update files only after successful GitHub operations
-- Keep operations atomic and simple
-- Sub-issues handled by SDD workflow, not this command
-- Use `--milestone N` to assign PRP to existing milestone
-- Milestones provide optional business-level progress tracking
-- PRP represents business requirement, not technical implementation
+- Trust GitHub CLI authentication
+- Don't pre-check for duplicates
+- Update files after successful GitHub ops
+- Keep operations simple
+- Sub-issues handled by SDD workflow
+- Auto-detection reduces friction
 
 ## Implementation Approach
 
-This command uses **natural language instructions** processed by Claude Code's native capabilities rather than complex bash scripting. Claude will:
+Uses natural language processing via Claude Code:
 
-1. **Parse arguments** intelligently from `$ARGUMENTS`
-2. **Read PRP content** using the Read tool
-3. **Execute GitHub operations** using simple Bash commands (issue creation, optional milestone assignment)
-4. **Update files** using Edit tool for surgical changes
-5. **Create new files** using Write tool when needed
+1. **Parse arguments** from `$ARGUMENTS`
+2. **Auto-detect PRP** if empty
+3. **Read PRP** via Read tool
+4. **Create issue** via gh CLI
+5. **Update files** via Edit/Write tools
 
-This approach is more robust than bash scripting because:
+**Benefits:**
+- No variable persistence issues
+- No temporary files
+- Natural language processing
+- Intelligent edge case handling
+- Maintainable and debuggable
 
-- No variable persistence issues between commands
-- No temporary file dependencies
-- Leverages Claude's natural language processing
-- More maintainable and debuggable
-- Handles edge cases intelligently
+## Workflow Integration
 
-## Relationship to SDD Workflow
+**PRP as Parent Issue:**
+- PRP = business requirement
+- GitHub issue = hub for technical sub-issues
+- SDD creates spec + implementation tasks
+- Stakeholders track via parent issue
+- Tech team tracks via sub-issues
 
-**PRP as Parent Issue Strategy**:
-
-- PRP represents the business requirement being tracked
-- GitHub issue becomes the central hub for all technical sub-issues
-- SDD workflow creates technical specification and implementation sub-issues
-- Business stakeholders track progress via parent PRP issue
-- Technical team tracks implementation via SDD sub-issues
-
-**Workflow Integration**:
-
+**Flow:**
 ```
-PRP.md → [prp-sync] → GitHub Parent Issue → [SDD-cycle:specify --from-issue] → Technical Spec + Sub-Issues
+PRP.md → [prp-new] → Business brainstorming
+   ↓
+PRP.md → [prp-sync] → GitHub Parent Issue
+   ↓
+GitHub Issue → [speckit.specify] → Spec + Sub-issues
 ```
+
+**Example:**
+
+1. **PM**: `/PRP-cycle:prp-new Implement notifications`
+   - Creates `prps/realtime-notifications/prp.md`
+
+2. **PM**: `/PRP-cycle:prp-sync`
+   - Auto-detects unsynced PRP
+   - Creates GitHub issue #123
+
+3. **Tech Lead**: `/SDD-cycle:speckit.specify from Github issue 123`
+   - Creates spec
+   - Creates sub-issues
+   - Links to parent #123
+
+4. **Team**: Tracks progress via parent issue #123
