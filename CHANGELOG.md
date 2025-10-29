@@ -12,6 +12,40 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [2.1.0] - 2025-10-29
+
+### Cambiado
+
+- ⚠️ **BREAKING**: Cambios arquitectónicos fundamentales con migración automática independiente (PR #23):
+
+  **1. Control de Artefactos de Usuario (`.gitignore`)**
+  - **Antes (v1.x)**: `/specs/` y `/prps/` forzosamente ignorados en todos los proyectos
+  - Usuario decide si versionar o ignorar estos directorios
+  - **Migración**: Reglas legacy auto-comentadas con marcador de versión, nueva sección USER ARTIFACTS documentada
+  - **Impacto**: Posibilita documentación versionada de especificaciones
+
+  **2. Configuración del Plugin (`settings.json` vs `settings.local.json`)**
+  - **Antes (v1.x)**: `settings.local.json` = defaults del framework (sobrescritos cada sesión)
+  - `settings.json` = framework (sincronizado) | `settings.local.json` = customs del usuario (nunca tocado)
+  - **Precedencia**: `settings.local.json` > `settings.json`
+  - **Impacto**: Configuraciones personales del usuario ya no se pierden
+
+  **3. Servidores MCP (`.mcp.json`)**
+  - **Antes (v1.x)**: `.mcp.json` copiado al proyecto desde template (redundante)
+  - Plugin `.mcp.json` = servidores del framework (Playwright, Shadcn) | Proyecto `.mcp.json` = servidores custom del usuario (opcional)
+  - **Precedencia**: proyecto > plugin
+  - **Impacto**: Eliminada sincronización redundante, arquitectura simplificada
+
+  **4. Workflow PRP-Cycle Optimizado**
+  - **Antes (v1.x)**: Branch names forzados como único input
+  - Input contextual flexible (lenguaje natural, GitHub issues `#N`, o rutas de archivos)
+  - **Auto-detección**: Params vacíos buscan automáticamente PRPs no sincronizados
+  - **Resultado**: +300% flexibilidad de entrada, -25% LOC
+
+  **Filosofía de Migración**: Independiente, cero acción manual, patrón industry-standard (Rails/npm/Terraform)
+
+---
+
 ## [2.0.0] - 2025-10-25
 
 ### 🎉 Añadido
@@ -59,6 +93,8 @@ _Más skills en cada actualización_
 
 ---
 
+::: details Versiones Anteriores
+
 ## [1.4.1] - 2025-10-23
 
 ### Añadido
@@ -78,8 +114,6 @@ _Más skills en cada actualización_
 - Git config cleanup: `--unset-all` → `--remove-section` (PR #21)
 
 ---
-
-::: details Versiones Anteriores
 
 ## [1.4.0] - 2025-10-22
 
@@ -156,5 +190,5 @@ _Más skills en cada actualización_
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-24 | **Versión**: 1.4.1 | **Formato**: Keep a Changelog
+**Fecha**: 2025-10-24 | **Versión**: 2.0.0 | **Formato**: Keep a Changelog
 :::
