@@ -107,6 +107,70 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         pass
 
 
+def migrate_legacy_gitignore(project_dir):
+    """Migra reglas legacy de .gitignore de forma idempotente (v2.0.0)
+
+    Migración:
+        - /specs/ y /prps/ de forzadas → opcionales (user decides)
+        - Agrega sección USER ARTIFACTS con documentación
+
+    Idempotencia:
+        - Detecta si ya migró (busca marker [v2.0])
+        - Seguro ejecutar N veces sin duplicación
+        - Sin archivos marker extras
+    """
+    gitignore = project_dir / ".gitignore"
+    if not gitignore.exists():
+        return
+
+    try:
+        content = gitignore.read_text(encoding="utf-8")
+        original_content = content
+
+        # Reglas legacy a migrar (ahora opcionales en v2.0)
+        legacy_rules = {
+            "/specs/": "User artifact - optional in v2.0",
+            "/prps/": "User artifact - optional in v2.0"
+        }
+
+        migrated = False
+        for rule, reason in legacy_rules.items():
+            # Patrón activo: \n/specs/\n (regla no comentada)
+            active_pattern = f"\n{rule}\n"
+
+            # Patrón migrado: comentario con marker [v2.0]
+            migrated_pattern = f"# [v2.0] {reason} - see USER ARTIFACTS section\n# {rule}"
+
+            # Si regla está activa Y NO está migrada → migrar
+            if active_pattern in content and migrated_pattern not in content:
+                replacement = f"\n# [v2.0] {reason} - see USER ARTIFACTS section\n# {rule}\n"
+                content = content.replace(active_pattern, replacement, 1)
+                migrated = True
+
+        # Si se migró algo, agregar sección USER ARTIFACTS (si no existe)
+        if migrated and "# USER ARTIFACTS (version control" not in content:
+            user_section = """
+# ============================================================================
+# USER ARTIFACTS (version control is user's choice)
+# ============================================================================
+
+# Specs and PRPs are user-generated artifacts created by framework commands.
+# By default, they are NOT ignored (can be versioned for documentation).
+# To ignore them, uncomment these lines:
+# /specs/
+# /prps/
+"""
+            content += user_section
+
+        # Solo escribir si hubo cambios
+        if content != original_content:
+            gitignore.write_text(content, encoding="utf-8")
+
+    except (OSError, IOError):
+        # Silently fail - migration is best-effort
+        pass
+
+
 def should_sync_file(rel_path_str):
     """Check if file should be synced to user project using WHITELIST approach
 
@@ -231,6 +295,9 @@ def main():
         if not plugin_root.exists():
             sys.stderr.write("ERROR: Plugin root not found\n")
             sys.exit(1)
+
+        # Migrate legacy .gitignore rules (v2.0.0 - idempotent)
+        migrate_legacy_gitignore(project_dir)
 
         # Ensure .gitignore has critical runtime rules
         ensure_gitignore_rules(plugin_root, project_dir)
