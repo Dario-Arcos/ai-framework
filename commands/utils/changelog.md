@@ -1,12 +1,12 @@
 ---
 allowed-tools: Bash(git *, gh *), Read, Edit
-description: Actualiza CHANGELOG.md usando template Keep a Changelog en español
+description: Actualiza CHANGELOG.md analizando commits de PRs con detalle técnico
 argument-hint: "todos los PRs" | "PR #123" | "desde v1.2.0"
 ---
 
 # Actualización de CHANGELOG
 
-Actualiza la sección `[No Publicado]` del CHANGELOG.md con información de PRs.
+Actualiza la sección `[No Publicado]` del CHANGELOG.md con análisis detallado de commits y archivos modificados por cada PR.
 
 **Input**: `$ARGUMENTS` - Descripción natural de qué actualizar
 
@@ -14,9 +14,9 @@ Actualiza la sección `[No Publicado]` del CHANGELOG.md con información de PRs.
 
 ```bash
 /ai-framework:utils:changelog "todos los PRs desde última versión"
-/ai-framework:utils:changelog "PR #123 y #124"
-/ai-framework:utils:changelog "desde v1.2.0"
-/ai-framework:utils:changelog "últimos 5 PRs mergeados"
+/ai-framework:utils:changelog "PR #23"
+/ai-framework:utils:changelog "desde v2.0.0"
+/ai-framework:utils:changelog "últimos 3 PRs mergeados"
 ```
 
 ## Template Keep a Changelog (Español)
@@ -35,7 +35,7 @@ Actualiza la sección `[No Publicado]` del CHANGELOG.md con información de PRs.
 ```markdown
 ### [Categoría]
 
-- Descripción clara y específica del cambio (PR #123)
+- Descripción técnica y específica del cambio (PR #123)
 ```
 
 ## Workflow de Ejecución
@@ -51,8 +51,8 @@ Actualiza la sección `[No Publicado]` del CHANGELOG.md con información de PRs.
 
 - "todos los PRs" → Desde último git tag hasta HEAD
 - "PR #123" → Solo ese PR específico
-- "desde v1.2.0" → Desde tag v1.2.0 hasta HEAD
-- "últimos 5 PRs" → 5 PRs mergeados más recientes
+- "desde v2.0.0" → Desde tag v2.0.0 hasta HEAD
+- "últimos 3 PRs" → 3 PRs mergeados más recientes
 
 ### 2. Obtener PRs
 
@@ -64,40 +64,59 @@ last_tag=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-pare
 pr_list=$(git log "$last_tag..HEAD" --oneline | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
 
 # Opción B: PRs específicos
-pr_list="123 124"
+pr_list="123"
 
 # Opción C: Últimos N PRs
-pr_list=$(git log --oneline | grep -oE '#[0-9]+' | tr -d '#' | head -5 | sort -u)
+pr_list=$(git log --oneline | grep -oE '#[0-9]+' | tr -d '#' | head -3 | sort -u)
 ```
 
-### 3. Procesar Cada PR
+### 3. Analizar Cada PR en Profundidad
 
 Para cada PR en `$pr_list`:
 
 ```bash
-# Obtener metadata
-pr_data=$(gh pr view "$pr_num" --json title,body,state)
+# Metadata básica del PR
+pr_data=$(gh pr view "$pr_num" --json title,state,mergedAt,body)
+
+# CRÍTICO: Obtener commits individuales del PR
+pr_commits=$(gh pr view "$pr_num" --json commits --jq '.commits[] | "\(.messageHeadline)|\(.oid[:7])"')
+
+# CRÍTICO: Obtener archivos modificados para contexto técnico
+pr_files=$(gh pr view "$pr_num" --json files --jq '.files[].path')
 ```
 
 **Responsabilidad de Claude**:
 
-1. **Extraer título y body** del JSON
-2. **Verificar estado** MERGED (skip si no)
-3. **Determinar categoría Keep a Changelog**:
+1. **Verificar estado** MERGED (skip si no mergeado)
+
+2. **Analizar commits individuales** (no solo título del PR):
+   - Extraer mensajes de commit
+   - Identificar patrones técnicos (feat/fix/refactor/etc.)
+   - Entender secuencia de cambios
+
+3. **Analizar archivos modificados**:
+   - Identificar módulos/componentes afectados
+   - Detectar alcance técnico (frontend/backend/config/docs)
+   - Extraer contexto para descripción precisa
+
+4. **Determinar categoría Keep a Changelog**:
    - `feat:` → **Añadido**
    - `fix:` → **Arreglado**
-   - `docs:` → (skip o categoría específica según contexto)
+   - `docs:` → (skip o **Cambiado** si sustancial)
    - `refactor:`, `perf:` → **Cambiado**
    - `security:` → **Seguridad**
-   - Otros → Preguntar al usuario o usar **Cambiado**
+   - `chore:` → (evaluar contexto)
+   - Otros → **Cambiado** (por defecto)
 
-4. **Construir descripción en español**:
-   - Si body tiene contenido útil: usar resumen del body
-   - Si body vacío: limpiar título (quitar `feat:`, scope)
-   - Traducir al español si está en inglés
-   - Ser específico: QUÉ cambió, no "cambios en X archivos"
+5. **Construir descripción técnica en español**:
+   - **Basada en commits + archivos**, no solo título PR
+   - **QUÉ cambió técnicamente** (no "cambios en X archivos")
+   - **Específica**: módulos, funcionalidades, impacto
+   - **Concisa**: 1-2 líneas, sin verbosidad innecesaria
+   - **Traducir** al español si está en inglés
+   - **Breaking changes**: marcar con ⚠️ **BREAKING** si detectado
 
-5. **Agrupar por categoría**
+6. **Agrupar por categoría**
 
 ### 4. Actualizar CHANGELOG.md
 
@@ -112,12 +131,16 @@ pr_data=$(gh pr view "$pr_num" --json title,body,state)
 
    ### Añadido
 
-   - Descripción específica feature 1 (PR #123)
-   - Descripción específica feature 2 (PR #124)
+   - Descripción técnica específica feature 1 basada en commits/archivos (PR #123)
+   - Descripción técnica específica feature 2 (PR #124)
+
+   ### Cambiado
+
+   - ⚠️ **BREAKING**: Descripción del breaking change con contexto técnico (PR #125)
 
    ### Arreglado
 
-   - Descripción específica fix 1 (PR #125)
+   - Descripción específica del fix con módulos afectados (PR #126)
    ```
 
 4. Usar Edit tool para reemplazar sección completa
@@ -132,13 +155,18 @@ Mostrar resumen al usuario:
 
 Categorías modificadas:
 - Añadido: 2 entradas
+- Cambiado: 1 entrada (1 breaking change)
 - Arreglado: 1 entrada
 
-PRs procesados: #123, #124, #125
+PRs procesados: #123, #124, #125, #126
+Commits analizados: 12
+Archivos analizados: 8
 ```
 
 ## Reglas
 
-- Entradas en español, específicas (QUÉ cambió, no "cambios en X archivos")
-- Breaking changes con ⚠️ **BREAKING**
-- NO commitear automáticamente (usuario decide cuándo)
+- **Analizar commits + archivos** para entender QUÉ cambió técnicamente
+- **Entradas en español**, específicas y técnicas (no genéricas)
+- **Breaking changes** con ⚠️ **BREAKING**
+- **NO commitear automáticamente** (usuario decide cuándo)
+- **Concisión con precisión**: 1-2 líneas por entrada, máximo detalle técnico
