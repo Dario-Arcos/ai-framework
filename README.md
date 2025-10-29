@@ -8,22 +8,19 @@ Constitutional SDD governance · Specialized agents · Intelligent hooks · Zero
 
 ## Why This Exists
 
-**A system architecture designed to orchestrate AI capabilities into quality-enforced software development.**
+**Orchestration architecture for AI-first development with constitutional quality enforcement.**
 
-This isn't a tool collection—it's an **orchestration architecture** where specialized agents, phase-gated workflows, constitutional rules, and intelligent hooks converge into a **system that creates systems**.
+Not a tool collection—a **system that creates systems** through specialized agents, phase-gated workflows, constitutional rules, and intelligent hooks.
 
-**Architectural Foundation:**
+**Foundation:**
 
-- **Constitutional Governance** — Value/complexity ratios, TDD mandates, complexity budgets enforced at every gate
-- **Specification-Driven Development (SDD)** — Spec → Plan → Tasks → Implementation with mandatory quality checkpoints
-- **Context Engineering** — Anthropic's research on attention budgets, just-in-time loading, progressive disclosure
-- **Orchestrated Execution** — Specialized agents + slash commands + hooks + MCP servers working in concert
-
-**Built on state-of-the-art AI engineering principles to guarantee maximum quality output.**
+- **Constitutional Governance** — Value/complexity ≥2x, TDD mandatory, complexity budgets enforced
+- **Specification-Driven Development** — Spec → Plan → Tasks → Implementation with quality checkpoints
+- **Orchestrated Execution** — Agents + skills + commands + hooks + MCP servers working in concert
 
 ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
-[Read the constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
+[Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
 
 ---
 
@@ -124,14 +121,27 @@ your-project/              # Your existing project root
     └── templates/           # Workflow templates (spec, plan, tasks)
 ```
 
-**Note:** `CLAUDE.md` and `.mcp.json` are gitignored by default. To version control them, uncomment the respective lines in `.gitignore`.
-
 ### Plugin Components (via Claude Code)
 
 - **Agents** — Architecture, Security, Testing, DevOps, Database, Documentation, UX/Design, Performance
+- **Skills** — Algorithmic art, Claude Code expert, Skill creator
 - **Commands** — SDD cycle, Git/GitHub automation, Project utilities
 - **Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
 - **MCP Servers** — Playwright (browser automation), Shadcn (UI components)
+
+---
+
+## Customization
+
+**Framework provides defaults. You control overrides.**
+
+Create these files for personal customizations (auto-gitignored, never overwritten):
+
+- **`.claude/settings.local.json`** — Personal settings ([precedence](https://docs.claude.com/en/docs/claude-code/settings): local > shared)
+- **`CLAUDE.local.md`** — Personal instructions ([pattern](https://www.anthropic.com/engineering/claude-code-best-practices))
+- **`.claude/.mcp.json`** — Personal MCP servers ([precedence](https://docs.claude.com/en/docs/claude-code/mcp): local > plugin)
+
+**Precedence:** local > shared > plugin. Personal configs override framework defaults without conflicts.
 
 ---
 

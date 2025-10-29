@@ -1,239 +1,260 @@
 ---
-allowed-tools: Bash(date -u +"%Y-%m-%dT%H:%M:%SZ"), Read, Write, LS
-model: claude-opus-4-1
+description: Create Product Requirements Prompt (minimal, business-focused) from natural language, GitHub issues, or context files
+argument-hint: [natural-language] or [from Github issue #N] or [from document path]
+allowed-tools: Bash(date -u +"%Y-%m-%dT%H:%M:%SZ"), Read, Write, LS, WebFetch
 ---
 
 # PRP New
 
-Launch brainstorming for new product requirements prompt (minimalista, business-focused).
+Create minimal, business-focused Product Requirements Prompt.
 
-## Usage
+## Usage Examples
 
+**Natural language:**
 ```
-/PRP-cycle:prp-new <feature_name>
+/PRP-cycle:prp-new Implement real-time notifications for user actions with email delivery
+```
+
+**GitHub issue:**
+```
+/PRP-cycle:prp-new from Github issue #456
+```
+
+**Context file:**
+```
+/PRP-cycle:prp-new from document research/notifications-proposal.md
+```
+
+**Short prompt (will ask questions):**
+```
+/PRP-cycle:prp-new notification system
 ```
 
 ## Required Rules
 
-**IMPORTANT:** Before executing this command, read and follow:
+**IMPORTANT:** Read and follow:
+- `.claude/rules/datetime.md` - For current date/time
 
-- `.claude/rules/datetime.md` - For getting real current date/time
+## User Input
 
-## Preflight Checklist
+```text
+$ARGUMENTS
+```
 
-Before proceeding, complete these validation steps.
-Do not bother the user with preflight checks progress ("I'm not going to ..."). Just do them and move on.
-
-### Input Validation
-
-1. **Validate feature name format:**
-   - Must contain only lowercase letters, numbers, and hyphens
-   - Must start with a letter
-   - No spaces or special characters allowed
-   - If invalid, tell user: "❌ Feature name must be kebab-case (lowercase letters, numbers, hyphens only). Examples: user-auth, payment-v2, notification-system"
-
-2. **Check for existing PRP:**
-   - Check if `prps/$ARGUMENTS/prp.md` already exists
-   - If it exists, ask user: "⚠️ PRP '$ARGUMENTS' already exists. Do you want to overwrite it? (yes/no)"
-   - Only proceed with explicit 'yes' confirmation
-   - If user says no, suggest: "Use a different name or sync existing PRP: /PRP-cycle:prp-sync $ARGUMENTS"
-
-3. **Verify directory structure:**
-   - Ensure `prps/$ARGUMENTS/` directory exists or can be created
-   - If cannot create, tell user: "❌ Cannot create PRP directory. Please check permissions."
+Input can be:
+- **Natural language**: "Implement real-time notifications"
+- **GitHub Issue**: "from Github issue #123" or URL
+- **Context file**: "from document <path>"
+- **Short name**: "user-notifications" (will prompt for details)
 
 ## Instructions
 
-You are a product manager creating a **lean, business-focused** Product Requirements Prompt (PRP) for: **$ARGUMENTS**
+### Step 1: Parse and Load Context
 
-### Design Philosophy (Steve Jobs Principles)
+**Identify input type and load context:**
 
-**"Simplicity is the ultimate sophistication"**
+**If natural language:**
+- Proceed to Step 2
 
-- PRP describes WHAT and WHY, not HOW
-- Target: 50-100 lines (vs typical 300+ line documents)
-- Say NO to implementation details (stack, architecture, config)
+**If GitHub issue** (contains "github.com" or "issue #"):
+- Extract URL or number
+- WebFetch issue content
+- Extract title, body, labels
+- Proceed with loaded context
+
+**If context file** (contains "from document"):
+- Extract file path
+- Read file content
+- Proceed with loaded context
+
+**If short/empty:**
+- Note: Will ask comprehensive questions
+- Proceed to Step 2
+
+### Step 2: Generate Short Name
+
+Create kebab-case name (2-4 words):
+- Extract meaningful keywords from input
+- Use action-noun format (e.g., "add-user-auth", "fix-payment-bug")
+- Preserve technical terms (OAuth2, API, JWT)
+- Keep concise but descriptive
+
+**Examples:**
+- "Implement real-time notifications" → "realtime-notifications"
+- "Add OAuth2 integration" → "oauth2-integration"
+- "Fix payment timeout" → "fix-payment-timeout"
+
+Store as `$SHORT_NAME`.
+
+### Step 3: Validate and Check
+
+**Silently validate:**
+
+1. **Format validation:**
+   - Lowercase letters, numbers, hyphens only
+   - Must start with letter
+   - If invalid: "❌ Feature name must be kebab-case. Examples: user-auth, payment-v2"
+
+2. **Check existing:**
+   - If `prps/$SHORT_NAME/prp.md` exists
+   - Ask: "⚠️ PRP '$SHORT_NAME' exists. Overwrite? (yes/no)"
+   - If no: "Use different name or sync: `/PRP-cycle:prp-sync $SHORT_NAME`"
+
+3. **Directory check:**
+   - Ensure `prps/$SHORT_NAME/` can be created
+   - If fails: "❌ Cannot create PRP directory. Check permissions."
+
+### Step 4: Discovery Session
+
+Ask clarifying questions **only if critical info missing**. Limit: 3-4 questions.
+
+**Priority 1 (always ask if unclear):**
+- **Problem**: What problem? Why now?
+- **Users**: Who affected? Primary personas?
+- **Success**: How measure if works?
+
+**Priority 2 (ask if impacts scope):**
+- **Impact**: What if we DON'T solve?
+- **Constraints**: Budget, timeline, compliance?
+- **Scope**: What NOT building in V1?
+
+**Make informed guesses** for non-critical details based on:
+- Industry standards
+- Context from input
+- Common patterns
+
+### Step 5: Create PRP Content
+
+**Philosophy: "Simplicity is the ultimate sophistication"**
+
+- Describe WHAT and WHY, not HOW
+- Target: 50-100 lines
+- No implementation details (stack, architecture, config)
 - Focus on user value and business outcomes
 
-### Discovery & Context
-
-Ask clarifying questions about:
-
-- **Problem**: What specific problem are we solving? Why now?
-- **Users**: Who experiences this problem? Primary personas?
-- **Impact**: What happens if we DON'T solve this?
-- **Success**: How do we measure if this works?
-- **Constraints**: Budget, timeline, compliance requirements?
-- **Scope**: What are we explicitly NOT building in V1?
-
-### PRP Structure (Minimalista)
-
-Create a lean PRP with ONLY these sections:
+**PRP Structure (5 sections only):**
 
 #### 1. Problem Statement (5-10 lines)
 
-Use structured format for clarity (AI-parseable):
-
-- **Problem**: [What problem exists today?]
-- **Affected Users**: [Who experiences this problem?]
-- **Frequency**: [How often does this occur?]
-- **Current Cost**: [Time/money wasted with current approach]
-- **Why Now**: [Why is it important to solve NOW?]
-- **Risk of Inaction**: [What happens if we DON'T solve it?]
+Structured format:
+- **Problem**: What exists today?
+- **Affected Users**: Who experiences this?
+- **Frequency**: How often?
+- **Current Cost**: Time/money wasted?
+- **Why Now**: Why important NOW?
+- **Risk of Inaction**: What if we don't solve?
 
 #### 2. User Impact (10-20 lines)
 
-**Primary Users**
+**Primary Users:**
+- Persona 1: Need in one sentence
+- Persona 2: Need in one sentence
 
-- [Persona 1]: [Their need in one sentence]
-- [Persona 2]: [Their need in one sentence]
-
-**User Journey (Happy Path)**
-
+**User Journey:**
 1. User does X
 2. System provides Y
-3. User achieves outcome Z
+3. User achieves Z
 
-**User Pain Points**
-
-- Current friction point 1
-- Current friction point 2
+**Pain Points:**
+- Current friction 1
+- Current friction 2
 
 #### 3. Success Criteria (5-10 lines)
 
-Use checkboxes and measurement methods (AI-parseable):
+**Quantitative:**
+- [ ] Metric 1: Baseline → Target (Measured by: method)
+- [ ] Metric 2: Baseline → Target (Measured by: method)
 
-**Quantitative**
-
-- [ ] Metric 1: [Baseline] → [Target] (Measured by: [method/tool])
-- [ ] Metric 2: [Baseline] → [Target] (Measured by: [method/tool])
-
-**Qualitative**
-
-- [ ] Observable outcome 1 (Verified by: [observation method])
-- [ ] Observable outcome 2 (Verified by: [observation method])
+**Qualitative:**
+- [ ] Observable 1 (Verified by: method)
+- [ ] Observable 2 (Verified by: method)
 
 #### 4. Constraints (5-10 lines)
 
 - **Budget**: $X or "zero cost"
-- **Timeline**: [Deadline] or "immediate"
-- **Team**: [Size/skills available]
-- **Compliance**: [Regulatory requirements if any]
-- **Complexity Budget**: Size S/M/L (S: ≤80 LOC, M: ≤250 LOC, L: ≤600 LOC)
+- **Timeline**: Deadline or "immediate"
+- **Team**: Size/skills available
+- **Compliance**: Regulatory requirements if any
+- **Complexity**: S (≤80 LOC), M (≤250 LOC), L (≤600 LOC)
 
-#### 5. Out of Scope (V1) (5-10 lines)
+#### 5. Out of Scope V1 (5-10 lines)
 
-Explicitly list what we're NOT building:
+Explicitly list what NOT building:
+- Feature X: Why excluded (defer V2, complexity, etc.)
+- Feature Y: Why excluded
 
-- [Feature X]: Why excluded (defer to V2, complexity, etc.)
-- [Feature Y]: Why excluded
-- [Feature Z]: Why excluded
+**Exclusions (belong in SDD-cycle):**
+- ❌ Stack decisions ("Use React")
+- ❌ Architecture diagrams
+- ❌ Data models, API endpoints
+- ❌ Performance targets ("<200ms")
+- ❌ Edge cases, error handling details
 
-### What NOT to Include (Critical)
+**Keep business-level:**
+- ✅ "Users find docs quickly"
+- ❌ "Algolia search <200ms"
 
-**❌ DO NOT include these (belong in SDD-cycle):**
+### Step 6: Save PRP with Frontmatter
 
-- Stack decisions (e.g., "Use Jekyll", "Use React")
-- Architecture diagrams or technical design
-- Domain entities and data models
-- API endpoints or database schemas
-- Configuration files (e.g., `_config.yml`)
-- Performance targets (e.g., "<200ms latency") - keep high-level only
-- Edge cases and error handling (technical details)
-- Integration dependencies (technical details)
-
-**✅ Keep it business-level:**
-
-- "Users need to find documentation quickly" ✅
-- "System must use Algolia search with <200ms response" ❌
-
-### File Format with Frontmatter
-
-Save the completed PRP to: `prps/$ARGUMENTS/prp.md` with this exact structure:
+Save to `prps/$SHORT_NAME/prp.md`:
 
 ```markdown
 ---
-name: $ARGUMENTS
-description: [Brief one-line description of the PRP]
+name: $SHORT_NAME
+description: [One-line PRP description]
 status: backlog
-created: [Current ISO date/time]
+created: [ISO timestamp]
 complexity_budget: S|M|L
 priority: P1|P2|P3
 ---
 
-# PRP: $ARGUMENTS
+# PRP: $SHORT_NAME
 
-## Problem Statement
-
-[Content...]
-
-## User Impact
-
-[Content...]
-
-## Success Criteria
-
-[Content...]
-
-## Constraints
-
-[Content...]
-
-## Out of Scope (V1)
-
-[Content...]
+[5 sections from Step 5]
 
 ---
 
-**Next Steps**: Run `/PRP-cycle:prp-sync $ARGUMENTS` to sync to GitHub as Parent Issue
+**Next Steps**: `/PRP-cycle:prp-sync $SHORT_NAME`
 ```
 
-### Frontmatter Guidelines
+**Frontmatter:**
+- `name`: Exact feature name
+- `description`: Concise summary
+- `status`: Always "backlog"
+- `created`: !bash date -u +"%Y-%m-%dT%H:%M:%SZ"
+- `complexity_budget`: S/M/L estimate
+- `priority`: P1 (Critical), P2 (Important), P3 (Nice-to-have)
 
-- **name**: Use the exact feature name (same as $ARGUMENTS)
-- **description**: Write a concise one-line summary of what this PRP covers
-- **status**: Always start with "backlog" for new PRPs
-- **created**: !bash date -u +"%Y-%m-%dT%H:%M:%SZ"
-  - Never use placeholder text
-  - Must be actual system time in ISO 8601 format
-- **complexity_budget**: Estimate size (S: ≤80 LOC, M: ≤250 LOC, L: ≤600 LOC)
-- **priority**: Assign priority (P1: Critical, P2: Important, P3: Nice-to-have)
+### Step 7: Quality Validation
 
-### Quality Checks
+**Verify before saving:**
+- [ ] Length: 50-100 lines (excluding frontmatter)
+- [ ] No implementation details
+- [ ] Problem statement uses structured format
+- [ ] Success criteria have checkboxes + measurement methods
+- [ ] Problem and user impact clear
+- [ ] Out of scope defined
+- [ ] No placeholders (no "TBD")
+- [ ] Written for business stakeholders (non-technical)
+- [ ] Frontmatter complete
 
-Before saving the PRP, verify:
+### Step 8: Confirm Creation
 
-- [ ] Total length: 50-100 lines (excluding frontmatter)
-- [ ] No implementation details (no stack, no config, no architecture)
-- [ ] Problem statement uses structured format with fields
-- [ ] Success criteria use checkboxes with measurement/verification methods
-- [ ] Problem and user impact are crystal clear
-- [ ] Success criteria are measurable
-- [ ] Out of scope explicitly defined
-- [ ] All sections complete (no placeholder text like "TBD")
-- [ ] Written for business stakeholders (non-technical language)
-- [ ] Frontmatter includes complexity_budget and priority
+**After successful creation:**
 
-### Post-Creation
-
-After successfully creating the PRP:
-
-1. Confirm: "✅ PRP created: prps/$ARGUMENTS/prp.md"
-2. Show brief summary:
+1. Confirm: "✅ PRP created: prps/$SHORT_NAME/prp.md"
+2. Summary:
    - Problem: [One sentence]
    - Target: [Primary metric]
-   - Complexity: Size S/M/L
+   - Complexity: S/M/L
    - Priority: P1/P2/P3
-3. Suggest next step: "Ready to sync to GitHub? Run: `/PRP-cycle:prp-sync $ARGUMENTS`"
+3. Next: "Sync to GitHub? `/PRP-cycle:prp-sync $SHORT_NAME`"
 
 ## Error Recovery
 
-If any step fails:
+**If any step fails:**
+- Explain what went wrong
+- Provide fix steps
+- Never leave partial/corrupted files
 
-- Clearly explain what went wrong
-- Provide specific steps to fix the issue
-- Never leave partial or corrupted files
-
-**Target**: Create a lean, business-focused PRP that fits on one screen (50-100 lines). Technical details are handled by SDD-cycle, not here.
-
-Conduct a thorough brainstorming session before writing the PRP. Ask questions, explore trade-offs, and ensure comprehensive coverage of the **business requirements** (not technical implementation) for "$ARGUMENTS".
+**Target**: Lean, business-focused PRP (100-200 lines). Technical details → SDD-cycle.
