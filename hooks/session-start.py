@@ -125,6 +125,12 @@ def migrate_legacy_gitignore(project_dir):
 
     try:
         content = gitignore.read_text(encoding="utf-8")
+
+        # Si ya tiene sección USER ARTIFACTS → proyecto ya migrado, no tocar
+        # Esto previene duplicación en proyectos con estructura legacy diferente
+        if "# USER ARTIFACTS (version control" in content:
+            return
+
         original_content = content
 
         # Reglas legacy a migrar (ahora opcionales en v2.0)
