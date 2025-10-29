@@ -212,6 +212,56 @@ Plan Mode + Bypass Permissions = Review seguro antes + ejecución fluida despué
 
 ---
 
+## Framework Customization
+
+**Framework provides defaults. You control overrides.**
+
+### Settings (v2.0+)
+
+| Archivo | Propósito | Precedencia |
+|---------|-----------|-------------|
+| `.claude/settings.json` | Framework defaults (auto-synced) | Base |
+| `.claude/settings.local.json` | Personal overrides (never touched) | **Máxima** |
+
+**Precedence:** `settings.local.json` > `settings.json`
+
+**Ejemplo `.claude/settings.local.json`:**
+
+```json
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": ["Bash(npm run lint)"],
+    "deny": ["Read(.env)"]
+  }
+}
+```
+
+### MCP Servers (v2.0+)
+
+| Ubicación | Propósito | Precedencia |
+|-----------|-----------|-------------|
+| Plugin `.mcp.json` | Framework MCP (Playwright, Shadcn) | Base |
+| Project `.mcp.json` | Custom MCP servers (optional) | **Máxima** |
+
+**Precedence:** project > plugin
+
+Agrega custom MCP servers en project root sin tocar framework defaults.
+
+[MCP docs →](https://docs.claude.com/en/docs/claude-code/mcp)
+
+### Personal Instructions
+
+**`CLAUDE.local.md`** — Personal instructions (auto-gitignored, never synced)
+
+[Best practices →](https://www.anthropic.com/engineering/claude-code-best-practices)
+
+::: tip Arquitectura v2.0
+Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personaliza sin miedo a perder cambios.
+:::
+
+---
+
 ## Sub-Agents: Invocación Explícita
 
 **Invocación Automática** (default):
@@ -387,5 +437,5 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-24 | **Tips**: Claude Code Workflow Optimization
+**Fecha**: 2025-10-29 | **Tips**: Claude Code Workflow Optimization
 :::
