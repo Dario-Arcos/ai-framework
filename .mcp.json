@@ -2,19 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp",
-        "--isolated",
-        "--viewport-size",
-        "1920x1080",
-        "--browser",
-        "chrome",
-        "--timeout-action",
-        "10000",
-        "--timeout-navigation",
-        "30000"
-      ]
+      "args": ["-y", "@playwright/mcp"]
     },
     "shadcn": {
       "command": "npx",
