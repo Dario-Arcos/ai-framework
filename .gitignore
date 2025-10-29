@@ -11,10 +11,12 @@
 /.specify/
 
 # Framework spec directories (features created by /speckit commands)
-/specs/
+# [v2.0] User artifact - optional in v2.0 - see USER ARTIFACTS section
+# /specs/
 
 # Framework PRP directories (business requirements created by /PRP-cycle commands)
-/prps/
+# [v2.0] User artifact - optional in v2.0 - see USER ARTIFACTS section
+# /prps/
 
 # Framework project files (ignored by default)
 # To version these files, comment out the lines below:
@@ -128,3 +130,13 @@ human-handbook/.vitepress/cache/
 # ============================================================================
 # AI FRAMEWORK FILES (auto-added by ai-framework plugin)
 # ============================================================================
+
+# ============================================================================
+# USER ARTIFACTS (version control is user's choice)
+# ============================================================================
+
+# Specs and PRPs are user-generated artifacts created by framework commands.
+# By default, they are NOT ignored (can be versioned for documentation).
+# To ignore them, uncomment these lines:
+# /specs/
+# /prps/
