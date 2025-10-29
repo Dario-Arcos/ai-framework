@@ -17,12 +17,21 @@ command -v npm >/dev/null 2>&1 || { echo "❌ npm requerido"; exit 1; }
 command -v gh >/dev/null 2>&1 || { echo "❌ gh CLI requerido"; exit 1; }
 
 # Validar archivos
-[[ -f CHANGELOG.md && -f package.json ]] || { echo "❌ Archivos faltantes"; exit 1; }
+test -f CHANGELOG.md || { echo "❌ CHANGELOG.md faltante"; exit 1; }
+test -f package.json || { echo "❌ package.json faltante"; exit 1; }
 grep -q "^## \[No Publicado\]" CHANGELOG.md || { echo "❌ [No Publicado] no encontrado"; exit 1; }
 
-# Validar que solo CHANGELOG.md esté modificado (input del workflow)
-changed_files=$(git status --porcelain | grep -v "^ M CHANGELOG.md$" | grep -v "^??")
-[[ -z "$changed_files" ]] || { echo "❌ Working tree tiene cambios además de CHANGELOG.md"; exit 1; }
+# Validar working tree (solo CHANGELOG.md modificado)
+# CORREGIDO: Compatible con zsh, usa archivos temporales para evitar parse errors
+git status --porcelain > /tmp/release_status.txt
+grep -v "^ M CHANGELOG.md" /tmp/release_status.txt | grep -v "^??" > /tmp/release_other.txt
+if test -s /tmp/release_other.txt; then
+  echo "❌ Working tree tiene cambios además de CHANGELOG.md"
+  rm -f /tmp/release_status.txt /tmp/release_other.txt
+  exit 1
+fi
+rm -f /tmp/release_status.txt /tmp/release_other.txt
+echo "✅ Working tree limpio"
 
 # Guardar versión actual
 current_version=$(node -p "require('./package.json').version")
@@ -40,9 +49,9 @@ git config --local release.temp.current-version "$current_version"
    - Buscar texto "BREAKING" → has_breaking
 
 3. Calcular versión según semver:
-   - `has_breaking = true` → MAJOR (1.4.0 → 2.0.0)
-   - `has_added = true` → MINOR (1.4.0 → 1.5.0)
-   - Solo `has_fixed` o `has_changed` → PATCH (1.4.0 → 1.4.1)
+   - `has_breaking = true` → MAJOR (2.0.0 → 3.0.0)
+   - `has_added = true` → MINOR (2.0.0 → 2.1.0)
+   - Solo `has_fixed` o `has_changed` → PATCH (2.0.0 → 2.0.1)
 
 4. Guardar resultado:
    ```bash
@@ -71,7 +80,7 @@ exit 0
 
 **CRÍTICO**: Debe ejecutarse ANTES de npm version (sync-versions.cjs valida versión en CHANGELOG)
 
-1. Usar Read tool para CHANGELOG.md
+1. Usar Read tool para CHANGELOG.md completo
 
 2. Identificar y reemplazar sección `[No Publicado]`:
    - `old_string`: Desde `## [No Publicado]` hasta `---`
@@ -81,13 +90,19 @@ exit 0
 
 4. Insertar nueva sección vacía al inicio:
 
-   ```
+   ```markdown
    ## [No Publicado]
 
    - [Cambios futuros se documentan aquí]
 
    ---
    ```
+
+5. **NUEVO: Actualizar footer "Última Actualización"**:
+   - Localizar línea con `**Fecha**: ... | **Versión**: ... | **Formato**: Keep a Changelog`
+   - `old_string`: Línea completa con versión antigua
+   - `new_string`: `**Fecha**: {YYYY-MM-DD} | **Versión**: {new_version} | **Formato**: Keep a Changelog`
+   - Usar Edit tool para reemplazar
 
 ## Paso 5: Bump Versión
 
@@ -119,6 +134,7 @@ current_branch=$(git branch --show-current)
 # Push commit + tag
 git push origin "$current_branch" --follow-tags || {
   echo "❌ Push falló"
+  git config --local --remove-section release.temp 2>/dev/null
   exit 1
 }
 ```
@@ -154,6 +170,7 @@ Ejecutar en bash:
 
 ```bash
 git config --local --remove-section release.temp 2>/dev/null
+echo "✅ Release v${new_version} publicado"
 ```
 
 **Output**: Release v{new_version} publicado en {release_url}
