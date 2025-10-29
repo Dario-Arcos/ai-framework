@@ -10,14 +10,6 @@
 /.claude/
 /.specify/
 
-# Framework spec directories (features created by /speckit commands)
-# [v2.0] User artifact - optional in v2.0 - see USER ARTIFACTS section
-# /specs/
-
-# Framework PRP directories (business requirements created by /PRP-cycle commands)
-# [v2.0] User artifact - optional in v2.0 - see USER ARTIFACTS section
-# /prps/
-
 # Framework project files (ignored by default)
 # To version these files, comment out the lines below:
 /CLAUDE.md
