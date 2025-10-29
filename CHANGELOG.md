@@ -190,5 +190,5 @@ _Más skills en cada actualización_
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-24 | **Versión**: 2.0.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-10-29 | **Versión**: 2.1.0 | **Formato**: Keep a Changelog
 :::
