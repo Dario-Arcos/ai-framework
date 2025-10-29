@@ -7,20 +7,17 @@
 # ============================================================================
 
 # Framework internals (rules, configuration)
-# Leading "/" anchors to project root, preventing accidental ignoring of
-# user-created directories like src/.claude/ or docs/CLAUDE.md
 /.claude/
 /.specify/
 
-# Framework spec directories (features created by /speckit commands)
-/specs/
-
-# Framework PRP directories (business requirements created by /PRP-cycle commands)
-/prps/
-
-# Framework project files (ignored by default)
-# To version these files, comment out the lines below:
+# Framework configuration files (ignored by default)
 /CLAUDE.md
+
+# Local configuration overrides (user customizations, not shared with team)
+# Uncomment to version these files (not recommended):
+# settings.local.json
+# config.local.json
+# CLAUDE.local.md
 
 # MCP server data directories
 /.playwright-mcp/
@@ -29,9 +26,19 @@
 # FRAMEWORK RUNTIME (logs, databases, temp files)
 # ============================================================================
 
-# Hook databases (notifications, tracking)
+# Hook databases and cache (if user creates custom hooks)
 /hooks/*.db
 /hooks/__pycache__/
+
+# ============================================================================
+# USER ARTIFACTS (version control is user's choice)
+# ============================================================================
+
+# Specs and PRPs are user-generated artifacts created by framework commands.
+# By default, they are NOT ignored (can be versioned for documentation).
+# To ignore them, uncomment these lines:
+# /specs/
+# /prps/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
@@ -60,7 +67,6 @@ ehthumbs.db
 
 # Dependencies
 node_modules/
-*/node_modules/
 vendor/
 jspm_packages/
 .npm
@@ -104,10 +110,6 @@ backups/
 tmp/
 temp/
 *.tmp
-
-# Local configuration overrides
-settings.local.json
-config.local.json
 
 # Playwright MCP test artifacts (if using Playwright MCP server)
 test-results/
