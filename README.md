@@ -111,10 +111,10 @@ The framework adds these files/directories to your **existing project structure*
 your-project/              # Your existing project root
 ├── [your existing files]  # Your code, package.json, etc.
 ├── CLAUDE.md              # Project configuration (gitignored by default)
-├── .mcp.json              # MCP servers (gitignored by default)
 ├── .claude/
-│   ├── settings.local.json  # Personal configuration (max priority)
-│   └── rules/               # 5 governance files
+│   ├── settings.json        # Framework defaults (synced from plugin)
+│   ├── settings.local.json  # Personal overrides (optional, max priority)
+│   └── rules/               # 3 governance files (datetime, agents-guide, operational-excellence)
 └── .specify/
     ├── memory/              # Constitutional documents (constitution.md, project-context.md)
     ├── scripts/bash/        # Utility scripts
@@ -127,7 +127,7 @@ your-project/              # Your existing project root
 - **Skills** — Algorithmic art, Claude Code expert, Skill creator
 - **Commands** — SDD cycle, Git/GitHub automation, Project utilities
 - **Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
-- **MCP Servers** — Playwright (browser automation), Shadcn (UI components)
+- **MCP Servers** — Playwright (browser automation), Shadcn (UI components) — Configured in plugin root, not project
 
 ---
 
@@ -135,13 +135,27 @@ your-project/              # Your existing project root
 
 **Framework provides defaults. You control overrides.**
 
-Create these files for personal customizations (auto-gitignored, never overwritten):
+### Settings Architecture (v2.0+)
 
-- **`.claude/settings.local.json`** — Personal settings ([precedence](https://docs.claude.com/en/docs/claude-code/settings): local > shared)
-- **`CLAUDE.local.md`** — Personal instructions ([pattern](https://www.anthropic.com/engineering/claude-code-best-practices))
-- **`.claude/.mcp.json`** — Personal MCP servers ([precedence](https://docs.claude.com/en/docs/claude-code/mcp): local > plugin)
+- **`.claude/settings.json`** — Framework defaults (synced from plugin, auto-updated)
+- **`.claude/settings.local.json`** — Personal overrides (optional, **never touched by framework**)
 
-**Precedence:** local > shared > plugin. Personal configs override framework defaults without conflicts.
+**Precedence:** `settings.local.json` > `settings.json`. Personal settings always win.
+
+### MCP Servers Architecture (v2.0+)
+
+- **Plugin `.mcp.json`** — Framework MCP servers (Playwright, Shadcn)
+- **Project `.mcp.json`** — Custom MCP servers (optional, user-defined)
+
+**Precedence:** project > plugin. Add custom servers without touching framework defaults.
+
+[MCP documentation →](https://docs.claude.com/en/docs/claude-code/mcp)
+
+### Personal Instructions
+
+- **`CLAUDE.local.md`** — Personal instructions (optional, auto-gitignored)
+
+[Best practices →](https://www.anthropic.com/engineering/claude-code-best-practices)
 
 ---
 
