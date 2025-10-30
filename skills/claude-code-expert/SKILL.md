@@ -5,7 +5,7 @@ description: PROACTIVELY create, modify, update, improve, and fix Claude Code co
 
 # Claude Code Expert
 
-Expert-level skill for creating production-ready Claude Code components with 100% consistency to official documentation and ai-framework project patterns.
+Production-ready Claude Code components with 100% consistency to official docs and ai-framework patterns.
 
 ## Purpose
 
@@ -17,18 +17,18 @@ Before implementing ANY component, follow this protocol:
 
 ### Step 1: Identify Component Type
 
-Determine which component the user is requesting:
+Determine which component user requests:
 
-- **Sub-agent**: "Create an agent for X" → Task tool invocation
-- **Slash command**: "Add a command to X" → User-invoked workflow
-- **Hook**: "Add a hook to X" → Event handler (SessionStart, PreToolUse, etc.)
-- **MCP server**: "Integrate X server" → External tool integration
+- **Sub-agent**: "Create agent for X" → specialized AI assistant
+- **Slash command**: "Add command to X" → user-invoked workflow
+- **Hook**: "Add hook to X" → event handler (SessionStart, PreToolUse, etc.)
+- **MCP server**: "Integrate X server" → external tool integration
 
 ### Step 2: Official Documentation
 
-**Your training data is stale. APIs change every 3 months. Never assume syntax.**
+**Training data is stale. APIs change every 3 months. Never assume syntax.**
 
-Load [references/doc-map.md](references/doc-map.md) and WebFetch the official docs for your component type:
+Load [references/doc-map.md](references/doc-map.md) and WebFetch official docs for the component type:
 
 ```
 1. Read references/doc-map.md
@@ -43,51 +43,37 @@ Load [references/doc-map.md](references/doc-map.md) and WebFetch the official do
 
 ### Step 3: Project Patterns
 
-Read existing ai-framework examples to extract patterns:
+Read existing ai-framework examples extracting patterns:
 
-**For Sub-agents**:
-```bash
-Read agents/[relevant-category]/[similar-agent].md
-```
-Extract: naming conventions, tool access patterns, constitutional constraints
+**Sub-agents**: Read agents/[relevant-category]/[similar-agent].md
+- Extract: naming conventions, tool access patterns, constitutional constraints
 
-**For Slash Commands**:
-```bash
-Read commands/[relevant-category]/[similar-command].md
-```
-Extract: argument-hint patterns, allowed-tools restrictions, workflow structure
+**Commands**: Read commands/[relevant-category]/[similar-command].md
+- Extract: argument-hint patterns, allowed-tools restrictions, workflow structure
 
-**For Hooks**:
-```bash
-Read hooks/[similar-hook].py
-Read hooks/hooks.json
-```
-Extract: error handling patterns, JSON I/O format, exit code conventions
+**Hooks**: Read hooks/[similar-hook].py and hooks/hooks.json
+- Extract: error handling patterns, JSON I/O format, exit code conventions
 
-**For MCP**:
-```bash
-Read .claude/.mcp.json
-```
-Extract: server configuration patterns, environment variable usage
+**MCP**: Read .claude/.mcp.json
+- Extract: server configuration patterns, environment variable usage
+
+See [references/naming-conventions.md](references/naming-conventions.md) and [references/language-conventions.md](references/language-conventions.md) for detailed standards.
 
 ### Step 4: Generate Component
 
-Merge:
+Merge official syntax (Step 2) + project patterns (Step 3) + constitutional principles.
 
-1. **Official syntax** (Step 2 - WebFetch)
-2. **Project patterns** (Step 3 - existing code)
-3. **Constitutional principles** (@.specify/memory/constitution.md)
+Load [references/constitutional-compliance.md](references/constitutional-compliance.md) for detailed requirements.
 
-Apply these principles:
-
+Core principles to apply:
 - **Value/Complexity ≥ 2**: Simplest solution that works
-- **Reuse First**: Use existing patterns before creating new ones
+- **Reuse First**: Use existing patterns before creating new
 - **TDD**: Tests before implementation (if applicable)
 - **AI-First**: Text/JSON interfaces for AI executability
 
 ### Step 5: Validate
 
-Load the appropriate checklist:
+Load appropriate checklist:
 
 | Component     | Checklist                                                          |
 | ------------- | ------------------------------------------------------------------ |
@@ -98,49 +84,18 @@ Load the appropriate checklist:
 
 Execute validation:
 
-1. **Run automated validators**: `scripts/validate_bash_blocks.py`, `scripts/validate_tool_invocations.py`, `scripts/validate_[type].py`
-2. **Manual review against checklist** (semantic/logic)
-3. **Execute Step 6** (Logic Review)
+1. Run automated validators: `scripts/validate_[type].py`
+2. Manual review against checklist
+3. Execute Step 6 (Logic Review)
 4. Confirm 100% correctness
 
 **Only deliver when all gates passed.**
 
+See [references/quality-gates.md](references/quality-gates.md) for gate details.
+
 ### Step 6: Logic Review
 
-Load [references/logic-anti-patterns.md](references/logic-anti-patterns.md) and verify all applicable patterns before delivery.
-
-## Component Reference
-
-| Component | Key Patterns |
-|-----------|--------------|
-| **Sub-agent** | tools comma-separated (e.g., `Read, Grep, Glob, Bash`); model: `sonnet`, `opus`, `haiku`, `inherit`; include "PROACTIVELY" in description for auto-delegation; limit tools to necessary minimum (security) |
-| **Command** | `allowed-tools:` restricts tool access (security); `argument-hint:` guides user input; bash execution: exclamation prefix before backticks; file references: at-sign prefix before paths |
-| **Hook** | No external dependencies (stdlib only); Spanish error messages (user-facing); JSON stdin/stdout; exit codes: 0=success, 2=block, other=non-blocking error; absolute paths using `$CLAUDE_PROJECT_DIR` |
-| **MCP** | Use `project` scope for team-shared tools; store secrets in env vars, not hardcoded; environment variable expansion: `${VAR_NAME:-default}`; HTTP servers for remote services; stdio servers for local processes |
-
-See [references/doc-map.md](references/doc-map.md) for official documentation URLs.
-
-## Standards
-
-**Naming Conventions**:
-- **Sub-agents**: `snake-case` (e.g., `code-quality-reviewer`)
-- **Commands**: `kebab-case` with category prefix (e.g., `speckit.plan`)
-- **Hooks**: `snake_case` with descriptive suffix (e.g., `session_start.py`)
-- **MCP servers**: `kebab-case` (e.g., `playwright`, `shadcn`)
-
-**Documentation Language**:
-- **Code & AI instructions**: English
-- **User-facing messages**: Spanish
-- **Technical terms**: English (even in Spanish docs)
-
-**Common Pitfalls**:
-- ❌ Assuming syntax from training → Always WebFetch
-- ❌ Creating new patterns → Reuse existing unless justified
-- ❌ Over-engineering → Simplest solution wins
-- ❌ Skipping validation → Checklist required
-- ❌ Mixing languages → English for code, Spanish for users
-- ❌ Hardcoding secrets → Use env vars
-- ❌ Adding external deps → Stdlib only (hooks/scripts)
+Load [references/logic-anti-patterns.md](references/logic-anti-patterns.md) verifying no anti-patterns present before delivery.
 
 ## Deliverables
 
