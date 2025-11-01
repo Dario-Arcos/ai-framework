@@ -207,6 +207,170 @@ See [references/mcp-configuration.md](references/mcp-configuration.md) for compl
 
 Set `CORE_API_KEY` environment variable.
 
+## REST API (Advanced)
+
+For programmatic access beyond MCP, Core provides a comprehensive REST API.
+
+### When to Use REST API
+
+**Use MCP (via setup_core_cloud.py) when:**
+- Setting up for first time
+- Using Claude Code, Cursor, VS Code
+- Want automatic agents (memory-search, memory-ingest)
+- Prefer zero-friction setup
+
+**Use REST API when:**
+- Building custom integrations
+- Need granular control over memory operations
+- Managing Spaces programmatically
+- Implementing custom workflows
+- Server-to-server communication
+
+### Quick Start
+
+**Get API Key:**
+1. Visit https://core.heysol.ai → Settings → API Keys
+2. Generate new key
+3. Export: `export CORE_API_KEY='your-key-here'`
+
+**Basic Search:**
+```bash
+curl -X POST https://core.heysol.ai/api/v1/search \
+  -H "Authorization: Bearer $CORE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "TypeScript preferences"}'
+```
+
+**Ingest Data:**
+```bash
+curl -X POST https://core.heysol.ai/api/v1/add \
+  -H "Authorization: Bearer $CORE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "Project uses PostgreSQL with JSONB for schemas",
+    "metadata": {"project": "TaskMaster"}
+  }'
+```
+
+### Spaces Management
+
+**What are Spaces:**
+- Organizational containers for memory
+- Like folders for knowledge graph
+- Filter searches to relevant context
+- Manage privacy/sharing boundaries
+
+**Manage via CLI:**
+```bash
+# List all spaces
+python3 scripts/manage_spaces.py list
+
+# Create new space
+python3 scripts/manage_spaces.py create "Work Project" \
+  --description "Professional context"
+
+# View space details
+python3 scripts/manage_spaces.py get space-work
+
+# Assign statements to space
+python3 scripts/manage_spaces.py assign space-work \
+  --statements stmt_1,stmt_2,stmt_3
+
+# Delete space
+python3 scripts/manage_spaces.py delete space-old
+```
+
+**Example Workflow:**
+```bash
+# 1. Set API key
+export CORE_API_KEY='sk-xxx...'
+
+# 2. Create project space
+python3 scripts/manage_spaces.py create "Client Alpha" \
+  --description "Alpha project memory"
+
+# 3. Ingest data to space
+curl -X POST https://core.heysol.ai/api/v1/add \
+  -H "Authorization: Bearer $CORE_API_KEY" \
+  -d '{
+    "data": "Client prefers React over Vue",
+    "metadata": {"spaceId": "space-alpha"}
+  }'
+
+# 4. Search within space
+curl -X POST https://core.heysol.ai/api/v1/search \
+  -H "Authorization: Bearer $CORE_API_KEY" \
+  -d '{
+    "query": "framework preferences",
+    "spaceIds": ["space-alpha"]
+  }'
+```
+
+### Privacy & Sharing
+
+**What you can control:**
+- Space organization (project, personal, work)
+- Search filtering by space
+- Statement assignment to spaces
+- OAuth scopes (read, write, mcp, integration)
+
+**What you CANNOT share natively:**
+- Memory with other users (single-user per account)
+- Public spaces (all data private by default)
+- Cross-account search
+
+**Workarounds for team collaboration:**
+1. Export via API, share file
+2. Build OAuth app that aggregates multiple users
+3. Self-host with custom team features
+
+See [references/spaces-and-privacy.md](references/spaces-and-privacy.md) for complete privacy model.
+
+### Full API Reference
+
+**Complete endpoint documentation:**
+- Memory operations (add, search, retrieve facts)
+- Spaces CRUD (create, read, update, delete, bulk assign)
+- Monitoring (logs, queue status)
+- Webhooks (real-time notifications)
+- Integrations (connect external services)
+- OAuth (scopes, authentication flows)
+
+See [references/rest-api-reference.md](references/rest-api-reference.md) for comprehensive API docs.
+
+### Python Integration Example
+
+```python
+import os
+import requests
+
+BASE_URL = "https://core.heysol.ai"
+API_KEY = os.getenv("CORE_API_KEY")
+HEADERS = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json"
+}
+
+def search_memory(query, space_ids=None):
+    """Search Core memory"""
+    payload = {"query": query}
+    if space_ids:
+        payload["spaceIds"] = space_ids
+
+    response = requests.post(
+        f"{BASE_URL}/api/v1/search",
+        headers=HEADERS,
+        json=payload
+    )
+    response.raise_for_status()
+    return response.json()
+
+# Usage
+results = search_memory("authentication approach", ["space-work"])
+for result in results.get("results", []):
+    print(f"[{result['relevance']:.2f}] {result['content']}")
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -296,11 +460,14 @@ Configure at: core.heysol.ai → Integrations
 - `setup_self_hosted.sh` - Automated self-hosting
 - `create_agents.py` - Generate automatic memory agents
 - `verify_connection.py` - Connection diagnostic
+- `manage_spaces.py` - Spaces CRUD operations (REST API)
 
 ### References
 - `core-concepts.md` - Architecture and data model
 - `mcp-configuration.md` - Complete configuration reference
 - `troubleshooting.md` - Common issues and solutions
+- `rest-api-reference.md` - Complete REST API documentation
+- `spaces-and-privacy.md` - Spaces management and privacy model
 
 ### Assets
 - `memory-search-template.md` - Auto-search agent template
