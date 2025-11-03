@@ -221,7 +221,28 @@ PUT /api/v1/spaces
 
 ### Filtering Searches by Space
 
-**Search specific spaces:**
+**⚠️ CRITICAL LIMITATION (Verified 2025-11-03):**
+
+The `spaceIds` parameter is documented in the API but **does NOT work** currently.
+
+**Evidence:**
+```bash
+# Episode "Matrix" exists in space-personal (cmhid7ina...)
+POST /api/v1/search {"query":"Matrix","spaceIds":["cmhid7ina..."]}
+→ Result: 0 episodes ✗ (should be 1)
+
+POST /api/v1/search {"query":"Matrix"}
+→ Result: 1 episode ✓
+```
+
+**Status:** API accepts parameter but ignores it. Episodes have `spaceIds` assigned but filtering not implemented.
+
+**Workaround:** Use https://github.com/Dario-Arcos/team-core-proxy for client-side filtering.
+
+---
+
+**Documented behavior (not currently working):**
+
 ```json
 POST /api/v1/search
 {
@@ -230,21 +251,10 @@ POST /api/v1/search
 }
 ```
 
-**Benefits:**
+**Intended benefits:**
 - Faster searches (smaller dataset)
 - More relevant results (contextual)
 - Avoid noise from unrelated contexts
-
-**Example:**
-```
-Query: "authentication approach"
-
-Without spaceIds:
-  → Returns: personal learning + work project + client project (mixed)
-
-With spaceIds: ["space-work"]:
-  → Returns: only work-related auth decisions (focused)
-```
 
 ---
 
@@ -508,20 +518,25 @@ DELETE /api/v1/logs/{logId}
 **Core limitation:** No native team sharing
 
 **Workarounds:**
-1. **Shared OAuth app:** Build app that aggregates multiple users
-2. **Export/import:** Export via API, share export file
-3. **Screen sharing:** Collaborative viewing (not editing)
+1. **MCP Proxy (Recommended):** https://github.com/Dario-Arcos/team-core-proxy - Stateless MCP-to-REST translator for read-only team access
+2. **Shared OAuth app:** Build app that aggregates multiple users
+3. **Export/import:** Export via API, share export file
 4. **Self-hosted:** Custom implementation for team features
 
 ---
 
-## Future Privacy Features
+## Team Sharing: Changelog vs Reality
 
-**Planned (check roadmap):**
-- Shared spaces (multi-user collaboration)
-- Granular permissions (read-only, comment, edit)
-- Time-limited sharing
-- Anonymous sharing (no user association)
+**Changelog claim (v0.1.13-v0.1.18, Aug 2025):**
+> "Share memory spaces with team members for collaborative AI assistance"
+
+**Actual implementation (verified 2025-11-03):**
+- Prisma schema: `Workspace.userId @unique` (1 user per workspace)
+- No Team, Member, or Permission models exist
+- PR #51 implemented "Spaces" (organizational) not sharing (multi-user)
+- Changelog appears premature or aspirational
+
+**Status:** Feature announced but not implemented. Use workarounds above.
 
 **Not planned:**
 - Public memory graphs

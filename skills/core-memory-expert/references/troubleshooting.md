@@ -209,7 +209,7 @@ cat .mcp.json
 **2. Set environment variable:**
 ```bash
 # Add to .env or shell profile
-export CORE_API_KEY="sk-xxx..."
+export CORE_API_KEY="rc_pat_xxx..."
 
 # Verify it's set
 echo $CORE_API_KEY

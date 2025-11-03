@@ -283,7 +283,7 @@ python3 scripts/manage_spaces.py delete space-old
 **Example Workflow:**
 ```bash
 # 1. Set API key
-export CORE_API_KEY='sk-xxx...'
+export CORE_API_KEY='rc_pat_xxx...'
 
 # 2. Create project space
 python3 scripts/manage_spaces.py create "Client Alpha" \
@@ -370,6 +370,47 @@ results = search_memory("authentication approach", ["space-work"])
 for result in results.get("results", []):
     print(f"[{result['relevance']:.2f}] {result['content']}")
 ```
+
+## Team Collaboration (Advanced)
+
+**Problem:** Core Cloud doesn't support native team sharing.
+
+**Solution:** MCP-to-REST proxy for read-only team access.
+
+### Setup
+
+**Repo:** https://github.com/Dario-Arcos/team-core-proxy
+
+**Architecture:**
+```
+Team (Claude Code) → Proxy Railway → Core REST API
+      MCP              MCP↔REST         Admin token
+```
+
+**Deploy:** 15 minutes to Railway (free tier)
+
+**Result:**
+- Team gets read-only memory access
+- Admin controls what's in memory (deterministic)
+- No team members need Core accounts
+- Organize with Spaces (team sees all)
+
+**Config team members:**
+```json
+{
+  "mcpServers": {
+    "team-memory": {
+      "type": "http",
+      "url": "https://your-proxy.railway.app/mcp",
+      "headers": {
+        "Authorization": "Bearer shared-team-token"
+      }
+    }
+  }
+}
+```
+
+See repo for complete setup instructions.
 
 ## Troubleshooting
 

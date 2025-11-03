@@ -112,9 +112,11 @@ Web interface uses session-based authentication automatically.
 
 **Parameters:**
 - `query` (required): Search query string
-- `spaceIds` (optional): Filter to specific spaces
+- `spaceIds` (optional): Filter to specific spaces **⚠️ NOT WORKING (verified 2025-11-03)**
 - `limit` (optional): Max results (default: 10)
 - `filters` (optional): Temporal, entity type, relevance filters
+
+**⚠️ KNOWN ISSUE:** `spaceIds` parameter is documented but currently ignored by API. See `spaces-and-privacy.md` for details and workarounds.
 
 **Response (200 OK):**
 ```json
