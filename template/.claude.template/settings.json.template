@@ -1,6 +1,6 @@
 {
   "cleanupPeriodDays": 7,
-  "enabledMcpjsonServers": ["playwright", "shadcn"],
+  "enabledMcpjsonServers": ["playwright"],
   "includeCoAuthoredBy": false,
 
   "permissions": {

@@ -1,4 +1,5 @@
 {
+  "$comment": "SECURITY: Never add tokens/secrets here (repo is public). Use .claude/.mcp.json for private configs. See human-handbook/docs/mcp-servers.md",
   "mcpServers": {
     "playwright": {
       "command": "npx",
@@ -7,6 +8,11 @@
     "shadcn": {
       "command": "npx",
       "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"]
+    },
+    "core-memory": {
+      "type": "http",
+      "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code"
     }
   }
 }
+
