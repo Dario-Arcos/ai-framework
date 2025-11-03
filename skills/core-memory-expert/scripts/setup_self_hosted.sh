@@ -10,12 +10,11 @@
 # 5. Verifies services
 #
 # Usage:
-#     bash setup_self_hosted.sh [--clone-dir ./core] [--openai-key sk-...]
+#     bash setup_self_hosted.sh [--clone-dir ./core]
 #
 # Examples:
 #     bash setup_self_hosted.sh
 #     bash setup_self_hosted.sh --clone-dir ~/projects/core
-#     bash setup_self_hosted.sh --openai-key sk-abc123
 #
 # Requirements:
 #     - Docker 20.10.0+
@@ -44,13 +43,9 @@ while [[ $# -gt 0 ]]; do
             CLONE_DIR="$2"
             shift 2
             ;;
-        --openai-key)
-            OPENAI_KEY="$2"
-            shift 2
-            ;;
         *)
             echo -e "${RED}❌ Unknown option: $1${NC}"
-            echo "Usage: $0 [--clone-dir DIR] [--openai-key KEY]"
+            echo "Usage: $0 [--clone-dir DIR]"
             exit 1
             ;;
     esac
@@ -135,11 +130,13 @@ if [ -f ".env" ]; then
         echo "   Keeping existing .env"
     else
         echo "OPENAI_API_KEY=$OPENAI_KEY" > .env
-        echo -e "${GREEN}✅ Created .env with OpenAI key${NC}"
+        chmod 600 .env
+        echo -e "${GREEN}✅ Created .env with OpenAI key (mode 600)${NC}"
     fi
 else
     echo "OPENAI_API_KEY=$OPENAI_KEY" > .env
-    echo -e "${GREEN}✅ Created .env with OpenAI key${NC}"
+    chmod 600 .env
+    echo -e "${GREEN}✅ Created .env with OpenAI key (mode 600)${NC}"
 fi
 
 # Launch services

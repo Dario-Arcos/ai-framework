@@ -79,10 +79,9 @@ bash scripts/setup_self_hosted.sh
 ```bash
 # Custom directory
 bash scripts/setup_self_hosted.sh --clone-dir ~/projects/core
-
-# Provide OpenAI key upfront
-bash scripts/setup_self_hosted.sh --openai-key sk-xxx...
 ```
+
+**Nota:** OpenAI key se solicita interactivamente (no se pasa por CLI por seguridad)
 
 ### Create Automatic Memory Agents
 
