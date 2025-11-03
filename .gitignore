@@ -14,7 +14,8 @@
 # To version these files, comment out the lines below:
 /CLAUDE.md
 
-# .mcp.json is only in template/ - gets copied to user project's .claude/ by session-start hook
+# MCP config (contains sensitive tokens - use .mcp.json.template)
+/.mcp.json
 
 # MCP server data directories
 /.playwright-mcp/

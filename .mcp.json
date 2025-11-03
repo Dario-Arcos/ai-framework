@@ -7,6 +7,10 @@
     "shadcn": {
       "command": "npx",
       "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"]
+    },
+    "core-memory": {
+      "type": "http",
+      "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code"
     }
   }
 }
