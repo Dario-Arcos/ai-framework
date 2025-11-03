@@ -8,15 +8,16 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 
 ## Servidores Instalados
 
-| Server          | Propósito                                    | Package/URL                      | Scope   |
-| --------------- | -------------------------------------------- | -------------------------------- | ------- |
-| **playwright**  | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | Público |
-| **shadcn**      | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | Público |
-| **core-memory** | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | Público |
-| **team-memory** | Team memory (read-only via proxy)            | `team-core-proxy.railway.app`    | Local   |
+| Server          | Propósito                                    | Package/URL                      | Estado    |
+| --------------- | -------------------------------------------- | -------------------------------- | --------- |
+| **playwright**  | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | Por defecto |
+| **shadcn**      | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | Opt-in  |
+| **core-memory** | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | Opt-in  |
+| **team-memory** | Team memory (read-only via proxy)            | `team-core-proxy.railway.app`    | Opt-in (local) |
 
-**Público:** Configurados en `.mcp.json` (repo)
-**Local:** Requieren `.claude/.mcp.json` (gitignored, contiene tokens privados)
+**Por defecto:** Habilitados automáticamente (solo playwright)
+**Opt-in:** Requieren activación manual en `.claude/settings.local.json`
+**Local:** Además requieren `.claude/.mcp.json` con tokens privados
 
 ---
 
@@ -27,6 +28,28 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 ::: warning Importante
 `.claude/settings.json` es ignorado si existe `.claude/settings.local.json`. Siempre edita el archivo `.local` para customizations.
 :::
+
+---
+
+## Activar Servidores Opt-In
+
+### Shadcn (UI Components)
+
+**1. Activar en `.claude/settings.local.json`:**
+
+```json
+{
+  "enabledMcpjsonServers": ["playwright", "shadcn"]
+}
+```
+
+**2. Restart:** `Ctrl+D` → `claude`
+
+**3. Verificar:** `/mcp` debe mostrar `shadcn: ✓ Connected`
+
+### Core Memory (Personal)
+
+Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com/Dario-Arcos/ai-framework/tree/main/skills/core-memory-expert).
 
 ---
 

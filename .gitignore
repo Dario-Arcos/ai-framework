@@ -14,9 +14,6 @@
 # To version these files, comment out the lines below:
 /CLAUDE.md
 
-# MCP config (contains sensitive tokens - use .mcp.json.template)
-/.mcp.json
-
 # MCP server data directories
 /.playwright-mcp/
 
