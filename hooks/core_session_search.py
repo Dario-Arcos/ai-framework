@@ -7,7 +7,6 @@ at the beginning of each Claude Code session.
 
 Uses official Core recommendation pattern.
 """
-import sys
 import json
 import os
 from pathlib import Path
@@ -38,7 +37,7 @@ def get_project_name():
     """Get current project name from directory"""
     try:
         return Path(os.getcwd()).resolve().name
-    except:
+    except (OSError, ValueError):
         return "current project"
 
 
@@ -64,7 +63,7 @@ def log_result(project_name):
                 )
                 + "\n"
             )
-    except:
+    except Exception:
         pass
 
 
