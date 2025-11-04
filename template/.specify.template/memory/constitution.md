@@ -153,6 +153,12 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 **Section 5. Security Non-Negotiables.** No credential exposure, secrets in managers, least privilege access.
 
+**Section 6. Context Verification Protocol.** Before any implementation:
+- Search Core Memory exhaustively for relevant context, decisions, and patterns
+- Review local documentation (project files, specs, architectural docs) if memory insufficient
+- Request user clarification if uncertainty remains
+- Never proceed with unvalidated assumptions or incomplete information
+
 ---
 
 ## Article VIII — Governance & Amendment

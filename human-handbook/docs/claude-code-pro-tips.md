@@ -184,6 +184,12 @@ Enfoque esperado:
 Plan Mode + Bypass Permissions = Review seguro antes + ejecución fluida después
 :::
 
+::: tip Recomendación: Plan Mode para Features Complejas
+Usa plan mode (`Shift+Tab` hasta ⏸) con `ultrathink` para features complejas. Combina análisis profundo + revisión antes de ejecutar. Pattern: **Think → Plan → Review → Execute**.
+
+Ideal para: refactorings grandes, integraciones externas, cambios arquitectónicos.
+:::
+
 **Configuración persistente en `.claude/settings.local.json`:**
 
 ```json

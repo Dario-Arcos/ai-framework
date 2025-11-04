@@ -4,7 +4,7 @@
   "includeCoAuthoredBy": false,
 
   "permissions": {
-    "defaultMode": "bypassPermissions",
+    "defaultMode": "default",
     "additionalDirectories": [],
 
     "allow": [
