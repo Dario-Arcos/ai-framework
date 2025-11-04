@@ -12,6 +12,32 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [2.2.0] - 2025-11-04
+
+### Añadido
+
+- **Skill core-memory-expert**: Setup automatizado para RedPlanet Core (Cloud <2min, self-hosted vía Docker), incluye REST API reference, Spaces CLI, agent templates y troubleshooting completo (PR #24)
+- **Hooks Core Memory**: Búsquedas automáticas de contexto en SessionStart (3 queries optimizadas) y UserPromptSubmit (patrón oficial Core), con agente memory-search para retrieval de team memory (PR #25)
+- **Protocolo de Verificación de Contexto**: Artículo VII §6 de la Constitución - mandato de búsqueda exhaustiva en Core Memory + docs locales antes de implementación (PR #25)
+- **Tip Plan Mode avanzado**: Recomendación concisa en pro-tips para usar plan mode con `ultrathink` en features complejas, pattern Think→Plan→Review→Execute (PR #25)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: `template/.claude.template/settings.json.template` - `defaultMode` cambió de `bypassPermissions` a `default` para mayor seguridad. Usuarios que requieran bypass: configurar en `.claude/settings.local.json` (PR #25)
+- **MCP servers por defecto**: Solo Playwright habilitado inicialmente (minimal footprint), shadcn/core-memory/team-memory opt-in vía `enabledMcpjsonServers` (PR #24)
+- **Team Memory como local config**: Movido de `.mcp.json` a `.claude/.mcp.json` (gitignored) para prevenir exposición de tokens, documentado setup en mcp-servers.md (PR #24)
+- **Skill claude-code-expert optimizado**: Eliminada redundancia y verbosidad, condensado de 163 → 105 líneas (PR #24)
+
+### Arreglado
+
+- **Exposición de credenciales**: Removida flag `--openai-key` CLI en setup self-hosted (prevenía exposición en shell history), agregado `chmod 600` a `.env`, actualizada SKILL.md - severity HIGH, confidence 0.95 (PR #24)
+- **Gaps Core Memory skill**: Token format corregido `sk-` → `rc_pat_`, documentado que `spaceIds` API no funciona (4 tests confirmaron), clarificado team sharing (Changelog vs Reality), agregado workaround team-core-proxy (PR #24)
+- **Dead code hooks**: Removida función `find_project_root()` sin usar y imports innecesarios en `core_prompt_search.py` (-23 líneas) (PR #25)
+- **Exception handling**: Bare except clauses reemplazadas por tipos específicos en `core_session_search.py` (líneas 41, 67) (PR #25)
+- **.specify/ tracking**: Removido `constitution.md` del tracking git (debería estar solo en `template/.specify.template/`) (PR #25)
+
+---
+
 ## [2.1.0] - 2025-10-29
 
 ### Cambiado
@@ -190,5 +216,5 @@ _Más skills en cada actualización_
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-29 | **Versión**: 2.1.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-11-04 | **Versión**: 2.2.0 | **Formato**: Keep a Changelog
 :::
