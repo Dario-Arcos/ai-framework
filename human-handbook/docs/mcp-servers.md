@@ -8,16 +8,16 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 
 ## Servidores Instalados
 
-| Server          | Propósito                                    | Package/URL                      | Estado    |
-| --------------- | -------------------------------------------- | -------------------------------- | --------- |
-| **playwright**  | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | Por defecto |
-| **shadcn**      | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | Opt-in  |
-| **core-memory** | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | Opt-in  |
-| **team-memory** | Team memory (read-only via proxy)            | `team-core-proxy.railway.app`    | Opt-in (local) |
+| Server          | Propósito                                    | Package/URL                      | Estado Default | Context Cost |
+| --------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
+| **playwright**  | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ⚠️ Deshabilitado | Alto (~15 tools) |
+| **shadcn**      | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ⚠️ Deshabilitado | Medio (~7 tools) |
+| **core-memory** | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | ⚠️ Deshabilitado | Medio (~6 tools) |
+| **team-memory** | Team memory (read-only via proxy)            | `team-core-proxy.railway.app`    | ⚠️ Deshabilitado | Medio (~2 tools) |
 
-**Por defecto:** Habilitados automáticamente (solo playwright)
-**Opt-in:** Requieren activación manual en `.claude/settings.local.json`
-**Local:** Además requieren `.claude/.mcp.json` con tokens privados
+**Por defecto:** Todos deshabilitados (optimización de contexto)
+**Activación:** Explícita en `.claude/settings.local.json`
+**Local:** `team-memory` además requiere `.claude/.mcp.json` con token privado
 
 ---
 
@@ -31,21 +31,57 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 
 ---
 
+## ⚠️ Context Budget & Responsabilidad
+
+::: warning Impacto en Contexto
+Cada MCP activo agrega tools al system prompt de Claude Code. El presupuesto de contexto es finito.
+
+**Regla:** Habilita solo MCPs que usas activamente en tu proyecto actual.
+:::
+
+**Context consumption estimado:**
+
+- **1 MCP**: ~5-15 tools, 2-5% context
+- **2 MCPs**: ~10-25 tools, 5-10% context
+- **4+ MCPs**: ~30-50 tools, 20-30% context
+
+**Síntomas de context overflow:**
+- Respuestas más lentas
+- Degradación en calidad de razonamiento
+- Pérdida de contexto conversacional
+
+**Solución:** Deshabilita MCPs no críticos para tu trabajo actual.
+
+---
+
 ## Activar Servidores Opt-In
 
-### Shadcn (UI Components)
+**Por defecto:** Todos los MCPs están deshabilitados (optimización de contexto).
 
-**1. Activar en `.claude/settings.local.json`:**
+**Activación:** Remueve servers de `disabledMcpjsonServers` en `.claude/settings.local.json`.
+
+### Ejemplo: Activar Playwright + Shadcn
+
+**1. Crear/editar `.claude/settings.local.json`:**
 
 ```json
 {
-  "enabledMcpjsonServers": ["playwright", "shadcn"]
+  "disabledMcpjsonServers": ["core-memory", "team-memory"]
+  // playwright y shadcn ahora activos (removidos de blacklist)
 }
 ```
 
 **2. Restart:** `Ctrl+D` → `claude`
 
-**3. Verificar:** `/mcp` debe mostrar `shadcn: ✓ Connected`
+**3. Verificar:** `/mcp` debe mostrar:
+```
+playwright: ✓ Connected
+shadcn: ✓ Connected
+```
+
+::: tip Context-Aware Activation
+Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `settings.local.json` cuando cambies de proyecto.
+:::
 
 ### Core Memory (Personal)
 
@@ -77,7 +113,8 @@ Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com
 
 ```json
 {
-  "enabledMcpjsonServers": ["playwright", "shadcn", "github"]
+  "disabledMcpjsonServers": ["core-memory", "team-memory"]
+  // playwright, shadcn, github activos
 }
 ```
 
@@ -117,7 +154,8 @@ Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com
 
 ```json
 {
-  "enabledMcpjsonServers": ["team-memory"]
+  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory"]
+  // solo team-memory activo
 }
 ```
 
@@ -164,11 +202,14 @@ Busca en memoria: [tu query]
 
 **Check:**
 
-1. `enabledMcpjsonServers` incluye el nombre
-2. `.mcp.json` tiene configuración
+1. Server NO está en `disabledMcpjsonServers` (o lista está vacía)
+2. `.mcp.json` tiene configuración del server
 3. Restart después de cambios
 
-**Debug:** `cat .claude/settings.local.json | grep enabledMcpjsonServers`
+**Debug:**
+```bash
+cat .claude/settings.local.json | grep disabledMcpjsonServers
+```
 
 :::
 
@@ -206,5 +247,5 @@ Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agre
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-03 | **Servers**: playwright, shadcn, core-memory, team-memory (local)
+**Fecha**: 2025-11-05 | **Servers**: Todos opt-in (context optimization)
 :::

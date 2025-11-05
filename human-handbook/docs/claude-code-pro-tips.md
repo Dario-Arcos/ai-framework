@@ -243,18 +243,68 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 }
 ```
 
+### Skills (v2.0+)
+
+**¿Qué son?** Context engineering patterns que se cargan on-demand. Zero overhead permanente.
+
+**Ventaja clave:** No consumen contexto hasta que los invocas explícitamente.
+
+**Invocar:**
+
+```bash
+/core-memory-expert
+# o
+"Use the skill-creator skill to help me build a new skill"
+```
+
+**Skills disponibles:**
+
+| Skill | Propósito |
+|-------|-----------|
+| `core-memory-expert` | Setup Core Memory (Cloud <2min, self-hosted) |
+| `algorithmic-art` | Generative art con p5.js + seeded randomness |
+| `claude-code-expert` | Build/modify agents, commands, hooks |
+| `skill-creator` | Create new skills (guided workflow) |
+
+**Cuándo usar:** Primera opción siempre. Cargan solo cuando necesitas, descargan después.
+
+[Ver todos →](./commands-guide#skills)
+
+---
+
 ### MCP Servers (v2.0+)
 
-| Ubicación | Propósito | Precedencia |
-|-----------|-----------|-------------|
-| Plugin `.mcp.json` | Framework MCP (Playwright, Shadcn) | Base |
-| Project `.mcp.json` | Custom MCP servers (optional) | **Máxima** |
+**¿Qué son?** Herramientas externas persistentes (browser, databases, APIs). Siempre activos cuando habilitados.
 
-**Precedence:** project > plugin
+**Costo:** 4+ MCPs = 20-30% context window. Usa solo si necesitas tools permanentemente disponibles.
 
-Agrega custom MCP servers en project root sin tocar framework defaults.
+::: warning Context Budget
+Skills son alternativa ligera. MCPs solo cuando workflow requiere integración continua.
+:::
 
-[MCP docs →](https://docs.claude.com/en/docs/claude-code/mcp)
+**Activar (remover de blacklist en `.claude/settings.local.json`):**
+
+```json
+{
+  "disabledMcpjsonServers": ["core-memory", "team-memory"]
+  // playwright y shadcn activos
+}
+```
+
+**Restart:** `Ctrl+D` → `claude` | **Verificar:** `/mcp`
+
+**Servers pre-configurados:**
+
+| Server | Context Cost | Uso |
+|--------|--------------|-----|
+| `playwright` | Alto (~15 tools) | E2E testing continuo |
+| `shadcn` | Medio (~7 tools) | UI dev con componentes |
+| `core-memory` | Medio (~6 tools) | Memory persistente |
+| `team-memory` | Medio (~2 tools) | Shared memory |
+
+**Cuándo usar:** Necesitas tools disponibles en cada prompt (E2E testing, UI library lookup).
+
+[Docs completos →](./mcp-servers.md)
 
 ### Personal Instructions
 
@@ -443,5 +493,5 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-29 | **Tips**: Claude Code Workflow Optimization
+**Fecha**: 2025-11-05 | **Tips**: MCP opt-in + context budget awareness
 :::
