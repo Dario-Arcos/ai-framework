@@ -6,6 +6,19 @@ Automatización completa de Chrome/Chromium via CDP (Chrome DevTools Protocol) c
 
 Control programático total de browser para E2E testing, performance profiling, web scraping, y debugging avanzado.
 
+## Compatibilidad de Plataforma
+
+**⚠️ macOS solamente** - Esta versión actual solo soporta macOS.
+
+**Limitaciones técnicas:**
+- Path de Chrome hardcoded: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+- Comando `rsync` para sincronización de perfil (estándar en macOS)
+- Paths de perfil específicos de macOS: `~/Library/Application Support/Google/Chrome/`
+
+**¿Necesitas Linux/Windows?** Abre un issue en [GitHub](https://github.com/Dario-Arcos/ai-framework/issues) para soporte multi-plataforma.
+
+## Capacidades
+
 **Capacidades equivalentes a Playwright MCP:**
 - E2E testing (assertions, multi-step flows, waitFor)
 - Network interception & mocking

@@ -1,5 +1,15 @@
 #!/usr/bin/env node
 
+/**
+ * Chrome Remote Debugging Launcher
+ *
+ * Platform Support: macOS only
+ * - Uses macOS-specific Chrome path: /Applications/Google Chrome.app/...
+ * - Uses rsync for profile sync (standard on macOS)
+ *
+ * For Linux/Windows support, see: https://github.com/Dario-Arcos/ai-framework/issues
+ */
+
 import { spawn, execSync } from "node:child_process";
 import puppeteer from "puppeteer-core";
 
@@ -21,7 +31,7 @@ if (process.argv[2] && process.argv[2] !== "--profile") {
 // User's Chrome sessions remain untouched
 
 // Setup profile directory
-execSync("mkdir -p ~/.cache/scraping", { stdio: "ignore" });
+execSync(`mkdir -p "${process.env["HOME"]}/.cache/scraping"`, { stdio: "ignore" });
 
 if (useProfile) {
   try {

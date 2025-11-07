@@ -7,6 +7,8 @@ description: "Control Chrome/Chromium via CDP for automated testing, performance
 
 Full-featured browser automation via Chrome DevTools Protocol (CDP). Equivalent capabilities to Playwright MCP, zero context overhead.
 
+**Platform Support:** macOS only. Uses macOS-specific Chrome paths and rsync. For Linux/Windows support, see repository issues.
+
 ## Start Chrome
 
 \`\`\`bash
