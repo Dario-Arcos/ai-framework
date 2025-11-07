@@ -86,8 +86,8 @@ def log_result():
                 )
                 + "\n"
             )
-    except:
-        pass  # Silent fail
+    except Exception:
+        pass  # Graceful degradation - logging is optional
 
 
 def main():
