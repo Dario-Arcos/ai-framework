@@ -6,14 +6,14 @@ import puppeteer from "puppeteer-core";
 const useProfile = process.argv[2] === "--profile";
 
 if (process.argv[2] && process.argv[2] !== "--profile") {
-  console.log("Usage: start.ts [--profile]");
+  console.log("Usage: start.js [--profile]");
   console.log("\nOptions:");
   console.log(
     "  --profile  Copy your default Chrome profile (cookies, logins)",
   );
   console.log("\nExamples:");
-  console.log("  start.ts            # Start with fresh profile");
-  console.log("  start.ts --profile  # Start with your Chrome profile");
+  console.log("  start.js            # Start with fresh profile");
+  console.log("  start.js --profile  # Start with your Chrome profile");
   process.exit(1);
 }
 
@@ -24,11 +24,16 @@ if (process.argv[2] && process.argv[2] !== "--profile") {
 execSync("mkdir -p ~/.cache/scraping", { stdio: "ignore" });
 
 if (useProfile) {
-  // Sync profile with rsync (much faster on subsequent runs)
-  execSync(
-    'rsync -a --delete "/Users/badlogic/Library/Application Support/Google/Chrome/" ~/.cache/scraping/',
-    { stdio: "pipe" },
-  );
+  try {
+    // Sync profile with rsync (much faster on subsequent runs)
+    execSync(
+      `rsync -a --delete "${process.env["HOME"]}/Library/Application Support/Google/Chrome/" "${process.env["HOME"]}/.cache/scraping/"`,
+      { stdio: "pipe" },
+    );
+  } catch (error) {
+    console.error("⚠ Warning: Could not sync Chrome profile. Starting with fresh profile.");
+    console.error("  Make sure Chrome is installed at the default location.");
+  }
 }
 
 // Start Chrome in background (detached so Node can exit)
