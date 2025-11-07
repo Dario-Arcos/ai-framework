@@ -2,7 +2,6 @@
   "cleanupPeriodDays": 7,
   "enabledMcpjsonServers": [],
   "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory", "team-memory"],
-  "$comment_mcp": "All MCP servers disabled by default (context optimization). Enable in .claude/settings.local.json as needed.",
   "includeCoAuthoredBy": false,
 
   "permissions": {
