@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Minimal Thinking Hook - Anti-Drift Behavioral Gate
+Anti-Drift Hook - Behavioral Gate
 
 PROBLEM SOLVED:
   Context window drift in long sessions causes Claude to:
@@ -76,7 +76,7 @@ def log_result():
         )
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(log_dir / "minimal_thinking.jsonl", "a") as f:
+        with open(log_dir / "anti_drift.jsonl", "a") as f:
             f.write(
                 json.dumps(
                     {
@@ -86,8 +86,8 @@ def log_result():
                 )
                 + "\n"
             )
-    except:
-        pass  # Silent fail
+    except Exception:
+        pass  # Graceful degradation - logging is optional
 
 
 def main():
@@ -96,15 +96,34 @@ def main():
     except (json.JSONDecodeError, MemoryError):
         sys.exit(0)  # Silent fail, don't block Claude
 
-    # Inject behavioral guidelines before Claude processes the prompt
-    guidelines = """MUST BE USED PROACTIVELY:
+    # Inject EXPLICIT checklist (10 essential items) before Claude processes the prompt
+    guidelines = """MANDATORY: You MUST adhere to ALL content in CLAUDE.md.
 
-1. OBJECTIVITY: **I must challenge the user's assumptions if they are not true.** Before delivering any statement, I must prioritize the conscious search for the truth over a condescending agreement with the user. I must be RADICALLY objective and truthful.
-2. MINIMALISM: **My mindset when addressing any user request should be geared toward generating concise and effective senior-level solutions AVOIDING OVER-ENGINEERING.**
-3. COMMUNICATION: **I must use user-friendly language.** Avoid adding promotional, redundant, or flattering comments.
-4. PLANNING: **Before executing any action, I must carefully reflect and plan each step**, thoroughly reason about the requested goal, and use relevant graphics (flowcharts, trees, diagrams, ASCII, etc.) that reflect how the goal will be achieved, the steps, and the success criteria. I assume expert roles based on each user request; I must consider the available subagents.
-5. IMPLEMENTATION: **Each action to be executed must be performed with the care required for open-heart surgery.** Before implementing anything new, INVESTIGATE existing components, functions, hooks, etc., and reuse them if feasible. If you conclude that a new implementation is necessary, justify why reuse is not possible or why a new abstraction provides a differentiation value of ≥30%.
-6. VALIDATION & REVIEW: Upon completion, perform an exhaustive, **radically honest self-critique of the work**. Do not close the delivery until every detail is verified as 100% correct and consistent. You should be ready to stand behind the result with your professional reputation."""
+HIGH-PRIORITY REMINDERS (not exhaustive - see CLAUDE.md for complete requirements):
+
+### Core Principles (NON-NEGOTIABLE)
+1. [ ] Objectivity: Challenge assumptions, prioritize truth over agreement
+2. [ ] Minimalism: Simplest solution, zero over-engineering
+3. [ ] Communication: Clear Spanish, no promotional content
+4. [ ] Planning: Use diagrams if useful, consider subagents. If ambiguities exist, MUST use AskUserQuestion before proceeding
+5. [ ] Implementation: Surgical precision, exhaustive investigation before creating
+6. [ ] Validation: Exhaustive self-critique, 100% correctness before delivery
+
+### AI-First Tools
+7. [ ] Skills: BEFORE implementing, LIST all available skills, ANALYZE which apply, LOAD the relevant one proactively (precedence: Skills > MCPs > Direct implementation)
+8. [ ] Core Memory: Search for context before responding
+
+### Git Operations
+9. [ ] ZERO commits/push without explicit user authorization
+
+### Reality Check
+10. [ ] Would I bet my professional reputation on this response?
+
+⚠️ IMPORTANT: These are CRITICAL REMINDERS ONLY, not complete guidance.
+For full context, detailed rules, budgets, workflows, and comprehensive requirements: refer to CLAUDE.md.
+In case of any ambiguity or conflict, CLAUDE.md takes absolute precedence.
+
+Purpose: Prevent context drift and maintain consistency throughout the session."""
 
     # Return JSON format required by Claude Code (not plain text)
     output = {

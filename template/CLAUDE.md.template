@@ -53,28 +53,38 @@ AI-first development workspace with constitutional governance framework.
 
 7. **AI-first**: All plans executable by AI with human oversight.
 
-## Execution Principles
+8. **Execution principles** (apply proactively to every step above):
 
-**Applied proactively to every interaction:**
-
-1. **Objectivity**: Challenge assumptions if not true. Prioritize truth over agreement. Radically objective and truthful.
-
-2. **Minimalism**: Generate concise senior-level solutions. Avoid over-engineering.
-
-3. **Communication**: Use clear, user-friendly language. Eliminate promotional or redundant content.
-
-4. **Planning**: Reflect and plan each step before execution. Use diagrams when helpful. Consider available subagents.
-
-5. **Implementation**: Execute with surgical precision. Investigate existing components before creating new ones. Justify new abstractions with ≥30% differentiation value.
-
-6. **Validation**: Perform exhaustive self-critique. Verify 100% correctness before delivery. Stand behind results professionally.
+   - **Objectivity**: Challenge assumptions if not true. Prioritize truth over agreement. Radically objective and truthful.
+   - **Minimalism**: Generate concise senior-level solutions. Avoid over-engineering.
+   - **Communication**: Use clear, user-friendly language. Eliminate promotional or redundant content.
+   - **Planning**: Reflect and plan each step before execution. **If ambiguities or uncertainties exist, MUST use AskUserQuestion to clarify with user before proceeding.** Use diagrams when helpful. Consider available subagents.
+   - **Implementation**: Execute with surgical precision. Investigate existing components before creating new ones. Justify new abstractions with ≥30% differentiation value.
+   - **Validation**: Perform exhaustive self-critique. Verify 100% correctness before delivery. Stand behind results professionally.
 
 ## Interaction Language
 
 1. **Always use Spanish** as the language of communication with the user
 2. **Only in the first message of a session**, show: _(You can change the interaction language by asking me whenever you want.)_
 
-## Conversation Memory Management
+## Mandatory AI-First Tools
+
+### Skills-First
+
+Before executing ANY user request, validate available skills. List relevant skills for the task.
+
+**Precedence**: Skills > MCPs > Direct implementation.
+
+### Core Memory Search
+
+Before responding to ANY user request, use `memory-search` to retrieve:
+- Previous discussions about this topic
+- Related project context
+- Similar problems solved before
+
+## Conversation Compaction Guidelines
+
+When compacting conversations (e.g., `/compact`), apply these rules:
 
 ### Always preserve
 
@@ -101,6 +111,19 @@ AI-first development workspace with constitutional governance framework.
 - **UIX Design Principles**: @.specify/memory/uix-design-principles.md
 - **Effective AI Agents**: @.claude/rules/effective-agents-guide.md
 
+## Git Operations
+
+- **Commit Authorization**: NEVER execute `git commit` without explicit user authorization. Always ask before committing changes.
+- **Push Authorization**: NEVER execute `git push` without explicit user authorization. Always ask before pushing to remote.
+- **Explicit Request Required**: Only perform git commit/push operations when user explicitly requests them with clear intent.
+- **No Proactive Commits**: Do not assume commit/push is part of task completion. User controls all git operations.
+- **Violation Severity**: Unauthorized git commit/push is a critical violation of user trust and project governance.
+
+## Quality Standards
+
+- **Language Consistency**: English for code/AI documentation, Spanish for human documentation. Never mix languages in same file.
+- **Quality Gates**: Use code-quality-reviewer proactively for security and performance validation.
+
 ## Code Review Guidelines
 
 - Priority: **SECURITY**, **BUG**, **RELIABILITY**, **PERFORMANCE** with production impact.
@@ -110,24 +133,3 @@ AI-first development workspace with constitutional governance framework.
 ### Exclusions
 
 - `build/`, `dist/`, `vendor/`, `**/*.lock`, assets (`*.png`/`*.jpg`/`*.svg`), `coverage/`, `snapshots/`
-
-## Claude Code Memories
-
-### Quality Standards
-
-- **Language Consistency**: English for code/AI documentation, Spanish for human documentation. Never mix languages in same file.
-- **Communication Style**: Professional, minimalist, clear language. Eliminate promotional content.
-- **Output Quality**: Production-ready with quantified business impact and executive-presentable value.
-- **Quality Gates**: Use code-quality-reviewer proactively for security and performance validation.
-
-### Agent Integration
-
-Apply @.claude/rules/effective-agents-guide.md when using Task tool.
-
-### Git Operations
-
-- **Commit Authorization**: NEVER execute `git commit` without explicit user authorization. Always ask before committing changes.
-- **Push Authorization**: NEVER execute `git push` without explicit user authorization. Always ask before pushing to remote.
-- **Explicit Request Required**: Only perform git commit/push operations when user explicitly requests them with clear intent.
-- **No Proactive Commits**: Do not assume commit/push is part of task completion. User controls all git operations.
-- **Violation Severity**: Unauthorized git commit/push is a critical violation of user trust and project governance.

@@ -31,11 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/minimal_thinking.py"
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/core_prompt_search.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/anti_drift.py"
           },
           {
             "type": "command",
@@ -47,6 +43,10 @@
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Evaluate if Claude should stop: $ARGUMENTS. Check if all tasks are complete."
+          },
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop"
