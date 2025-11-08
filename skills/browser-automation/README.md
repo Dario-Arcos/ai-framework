@@ -30,9 +30,22 @@ Control programático total de browser para E2E testing, performance profiling, 
 
 ## Setup (una vez)
 
+**IMPORTANTE:** Ejecuta estos comandos EXACTAMENTE como se muestran:
+
 ```bash
+# Desde el directorio raíz del plugin ai-framework:
 cd skills/browser-automation/tools
-npm i
+npm install
+
+# Verificar instalación exitosa:
+ls node_modules/puppeteer-core
+```
+
+Si ves "No such file or directory", instalaste en el directorio incorrecto. **Debe ser en `tools/` subdirectory**, no en `skills/browser-automation/`.
+
+**Path completo esperado:**
+```
+~/.claude/plugins/marketplaces/ai-framework/skills/browser-automation/tools/
 ```
 
 ## Uso Típico
@@ -61,6 +74,17 @@ Usa puerto `:9223` (aislado de tu Chrome principal en `:9222`). **No cierra tus 
 ```bash
 ./tools/screenshot.js         # Devuelve path a archivo temp
 ```
+
+**5. Cerrar Chrome de debugging:**
+```bash
+./tools/stop.js               # Cierra SOLO el Chrome del puerto 9223
+```
+
+::: danger ⚠️ ADVERTENCIA CRÍTICA
+**NUNCA uses `killall "Google Chrome"`** - cerrará TODAS tus sesiones de Chrome activas (incluyendo tu navegación personal).
+
+**Usa siempre `./tools/stop.js`** para cerrar solo la instancia de debugging sin afectar tus sesiones.
+:::
 
 ## Casos de Uso Avanzados
 
@@ -97,6 +121,57 @@ Usa puerto `:9223` (aislado de tu Chrome principal en `:9222`). **No cierra tus 
 - Testing continuo (browser siempre disponible)
 - Prefieres API calls vs escribir código
 - Necesitas tools pre-empaquetados
+
+## Troubleshooting
+
+### Error: "Cannot find package 'puppeteer-core'"
+
+**Causa:** `npm install` ejecutado en directorio incorrecto.
+
+**Solución:**
+```bash
+# Verifica que estás en tools/, no en browser-automation/
+pwd  # Debe mostrar: .../skills/browser-automation/tools
+
+# Si estás en el directorio incorrecto:
+cd skills/browser-automation/tools
+npm install
+```
+
+### Error: Chrome no inicia o no se conecta
+
+**Causa:** Chrome ya corriendo en puerto 9223, o proceso zombie.
+
+**Solución:**
+```bash
+# Ver si hay proceso en puerto 9223:
+lsof -ti :9223
+
+# Si existe, mátalo de forma segura:
+./tools/stop.js
+
+# Luego reinicia:
+./tools/start.js
+```
+
+### Error: "permission denied" al ejecutar scripts
+
+**Causa:** Scripts no tienen permisos de ejecución.
+
+**Solución:**
+```bash
+chmod +x tools/*.js
+```
+
+### Chrome se cerró pero puerto 9223 sigue ocupado
+
+**Causa:** Proceso zombie de Chrome.
+
+**Solución:**
+```bash
+# Matar específicamente proceso en puerto 9223:
+lsof -ti :9223 | xargs kill -9
+```
 
 ## Referencias
 

@@ -9,6 +9,23 @@ Full-featured browser automation via Chrome DevTools Protocol (CDP). Equivalent 
 
 **Platform Support:** macOS only. Uses macOS-specific Chrome paths and rsync. For Linux/Windows support, see repository issues.
 
+## Initial Setup
+
+**Run ONCE before first use:**
+
+\`\`\`bash
+cd skills/browser-automation/tools
+npm install
+\`\`\`
+
+**Verify installation succeeded:**
+
+\`\`\`bash
+ls node_modules/puppeteer-core  # Should exist
+\`\`\`
+
+If you see "No such file or directory", you installed in the wrong location. Must be in `tools/` subdirectory, not in `skills/browser-automation/`.
+
 ## Start Chrome
 
 \`\`\`bash
@@ -52,3 +69,13 @@ Screenshot current viewport, returns temp file path
 \`\`\`
 
 Interactive element picker. Click to select, Cmd/Ctrl+Click for multi-select, Enter to finish.
+
+## Stop Chrome
+
+\`\`\`bash
+./tools/stop.js
+\`\`\`
+
+Safely stops the debugging Chrome instance on `:9223` without touching your main Chrome sessions.
+
+**⚠️ CRITICAL WARNING:** Do NOT use `killall "Google Chrome"` - it will close ALL your Chrome windows (personal and debugging). Always use `./tools/stop.js` instead.
