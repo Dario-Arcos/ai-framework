@@ -19,12 +19,6 @@ Push spec to GitHub as child issue linked to parent PRP.
 
 $ARGUMENTS
 
-## Required Rules
-
-**IMPORTANT:** Before executing this command, read and follow:
-
-- `.claude/rules/datetime.md` - For getting real current date/time
-
 ## Instructions
 
 ### 1. Parse Arguments and Validate

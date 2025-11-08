@@ -30,11 +30,6 @@ Create minimal, business-focused Product Requirements Prompt.
 /PRP-cycle:prp-new notification system
 ```
 
-## Required Rules
-
-**IMPORTANT:** Read and follow:
-- `.claude/rules/datetime.md` - For current date/time
-
 ## User Input
 
 ```text

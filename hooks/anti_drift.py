@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 """
-Anti-Drift Hook - Behavioral Gate
+Anti-Drift Hook v2.0 - Evidence-Based Behavioral Consistency
 
-PROBLEM SOLVED:
-  Context window drift in long sessions causes Claude to:
-  - Lose adherence to core principles (minimalism, objectivity)
-  - Revert to default verbose/agreeable behavior
-  - Forget validation requirements
+CHANGES FROM v1.0:
+  - Eliminated forceful language (MUST/NEVER → actionable checklist)
+  - Added self-validation requirement (explicit compliance declaration)
+  - Reduced token count (150 → 50 tokens, 67% reduction)
+  - Positive framing throughout (no negative prompting)
+  - Version tracking in logs
+  - Replaced 'List reused components' with 'Skills-First' (v2.0.1 - Nov 2025)
 
-SOLUTION:
-  Inject behavioral guidelines on EVERY prompt (not just session start)
-  to ensure consistency regardless of context window state.
+EVIDENCE BASE:
+  - Anthropic Context Engineering (Sept 2025): Lightweight goal reminders, smallest high-signal tokens
+  - Research "Drift No More?" (Oct 2024): Simple reminders reliably reduce divergence
+  - Anthropic Workshop (2024): Forceful negative prompting can backfire
+  - OpenAI GPT-4.1 Guidelines: Instructions at beginning + end (position matters)
+  - Cowan (2001): Working memory capacity 4±1 items optimal
+  - Pronovost (2006): 5-item checklist = 66% error reduction, 11%→0% infection rate
+  - Checklist research: Pre-checks have higher preventive impact than post-checks
 
 DESIGN RATIONALE:
-  - CLAUDE.md only read at session start (vulnerable to context loss)
+  - CLAUDE.md read at session start (vulnerable to context rot)
   - This hook executes per-prompt (immune to context window rotation)
-  - 6 principles ensure consistent behavior in prompts 1, 50, 100, 1000+
+  - Lightweight checklist > complex enforcement (research-validated)
+  - Self-validation creates explicit compliance (vs. implicit assumptions)
 
 ARCHITECTURAL NECESSITY:
   Without this hook, consistency degrades after ~50 prompts as CLAUDE.md
-  exits the context window. This mechanism guarantees behavioral invariants
-  throughout the entire session lifecycle.
+  exits context window. Lightweight reminders maintain behavioral invariants
+  throughout session lifecycle without creating additional drift.
 """
 import sys, json, os
 from pathlib import Path
@@ -65,7 +73,7 @@ def find_project_root():
 
 
 def log_result():
-    """Log behavioral guidelines activation"""
+    """Log behavioral guidelines activation with version tracking"""
     try:
         project_root = find_project_root()
         if not project_root:
@@ -81,7 +89,10 @@ def log_result():
                 json.dumps(
                     {
                         "timestamp": datetime.now().isoformat(),
+                        "version": "2.0.1",
                         "guidelines_injected": True,
+                        "checklist_items": 4,
+                        "changes": "Skills-First replaces List reused components"
                     }
                 )
                 + "\n"
@@ -96,34 +107,21 @@ def main():
     except (json.JSONDecodeError, MemoryError):
         sys.exit(0)  # Silent fail, don't block Claude
 
-    # Inject EXPLICIT checklist (10 essential items) before Claude processes the prompt
-    guidelines = """MANDATORY: You MUST adhere to ALL content in CLAUDE.md.
+    # LIGHTWEIGHT GOAL REMINDERS (evidence-based: Anthropic Sept 2025)
+    # Token count: ~50 tokens (reduced from 150, -67%)
+    # Checklist optimal length: 4 items (Cowan 2001, Pronovost 2006)
+    guidelines = """BEFORE RESPONDING:
 
-HIGH-PRIORITY REMINDERS (not exhaustive - see CLAUDE.md for complete requirements):
+□ Skills: List available skills, use if applicable
+□ Frame problem (≤3 bullets) + size (S/M/L)
+□ If ambiguous: use AskUserQuestion
+□ Check complexity budget (CLAUDE.md §3)
 
-### Core Principles (NON-NEGOTIABLE)
-1. [ ] Objectivity: Challenge assumptions, prioritize truth over agreement
-2. [ ] Minimalism: Simplest solution, zero over-engineering
-3. [ ] Communication: Clear Spanish, no promotional content
-4. [ ] Planning: Use diagrams if useful, consider subagents. If ambiguities exist, MUST use AskUserQuestion before proceeding
-5. [ ] Implementation: Surgical precision, exhaustive investigation before creating
-6. [ ] Validation: Exhaustive self-critique, 100% correctness before delivery
+AT COMPLETION:
+Declare: "✓ Validated: CLAUDE.md §[X,Y,Z]"
 
-### AI-First Tools
-7. [ ] Skills: BEFORE implementing, LIST all available skills, ANALYZE which apply, LOAD the relevant one proactively (precedence: Skills > MCPs > Direct implementation)
-8. [ ] Core Memory: Search for context before responding
-
-### Git Operations
-9. [ ] ZERO commits/push without explicit user authorization
-
-### Reality Check
-10. [ ] Would I bet my professional reputation on this response?
-
-⚠️ IMPORTANT: These are CRITICAL REMINDERS ONLY, not complete guidance.
-For full context, detailed rules, budgets, workflows, and comprehensive requirements: refer to CLAUDE.md.
-In case of any ambiguity or conflict, CLAUDE.md takes absolute precedence.
-
-Purpose: Prevent context drift and maintain consistency throughout the session."""
+Full context: CLAUDE.md (authoritative operating protocol)
+"""
 
     # Return JSON format required by Claude Code (not plain text)
     output = {

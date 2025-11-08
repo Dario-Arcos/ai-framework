@@ -1,5 +1,18 @@
 # Project Configuration
 
+**Authority**: Tier 2 (Tactical Implementation)
+**Delegates to**: `.specify/memory/constitution.md` (strategic governance - HIGHEST LAW)
+**Referenced by**: `.claude/rules/operational-excellence.md`, `hooks/anti_drift.py`
+**Version**: 2.0.0 | **Last Updated**: 2025-11-07
+
+---
+
+> **Golden Rule**: "Find the smallest set of high-signal tokens that maximize desired outcomes"
+>
+> _Source: Anthropic Effective Context Engineering (Sept 2025)_
+
+---
+
 AI-first development workspace with constitutional governance framework.
 
 ## Operating Protocol
@@ -53,14 +66,25 @@ AI-first development workspace with constitutional governance framework.
 
 7. **AI-first**: All plans executable by AI with human oversight.
 
-8. **Execution principles** (apply proactively to every step above):
+8. **Execution Principles** (apply to every step)
 
-   - **Objectivity**: Challenge assumptions if not true. Prioritize truth over agreement. Radically objective and truthful.
-   - **Minimalism**: Generate concise senior-level solutions. Avoid over-engineering.
-   - **Communication**: Use clear, user-friendly language. Eliminate promotional or redundant content.
-   - **Planning**: Reflect and plan each step before execution. **If ambiguities or uncertainties exist, MUST use AskUserQuestion to clarify with user before proceeding.** Use diagrams when helpful. Consider available subagents.
-   - **Implementation**: Execute with surgical precision. Investigate existing components before creating new ones. Justify new abstractions with ≥30% differentiation value.
-   - **Validation**: Perform exhaustive self-critique. Verify 100% correctness before delivery. Stand behind results professionally.
+   **Before Acting:**
+   - [ ] Framed problem in ≤3 bullets?
+   - [ ] Declared size class (S/M/L)?
+   - [ ] Proposed 2-3 approaches with ROI?
+   - [ ] If ambiguous: use AskUserQuestion to clarify
+
+   **Core Values:**
+   - **Objectivity**: Prioritize truth over agreement
+   - **Minimalism**: Simplest solution that works
+   - **Communication**: Clear Spanish, no promotional content
+   - **Implementation**: Investigate before creating, justify abstractions (≥30%)
+   - **Validation**: Self-critique before delivery
+
+   **When Uncertain:**
+   - Use AskUserQuestion to clarify ambiguities
+   - Consider available subagents for complex tasks
+   - Use diagrams when helpful
 
 ## Interaction Language
 
@@ -113,23 +137,48 @@ When compacting conversations (e.g., `/compact`), apply these rules:
 
 ## Git Operations
 
-- **Commit Authorization**: NEVER execute `git commit` without explicit user authorization. Always ask before committing changes.
-- **Push Authorization**: NEVER execute `git push` without explicit user authorization. Always ask before pushing to remote.
-- **Explicit Request Required**: Only perform git commit/push operations when user explicitly requests them with clear intent.
-- **No Proactive Commits**: Do not assume commit/push is part of task completion. User controls all git operations.
-- **Violation Severity**: Unauthorized git commit/push is a critical violation of user trust and project governance.
+- **Commit Authorization**: Always request explicit user authorization before executing `git commit`. Ask user before committing changes.
+- **Push Authorization**: Always request explicit user authorization before executing `git push`. Ask user before pushing to remote.
+- **Explicit Request Required**: Perform git commit/push operations only when user explicitly requests them with clear intent.
+- **User-Controlled Operations**: User controls all git operations. Request authorization before any commit or push.
+- **Trust & Governance**: Unauthorized git commit/push violates user trust and project governance.
 
 ## Quality Standards
 
-- **Language Consistency**: English for code/AI documentation, Spanish for human documentation. Never mix languages in same file.
+- **Language Consistency**: Use English for code/AI documentation, Spanish for human documentation. Maintain language consistency within each file.
 - **Quality Gates**: Use code-quality-reviewer proactively for security and performance validation.
 
 ## Code Review Guidelines
 
 - Priority: **SECURITY**, **BUG**, **RELIABILITY**, **PERFORMANCE** with production impact.
-- Ignore style/nits if they do not affect clarity or security.
-- Do not suggest repo-wide refactors outside the diff.
+- Focus on changes that affect clarity or security. Style/nits are secondary.
+- Limit suggestions to code within the diff scope.
 
 ### Exclusions
 
 - `build/`, `dist/`, `vendor/`, `**/*.lock`, assets (`*.png`/`*.jpg`/`*.svg`), `coverage/`, `snapshots/`
+
+---
+
+## Self-Validation Protocol
+
+Before delivering response, verify:
+
+**Complexity Check:**
+- [ ] Within S/M/L budget (§3)?
+- [ ] Listed reused components?
+- [ ] Justified new abstractions (≥30% OR future ROI)?
+
+**Quality Check:**
+- [ ] Framed problem in ≤3 bullets (§2)?
+- [ ] Proposed 2-3 approaches with ROI (§4)?
+- [ ] Would I bet my professional reputation on this?
+
+**Compliance Declaration:**
+
+After completing work, declare:
+```
+✓ Validated: CLAUDE.md §[X,Y,Z]
+```
+
+Example: `✓ Validated: CLAUDE.md §3 (Complexity M), §5 (Reuse first), §8 (Self-critique)`

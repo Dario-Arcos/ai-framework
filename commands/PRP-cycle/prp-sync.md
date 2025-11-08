@@ -31,12 +31,6 @@ Sync PRP to GitHub as parent issue for SDD workflow tracking.
 $ARGUMENTS
 ```
 
-## Required Rules
-
-**IMPORTANT:** Read and follow:
-
-- `.claude/rules/datetime.md` - For current date/time
-
 ## Instructions
 
 ### Step 1: Identify PRP to Sync

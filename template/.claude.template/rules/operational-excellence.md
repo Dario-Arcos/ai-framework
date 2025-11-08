@@ -1,5 +1,11 @@
 # 🎯 OPERATIONAL EXCELLENCE GUIDE
 
+**Authority**: Tier 3 (Execution Guidance)
+**Implements**: `.specify/memory/constitution.md` Article III, `CLAUDE.md` §1-8
+**Version**: 1.1.0 | **Last Updated**: 2025-11-07
+
+---
+
 Apply these practical execution rules while implementing constitutional principles.
 
 > **Constitutional Foundation**: These operational guidelines implement the principles defined in `@constitution.md` Article III. Refer to the Constitution for the WHY; this document provides the HOW.
@@ -89,11 +95,13 @@ ANY external dependency, library, framework, CLI tool, API, or SDK that you didn
 
 ## 📊 COMPLEXITY BUDGET ENFORCEMENT
 
+See CLAUDE.md §3 for S/M/L thresholds (authoritative table).
+
 **Before implementing**:
 
-- Size S (≤80 LOC): Can I solve this in one focused function?
-- Size M (≤250 LOC): Can I avoid new abstractions?
-- Size L (≤600 LOC): Is every new class/file absolutely necessary?
+- Can I solve this in one focused function? (Size S target)
+- Can I avoid new abstractions? (Size M target)
+- Is every new class/file absolutely necessary? (Size L target)
 
 **During implementation**:
 

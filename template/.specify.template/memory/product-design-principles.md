@@ -1,71 +1,37 @@
-Steve Jobs: How to design insanely great products
+# Product Design Principles
 
-Design Philosophy:
+**Authority**: Tier 3 (Design Philosophy)
+**Source**: Inspired by Steve Jobs design philosophy, adapted for AI-first development
+**Version**: 2.0.0 | **Last Updated**: 2025-11-07
 
-Simplicity is the ultimate sophistication
+---
 
-If users need a manual, the design has failed
+## Core Philosophy
 
-Eliminate unnecessary buttons, features, and complexity
+**Simplicity**: "As simple as possible, but not simpler" (Einstein)
 
-Focus on making the product intuitive and obvious to use
+**User-Centric**: Start with user experience, work backwards to technology. Design is not just how it looks, but how it works.
 
-Question everything about the current design
+**Quality Throughout**: Perfection in details matters. Quality goes all the way through—visible and invisible parts.
 
-Challenge every assumption about how things "should" be
+**Focus**: Say no to 1,000 things. Do few things exceptionally well rather than many adequately.
 
-Think different - break from conventional wisdom when necessary
+**Iteration**: Prototype and test with real working models. Refine until right. Restart if not perfect.
 
-User Experience:
+## Design Standards
 
-Start with the user experience, then work backwards to the technology
+**Clarity**: If users need a manual, design has failed. Make product intuitive and obvious.
 
-Design is not just how it looks, but how it works
+**Invisible Technology**: Best interface is no interface. Make technology disappear behind excellent UX.
 
-Every interaction should feel magical and delightful
+**Question Everything**: Challenge every assumption. Break from conventional wisdom when necessary.
 
-The best interface is no interface - make technology invisible
+**Innovation**: See what others can't see. Show users the future.
 
-Perfection in details matters
+## AI-First Adaptations
 
-Obsess over every pixel, every corner, every transition
+**Component Reuse**: Leverage proven libraries and patterns (aligned with constitution reuse-first principle).
 
-The parts you can't see should be as beautiful as the parts you can
+**Integration**: Ensure seamless integration across stack using standard interfaces.
 
-Quality must go all the way through
-
-Innovation:
-
-Create products people don't know they need yet
-
-Don't rely on market research - show people the future
-
-If you ask customers what they want, they'll say "better horses"
-
-True innovation means seeing what others can't see
-
-Integration of hardware and software
-
-Great experiences come from controlling the entire stack
-
-Everything must work together seamlessly
-
-Don't compromise the vision by relying on others' components
-
-Product Development:
-
-Say no to 1,000 things
-
-Focus is about saying no to good ideas
-
-Do a few things exceptionally well rather than many things adequately
-
-Kill projects that don't meet the highest standards
-
-Prototype and iterate
-
-Make real working models, not just drawings
-
-Keep refining until it feels absolutely right
-
-Don't be afraid to restart if it's not perfect
+**Pragmatic Excellence**: Balance innovation with practical constraints.

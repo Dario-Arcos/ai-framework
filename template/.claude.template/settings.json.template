@@ -76,5 +76,17 @@
     "type": "command",
     "command": "npx --yes ccstatusline@latest",
     "padding": 0
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a Stop validation gate. Evaluate if Claude should stop based on: $ARGUMENTS. Check if all tasks are complete. ALWAYS provide feedback to the user in Spanish, explaining what was accomplished and if there are pending tasks. Be specific and actionable."
+          }
+        ]
+      }
+    ]
   }
 }

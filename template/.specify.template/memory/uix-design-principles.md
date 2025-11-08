@@ -1,129 +1,224 @@
-# S-Tier SaaS Dashboard Design Checklist (Inspired by Stripe, Airbnb, Linear)
+# UIX Design Standards
 
-## I. Core Design Philosophy & Strategy
+**Authority**: Tier 3 (UI/UX Design Standards)
+**Scope**: For UI development agents (premium-ux-designer, design-review, shadcn agents)
+**Source**: Inspired by Stripe, Airbnb, Linear
+**Version**: 2.0.0 | **Last Updated**: 2025-11-07
 
-*   [ ] **Users First:** Prioritize user needs, workflows, and ease of use in every design decision.
-*   [ ] **Meticulous Craft:** Aim for precision, polish, and high quality in every UI element and interaction.
-*   [ ] **Speed & Performance:** Design for fast load times and snappy, responsive interactions.
-*   [ ] **Simplicity & Clarity:** Strive for a clean, uncluttered interface. Ensure labels, instructions, and information are unambiguous.
-*   [ ] **Focus & Efficiency:** Help users achieve their goals quickly and with minimal friction. Minimize unnecessary steps or distractions.
-*   [ ] **Consistency:** Maintain a uniform design language (colors, typography, components, patterns) across the entire dashboard.
-*   [ ] **Accessibility (WCAG AA+):** Design for inclusivity. Ensure sufficient color contrast, keyboard navigability, and screen reader compatibility.
-*   [ ] **Opinionated Design (Thoughtful Defaults):** Establish clear, efficient default workflows and settings, reducing decision fatigue for users.
+---
 
-## II. Design System Foundation (Tokens & Core Components)
+## Core Design Philosophy
 
-*   [ ] **Define a Color Palette:**
-    *   [ ] **Primary Brand Color:** User-specified, used strategically.
-    *   [ ] **Neutrals:** A scale of grays (5-7 steps) for text, backgrounds, borders.
-    *   [ ] **Semantic Colors:** Define specific colors for Success (green), Error/Destructive (red), Warning (yellow/amber), Informational (blue).
-    *   [ ] **Dark Mode Palette:** Create a corresponding accessible dark mode palette.
-    *   [ ] **Accessibility Check:** Ensure all color combinations meet WCAG AA contrast ratios.
-*   [ ] **Establish a Typographic Scale:**
-    *   [ ] **Primary Font Family:** Choose a clean, legible sans-serif font (e.g., Inter, Manrope, system-ui).
-    *   [ ] **Modular Scale:** Define distinct sizes for H1, H2, H3, H4, Body Large, Body Medium (Default), Body Small/Caption. (e.g., H1: 32px, Body: 14px/16px).
-    *   [ ] **Font Weights:** Utilize a limited set of weights (e.g., Regular, Medium, SemiBold, Bold).
-    *   [ ] **Line Height:** Ensure generous line height for readability (e.g., 1.5-1.7 for body text).
-*   [ ] **Define Spacing Units:**
-    *   [ ] **Base Unit:** Establish a base unit (e.g., 8px).
-    *   [ ] **Spacing Scale:** Use multiples of the base unit for all padding, margins, and layout spacing (e.g., 4px, 8px, 12px, 16px, 24px, 32px).
-*   [ ] **Define Border Radii:**
-    *   [ ] **Consistent Values:** Use a small set of consistent border radii (e.g., Small: 4-6px for inputs/buttons; Medium: 8-12px for cards/modals).
-*   [ ] **Develop Core UI Components (with consistent states: default, hover, active, focus, disabled):**
-    *   [ ] Buttons (primary, secondary, tertiary/ghost, destructive, link-style; with icon options)
-    *   [ ] Input Fields (text, textarea, select, date picker; with clear labels, placeholders, helper text, error messages)
-    *   [ ] Checkboxes & Radio Buttons
-    *   [ ] Toggles/Switches
-    *   [ ] Cards (for content blocks, multimedia items, dashboard widgets)
-    *   [ ] Tables (for data display; with clear headers, rows, cells; support for sorting, filtering)
-    *   [ ] Modals/Dialogs (for confirmations, forms, detailed views)
-    *   [ ] Navigation Elements (Sidebar, Tabs)
-    *   [ ] Badges/Tags (for status indicators, categorization)
-    *   [ ] Tooltips (for contextual help)
-    *   [ ] Progress Indicators (Spinners, Progress Bars)
-    *   [ ] Icons (use a single, modern, clean icon set; SVG preferred)
-    *   [ ] Avatars
+Design for:
+- **Users First**: Prioritize needs, workflows, ease of use
+- **Simplicity & Clarity**: Clean, uncluttered, unambiguous
+- **Speed & Performance**: Fast loads, snappy interactions
+- **Accessibility**: WCAG 2.2 AA minimum (keyboard nav, screen readers, contrast)
+- **Consistency**: Uniform design language across product
 
-## III. Layout, Visual Hierarchy & Structure
+---
 
-*   [ ] **Responsive Grid System:** Design based on a responsive grid (e.g., 12-column) for consistent layout across devices.
-*   [ ] **Strategic White Space:** Use ample negative space to improve clarity, reduce cognitive load, and create visual balance.
-*   [ ] **Clear Visual Hierarchy:** Guide the user's eye using typography (size, weight, color), spacing, and element positioning.
-*   [ ] **Consistent Alignment:** Maintain consistent alignment of elements.
-*   [ ] **Main Dashboard Layout:**
-    *   [ ] Persistent Left Sidebar: For primary navigation between modules.
-    *   [ ] Content Area: Main space for module-specific interfaces.
-    *   [ ] (Optional) Top Bar: For global search, user profile, notifications.
-*   [ ] **Mobile-First Considerations:** Ensure the design adapts gracefully to smaller screens.
+## Design System Foundation
 
-## IV. Interaction Design & Animations
+### Color System
 
-*   [ ] **Purposeful Micro-interactions:** Use subtle animations and visual feedback for user actions (hovers, clicks, form submissions, status changes).
-    *   [ ] Feedback should be immediate and clear.
-    *   [ ] Animations should be quick (150-300ms) and use appropriate easing (e.g., ease-in-out).
-*   [ ] **Loading States:** Implement clear loading indicators (skeleton screens for page loads, spinners for in-component actions).
-*   [ ] **Transitions:** Use smooth transitions for state changes, modal appearances, and section expansions.
-*   [ ] **Avoid Distraction:** Animations should enhance usability, not overwhelm or slow down the user.
-*   [ ] **Keyboard Navigation:** Ensure all interactive elements are keyboard accessible and focus states are clear.
+```tsx
+// Semantic colors (shadcn compatible)
+const colors = {
+  primary: 'hsl(var(--primary))',      // Brand color
+  destructive: 'hsl(var(--destructive))', // Error/danger
+  success: 'hsl(142 76% 36%)',         // Success states
+  warning: 'hsl(38 92% 50%)',          // Warnings
+  muted: 'hsl(var(--muted))',          // Subtle backgrounds
+}
+```
 
-## V. Specific Module Design Tactics
+**Requirements**:
+- 5-7 neutral grays for text/backgrounds/borders
+- Semantic colors: success (green), error (red), warning (amber), info (blue)
+- Dark mode palette with WCAG AA contrast
+- Accessibility check for all combinations
 
-### A. Multimedia Moderation Module
+### Typography
 
-*   [ ] **Clear Media Display:** Prominent image/video previews (grid or list view).
-*   [ ] **Obvious Moderation Actions:** Clearly labeled buttons (Approve, Reject, Flag, etc.) with distinct styling (e.g., primary/secondary, color-coding). Use icons for quick recognition.
-*   [ ] **Visible Status Indicators:** Use color-coded Badges for content status (Pending, Approved, Rejected).
-*   [ ] **Contextual Information:** Display relevant metadata (uploader, timestamp, flags) alongside media.
-*   [ ] **Workflow Efficiency:**
-    *   [ ] Bulk Actions: Allow selection and moderation of multiple items.
-    *   [ ] Keyboard Shortcuts: For common moderation actions.
-*   [ ] **Minimize Fatigue:** Clean, uncluttered interface; consider dark mode option.
+```tsx
+// Type scale (shadcn/tailwind)
+<h1 className="text-4xl font-bold">Heading 1</h1>  // 36px
+<h2 className="text-3xl font-semibold">Heading 2</h2>  // 30px
+<p className="text-base">Body text</p>  // 16px
+<span className="text-sm text-muted-foreground">Caption</span>  // 14px
+```
 
-### B. Data Tables Module (Contacts, Admin Settings)
+**Standards**:
+- Font family: Clean sans-serif (Inter, system-ui)
+- Line height: 1.5-1.7 for body text
+- Weights: Regular (400), Medium (500), SemiBold (600), Bold (700)
 
-*   [ ] **Readability & Scannability:**
-    *   [ ] Smart Alignment: Left-align text, right-align numbers.
-    *   [ ] Clear Headers: Bold column headers.
-    *   [ ] Zebra Striping (Optional): For dense tables.
-    *   [ ] Legible Typography: Simple, clean sans-serif fonts.
-    *   [ ] Adequate Row Height & Spacing.
-*   [ ] **Interactive Controls:**
-    *   [ ] Column Sorting: Clickable headers with sort indicators.
-    *   [ ] Intuitive Filtering: Accessible filter controls (dropdowns, text inputs) above the table.
-    *   [ ] Global Table Search.
-*   [ ] **Large Datasets:**
-    *   [ ] Pagination (preferred for admin tables) or virtual/infinite scroll.
-    *   [ ] Sticky Headers / Frozen Columns: If applicable.
-*   [ ] **Row Interactions:**
-    *   [ ] Expandable Rows: For detailed information.
-    *   [ ] Inline Editing: For quick modifications.
-    *   [ ] Bulk Actions: Checkboxes and contextual toolbar.
-    *   [ ] Action Icons/Buttons per Row: (Edit, Delete, View Details) clearly distinguishable.
+### Spacing & Layout
 
-### C. Configuration Panels Module (Microsite, Admin Settings)
+```tsx
+// 8px base unit (tailwind spacing scale)
+<div className="p-4">     // 16px padding
+<div className="gap-6">   // 24px gap
+<div className="space-y-8"> // 32px vertical spacing
+```
 
-*   [ ] **Clarity & Simplicity:** Clear, unambiguous labels for all settings. Concise helper text or tooltips for descriptions. Avoid jargon.
-*   [ ] **Logical Grouping:** Group related settings into sections or tabs.
-*   [ ] **Progressive Disclosure:** Hide advanced or less-used settings by default (e.g., behind "Advanced Settings" toggle, accordions).
-*   [ ] **Appropriate Input Types:** Use correct form controls (text fields, checkboxes, toggles, selects, sliders) for each setting.
-*   [ ] **Visual Feedback:** Immediate confirmation of changes saved (e.g., toast notifications, inline messages). Clear error messages for invalid inputs.
-*   [ ] **Sensible Defaults:** Provide default values for all settings.
-*   [ ] **Reset Option:** Easy way to "Reset to Defaults" for sections or entire configuration.
-*   [ ] **Microsite Preview (If Applicable):** Show a live or near-live preview of microsite changes.
+**Standards**:
+- Base unit: 8px
+- Scale: 4px, 8px, 12px, 16px, 24px, 32px, 48px
+- Border radius: Small (6px), Medium (8px), Large (12px)
 
-## VI. CSS & Styling Architecture
+---
 
-*   [ ] **Choose a Scalable CSS Methodology:**
-    *   [ ] **Utility-First (Recommended for LLM):** e.g., Tailwind CSS. Define design tokens in config, apply via utility classes.
-    *   [ ] **BEM with Sass:** If not utility-first, use structured BEM naming with Sass variables for tokens.
-    *   [ ] **CSS-in-JS (Scoped Styles):** e.g., Stripe's approach for Elements.
-*   [ ] **Integrate Design Tokens:** Ensure colors, fonts, spacing, radii tokens are directly usable in the chosen CSS architecture.
-*   [ ] **Maintainability & Readability:** Code should be well-organized and easy to understand.
-*   [ ] **Performance:** Optimize CSS delivery; avoid unnecessary bloat.
+## Core Components (Shadcn)
 
-## VII. General Best Practices
+### Buttons
 
-*   [ ] **Iterative Design & Testing:** Continuously test with users and iterate on designs.
-*   [ ] **Clear Information Architecture:** Organize content and navigation logically.
-*   [ ] **Responsive Design:** Ensure the dashboard is fully functional and looks great on all device sizes (desktop, tablet, mobile).
-*   [ ] **Documentation:** Maintain clear documentation for the design system and components.
+```tsx
+import { Button } from "@/components/ui/button"
+
+<Button>Primary</Button>
+<Button variant="secondary">Secondary</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="ghost">Ghost</Button>
+<Button variant="destructive">Delete</Button>
+```
+
+**States**: default, hover, active, focus, disabled
+
+### Forms
+
+```tsx
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+<Label htmlFor="email">Email</Label>
+<Input
+  id="email"
+  type="email"
+  placeholder="you@example.com"
+/>
+```
+
+**Requirements**:
+- Clear labels, helper text, error messages
+- Validation states (success, error)
+- Accessible (aria-labels, aria-describedby)
+
+### Data Tables
+
+```tsx
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Name</TableHead>
+      <TableHead className="text-right">Amount</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>Item</TableCell>
+      <TableCell className="text-right">$100</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+**Features**:
+- Column sorting (clickable headers)
+- Filtering controls
+- Pagination for large datasets
+- Smart alignment (text left, numbers right)
+
+---
+
+## Layout Patterns
+
+### Responsive Grid
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <Card>...</Card>
+</div>
+```
+
+### Dashboard Layout
+
+```tsx
+// Sidebar + Main Content
+<div className="flex h-screen">
+  <aside className="w-64 border-r">Sidebar</aside>
+  <main className="flex-1 overflow-auto p-6">Content</main>
+</div>
+```
+
+---
+
+## Interaction Design
+
+**Micro-interactions**:
+- Hover states: Subtle background change
+- Click feedback: Scale animation (150-200ms)
+- Loading states: Skeleton screens or spinners
+- Transitions: Smooth (ease-in-out)
+
+```tsx
+// Framer Motion example
+<motion.div
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+  transition={{ duration: 0.15 }}
+>
+  <Card>...</Card>
+</motion.div>
+```
+
+**Keyboard Navigation**:
+- All interactive elements keyboard accessible
+- Clear focus states (`focus-visible:ring-2`)
+- Tab order logical
+
+---
+
+## Accessibility (WCAG 2.2 AA)
+
+**Checklist**:
+- [ ] Color contrast ≥4.5:1 (text), ≥3:1 (UI components)
+- [ ] Keyboard navigation works for all interactions
+- [ ] Focus states visible (`focus-visible:ring-2 ring-primary`)
+- [ ] Semantic HTML (`<button>`, `<nav>`, `<main>`, `<article>`)
+- [ ] ARIA labels for icon-only buttons
+- [ ] Alt text for images
+- [ ] Form labels associated with inputs
+
+```tsx
+// Accessible button
+<Button aria-label="Delete item">
+  <TrashIcon className="h-4 w-4" />
+</Button>
+```
+
+---
+
+## Performance
+
+**Core Web Vitals**:
+- LCP (Largest Contentful Paint): <2.5s
+- FID (First Input Delay): <100ms
+- CLS (Cumulative Layout Shift): <0.1
+
+**Optimization**:
+- Lazy load images (`loading="lazy"`)
+- Code splitting for routes
+- Minimize bundle size
+- Optimize animations (60fps, use `transform` and `opacity`)
+
+---
+
+## Reference
+
+See Product Design Principles for high-level philosophy.
+
+For shadcn components: Use shadcn MCP server or visit ui.shadcn.com

@@ -1,23 +1,11 @@
-<!--
-Sync Impact Report - Constitution v2.3.0
-Version change: v2.2.0 → v2.3.0 (Remove redundancies with CLAUDE.md)
-Modified principles: All 5 core principles preserved - compressed to eliminate tactical detail duplication
-Modified sections:
-  - Article III §II (Value/Complexity): Removed ROI formula (→ CLAUDE.md §4)
-  - Article III §III (TDD): Removed red-green-refactor details (→ CLAUDE.md §5)
-  - Article III §IV (Complexity Budget): Removed S/M/L table (→ CLAUDE.md §3)
-  - Article III §V (Reuse): Removed ≥30% threshold details (→ CLAUDE.md §5)
-Added sections: None
-Removed sections:
-  - Annex (S-ROI, S-AGENT, S-SEC, S-CHECKS) - moved to operational docs
-  - Glossary (redundant with inline definitions and CLAUDE.md)
-Templates requiring updates: None
-Rationale: Eliminate ~180 tokens of redundancy between constitution.md and CLAUDE.md. Constitution retains strategic governance authority; CLAUDE.md retains tactical implementation details.
--->
-
 # AI Framework Constitution
 
-**Version**: 2.3.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-10-18
+**Authority**: Tier 1 (HIGHEST LAW - Strategic Governance)
+**Delegates tactical details to**: `CLAUDE.md` (operating protocol)
+**Implemented by**: All framework documents, agents, and workflows
+**Version**: 2.3.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-11-07
+
+---
 
 > This Constitution is the _highest law_ of how AI Framework conceives, designs, builds, and operates digital products with and for AI. It defines purpose, rights, duties, powers, limits, due process, and amendment. Everything else—policies, playbooks, checklists—derives authority from here and is void where it conflicts.
 
@@ -67,7 +55,7 @@ We exist to **amplify human impact** through AI-first software development. We t
 
 ### I. AI-First Workflow
 
-Everything must be executable by advanced AI with human oversight; Humans direct vision and strategy while AI executes implementation; All plans and outcomes must be AI-executable following clear patterns and established conventions; No manual processes that cannot be delegated to AI agents.
+AI-executable design: Humans direct vision and strategy, AI executes implementation. All plans and outcomes follow clear patterns and established conventions. Processes delegate to AI agents with human oversight.
 
 ### II. Value/Complexity Ratio
 
@@ -77,19 +65,19 @@ _See CLAUDE.md §4 for ROI scoring formula (benefit 1-5, complexity 1-5)._
 
 ### III. Test-First Development
 
-TDD mandatory: Tests written → User approved → Tests fail → Then implement. Contract tests before implementation always. Integration-First Testing: prefer real environments over mocks, use actual service instances. Integration tests for user stories. No implementation without failing tests first.
+Test-First Development: Tests precede implementation (write → user approves → fail → implement). Contract tests before code. Integration-first approach uses real environments and service instances. Integration tests for user stories.
 
 _See CLAUDE.md §5 for TDD loop (red → green → refactor)._
 
 ### IV. Complexity Budget
 
-Formal limits on implementation scope to prevent over-engineering (**Δ LOC = additions - deletions**). Anti-Abstraction enforcement: maximum 3 projects for initial implementation, use framework features directly, avoid unnecessary abstraction layers. Stop and ask if exceeding budget. Self-audit against metrics mandatory.
+Formal limits on implementation scope prevent over-engineering (**Δ LOC = additions - deletions**). Anti-Abstraction enforcement: maximum 3 projects for initial implementation, use framework features directly, avoid unnecessary abstraction layers. Stop and ask if exceeding budget. Self-audit against metrics.
 
 _See CLAUDE.md §3 for size classes (S/M/L) with thresholds (lines, files, deps, CPU/RAM)._
 
 ### V. Reuse First & Simplicity
 
-Library-First Principle: Every feature MUST begin its existence as a standalone library. Reuse components before creating new abstractions. New abstraction requires significant duplication (≥30%) OR demonstrable future-cost reduction. Apply Einstein's principle: "Everything should be made as simple as possible, but not simpler". List reused components explicitly.
+Library-First Principle: Features begin as standalone libraries. Reuse components before creating new abstractions. New abstraction requires significant duplication (≥30%) OR demonstrable future ROI. Apply Einstein's principle: "As simple as possible, but not simpler". List reused components.
 
 _See CLAUDE.md §5 for implementation rules (reuse first, abstraction justification threshold)._
 
@@ -143,13 +131,13 @@ A proposal **must** satisfy all tests below to be legitimate:
 
 **Section 2. Guided Exploration.** Propose 2-3 approaches with explicit benefit/complexity scoring before implementation.
 
-**Section 3. TDD Enforcement.** Red-green-refactor discipline strictly enforced.
+**Section 3. TDD Enforcement.** Red-green-refactor discipline applies to all implementation.
 
-**Section 4. Framework Alignment & Project Context.** Framework and library choices must align with existing project conventions:
+**Section 4. Framework Alignment & Project Context.** Framework and library choices align with existing project conventions:
 
-- **MUST read** `.specify/memory/project-context.md` before making technology or architecture decisions
-- **MUST respect** existing stack (languages, frameworks, databases, tools) unless explicit justification for change (security risk, EOL, performance bottleneck)
-- **MAY suggest** strategic improvements or tactical optimizations if gaps, risks, or inefficiencies are identified, with documented rationale and ROI analysis
+- Read `.specify/memory/project-context.md` before technology or architecture decisions
+- Respect existing stack (languages, frameworks, databases, tools) unless justified (security risk, EOL, performance bottleneck)
+- Suggest strategic improvements or tactical optimizations when gaps, risks, or inefficiencies exist, with documented rationale and ROI analysis
 
 **Section 5. Security Non-Negotiables.** No credential exposure, secrets in managers, least privilege access.
 
@@ -157,13 +145,13 @@ A proposal **must** satisfy all tests below to be legitimate:
 - Search Core Memory exhaustively for relevant context, decisions, and patterns
 - Review local documentation (project files, specs, architectural docs) if memory insufficient
 - Request user clarification if uncertainty remains
-- Never proceed with unvalidated assumptions or incomplete information
+- Validate assumptions and complete information before proceeding
 
 ---
 
 ## Article VIII — Governance & Amendment
 
-**Section 1. Constitutional Gates.** Pre-implementation checkpoints mandatory for simplicity, anti-abstraction, and integration testing compliance.
+**Section 1. Constitutional Gates.** Pre-implementation checkpoints verify simplicity, anti-abstraction, and integration testing compliance.
 
 **Section 2. Supremacy.** Constitution supersedes all other development practices; All PRs and code reviews must verify constitutional compliance.
 

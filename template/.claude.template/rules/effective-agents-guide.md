@@ -1,7 +1,9 @@
 # Effective AI Agents: Context Engineering Guide
 
+**Authority**: Tier 3 (Context Engineering Standards)
 **Source**: [Effective Context Engineering for AI Agents](https://www.anthropic.com/research/effective-context-engineering) (Anthropic Research, Sept 2025)
 **Scope**: Mandatory parameters for designing, creating, and operating AI agents
+**Version**: 1.0.0 | **Last Updated**: 2025-10-01
 
 ---
 
