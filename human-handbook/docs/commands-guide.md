@@ -11,7 +11,7 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 | [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
 | [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
 | [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| [Utilidades](#utilidades)                                     | 9        | Understand → Research → Polish → Docs  |
+| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish → Ultrathink  |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos).
@@ -614,31 +614,37 @@ KEY INSIGHTS
 
 ---
 
-### `/ai-framework:utils:three-experts`
+### `/ai-framework:utils:ultrathink`
 
 ::: tip Propósito
-Panel de 3 expertos (backend/frontend/security) genera plan consensuado.
+Activa deep work mode para problemas complejos que requieren análisis sistemático y máximo rigor.
 :::
 
 **Usage:**
 
 ```bash
-/ai-framework:utils:three-experts {goal}
+/ai-framework:utils:ultrathink
+/ai-framework:utils:ultrathink "API architecture redesign"
 ```
 
-**Expert Panel (Fixed):**
+**Cuándo usar:**
+- Decisiones arquitecturales complejas
+- Refactoring de alto riesgo
+- Optimización performance-critical
+- Implementaciones security-sensitive
+- Problemas multi-disciplinarios
 
-1. **backend-architect** → API design, data modeling, services
-2. **frontend-developer** → UI components, user flows, client-side
-3. **security-reviewer** → Threat modeling, compliance, security validation
+**Deep Work Protocol:**
 
-**Workflow:**
+1. **Systematic Framing**: Problem definition (≤3 bullets) + size (S/M/L) + scope boundaries
+2. **Multi-Approach Analysis**: 2-3 fundamentally different approaches con ROI scoring (benefit/complexity)
+3. **Challenge Assumptions**: Question constraints, validate with AskUserQuestion if uncertain
+4. **Implementation Excellence**: TDD, Reality Check, simplify ruthlessly
+5. **Continuous Refinement**: Iterate until production-ready
 
-**Round 1: Proposals (Independent)** - Cada expert provides su perspectiva
+**Evidence Base**: Google DeepMind (+46.2pts), ATLAS study (+57.7% quality), 9 academic papers (2024-2025)
 
-**Round 2: Synthesis & Decision** - Cross-review → Identify integration points/conflicts → Build consensus → Define priorities → Create final plan
-
-**Output:** PLAN.md con OBJETIVO & SCOPE + DECISIONES TÉCNICAS + ✅ TAREAS CRÍTICAS + CRITERIOS DE ÉXITO
+**Output:** Systematic analysis + implementation plan + validation checklist
 
 ---
 
@@ -946,11 +952,16 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 | **PRP-cycle**  | 2        | Business layer                       |
 | **SDD-cycle**  | 9        | Engineering layer (orden específico) |
 | **git-github** | 5        | Delivery layer                       |
-| **utils**      | 9        | Utilidades transversales             |
-| **TOTAL**      | 25       | Comandos disponibles                 |
+| **utils**      | 8        | Utilidades transversales             |
+| **TOTAL**      | 24       | Comandos disponibles                 |
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-24 | **Comandos Documentados**: 25 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
+**Fecha**: 2025-11-08 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
+
+**Cambios recientes**:
+- ✅ Agregado `/ultrathink` - Deep work mode evidence-based
+- ❌ Eliminado `/three-experts` - Sin uso (0 executions en >1 año)
+- ❌ Eliminado `/update-docs` - Sin uso (ahora es `/docs`)
 :::
