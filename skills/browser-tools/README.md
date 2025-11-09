@@ -1,4 +1,4 @@
-# Browser Automation Skill
+# Browser Tools Skill
 
 Automatización completa de Chrome/Chromium via CDP (Chrome DevTools Protocol) con Puppeteer API completo.
 
@@ -34,18 +34,18 @@ Control programático total de browser para E2E testing, performance profiling, 
 
 ```bash
 # Desde el directorio raíz del plugin ai-framework:
-cd skills/browser-automation/tools
+cd skills/browser-tools/tools
 npm install
 
 # Verificar instalación exitosa:
 ls node_modules/puppeteer-core
 ```
 
-Si ves "No such file or directory", instalaste en el directorio incorrecto. **Debe ser en `tools/` subdirectory**, no en `skills/browser-automation/`.
+Si ves "No such file or directory", instalaste en el directorio incorrecto. **Debe ser en `tools/` subdirectory**, no en `skills/browser-tools/`.
 
 **Path completo esperado:**
 ```
-~/.claude/plugins/marketplaces/ai-framework/skills/browser-automation/tools/
+~/.claude/plugins/marketplaces/ai-framework/skills/browser-tools/tools/
 ```
 
 ## Uso Típico
@@ -130,11 +130,11 @@ Usa puerto `:9223` (aislado de tu Chrome principal en `:9222`). **No cierra tus 
 
 **Solución:**
 ```bash
-# Verifica que estás en tools/, no en browser-automation/
-pwd  # Debe mostrar: .../skills/browser-automation/tools
+# Verifica que estás en tools/, no en browser-tools/
+pwd  # Debe mostrar: .../skills/browser-tools/tools
 
 # Si estás en el directorio incorrecto:
-cd skills/browser-automation/tools
+cd skills/browser-tools/tools
 npm install
 ```
 
