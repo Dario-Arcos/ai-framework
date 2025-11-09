@@ -1,9 +1,9 @@
 ---
-name: browser-automation
+name: browser-tools
 description: "Control Chrome/Chromium via CDP for automated testing, performance profiling, web scraping, and debugging. Full Puppeteer API access: E2E testing, network interception, coverage analysis, multi-tab orchestration. Zero context overhead - loads on-demand unlike persistent MCP servers."
 ---
 
-# Browser Automation Skill
+# Browser Tools Skill
 
 Full-featured browser automation via Chrome DevTools Protocol (CDP). Equivalent capabilities to Playwright MCP, zero context overhead.
 
@@ -14,7 +14,7 @@ Full-featured browser automation via Chrome DevTools Protocol (CDP). Equivalent 
 **Run ONCE before first use:**
 
 \`\`\`bash
-cd skills/browser-automation/tools
+cd skills/browser-tools/tools
 npm install
 \`\`\`
 
@@ -26,15 +26,15 @@ ls node_modules/puppeteer-core  # Should exist
 
 ### ⚠️ CRITICAL INSTALLATION WARNING
 
-**MUST install in `tools/` subdirectory, NOT in `browser-automation/`.**
+**MUST install in `tools/` subdirectory, NOT in `browser-tools/`.**
 
 ```bash
 # ❌ WRONG - Will fail at runtime
-cd skills/browser-automation
+cd skills/browser-tools
 npm install
 
 # ✅ CORRECT - Works first time
-cd skills/browser-automation/tools
+cd skills/browser-tools/tools
 npm install
 ```
 

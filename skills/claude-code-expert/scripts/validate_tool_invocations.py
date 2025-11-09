@@ -88,7 +88,7 @@ def validate_agent_exists(agent_name, available_agents):
             "backend-architect",
             "frontend-developer",
             "security-reviewer",
-            "code-quality-reviewer",
+            "code-reviewer",
             "python-pro",
             "javascript-pro",
             "typescript-pro",

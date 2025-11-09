@@ -192,26 +192,59 @@ fi
 
 Ejecutar Task tool en **paralelo**:
 
-### Review 1: Code Quality
+### Review 1: Plan Alignment & Quality
 
 ```
-Prompt: "Review changes in current branch vs origin/$target_branch.
-Return '✅ NO_ISSUES' if clean, otherwise list issues:
-## Critical
-- issue
-## Warnings
-- warning"
+Prompt: "Review implementation in current branch vs origin/$target_branch.
 
-Agent: code-quality-reviewer
+Analyze:
+1. Plan alignment (if planning document exists in .specify/ or docs/)
+2. Code quality and best practices
+3. Architecture and design patterns
+4. Documentation completeness
+
+Return structured findings categorized as:
+- Critical (must fix before deployment)
+- Important (should fix, affects maintainability)
+- Suggestions (nice to have, optional improvements)
+
+Focus on maintainability, testability, and adherence to project standards defined in CLAUDE.md."
+
+Agent: code-reviewer
 ```
 
-### Review 2: Security
+### Review 2: Production Readiness (CI/CD Prevention)
 
 ```
-Prompt: "Security review of changes in current branch vs origin/$target_branch.
-Return '✅ SECURE' if no issues, otherwise list findings with Severity (HIGH/MEDIUM/LOW) and Confidence (0.0-1.0)."
+Prompt: "Production-readiness review of changes in current branch vs origin/$target_branch.
 
-Agent: security-reviewer
+This review MUST replicate CI/CD bot logic to prevent GitHub Actions failures.
+
+Analyze ALL categories:
+- SECURITY vulnerabilities (with false positive filtering)
+- BUG risks (logical errors, edge cases)
+- RELIABILITY issues (error handling, resilience)
+- PERFORMANCE problems (production impact)
+- CONSTITUTIONAL compliance (Δ LOC budget from CLAUDE.md §3)
+- MAINTAINABILITY concerns (when materially impactful)
+
+Return findings with EXACT format:
+- Category: SECURITY | BUG | RELIABILITY | PERFORMANCE | MAINTAINABILITY
+- Severity: BLOCKER | CRITICAL | MAJOR | MINOR | NIT
+- Confidence: 0.00-1.00 (drop findings < 0.80)
+- File: <path>:<line>
+- Why: 1-3 sentences tying evidence to impact
+- Fix: minimal concrete patch or precise steps
+
+Review Decision:
+- BLOCK if any BLOCKER severity
+- BLOCK if any CRITICAL with confidence ≥0.80
+- WARN if only MAJOR/MINOR/NIT
+- APPROVE if no valid findings
+
+Return '✅ APPROVED' if no issues, otherwise list all findings."
+
+Agent: ci-cd-pre-reviewer
 ```
 
 ### Evaluación de Resultados
@@ -219,21 +252,51 @@ Agent: security-reviewer
 Ejecutar en bash:
 
 ```bash
-has_security_critical=false
-if echo "$security_review_result" | grep -Eq 'Severity.*:.*HIGH'; then
-  if echo "$security_review_result" | grep -Eq 'Confidence.*:.*(0\.[89]|1\.0)'; then
-    has_security_critical=true
+# Check code-reviewer results
+code_review_critical=false
+if echo "$code_review_result" | grep -Eq 'Critical'; then
+  code_review_critical=true
+fi
+
+# Check ci-cd-pre-reviewer results (blockers)
+has_blockers=false
+if echo "$ci_cd_review_result" | grep -Eq 'Severity.*:.*BLOCKER'; then
+  has_blockers=true
+elif echo "$ci_cd_review_result" | grep -Eq 'Severity.*:.*CRITICAL'; then
+  if echo "$ci_cd_review_result" | grep -Eq 'Confidence.*:.*(0\.[89]|1\.0)'; then
+    has_blockers=true
   fi
 fi
 
-if [ "$has_security_critical" = "true" ]; then
-  echo "❌ PR BLOQUEADO: Vulnerabilidades HIGH con confidence ≥0.8"
+# Block PR if blockers detected
+if [ "$has_blockers" = "true" ]; then
+  echo "❌ PR BLOQUEADO: Issues críticos detectados por ci-cd-pre-reviewer"
+  echo "   (BLOCKER severity o CRITICAL con confidence ≥0.8)"
+  echo ""
+  echo "Findings:"
+  echo "$ci_cd_review_result"
   git config --local --remove-section pr.temp 2>/dev/null
   exit 1
 fi
+
+# Warn if code-reviewer found critical issues
+if [ "$code_review_critical" = "true" ]; then
+  echo "⚠️  WARNING: code-reviewer encontró issues críticos"
+  echo "Findings:"
+  echo "$code_review_result"
+  echo ""
+  read -p "¿Continuar con PR? (y/n): " continue_choice
+  if [ "$continue_choice" != "y" ]; then
+    git config --local --remove-section pr.temp 2>/dev/null
+    exit 1
+  fi
+fi
 ```
 
-**Si hay quality issues pero no security critical**: Preguntar al usuario si continuar (y/n/d)
+**Lógica de bloqueo:**
+- ci-cd-pre-reviewer BLOCKER → automático (sin preguntar)
+- ci-cd-pre-reviewer CRITICAL + confidence ≥0.8 → automático
+- code-reviewer Critical → pregunta al usuario
 
 ## Paso 4: Push Branch
 

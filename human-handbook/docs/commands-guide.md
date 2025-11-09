@@ -11,7 +11,8 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 | [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
 | [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
 | [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish → Ultrathink  |
+| [Superpowers](#superpowers)                                   | 3        | Brainstorm → Plan → Execute            |
+| [Utilidades](#utilidades)                                     | 7        | Understand → Research → Polish         |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos).
@@ -614,37 +615,61 @@ KEY INSIGHTS
 
 ---
 
-### `/ai-framework:utils:ultrathink`
+## Superpowers
+
+### `/ai-framework:superpowers:brainstorm`
 
 ::: tip Propósito
-Activa deep work mode para problemas complejos que requieren análisis sistemático y máximo rigor.
+Activa brainstorming skill para refinamiento Socrático de diseño antes de implementación.
 :::
 
 **Usage:**
 
 ```bash
-/ai-framework:utils:ultrathink
-/ai-framework:utils:ultrathink "API architecture redesign"
+/ai-framework:superpowers:brainstorm
 ```
 
-**Cuándo usar:**
-- Decisiones arquitecturales complejas
-- Refactoring de alto riesgo
-- Optimización performance-critical
-- Implementaciones security-sensitive
-- Problemas multi-disciplinarios
+**Workflow:** Refina ideas rough → diseños completamente formados mediante cuestionamiento colaborativo, exploración de alternativas, validación incremental.
 
-**Deep Work Protocol:**
+**Cuándo usar:** ANTES de escribir código, cuando tienes idea rough que necesita refinamiento estructural.
 
-1. **Systematic Framing**: Problem definition (≤3 bullets) + size (S/M/L) + scope boundaries
-2. **Multi-Approach Analysis**: 2-3 fundamentally different approaches con ROI scoring (benefit/complexity)
-3. **Challenge Assumptions**: Question constraints, validate with AskUserQuestion if uncertain
-4. **Implementation Excellence**: TDD, Reality Check, simplify ruthlessly
-5. **Continuous Refinement**: Iterate until production-ready
+**Output:** Diseño refinado con alternativas exploradas y decisiones validadas.
 
-**Evidence Base**: Google DeepMind (+46.2pts), ATLAS study (+57.7% quality), 9 academic papers (2024-2025)
+---
 
-**Output:** Systematic analysis + implementation plan + validation checklist
+### `/ai-framework:superpowers:write-plan`
+
+::: tip Propósito
+Activa Writing-Plans skill para crear planes de implementación detallados.
+:::
+
+**Usage:**
+
+```bash
+/ai-framework:superpowers:write-plan
+```
+
+**Workflow:** Diseño completo → plan detallado con file paths exactos, code examples completos, verification steps.
+
+**Output:** Implementation plan ejecutable por ingenieros con zero codebase context.
+
+---
+
+### `/ai-framework:superpowers:execute-plan`
+
+::: tip Propósito
+Activa Executing-Plans skill para ejecutar planes en batches controlados con review checkpoints.
+:::
+
+**Usage:**
+
+```bash
+/ai-framework:superpowers:execute-plan
+```
+
+**Workflow:** Load plan → critical review → batch execution → review entre batches → completion report.
+
+**Output:** Implementation completada con quality gates entre batches.
 
 ---
 
@@ -961,7 +986,6 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 **Fecha**: 2025-11-08 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
 
 **Cambios recientes**:
-- ✅ Agregado `/ultrathink` - Deep work mode evidence-based
 - ❌ Eliminado `/three-experts` - Sin uso (0 executions en >1 año)
 - ❌ Eliminado `/update-docs` - Sin uso (ahora es `/docs`)
 :::

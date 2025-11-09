@@ -22,16 +22,16 @@ html {
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-elegant: cubic-bezier(0.25, 0.1, 0.25, 1); /* Subtle, refined motion */
 
-  /* ===== STRATEGIC COLOR PALETTE (Azul Royal Minimalista - 10% usage) ===== */
-  --royal-blue: #3423A6;        /* Primary accent - buttons, CTAs (5-7%) */
-  --lavender-blue: #7180B9;     /* Secondary - hover states (2-3%) */
+  /* ===== STRATEGIC COLOR PALETTE (Slate Graphite - Sober Technical) ===== */
+  --royal-blue: #0F172A;        /* Slate-900 - Primary accent (5-7%) */
+  --lavender-blue: #475569;     /* Slate-600 - Secondary hover states (2-3%) */
   --mint-green: #DFF3E4;        /* Highlights - success, badges (<2%) */
-  --deep-purple: #2E1760;       /* Special - gradients, premium accents (<1%) */
+  --deep-purple: #1E293B;       /* Slate-800 - Gradients, accents (<1%) */
 
   /* ===== RGB VALUES (for rgba() with opacity) ===== */
-  --royal-blue-rgb: 52, 35, 166;
-  --lavender-blue-rgb: 113, 128, 185;
-  --deep-purple-rgb: 46, 23, 96;
+  --royal-blue-rgb: 15, 23, 42;
+  --lavender-blue-rgb: 71, 85, 105;
+  --deep-purple-rgb: 30, 41, 59;
   --success-rgb: 45, 164, 78;
 
   /* ===== BRAND COLORS (Monochrome Base - 90%) ===== */
@@ -67,16 +67,16 @@ html {
 
 /* Dark mode */
 .dark {
-  /* ===== STRATEGIC PALETTE (Dark Mode Compatible) ===== */
-  --royal-blue: #5B4FCF;        /* Lighter for dark bg accessibility */
-  --lavender-blue: #8F9DC7;     /* Brighter for visibility */
+  /* ===== STRATEGIC PALETTE (Dark Mode - Slate Graphite) ===== */
+  --royal-blue: #CBD5E1;        /* Slate-300 - Lighter for dark bg accessibility */
+  --lavender-blue: #94A3B8;     /* Slate-400 - Brighter for visibility */
   --mint-green: #C8E6D0;        /* Softened for dark mode */
-  --deep-purple: #4A3785;       /* Lighter purple */
+  --deep-purple: #94A3B8;       /* Slate-400 - Consistent with lavender */
 
   /* ===== RGB VALUES (Dark Mode) ===== */
-  --royal-blue-rgb: 91, 79, 207;
-  --lavender-blue-rgb: 143, 157, 199;
-  --deep-purple-rgb: 74, 55, 133;
+  --royal-blue-rgb: 203, 213, 225;
+  --lavender-blue-rgb: 148, 163, 184;
+  --deep-purple-rgb: 148, 163, 184;
 
   /* ===== BACKGROUNDS (Dark Mode) ===== */
   --vp-c-bg: #0D1117;
@@ -100,95 +100,40 @@ html {
   --vp-c-brand-soft: #27272A;
 }
 
-/* ===== PRIMARY BUTTONS - ROYAL BLUE ACCENT (5-7% usage) ===== */
+/* ===== PRIMARY BUTTONS - SLATE GRAPHITE SOBER (5-7% usage) ===== */
 .VPButton.brand {
-  background: linear-gradient(135deg, var(--royal-blue) 0%, var(--deep-purple) 100%);
+  background: var(--royal-blue);
   border: none;
   color: white;
   font-weight: 600;
   letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
-  /* Elegant refined transitions - senior-level subtlety */
-  transition: transform 0.3s var(--ease-elegant),
-              box-shadow 0.3s var(--ease-smooth),
-              background 0.25s ease;
-  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.12),
-              0 1px 2px rgba(var(--royal-blue-rgb), 0.08);
-  will-change: transform, box-shadow; /* GPU optimization for frequent hover states */
-}
-
-/* Subtle shine effect - refined */
-.VPButton.brand::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(255,255,255,0.15),
-    transparent);
-  transition: left 0.6s var(--ease-smooth);
-}
-
-/* Subtle glow effect on hover - refined */
-.VPButton.brand::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(135deg, var(--royal-blue), var(--deep-purple));
-  border-radius: inherit;
-  opacity: 0;
-  z-index: -1;
-  filter: blur(10px);
-  transition: opacity 0.35s ease;
-}
-
-.VPButton.brand:hover::before {
-  left: 100%;
-}
-
-.VPButton.brand:hover::after {
-  opacity: 0.2; /* Subtle glow, not overwhelming */
+  transition: transform 0.25s var(--ease-elegant),
+              box-shadow 0.25s var(--ease-smooth),
+              background 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .VPButton.brand:hover {
-  background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-blue) 100%);
-  /* Micro-lift - elegant refinement (Linear/Stripe style) */
+  background: var(--deep-purple);
   transform: translateY(-1px);
-  /* Refined multi-layer shadows - subtle depth */
-  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.2),
-              0 2px 6px rgba(var(--royal-blue-rgb), 0.12),
-              0 1px 3px rgba(var(--royal-blue-rgb), 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .VPButton.brand:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px rgba(var(--royal-blue-rgb), 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   transition: all 0.12s var(--ease-smooth);
 }
 
-/* Dark mode button - refined shadows */
+/* Dark mode button - darker for better contrast */
 .dark .VPButton.brand {
-  box-shadow: 0 1px 3px rgba(var(--royal-blue-rgb), 0.2),
-              0 1px 2px rgba(var(--royal-blue-rgb), 0.12);
+  background: #475569; /* Slate-600 - better contrast on dark bg */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .dark .VPButton.brand:hover {
-  box-shadow: 0 4px 12px rgba(var(--royal-blue-rgb), 0.25),
-              0 2px 6px rgba(var(--royal-blue-rgb), 0.15),
-              0 1px 3px rgba(var(--royal-blue-rgb), 0.1);
-}
-
-.dark .VPButton.brand::before {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-}
-
-.dark .VPButton.brand::after {
-  background: linear-gradient(135deg, var(--royal-blue), var(--deep-purple));
-  filter: blur(10px);
+  background: #334155; /* Slate-700 - darker on hover */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* ===== LINK COLORS - STRATEGIC ACCENT (2-3% usage) ===== */
@@ -213,10 +158,10 @@ html {
   color: var(--royal-blue);
 }
 
-/* ===== HERO TITLE - ROYAL BLUE GRADIENT (<1% special accent) ===== */
+/* ===== HERO TITLE - SLATE GRAPHITE GRADIENT (Sober but visible) ===== */
 .VPHero .name,
 .VPHero .text {
-  background: linear-gradient(120deg, var(--royal-blue) 0%, var(--deep-purple) 50%, var(--vp-c-brand-1) 100%);
+  background: linear-gradient(120deg, #0F172A 0%, #475569 40%, #64748B 70%, var(--vp-c-brand-1) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -233,15 +178,15 @@ html {
   50% { background-position: 100% 50%; }
 }
 
-/* Dark mode hero - brighter gradient */
+/* Dark mode hero - lighter slate gradient for visibility */
 .dark .VPHero .name,
 .dark .VPHero .text {
-  background: linear-gradient(120deg, var(--royal-blue) 0%, var(--lavender-blue) 50%, var(--vp-c-brand-1) 100%);
+  background: linear-gradient(120deg, #94A3B8 0%, #CBD5E1 40%, #E2E8F0 70%, var(--vp-c-brand-1) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite; /* FIX: Animation was missing in dark mode */
+  animation: gradient-shift 8s ease infinite;
 }
 
 /* ===== DARK MODE ICON FIX ===== */

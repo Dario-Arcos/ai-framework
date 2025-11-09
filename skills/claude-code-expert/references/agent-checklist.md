@@ -50,7 +50,7 @@ Use this checklist to validate sub-agent implementations before delivery.
 ## Naming Conventions
 
 - [ ] Agent name is descriptive and unique
-- [ ] Name follows `snake-case` pattern (e.g., `code-quality-reviewer`)
+- [ ] Name follows `snake-case` pattern (e.g., `code-reviewer`)
 - [ ] Category matches existing categories or justifies new one
 
 ## Tool Access

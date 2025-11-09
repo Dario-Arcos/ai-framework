@@ -6,21 +6,22 @@ Constitutional SDD governance · Specialized agents · Intelligent hooks · Zero
 
 ---
 
-## Why This Exists
+## Why This Framework Exists
 
-**Orchestration architecture for AI-first development with constitutional quality enforcement.**
+**Claude Code is extraordinary. This framework makes it indispensable.**
 
-Not a tool collection—a **system that creates systems** through specialized agents, phase-gated workflows, constitutional rules, and intelligent hooks.
+Without structure, Claude Code's power gets wasted: code that "works" but fails in production, no tests, inconsistent architecture. Brilliant ideas become fragile implementations.
 
-**Foundation:**
+**This framework transforms AI from assistant to autonomous engineer:**
 
-- **Constitutional Governance** — Value/complexity ≥2x, TDD mandatory, complexity budgets enforced
-- **Specification-Driven Development** — Spec → Plan → Tasks → Implementation with quality checkpoints
-- **Orchestrated Execution** — Agents + skills + commands + hooks + MCP servers working in concert
+- **Research-backed governance** — Anthropic context engineering, DeepMind LLM optimization, TDD enforcement
+- **Constitutional compliance** — Value/complexity ≥2x, complexity budgets (S≤80|M≤250|L≤600 Δ LOC), enforced automatically
+- **Production-ready output** — Tests from day 1, vulnerability scanning, coherent architecture
+- **Orchestrated execution** — Specialized agents, workflow commands, lifecycle hooks, proven patterns working in concert
 
-ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
+> Transform the complete lifecycle of digital products into an automated, high-quality process—freeing brilliant minds to make ideas reality in record time without sacrificing quality, scalability, security, or potential.
 
-[Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
+[Why AI Framework? →](https://dario-arcos.github.io/ai-framework/why-ai-framework) | [Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
 
 ---
 
@@ -47,87 +48,56 @@ ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
 
 ## Quick Install
 
-**Step 1: Install Claude Code CLI**
+**1. Install Claude Code CLI** — [Installation guide](https://docs.claude.com/en/docs/claude-code/installation)
 
-Follow the [official installation guide](https://docs.claude.com/en/docs/claude-code/installation) for your platform.
-
-**Step 2: Add Marketplace**
+**2. Add marketplace and install plugin:**
 
 ```bash
 /plugin marketplace add Dario-Arcos/ai-framework
-```
-
-**Step 3: Install Plugin**
-
-```bash
 /plugin install ai-framework@ai-framework
 ```
 
-**Step 4: Start in Your Project**
+**3. Start in your project:**
 
 ```bash
 cd /path/to/your/project
-claude
-# Framework auto-installs on first session
+claude  # Framework auto-installs on first session
 ```
 
-**Installation complete.** See Post-Installation for configuration steps.
+**4. Post-install (required):**
 
-[Official plugin documentation →](https://docs.claude.com/en/docs/claude-code/plugins)
-
----
-
-## Post-Installation
-
-**Step 1: Restart Claude Code** (Required)
-
-Exit and reopen Claude Code to load the framework.
-
-**Step 2: Initialize Project Context** (Critical)
+Exit and reopen Claude Code, then initialize:
 
 ```bash
-/ai-framework:utils:project-init
+/ai-framework:utils:project-init        # Analyzes stack, generates project-context.md
+/ai-framework:utils:setup-dependencies   # Optional: installs formatters, notifier
 ```
-
-Analyzes stack (languages, frameworks, databases), generates `project-context.md`, and configures specialized agent recommendations for your codebase.
-
-**Step 3: Install Optional Dependencies**
-
-```bash
-/ai-framework:utils:setup-dependencies
-```
-
-Auto-detects and installs optional tools (terminal-notifier, formatters like black/ruff/prettier).
 
 ---
 
 ## What Gets Installed
 
-### Framework Installation Structure
-
-The framework adds these files/directories to your **existing project structure**:
+Framework adds to your existing project:
 
 ```
-your-project/              # Your existing project root
-├── [your existing files]  # Your code, package.json, etc.
-├── CLAUDE.md              # Project configuration (gitignored by default)
+your-project/
+├── CLAUDE.md              # Configuration (gitignored)
 ├── .claude/
-│   ├── settings.json        # Framework defaults (synced from plugin)
-│   ├── settings.local.json  # Personal overrides (optional, max priority)
-│   └── rules/               # 3 governance files (datetime, agents-guide, operational-excellence)
+│   ├── settings.json        # Framework defaults (synced)
+│   ├── settings.local.json  # Personal overrides (optional)
+│   └── rules/               # Governance files
 └── .specify/
-    ├── memory/              # Constitutional documents (constitution.md, project-context.md)
-    ├── scripts/bash/        # Utility scripts
-    └── templates/           # Workflow templates (spec, plan, tasks)
+    ├── memory/              # Constitution, project-context
+    ├── scripts/bash/        # Utilities
+    └── templates/           # Spec, plan, tasks
 ```
 
-### Plugin Components (via Claude Code)
-
-- **Agents** — Architecture, Security, Testing, DevOps, Database, Documentation, UX/Design, Performance
-- **Skills** — Algorithmic art, Claude Code expert, Skill creator
-- **Commands** — SDD cycle, Git/GitHub automation, Project utilities
-- **Hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
-- **MCP Servers** — Playwright (browser automation), Shadcn (UI components) — Configured in plugin root, not project
+**Plugin components** (via Claude Code):
+- **Specialized agents** — Architecture, Security, Testing, DevOps, Database, Docs, UX, Performance
+- **Workflow commands** — SDD cycle, Git/GitHub automation, Project utilities
+- **Proven patterns (Skills)** — Algorithmic art, Claude Code expert, Skill creator
+- **Lifecycle hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
+- **MCP servers** — Playwright, Shadcn (configured in plugin)
 
 ---
 
@@ -135,27 +105,11 @@ your-project/              # Your existing project root
 
 **Framework provides defaults. You control overrides.**
 
-### Settings Architecture (v2.0+)
+**Settings:** `.claude/settings.local.json` > `settings.json` (personal always wins)
 
-- **`.claude/settings.json`** — Framework defaults (synced from plugin, auto-updated)
-- **`.claude/settings.local.json`** — Personal overrides (optional, **never touched by framework**)
+**MCP Servers:** `project/.mcp.json` > `plugin/.mcp.json` (add custom servers) — [Docs](https://docs.claude.com/en/docs/claude-code/mcp)
 
-**Precedence:** `settings.local.json` > `settings.json`. Personal settings always win.
-
-### MCP Servers Architecture (v2.0+)
-
-- **Plugin `.mcp.json`** — Framework MCP servers (Playwright, Shadcn)
-- **Project `.mcp.json`** — Custom MCP servers (optional, user-defined)
-
-**Precedence:** project > plugin. Add custom servers without touching framework defaults.
-
-[MCP documentation →](https://docs.claude.com/en/docs/claude-code/mcp)
-
-### Personal Instructions
-
-- **`CLAUDE.local.md`** — Personal instructions (optional, auto-gitignored)
-
-[Best practices →](https://www.anthropic.com/engineering/claude-code-best-practices)
+**Personal instructions:** `CLAUDE.local.md` (optional, auto-gitignored) — [Best practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 
 ---
 
@@ -179,14 +133,10 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 
 **[Full Documentation →](https://dario-arcos.github.io/ai-framework/)**
 
-**Key Guides:**
-
 - [Quickstart](https://dario-arcos.github.io/ai-framework/quickstart) — 15 minutes to productive
-- [MCP Servers](https://dario-arcos.github.io/ai-framework/mcp-servers) — Extend Claude Code capabilities
 - [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — Slash commands reference
 - [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — Specialized agents catalog
-
-Constitution · Always Works™ methodology · Context engineering · Design principles
+- [MCP Servers](https://dario-arcos.github.io/ai-framework/mcp-servers) — Extend Claude Code capabilities
 
 ---
 

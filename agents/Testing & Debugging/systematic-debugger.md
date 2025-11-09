@@ -70,7 +70,7 @@ Debugging Assessment:
 | API Issues | api-architect | rails-api-developer |
 | Frontend Bugs | frontend-developer | react-component-architect |
 | Database Issues | database-expert | rails-activerecord-expert |
-| Performance | performance-optimizer | code-quality-reviewer |
+| Performance | performance-optimizer | code-reviewer |
 | Security | security-reviewer | config-security-expert |
 
 **Coordination Process:**

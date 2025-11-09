@@ -41,7 +41,7 @@ Especialistas AI que ejecutan tareas complejas con expertise en dominios especí
 **Task Tool** (ejecución paralela):
 
 ```bash
-"Launch code-quality-reviewer and security-reviewer agents in parallel"
+"Launch code-reviewer and security-reviewer agents in parallel"
 ```
 
 ### Ejecución en Paralelo
@@ -50,7 +50,7 @@ Especialistas AI que ejecutan tareas complejas con expertise en dominios especí
 
 ```bash
 "Launch in parallel:
-- code-quality-reviewer for code standards
+- code-reviewer for code standards
 - security-reviewer for vulnerabilities
 - performance-engineer for optimization
 
@@ -170,7 +170,7 @@ Analiza trabajo y recomienda agents óptimos con rationale detallado. NO ejecuta
 
 ## Code Review & Security
 
-### `code-quality-reviewer`
+### `code-reviewer`
 
 ::: tip Quality Gates Universales
 Prevención de deuda técnica, principios universales de calidad
@@ -179,6 +179,24 @@ Prevención de deuda técnica, principios universales de calidad
 **Dimensiones:** Code structure (<50 líneas/función, no duplicación) · Error handling (tipos específicos, cleanup) · Security (no secrets, SQL injection) · Testing (happy path + edge cases)
 
 **Output:** CRITICAL (vulnerabilidades) · ⚠️ HIGH (deuda técnica) · SUGGESTIONS (optimizaciones)
+
+---
+
+### `ci-cd-pre-reviewer`
+
+::: danger Production Readiness Gate
+Replica lógica completa del CI/CD bot para prevenir failures de GitHub Actions
+:::
+
+**Categorías:** SECURITY (vulnerabilities con false positive filtering) · BUG (logical errors, edge cases) · RELIABILITY (error handling) · PERFORMANCE (production impact) · CONSTITUTIONAL (Δ LOC compliance)
+
+**Severity Levels:** BLOCKER (auto-block) · CRITICAL (≥0.8 confidence = block) · MAJOR (warn) · MINOR/NIT (informational)
+
+**False Positive Filtering:** 30 reglas (DOS exclusion, memory safety, theoretical race conditions, test files, documentation)
+
+**Output:** Category · Severity · Confidence (0.0-1.0, drop <0.80) · File:line · Why (1-3 sentences) · Fix (concrete patch)
+
+**Decision:** REQUEST CHANGES (BLOCKER/CRITICAL) · COMMENT (MAJOR/MINOR) · APPROVE (no issues)
 
 ---
 
@@ -583,7 +601,7 @@ Methodical bug identification, root cause analysis, coordinated delegation
 | API Issues      | api-architect         | rails-api-developer       |
 | Frontend Bugs   | frontend-developer    | react-component-architect |
 | Database Issues | database-expert       | rails-activerecord-expert |
-| Performance     | performance-optimizer | code-quality-reviewer     |
+| Performance     | performance-optimizer | code-reviewer     |
 | Security        | security-reviewer     | config-security-expert    |
 
 ---
@@ -715,7 +733,7 @@ Metaprogramming, Rails patterns, performance optimization
 | Combinación                                    | Resultado                            |
 | ---------------------------------------------- | ------------------------------------ |
 | `backend-architect` + `database-optimizer`     | Scalable architecture                |
-| `code-quality-reviewer` + `security-reviewer`  | Quality + Security gates             |
+| `code-reviewer` + `security-reviewer`  | Quality + Security gates             |
 | `test-automator` + `playwright-test-generator` | Complete testing automation          |
 | `shadcn-*` agents                              | Complete UI component implementation |
 

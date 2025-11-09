@@ -12,7 +12,7 @@
 
 **Examples**:
 
-- ✅ `code-quality-reviewer`
+- ✅ `code-reviewer`
 - ✅ `python-pro`
 - ✅ `backend-architect`
 - ❌ `CodeQualityReviewer` (CamelCase not allowed)
@@ -165,7 +165,7 @@ MAX_TIMEOUT = 60
 
 | Component    | Convention      | Example                 | Max Length |
 | ------------ | --------------- | ----------------------- | ---------- |
-| Sub-agents   | `snake-case`    | `code-quality-reviewer` | 64 chars   |
+| Sub-agents   | `snake-case`    | `code-reviewer` | 64 chars   |
 | Commands     | `kebab-case`    | `speckit.plan`          | -          |
 | Hooks        | `snake_case.py` | `session_start.py`      | -          |
 | MCP servers  | `kebab-case`    | `playwright`            | -          |
