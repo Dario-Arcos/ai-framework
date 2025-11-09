@@ -45,6 +45,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: "Inicio Rápido", link: "/docs/quickstart" },
+          { text: "Por Qué AI Framework", link: "/docs/why-ai-framework" },
           { text: "AI-First Workflow", link: "/docs/ai-first-workflow" },
           { text: "Pro Tips", link: "/docs/claude-code-pro-tips" },
         ],

@@ -6,21 +6,49 @@ Constitutional SDD governance · Specialized agents · Intelligent hooks · Zero
 
 ---
 
-## Why This Exists
+## Why This Framework Exists
 
-**Orchestration architecture for AI-first development with constitutional quality enforcement.**
+**Claude Code is extraordinary. This framework makes it indispensable.**
 
-Not a tool collection—a **system that creates systems** through specialized agents, phase-gated workflows, constitutional rules, and intelligent hooks.
+### The Problem
 
-**Foundation:**
+**Claude Code vanilla** gives you access to world-class AI capable of writing code, analyzing systems, and executing commands. A universe of incredible possibilities.
 
-- **Constitutional Governance** — Value/complexity ≥2x, TDD mandatory, complexity budgets enforced
-- **Specification-Driven Development** — Spec → Plan → Tasks → Implementation with quality checkpoints
-- **Orchestrated Execution** — Agents + skills + commands + hooks + MCP servers working in concert
+**But there's a critical gap:** Without structure, without methodology, without "rails"—that power gets wasted.
 
-ROI ≥ 2x · TDD mandatory · Complexity budgets—**enforced**, not suggested.
+**Symptoms:**
+- Code that "works" but fails in production
+- No tests, inconsistent architecture
+- Brilliant ideas → fragile implementations
+- AI as "advanced assistant" instead of "autonomous engineer"
 
-[Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
+### The Solution
+
+**This framework transforms Claude Code from powerful tool into disciplined engineering system.**
+
+**Not configuration—governance:**
+
+- **Research-backed** — Integrates Anthropic context engineering, DeepMind LLM optimization, industry TDD practices
+- **Constitutional enforcement** — Value/complexity ≥2x, TDD mandatory, complexity budgets (S≤80|M≤250|L≤600 Δ LOC)
+- **Production-ready** — Not demos. Real software engineering guided by humans, executed by AI.
+- **Orchestrated execution** — 45 agents + 26 commands + 5 hooks + 23 skills working in concert
+
+**Result:** Claude Code stops being "assistant" and becomes **autonomous engineer** with scientific rigor.
+
+### The Vision
+
+> **Transform the complete lifecycle of digital products into an automated, high-quality process with compliance and versatility—freeing brilliant minds to make their ideas reality in record time without sacrificing quality, scalability, security, or potential.**
+
+**Framework guarantees:**
+- ✅ Production-ready quality (tests from day 1)
+- ✅ Scalability by default (coherent architecture)
+- ✅ Automatic security (vulnerability scanning)
+- ✅ Constitutional compliance (enforced, not suggested)
+- ✅ Velocity without friction (AI executes, framework validates)
+
+**This framework isn't optional. It's indispensable.**
+
+[Why AI Framework? →](https://dario-arcos.github.io/ai-framework/why-ai-framework) | [Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
 
 ---
 
