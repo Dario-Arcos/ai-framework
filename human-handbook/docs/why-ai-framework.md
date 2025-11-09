@@ -1,124 +1,134 @@
 # Por Qué Existe AI Framework
 
-::: tip Esencia
-**Claude Code es increíble. Este framework lo hace indispensable.**
-:::
+Claude Code te da acceso a IA de clase mundial. Este framework estructura esas capacidades en un sistema de ingeniería predecible.
 
 ---
 
 ## El Problema
 
-**Claude Code vanilla** te da acceso a IA de clase mundial: escribe código, analiza sistemas, ejecuta comandos. Un universo de posibilidades.
+El desarrollo con LLM sin estructura presenta patrones repetidos de degradación:
 
-**Pero sin estructura, esa potencia se desperdicia.**
+**Iteración sin arquitectura**
 
+```plaintext
+Request: "Implementa autenticación JWT"
+Output: Código funcional sin tests
+Request: "Agrega refresh tokens"
+Output: Modificación sin validación de regresión
+Request: "Agrega validación"
+Output: Parches sobre parches
+
+Resultado: Código frágil, arquitectura ad-hoc, deuda técnica
 ```
-Developer: "Implementa autenticación JWT"
-Claude: *Genera código brillante*
-Developer: "Agrega refresh tokens"
-Claude: *Modifica sin tests*
-Developer: "Hmm, agregale validación"
-Claude: *Parchea sobre parches*
-[3 horas después]
-Developer: "¿Por qué no funciona?"
-```
 
-**Síntomas:**
-- Código que "funciona" pero falla en producción
-- Sin tests, arquitectura inconsistente
-- Ideas brillantes → implementaciones frágiles
-- Refactors infinitos, decisiones ad-hoc
+**Ausencia de quality gates**
+- Tests como afterthought (si existen)
+- Security reviews manuales e inconsistentes
+- Complexity sin control (over-engineering o under-engineering)
+- Arquitectura que emerge sin diseño intencional
 
-**Resultado:** Claude Code como "asistente avanzado", no "ingeniero autónomo".
+**Consecuencia**: Proyectos que funcionan en desarrollo pero fallan en producción.
 
 ---
 
-## La Solución: Rigor Científico
+## La Solución
 
-**AI Framework transforma AI de asistente a ingeniero.**
+AI Framework implementa gobernanza basada en investigación validada:
 
-No es configuración—es **gobernanza respaldada por evidencia científica:**
+### Fundamentos Científicos
 
-**Context Engineering (Anthropic, 2025):**
+**Context Engineering (Anthropic, 2025)**
+Optimización de context windows:
 - Minimizar tokens, maximizar señal
-- False positive filtering validado
-- Signal quality criteria (explotabilidad real vs teórica)
+- Filtrado de false positives validado
+- Context loading just-in-time
 
-**LLM Optimization (DeepMind OPRO, 2023):**
-- "Take a deep breath and work step-by-step" → **+46.2 puntos precisión**
-- Multi-approach analysis → **+57.7% calidad** (ATLAS Study, 2024)
+**LLM Optimization (DeepMind OPRO, 2023)**
+Técnicas con resultados medidos:
+- Framing sistemático: +46.2 puntos accuracy (benchmark GSM8K)
+- Multi-approach analysis: +57.7% calidad (ATLAS study, 2024)
 
-**Test-Driven Development (Kent Beck):**
-- Red → Green → Refactor (disciplina no negociable)
-- Correlation: **40-80% menos bugs** (Microsoft Research)
+**Test-Driven Development (Kent Beck)**
+Red-green-refactor enforcement:
+- 40-80% reducción en bugs (Microsoft Research, 2008)
+- Prevención de regresiones mediante test-first
 
-**Constitutional AI (Anthropic, 2022):**
-- Principios como "leyes" (enforcement automático)
+**Constitutional AI (Anthropic, 2022)**
+Principios como enforcement automático:
+- Constraints no negociables (complexity budgets, TDD, reuse-first)
 - Separation of powers (Product, Design, Engineering, Security)
+- Audit trail para decisiones arquitectónicas
 
 ---
 
-## Cómo Funciona
+## Arquitectura
 
-### Arquitectura en Capas
+El framework aplica enforcement en tres capas:
 
-```
-┌─────────────────────────────────────────┐
-│  CONSTITUTIONAL GOVERNANCE              │
-│  Value/Complexity ≥2x · TDD mandatory   │
-│  Complexity budgets enforced            │
-└─────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────┐
-│  ORCHESTRATION LAYER                    │
-│  Specialized agents · Workflow commands │
-│  Lifecycle hooks · Proven patterns      │
-└─────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────┐
-│  EXECUTION                              │
-│  AI executes · Framework validates      │
-└─────────────────────────────────────────┘
-```
+**Constitutional Layer**
+Invariantes aplicadas automáticamente:
+- Value/complexity ≥2x (beneficio debe justificar costo)
+- TDD mandatory (tests antes de código)
+- Complexity budgets (S≤80, M≤250, L≤600 líneas netas)
 
-**Diferencia clave:** No son sugerencias—son **leyes aplicadas automáticamente**.
+**Orchestration Layer**
+Componentes especializados:
+- 45 specialized agents por dominio técnico
+- 26 workflow commands para ciclos reproducibles
+- 5 lifecycle hooks con interception points
+- 19 skills con workflows estructurados
 
-### Ejemplo: Feature de Autenticación
+**Execution Layer**
+Validación continua:
+- Quality gates automáticos (security, performance, constitutional)
+- Ejecución paralela con manejo de dependencias
+- Audit trail completo
+
+**Diferencia clave**: Enforcement automático, no sugerencias opcionales.
+
+---
+
+## Ejemplo: Autenticación
 
 **Sin framework:**
-```
-"Implementa JWT auth"
-→ Claude genera código (sin tests)
-→ "Funciona, siguiente feature"
-→ [Semana después: security breach]
+
+```plaintext
+Request: "Implementa JWT auth"
+Output: Código funcional sin tests
+Deploy: Funciona en desarrollo
+Production: Token expiration no validada → security breach
 ```
 
 **Con framework:**
-```
-"Implementa JWT auth"
-→ TDD enforced: Write test → Implement → Refactor
-→ Security review: Detecta "Falta validación token expiration"
-→ Constitutional check: Δ LOC = +120 (Size M compliant ✅)
-→ Blocker si critical issues
-→ Feature con tests, seguridad validada, complexity controlada
+
+```plaintext
+Request: "Implementa JWT auth"
+TDD gate: Test escrito antes de implementación
+Security review: Detecta falta de token expiration → blocker
+Constitutional check: +120 líneas (Size M, dentro de budget)
+Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 ```
 
-**Prevención automática:**
-- Código sin tests
-- Vulnerabilidades básicas
-- Over-engineering
-- Arquitectura inconsistente
+**Prevención verificada:**
+- Tests ausentes (TDD blocker)
+- Vulnerabilidades básicas (security review pre-merge)
+- Over-engineering (complexity budget)
+- Arquitectura inconsistente (agent orchestration)
 
-### Transformación: Asistente → Ingeniero
+---
+
+## Transformación: Asistente → Ingeniero
 
 **Asistente (vanilla):**
-```
+
+```plaintext
 Developer → "Haz X" → Claude hace X → "Ahora Y" → Claude hace Y
-              [Micro-management continuo]
+            [Micro-management continuo]
 ```
 
 **Ingeniero (framework):**
-```
+
+```plaintext
 Developer → "Objetivo: Sistema de autenticación"
 Framework + Claude:
   ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)
@@ -130,60 +140,29 @@ Framework + Claude:
 [Developer: decisiones estratégicas | Claude: ejecución táctica]
 ```
 
-**Resultado:** Developer liberado de micro-management.
+**Resultado**: Developer liberado de micro-management.
 
 ---
 
-## Componentes Orquestados
-
-**Framework conecta ecosistema completo:**
-
-**Specialized Agents:**
-- `backend-architect` — APIs RESTful, microservices
-- `ci-cd-pre-reviewer` — Previene failures de GitHub Actions
-- `database-optimizer` — N+1 queries, índices
-- `premium-ux-designer` — UI/UX premium (Stripe/Airbnb-level)
-
-**Workflow Commands:**
-- `/speckit.specify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`
-- `/commit` — Smart grouping automático
-- `/pullrequest` — Dual review (plan alignment + production readiness)
-
-**Lifecycle Hooks:**
-- SessionStart → Core Memory search (contexto previo)
-- PreToolUse → Security guard (operaciones peligrosas)
-- UserPromptSubmit → Constitutional compliance
-
-**Proven Patterns (Skills):**
-- `systematic-debugging` — Root cause → hypothesis → test → fix
-- `verification-before-completion` — Evidence before assertions
-- `test-driven-development` — Red-Green-Refactor enforcement
-
-**MCP Servers:**
-- Playwright → Browser automation
-- Shadcn → UI components production-ready
-- Core Memory → Persistent context
-
-**Resultado:** Orquesta sinfónica donde cada componente conoce su rol.
-
----
-
-## De Idea a Producción—Automatizado
+## De Idea a Producción
 
 **Ciclo tradicional:**
-```
+
+```plaintext
 Idea → Spec (días) → Design (días) → Dev (semanas) → QA (días)
       [Humanos en cada paso · Errores acumulados · 1-2 meses]
 ```
 
 **Ciclo Claude Code vanilla:**
-```
+
+```plaintext
 Idea → Claude genera → Developer corrige → Deploy (maybe)
-      [Rápido pero frágil · Sin tests · Días, calidad ?)
+      [Rápido pero frágil · Sin tests · Días, calidad ?]
 ```
 
 **Ciclo AI Framework:**
-```
+
+```plaintext
 Idea → /speckit.specify (minutos)
      → /speckit.plan (minutos)
      → /speckit.implement (horas)
@@ -193,7 +172,7 @@ Idea → /speckit.specify (minutos)
 [Tests desde día 1 · Horas-días, production-ready]
 ```
 
-**Diferencia clave:**
+**Diferencia**:
 
 | Aspecto | Sin Framework | Con Framework |
 |---------|---------------|---------------|
@@ -201,35 +180,6 @@ Idea → /speckit.specify (minutos)
 | Seguridad | Ad-hoc | Automática (scanning) |
 | Escalabilidad | Se degrada | Se mantiene (patterns) |
 | Compliance | Manual | Automático (budgets) |
-
----
-
-## Evidencia de Producción
-
-**Deployments reales:**
-- Production SaaS (HIPAA, SOC2 compliance)
-- Enterprise migrations (legacy → cloud-native)
-- Startups (MVP → scale en semanas)
-
-**Métricas observadas:**
-- **Time-to-production:** -60% vs desarrollo tradicional
-- **Test coverage:** 85%+ vs 30-40% típico
-- **Security incidents:** -90% (pre-deployment scanning)
-- **Technical debt:** Minimal (constitutional prevention)
-
----
-
-## La Visión
-
-> **Transformar el ciclo de vida completo de productos digitales en un proceso automatizado de alta calidad—liberando el potencial de mentes brillantes para hacer realidad sus ideas en tiempo récord sin sacrificar calidad, escalabilidad, seguridad o potencial.**
-
-**Framework garantiza:**
-
-✅ **Rigor científico** (evidencia > intuición)
-✅ **Ingeniería real** (production-ready, no demos)
-✅ **Calidad sostenible** (TDD + constitutional enforcement)
-✅ **Velocidad sin sacrificios** (automatización con validación)
-✅ **Escalabilidad garantizada** (patterns desde día 1)
 
 ---
 
