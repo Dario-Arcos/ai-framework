@@ -8,11 +8,25 @@ Capacidades especializadas que extienden Claude con conocimiento experto en domi
 
 ## Skills Disponibles
 
-| Skill                                     | Tipo           | Activación                                   |
-| ----------------------------------------- | -------------- | -------------------------------------------- |
+| Skill | Tipo | Activación |
+|-------|------|-----------|
 | [claude-code-expert](#claude-code-expert) | 🔧 Development | Crear/modificar agents, commands, hooks, MCP |
-| [skill-creator](#skill-creator)           | 🏗️ Meta        | Crear/actualizar skills                      |
-| [algorithmic-art](#algorithmic-art)       | 🎨 Creative    | Arte algorítmico, p5.js, flow fields         |
+| [browser-tools](#browser-tools) | 🌐 Web | Browser automation, testing, profiling, scraping |
+| [skill-creator](#skill-creator) | 🏗️ Meta | Crear/actualizar skills |
+| [core-memory-expert](#core-memory-expert) | 💾 Memory | Setup/config RedPlanet Core memory |
+| [algorithmic-art](#algorithmic-art) | 🎨 Creative | Arte algorítmico, p5.js, flow fields |
+
+::: details Superpowers Skills (Integración Completa)
+**Testing:** test-driven-development, condition-based-waiting, testing-anti-patterns
+
+**Debugging:** systematic-debugging, root-cause-tracing, verification-before-completion, defense-in-depth
+
+**Collaboration:** brainstorming, writing-plans, executing-plans, dispatching-parallel-agents, requesting-code-review, receiving-code-review, using-git-worktrees, finishing-a-development-branch, subagent-driven-development
+
+**Meta:** sharing-skills, testing-skills-with-subagents, using-superpowers
+
+[Ver documentación completa de superpowers →](https://github.com/obra/superpowers)
+:::
 
 ---
 
@@ -77,6 +91,44 @@ Proceso guiado de 6 pasos para crear skills personalizadas siguiendo best practi
 :::
 
 **Genera:** `skills/skill-name/` con SKILL.md + scripts + referencias + assets
+
+---
+
+## browser-tools
+
+::: tip Tipo: Web Tool
+Control Chrome/Chromium via CDP para testing, profiling, scraping, debugging. Puppeteer API completo, zero context overhead.
+:::
+
+**Capacidades:** E2E testing, network interception, performance profiling, coverage analysis, multi-tab orchestration, web scraping
+
+**Platform:** macOS only (Chrome paths específicos, rsync)
+
+**Setup:** `cd skills/browser-tools/tools && npm install` (una vez)
+
+**Tools:** start.js, nav.js, eval.js, screenshot.js, stop.js
+
+::: danger CRITICAL
+**NUNCA usar `killall Chrome`** — cierra TODAS tus sesiones. Usa `./tools/stop.js` (solo cierra debugging instance en puerto 9223).
+:::
+
+**Cuándo usar:** Context budget crítico, E2E testing ad-hoc, profiling programático, scraping complejo
+
+---
+
+## core-memory-expert
+
+::: tip Tipo: Memory System
+Setup/config RedPlanet Core como memory layer. Cloud deployment (<2min) o self-hosted (Docker).
+:::
+
+**Capacidades:** Persistent context, knowledge graphs, conversation history, user preferences, project decisions
+
+**Deployment:** Cloud (zero config) o Self-hosted (Docker + PostgreSQL)
+
+**Components:** Setup scripts, REST API reference, Spaces CLI, agent templates
+
+**Cuándo usar:** Necesitas memoria persistente entre sesiones, contexto long-term, knowledge graphs
 
 ---
 
