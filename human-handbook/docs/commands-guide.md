@@ -614,7 +614,6 @@ KEY INSIGHTS
 
 ---
 
-### `/ai-framework:utils:ultrathink`
 
 ::: tip Propósito
 Activa deep work mode para problemas complejos que requieren análisis sistemático y máximo rigor.
@@ -623,8 +622,6 @@ Activa deep work mode para problemas complejos que requieren análisis sistemát
 **Usage:**
 
 ```bash
-/ai-framework:utils:ultrathink
-/ai-framework:utils:ultrathink "API architecture redesign"
 ```
 
 **Cuándo usar:**
@@ -961,7 +958,6 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 **Fecha**: 2025-11-08 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
 
 **Cambios recientes**:
-- ✅ Agregado `/ultrathink` - Deep work mode evidence-based
 - ❌ Eliminado `/three-experts` - Sin uso (0 executions en >1 año)
 - ❌ Eliminado `/update-docs` - Sin uso (ahora es `/docs`)
 :::

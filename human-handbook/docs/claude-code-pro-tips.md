@@ -13,7 +13,6 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 | Razonamiento básico       | `thinking`            |
 | Razonamiento profundo     | `think hard`          |
 | Razonamiento más profundo | `think harder`        |
-| Razonamiento máximo       | `ultrathink`          |
 | Toggle razonamiento       | `Tab`                 |
 | Referencia archivo/dir    | `@path`               |
 | Revertir cambios          | `ESC ESC` o `/rewind` |
@@ -31,12 +30,10 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 | `thinking`     | Debugging, refactoring simple, code review                 |
 | `think hard`   | Diseño de features, optimización de queries                |
 | `think harder` | Refactoring complejo, análisis de dependencias             |
-| `ultrathink`   | Arquitectura de sistemas, análisis de codebase desconocida |
 
 **Activación:** Incluye trigger en prompt o presiona `Tab` durante sesión.
 
 ```bash
-ultrathink analiza esta optimización de performance
 ```
 
 ::: tip Pattern Efectivo
@@ -144,7 +141,6 @@ ESC ESC → Both
 **Template para nueva conversación:**
 
 ```
-ultrathink necesito [objetivo claro]
 
 Contexto:
 - [información relevante]
@@ -185,7 +181,6 @@ Plan Mode + Bypass Permissions = Review seguro antes + ejecución fluida despué
 :::
 
 ::: tip Recomendación: Plan Mode para Features Complejas
-Usa plan mode (`Shift+Tab` hasta ⏸) con `ultrathink` para features complejas. Combina análisis profundo + revisión antes de ejecutar. Pattern: **Think → Plan → Review → Execute**.
 
 Ideal para: refactorings grandes, integraciones externas, cambios arquitectónicos.
 :::
@@ -341,7 +336,7 @@ Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personali
 "Use the {agent-name} agent to {task}"
 
 # Task tool (paralelo)
-"Use Task tool to launch code-quality-reviewer and security-reviewer in parallel"
+"Use Task tool to launch code-reviewer and security-reviewer in parallel"
 ```
 
 **Best Practices:**
@@ -358,7 +353,7 @@ Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personali
 
 ```bash
 # Review en paralelo (PR workflow)
-"Launch code-quality-reviewer and security-reviewer in parallel
+"Launch code-reviewer and security-reviewer in parallel
 to review changes in current branch vs develop"
 
 # Especialización forzada
@@ -437,10 +432,8 @@ git commit -m "checkpoint: antes de refactor X"
 
 ## Combinaciones Poderosas
 
-**ultrathink + @directorio:**
 
 ```bash
-ultrathink analiza la arquitectura de @src/core
 ```
 
 Claude gets deep context upfront + razonamiento profundo = architectural insights precisos
@@ -456,7 +449,6 @@ Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto
 **Tab + thinking explícito:**
 
 ```
-Tab (activar razonamiento) + "ultrathink diseña este sistema"
 ```
 
 Problems realmente complejos. Double thinking = Claude goes extra deep
