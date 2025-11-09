@@ -9,6 +9,8 @@ CHANGES FROM v1.0:
   - Positive framing throughout (no negative prompting)
   - Version tracking in logs
   - Replaced 'List reused components' with 'Skills-First' (v2.0.1 - Nov 2025)
+  - Moved complexity budget to AT COMPLETION (v2.0.2 - Nov 2025)
+  - Added Core Memory search reminder BEFORE RESPONDING (v2.0.2 - Nov 2025)
 
 EVIDENCE BASE:
   - Anthropic Context Engineering (Sept 2025): Lightweight goal reminders, smallest high-signal tokens
@@ -89,10 +91,10 @@ def log_result():
                 json.dumps(
                     {
                         "timestamp": datetime.now().isoformat(),
-                        "version": "2.0.1",
+                        "version": "2.0.2",
                         "guidelines_injected": True,
                         "checklist_items": 4,
-                        "changes": "Skills-First replaces List reused components"
+                        "changes": "Core Memory search moved to BEFORE, complexity budget to AT COMPLETION"
                     }
                 )
                 + "\n"
@@ -108,16 +110,17 @@ def main():
         sys.exit(0)  # Silent fail, don't block Claude
 
     # LIGHTWEIGHT GOAL REMINDERS (evidence-based: Anthropic Sept 2025)
-    # Token count: ~50 tokens (reduced from 150, -67%)
+    # Token count: ~55 tokens (v2.0.2)
     # Checklist optimal length: 4 items (Cowan 2001, Pronovost 2006)
     guidelines = """BEFORE RESPONDING:
 
+□ Core Memory: Search relevant context
 □ Skills: List available skills, use if applicable
 □ Frame problem (≤3 bullets) + size (S/M/L)
 □ If ambiguous: use AskUserQuestion
-□ Check complexity budget (CLAUDE.md §3)
 
 AT COMPLETION:
+□ Check complexity budget (CLAUDE.md §3)
 Declare: "✓ Validated: CLAUDE.md §[X,Y,Z]"
 
 Full context: CLAUDE.md (authoritative operating protocol)
