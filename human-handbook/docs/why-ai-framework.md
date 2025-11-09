@@ -1,6 +1,8 @@
 # Por Qué Existe AI Framework
 
+::: tip Esencia
 Claude Code te da acceso a IA de clase mundial. Este framework estructura esas capacidades en un sistema de ingeniería predecible.
+:::
 
 ---
 
@@ -8,26 +10,29 @@ Claude Code te da acceso a IA de clase mundial. Este framework estructura esas c
 
 El desarrollo con LLM sin estructura presenta patrones repetidos de degradación:
 
-**Iteración sin arquitectura**
+### Iteración sin arquitectura
 
 ```plaintext
 Request: "Implementa autenticación JWT"
 Output: Código funcional sin tests
 Request: "Agrega refresh tokens"
-Output: Modificación sin validación de regresión
+Output: Modificación sin validación de regresión  // [!code warning]
 Request: "Agrega validación"
-Output: Parches sobre parches
+Output: Parches sobre parches  // [!code error]
 
-Resultado: Código frágil, arquitectura ad-hoc, deuda técnica
+Resultado: Código frágil, arquitectura ad-hoc, deuda técnica  // [!code error]
 ```
 
-**Ausencia de quality gates**
+### Ausencia de quality gates
+
 - Tests como afterthought (si existen)
 - Security reviews manuales e inconsistentes
 - Complexity sin control (over-engineering o under-engineering)
 - Arquitectura que emerge sin diseño intencional
 
-**Consecuencia**: Proyectos que funcionan en desarrollo pero fallan en producción.
+::: danger Consecuencia
+Proyectos que funcionan en desarrollo pero fallan en producción.
+:::
 
 ---
 
@@ -37,27 +42,31 @@ AI Framework implementa gobernanza basada en investigación validada:
 
 ### Fundamentos Científicos
 
-**Context Engineering (Anthropic, 2025)**
+::: info Context Engineering (Anthropic, 2025)
 Optimización de context windows:
 - Minimizar tokens, maximizar señal
 - Filtrado de false positives validado
 - Context loading just-in-time
+:::
 
-**LLM Optimization (DeepMind OPRO, 2023)**
+::: info LLM Optimization (DeepMind OPRO, 2023)
 Técnicas con resultados medidos:
-- Framing sistemático: +46.2 puntos accuracy (benchmark GSM8K)
-- Multi-approach analysis: +57.7% calidad (ATLAS study, 2024)
+- Framing sistemático: **+46.2 puntos** accuracy (benchmark GSM8K)
+- Multi-approach analysis: **+57.7% calidad** (ATLAS study, 2024)
+:::
 
-**Test-Driven Development (Kent Beck)**
+::: info Test-Driven Development (Kent Beck)
 Red-green-refactor enforcement:
-- 40-80% reducción en bugs (Microsoft Research, 2008)
+- **40-80% reducción** en bugs (Microsoft Research, 2008)
 - Prevención de regresiones mediante test-first
+:::
 
-**Constitutional AI (Anthropic, 2022)**
+::: info Constitutional AI (Anthropic, 2022)
 Principios como enforcement automático:
 - Constraints no negociables (complexity budgets, TDD, reuse-first)
 - Separation of powers (Product, Design, Engineering, Security)
 - Audit trail para decisiones arquitectónicas
+:::
 
 ---
 
@@ -65,24 +74,27 @@ Principios como enforcement automático:
 
 El framework aplica enforcement en tres capas:
 
-**Constitutional Layer**
-Invariantes aplicadas automáticamente:
+::: details Constitutional Layer
+**Invariantes aplicadas automáticamente:**
 - Value/complexity ≥2x (beneficio debe justificar costo)
 - TDD mandatory (tests antes de código)
 - Complexity budgets (S≤80, M≤250, L≤600 líneas netas)
+:::
 
-**Orchestration Layer**
-Componentes especializados:
+::: details Orchestration Layer
+**Componentes especializados:**
 - 45 specialized agents por dominio técnico
 - 26 workflow commands para ciclos reproducibles
 - 5 lifecycle hooks con interception points
 - 19 skills con workflows estructurados
+:::
 
-**Execution Layer**
-Validación continua:
+::: details Execution Layer
+**Validación continua:**
 - Quality gates automáticos (security, performance, constitutional)
 - Ejecución paralela con manejo de dependencias
 - Audit trail completo
+:::
 
 **Diferencia clave**: Enforcement automático, no sugerencias opcionales.
 
@@ -90,24 +102,24 @@ Validación continua:
 
 ## Ejemplo: Autenticación
 
-**Sin framework:**
+::: code-group
 
-```plaintext
+```plaintext [Sin Framework]
 Request: "Implementa JWT auth"
-Output: Código funcional sin tests
+Output: Código funcional sin tests  // [!code warning]
 Deploy: Funciona en desarrollo
-Production: Token expiration no validada → security breach
+Production: Token expiration no validada → security breach  // [!code error]
 ```
 
-**Con framework:**
-
-```plaintext
+```plaintext [Con Framework]
 Request: "Implementa JWT auth"
-TDD gate: Test escrito antes de implementación
-Security review: Detecta falta de token expiration → blocker
-Constitutional check: +120 líneas (Size M, dentro de budget)
+TDD gate: Test escrito antes de implementación  // [!code highlight]
+Security review: Detecta falta de token expiration → blocker  // [!code highlight]
+Constitutional check: +120 líneas (Size M, dentro de budget)  // [!code highlight]
 Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 ```
+
+:::
 
 **Prevención verificada:**
 - Tests ausentes (TDD blocker)
@@ -119,60 +131,60 @@ Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 
 ## Transformación: Asistente → Ingeniero
 
-**Asistente (vanilla):**
+::: code-group
 
-```plaintext
+```plaintext [Asistente (vanilla)]
 Developer → "Haz X" → Claude hace X → "Ahora Y" → Claude hace Y
-            [Micro-management continuo]
+            [Micro-management continuo]  // [!code warning]
 ```
 
-**Ingeniero (framework):**
-
-```plaintext
+```plaintext [Ingeniero (framework)]
 Developer → "Objetivo: Sistema de autenticación"
 Framework + Claude:
-  ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)
-  ├─ Multi-approach ROI (beneficio vs complejidad)
-  ├─ TDD implementation (tests → código)
-  ├─ Quality gates (security + code review + constitutional)
-  └─ Deployment (PR auto-created, reviews passed)
+  ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)  // [!code highlight]
+  ├─ Multi-approach ROI (beneficio vs complejidad)  // [!code highlight]
+  ├─ TDD implementation (tests → código)  // [!code highlight]
+  ├─ Quality gates (security + code review + constitutional)  // [!code highlight]
+  └─ Deployment (PR auto-created, reviews passed)  // [!code highlight]
 
 [Developer: decisiones estratégicas | Claude: ejecución táctica]
 ```
 
-**Resultado**: Developer liberado de micro-management.
+:::
+
+::: tip Resultado
+Developer liberado de micro-management.
+:::
 
 ---
 
 ## De Idea a Producción
 
-**Ciclo tradicional:**
+::: code-group
 
-```plaintext
+```plaintext [Ciclo Tradicional]
 Idea → Spec (días) → Design (días) → Dev (semanas) → QA (días)
-      [Humanos en cada paso · Errores acumulados · 1-2 meses]
+      [Humanos en cada paso · Errores acumulados · 1-2 meses]  // [!code warning]
 ```
 
-**Ciclo Claude Code vanilla:**
-
-```plaintext
+```plaintext [Claude Code Vanilla]
 Idea → Claude genera → Developer corrige → Deploy (maybe)
-      [Rápido pero frágil · Sin tests · Días, calidad ?]
+      [Rápido pero frágil · Sin tests · Días, calidad ?]  // [!code warning]
 ```
 
-**Ciclo AI Framework:**
-
-```plaintext
-Idea → /speckit.specify (minutos)
-     → /speckit.plan (minutos)
-     → /speckit.implement (horas)
-     → Dual review → /pullrequest → Deploy
+```plaintext [AI Framework]
+Idea → /speckit.specify (minutos)  // [!code highlight]
+     → /speckit.plan (minutos)  // [!code highlight]
+     → /speckit.implement (horas)  // [!code highlight]
+     → Dual review → /pullrequest → Deploy  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]
 [Tests desde día 1 · Horas-días, production-ready]
 ```
 
-**Diferencia**:
+:::
+
+### Comparación
 
 | Aspecto | Sin Framework | Con Framework |
 |---------|---------------|---------------|
