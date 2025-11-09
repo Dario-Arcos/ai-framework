@@ -146,7 +146,7 @@ When compacting conversations (e.g., `/compact`), apply these rules:
 ## Quality Standards
 
 - **Language Consistency**: Use English for code/AI documentation, Spanish for human documentation. Maintain language consistency within each file.
-- **Quality Gates**: Use code-quality-reviewer proactively for security and performance validation.
+- **Quality Gates**: Use code-reviewer proactively for security and performance validation.
 
 ## Code Review Guidelines
 

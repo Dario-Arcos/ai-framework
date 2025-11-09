@@ -464,7 +464,7 @@ Hook: user_auth.py
 ```markdown
 # New agent: code-analyzer
 
-# (But code-quality-reviewer already exists and does the same!)
+# (But code-reviewer already exists and does the same!)
 ```
 
 **Impact**: Violates "Reuse First" principle, maintenance burden
@@ -472,7 +472,7 @@ Hook: user_auth.py
 **Fix**: Reuse or justify ≥30% differentiation
 
 ```markdown
-# Use existing code-quality-reviewer
+# Use existing code-reviewer
 
 # OR
 
