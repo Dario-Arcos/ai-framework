@@ -336,7 +336,7 @@ Always consider these specialized agents for quality gates:
 
 **Code Quality**:
 
-- `code-quality-reviewer`: Universal code quality (recommend for all significant code changes)
+- `code-reviewer`: Universal code quality (recommend for all significant code changes)
 
 **Security**:
 
