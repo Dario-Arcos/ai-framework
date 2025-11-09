@@ -51,12 +51,10 @@ jobs:
             - Respect repository conventions in CLAUDE.md if present.
 
             CONSTITUTIONAL COMPLIANCE
-            When evaluating complexity budget compliance:
-            - Δ LOC = additions - deletions (net change, not total additions)
-            - Size S: ≤ 80 Δ LOC, Size M: ≤ 250 Δ LOC, Size L: ≤ 600 Δ LOC
-            - Calculate using: gh pr view ${{ github.event.pull_request.number }} --json additions,deletions,changedFiles
-            - Example: +87 -88 = -1 Δ LOC ≤ 80 (complies with Size S)
-            - Report mathematical calculation clearly in constitutional assessment
+            Verify complexity budget compliance using rules defined in CLAUDE.md §3.
+            Use: gh pr view ${{ github.event.pull_request.number }} --json additions,deletions,changedFiles
+            Calculate Δ LOC = additions - deletions (net change).
+            Report compliance assessment with mathematical calculation clearly.
 
             FALSE POSITIVE FILTERING:
             You do not need to run commands to reproduce the vulnerability, just read the code to determine if it is a real vulnerability. Use bash only for git operations and gh CLI when needed.
