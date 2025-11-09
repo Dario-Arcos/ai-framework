@@ -24,7 +24,30 @@ npm install
 ls node_modules/puppeteer-core  # Should exist
 \`\`\`
 
-If you see "No such file or directory", you installed in the wrong location. Must be in `tools/` subdirectory, not in `skills/browser-automation/`.
+### ⚠️ CRITICAL INSTALLATION WARNING
+
+**MUST install in `tools/` subdirectory, NOT in `browser-automation/`.**
+
+```bash
+# ❌ WRONG - Will fail at runtime
+cd skills/browser-automation
+npm install
+
+# ✅ CORRECT - Works first time
+cd skills/browser-automation/tools
+npm install
+```
+
+**Why it matters:** Scripts expect relative path `./node_modules/puppeteer-core`. Wrong location = runtime failure requiring full restart.
+
+### Why Setup Verification Matters (Real Timing)
+
+| Approach | Initial Time | Failure Recovery | Total Time | Success Rate |
+|----------|-------------|------------------|------------|--------------|
+| Skip verification | 30 sec | 90 sec debug + restart | 2+ min | 40% |
+| Verify setup (ls node_modules/) | 2 min | 0 sec (works first time) | 2 min | 100% |
+
+**Under pressure, setup verification is faster than debugging failures.**
 
 ## Start Chrome
 
@@ -78,4 +101,15 @@ Interactive element picker. Click to select, Cmd/Ctrl+Click for multi-select, En
 
 Safely stops the debugging Chrome instance on `:9223` without touching your main Chrome sessions.
 
-**⚠️ CRITICAL WARNING:** Do NOT use `killall "Google Chrome"` - it will close ALL your Chrome windows (personal and debugging). Always use `./tools/stop.js` instead.
+### ⚠️ CRITICAL: NEVER Use killall
+
+**NEVER use `killall "Google Chrome"`** - it closes ALL your Chrome sessions:
+- ❌ Personal browsing tabs (work, email, social)
+- ❌ Other development sessions
+- ❌ Unsaved form data
+- ❌ Active downloads
+- ❌ **User trust when you destroy their work**
+
+**ALWAYS use `./tools/stop.js`** - it ONLY closes the debugging instance on port `:9223`.
+
+**Why this matters:** Running `killall` under pressure to "just get it working" destroys user sessions and breaks trust. The extra 2 seconds to use `stop.js` prevents catastrophic data loss.

@@ -83,7 +83,59 @@ Skills use a three-level loading system to manage context efficiently:
 
 \*Unlimited because scripts can be executed without reading into context window.
 
-## Skill Creation Process
+## Core Principle: Concrete Examples First
+
+**Generic skills fail on specific edge cases. Always start with 3-5 concrete examples.**
+
+A skill addressing real user scenarios works. A skill trying to solve "all possible cases" helps no one.
+
+## Anti-Pattern: Generic Skills
+
+### ❌ BAD - Generic skill without examples
+
+User: "Create a skill for Python import errors"
+
+You create:
+```yaml
+---
+name: python-import-fixer
+description: Fix Python import errors
+---
+# Steps:
+1. Check if module installed
+2. Check sys.path
+3. Fix relative imports
+```
+
+**Problem:** Doesn't address user's actual edge cases (circular imports? namespace packages? editable installs?). User hits error → skill doesn't help → user debugs skill instead of problem.
+
+### ✅ GOOD - Specific to user's examples
+
+User: "I keep getting ImportError when using relative imports in my Flask app"
+
+You ask: "Can you show me 2-3 specific import errors you're hitting?"
+
+User provides:
+- `ImportError: attempted relative import with no known parent package`
+- `ModuleNotFoundError: No module named 'app.models'`
+- `ImportError: cannot import name 'db' from 'app'`
+
+You create skill addressing THESE specific patterns.
+
+**Result:** Skill solves user's actual problems. User trusts skill because it works.
+
+## Skill Creation Workflow (Follow in Order)
+
+Use this checklist for every skill:
+
+- [ ] **Step 1:** Get 3-5 concrete examples from user
+- [ ] **Step 2:** Identify reusable resources needed (scripts/references/assets)
+- [ ] **Step 3:** Initialize skill structure (SKILL.md + directories)
+- [ ] **Step 4:** Write SKILL.md addressing specific examples
+- [ ] **Step 5:** Add bundled resources (scripts, references, assets)
+- [ ] **Step 6:** Validate and package
+
+## Skill Creation Process (Detailed)
 
 To create a skill, follow the "Skill Creation Process" in order, skipping steps only if there is a clear reason why they are not applicable.
 

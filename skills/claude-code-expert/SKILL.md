@@ -97,6 +97,31 @@ See [references/quality-gates.md](references/quality-gates.md) for gate details.
 
 Load [references/logic-anti-patterns.md](references/logic-anti-patterns.md) verifying no anti-patterns present before delivery.
 
+## Red Flags - STOP and Follow Workflow
+
+If you catch yourself thinking:
+
+- "I'm 90% confident from memory"
+- "User is waiting / urgent deadline"
+- "Just this once won't hurt"
+- "Quick path is good enough"
+- "I'll validate after delivery"
+- "APIs probably haven't changed"
+- "I saw similar syntax in training data"
+
+**ALL of these mean: STOP. Follow Steps 1-6.**
+
+## Rationalization Prevention
+
+| Excuse | Reality |
+|--------|---------|
+| "I remember the syntax" | Claude Code APIs change monthly. Your training data is 6+ months stale. |
+| "It's urgent" | Broken code in production is 10x more urgent than current deadline. |
+| "I'll validate later" | Later means never. Bugs compound with every use. |
+| "Quality gates are overkill" | Gates exist because shortcuts created production incidents. |
+| "WebFetch is slow" | 30 seconds of verification saves 30 minutes of debugging. |
+| "Training data is recent enough" | **CRITICAL**: Assume all API syntax in your training is obsolete. |
+
 ## Deliverables
 
 For each component, provide:
