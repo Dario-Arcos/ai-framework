@@ -21,7 +21,7 @@ Without structure, Claude Code's power gets wasted: code that "works" but fails 
 
 > Transform the complete lifecycle of digital products into an automated, high-quality process—freeing brilliant minds to make ideas reality in record time without sacrificing quality, scalability, security, or potential.
 
-[Why AI Framework? →](https://dario-arcos.github.io/ai-framework/why-ai-framework) | [Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
+[Why AI Framework? →](https://dario-arcos.github.io/ai-framework/docs/why-ai-framework) | [Constitution →](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify.template/memory/constitution.md)
 
 ---
 
@@ -125,7 +125,7 @@ Framework enforces **5 non-negotiable principles**:
 | **Complexity Budget** | S≤80LOC \| M≤250LOC \| L≤600LOC (net change)         |
 | **Reuse First**       | Library-first, avoid abstractions <30% justification |
 
-Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify/memory/constitution.md)
+Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/blob/main/template/.specify.template/memory/constitution.md)
 
 ---
 
@@ -133,10 +133,10 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 
 **[Full Documentation →](https://dario-arcos.github.io/ai-framework/)**
 
-- [Quickstart](https://dario-arcos.github.io/ai-framework/quickstart) — 15 minutes to productive
-- [Commands Guide](https://dario-arcos.github.io/ai-framework/commands-guide) — Slash commands reference
-- [Agents Guide](https://dario-arcos.github.io/ai-framework/agents-guide) — Specialized agents catalog
-- [MCP Servers](https://dario-arcos.github.io/ai-framework/mcp-servers) — Extend Claude Code capabilities
+- [Quickstart](https://dario-arcos.github.io/ai-framework/docs/quickstart) — 15 minutes to productive
+- [Commands Guide](https://dario-arcos.github.io/ai-framework/docs/commands-guide) — Slash commands reference
+- [Agents Guide](https://dario-arcos.github.io/ai-framework/docs/agents-guide) — Specialized agents catalog
+- [MCP Servers](https://dario-arcos.github.io/ai-framework/docs/mcp-servers) — Extend Claude Code capabilities
 
 ---
 
