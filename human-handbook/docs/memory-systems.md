@@ -29,3 +29,30 @@ Sistemas de persistencia de contexto para Claude Code. Permiten recordar decisio
 - Buscar por contexto semántico, no solo keywords
 
 ---
+
+## Comparativa Técnica
+
+| Feature | Team Memory | Episodic Memory |
+|---------|-------------|-----------------|
+| **Propósito** | Memoria oficial del proyecto | Memoria personal del desarrollador |
+| **Tipo** | Knowledge graph | Vector search |
+| **Granularidad** | Facts/entities | Conversaciones completas |
+| **Búsqueda** | Conceptual (knowledge graph) | Semántica (full-text) |
+| **Persistencia** | Cloud (proxy Railway) | Local SQLite |
+| **Acceso** | Read-only (vía proxy) | Read/write (local) |
+| **Alimentación** | Planificada por admin | Automática (session-end) |
+| **Costo contexto** | Bajo (~2 tools) | Bajo (~3 tools) |
+| **Privacidad** | Compartido (equipo) | Personal (solo tú) |
+
+::: tip Implementación desde Cero
+Si necesitas configurar tu propia memoria estructurada personal, consulta [MCP Servers - Core Memory](/docs/mcp-servers#core-memory-personal)
+:::
+
+---
+
+## Setup Guides
+
+- [Team Memory Setup](#team-memory)
+- [Episodic Memory Setup](#episodic-memory)
+
+---
