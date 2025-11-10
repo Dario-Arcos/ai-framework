@@ -37,7 +37,7 @@ Sistemas de persistencia de contexto para Claude Code. Permiten recordar decisio
 | **Propósito** | Memoria oficial del proyecto | Memoria personal del desarrollador |
 | **Tipo** | Knowledge graph | Vector search |
 | **Granularidad** | Facts/entities | Conversaciones completas |
-| **Búsqueda** | Conceptual (knowledge graph) | Semántica (full-text) |
+| **Búsqueda** | Conceptual (knowledge graph) | Semántica (vector embeddings) |
 | **Persistencia** | Cloud (proxy Railway) | Local SQLite |
 | **Acceso** | Read-only (vía proxy) | Read/write (local) |
 | **Alimentación** | Planificada por admin | Automática (session-end) |
