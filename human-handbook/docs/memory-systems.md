@@ -74,7 +74,7 @@ Búsqueda semántica local de tus conversaciones completas con Claude Code. A di
 **1. Instalar globalmente:**
 
 ```bash
-npm install -g @obra/episodic-memory
+npm install -g episodic-memory
 ```
 
 **2. Configurar MCP en `.mcp.json`:**
@@ -83,7 +83,7 @@ npm install -g @obra/episodic-memory
 {
   "mcpServers": {
     "episodic-memory": {
-      "command": "episodic-memory-mcp"
+      "command": "episodic-memory-mcp-server"
     }
   }
 }
@@ -152,9 +152,7 @@ episodic-memory show <conversation-id>
 Para excluir conversaciones específicas, usa markers:
 
 ```xml
-<INSTRUCTIONS-TO-EPISODIC-MEMORY>
-DO_NOT_INDEX
-</INSTRUCTIONS-TO-EPISODIC-MEMORY>
+<INSTRUCTIONS-TO-EPISODIC-MEMORY>DO NOT INDEX THIS CHAT</INSTRUCTIONS-TO-EPISODIC-MEMORY>
 ```
 
 Las conversaciones marcadas se archivan pero NO se indexan.
