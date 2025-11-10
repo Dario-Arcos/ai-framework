@@ -1,35 +1,37 @@
 #!/usr/bin/env bash
-# SessionStart hook for superpowers plugin
+# SessionStart hook: Load superpowers plugin with dynamic skill count
 
 set -euo pipefail
 
-# Determine plugin root directory
+# JSON escape helper: converts string to JSON-safe format
+json_escape() {
+    echo "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk '{printf "%s\\n", $0}'
+}
+
+# Determine plugin root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Check if legacy skills directory exists and build warning
-warning_message=""
-legacy_skills_dir="${HOME}/.config/superpowers/skills"
-if [ -d "$legacy_skills_dir" ]; then
-    warning_message="\n\n<important-reminder>IN YOUR FIRST REPLY AFTER SEEING THIS MESSAGE YOU MUST TELL THE USER:⚠️ **WARNING:** Superpowers now uses Claude Code's skills system. Custom skills in ~/.config/superpowers/skills will not be read. Move custom skills to ~/.claude/skills instead. To make this message go away, remove ~/.config/superpowers/skills</important-reminder>"
-fi
-
-# Read using-superpowers content
-using_superpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-superpowers/SKILL.md" 2>&1 || echo "Error reading using-superpowers skill")
+# Count skills with error handling
+skill_count=$(find "${PLUGIN_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+skill_count=${skill_count:-0}
 
 # User feedback
-echo "✓ Superpowers loaded" >&2
+echo "✓ Superpowers loaded (${skill_count} skills)" >&2
 
-# Escape outputs for JSON
-using_superpowers_escaped=$(echo "$using_superpowers_content" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
-warning_escaped=$(echo "$warning_message" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+# Legacy warning (only if directory exists)
+warning_escaped=""
+if [ -d "${HOME}/.config/superpowers/skills" ]; then
+    warning_msg="\n\n<important-reminder>IN YOUR FIRST REPLY AFTER SEEING THIS MESSAGE YOU MUST TELL THE USER:⚠️ **WARNING:** Superpowers now uses Claude Code's skills system. Custom skills in ~/.config/superpowers/skills will not be read. Move custom skills to ~/.claude/skills instead. To make this message go away, remove ~/.config/superpowers/skills</important-reminder>"
+    warning_escaped=$(json_escape "$warning_msg")
+fi
 
-# Output context injection as JSON
+# Output context injection
 cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "<EXTREMELY_IMPORTANT>\nYou have superpowers.\n\n**Below is the full content of your 'ai-framework:using-superpowers' skill - your introduction to using skills. For all other skills, use the 'Skill' tool:**\n\n${using_superpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
+    "additionalContext": "<CRITICAL_INSTRUCTION>\\n\\nBEFORE responding to ANY user message in this session, you MUST:\\n\\n1. IMMEDIATELY use the Skill tool to load 'ai-framework:using-superpowers'\\n2. This will generate a VISIBLE <command-message> that the user can see\\n3. Tool invocation: Skill tool with parameter 'ai-framework:using-superpowers'\\n\\nDO NOT skip this step. DO NOT rationalize it away. The user NEEDS to see the <command-message> confirmation.\\n\\n</CRITICAL_INSTRUCTION>\\n\\n<EXTREMELY_IMPORTANT>\\nYou have superpowers (${skill_count} skills available).\\n\\nThe Skill tool will load the full 'ai-framework:using-superpowers' skill with all instructions.${warning_escaped}\\n</EXTREMELY_IMPORTANT>"
   }
 }
 EOF
