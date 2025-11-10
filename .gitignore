@@ -130,3 +130,6 @@ human-handbook/.vitepress/cache/
 # To ignore them, uncomment these lines:
 # /specs/
 # /prps/
+
+# Planning & design documents (working files, not for version control)
+/docs/plans/
