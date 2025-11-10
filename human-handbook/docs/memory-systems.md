@@ -56,3 +56,112 @@ Si necesitas configurar tu propia memoria estructurada personal, consulta [MCP S
 - [Episodic Memory Setup](#episodic-memory)
 
 ---
+
+## Episodic Memory
+
+### ¿Qué es?
+
+Búsqueda semántica local de tus conversaciones completas con Claude Code. A diferencia de Team Memory (knowledge graph centralizado), Episodic Memory mantiene un índice personal de TODAS tus conversaciones para búsqueda full-text y semántica.
+
+**Casos de uso:**
+- Encontrar "¿Cómo resolvimos el bug de autenticación hace 2 semanas?"
+- Rastrear evolución de decisiones técnicas
+- Recuperar patrones de solución aplicados anteriormente
+- Buscar por contexto semántico, no solo keywords
+
+### Quick Install
+
+**1. Instalar globalmente:**
+
+```bash
+npm install -g @obra/episodic-memory
+```
+
+**2. Configurar MCP en `.mcp.json`:**
+
+```json
+{
+  "mcpServers": {
+    "episodic-memory": {
+      "command": "episodic-memory-mcp"
+    }
+  }
+}
+```
+
+**3. Activar en `.claude/settings.local.json`:**
+
+```json
+{
+  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory"]
+  // episodic-memory activo (no está en la lista)
+}
+```
+
+**4. Restart:** `Ctrl+D` → `claude`
+
+**5. Verificar:** `/mcp` debe mostrar `episodic-memory: ✓ Connected`
+
+### Uso desde Claude Code
+
+**Búsqueda básica:**
+```
+Busca en mis conversaciones: decisiones sobre arquitectura de API
+```
+
+**Búsqueda con filtro de fecha:**
+```
+Busca conversaciones sobre Docker desde hace 1 semana
+```
+
+**Multi-concepto (AND search):**
+```
+Busca conversaciones sobre testing Y performance
+```
+
+### Comandos CLI
+
+Además del uso desde Claude Code, puedes usar episodic-memory desde terminal:
+
+```bash
+# Sincronizar conversaciones nuevas
+episodic-memory sync
+
+# Buscar
+episodic-memory search "authentication bug"
+
+# Ver estadísticas
+episodic-memory stats
+
+# Ver conversación específica
+episodic-memory show <conversation-id>
+```
+
+### Features Clave
+
+| Feature | Descripción |
+|---------|-------------|
+| **Semantic Search** | Búsqueda por significado, no solo keywords |
+| **Offline** | Todo local, sin servicios cloud |
+| **Privacy** | Control total sobre qué se indexa |
+| **Multi-concept** | Combina 2-5 conceptos con AND |
+| **Date Filtering** | Filtra por rango temporal |
+
+### Control de Indexación
+
+Para excluir conversaciones específicas, usa markers:
+
+```xml
+<INSTRUCTIONS-TO-EPISODIC-MEMORY>
+DO_NOT_INDEX
+</INSTRUCTIONS-TO-EPISODIC-MEMORY>
+```
+
+Las conversaciones marcadas se archivan pero NO se indexan.
+
+### Ver También
+
+→ [Documentación oficial completa](https://github.com/obra/episodic-memory)
+→ [MCP Servers - Configuración avanzada](/docs/mcp-servers)
+
+---
