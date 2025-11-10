@@ -114,7 +114,7 @@ def main():
     # Checklist optimal length: 4 items (Cowan 2001, Pronovost 2006)
     guidelines = """BEFORE RESPONDING:
 
-□ Core Memory: Search relevant context
+□ Core Memory: use memory-search for: previous discussions about this topic, related project context, and similar problems solved before
 □ Skills: List available skills, use if applicable
 □ Frame problem (≤3 bullets) + size (S/M/L)
 □ If ambiguous: use AskUserQuestion

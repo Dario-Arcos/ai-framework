@@ -70,32 +70,8 @@ def log_result(project_name):
 def main():
     project_name = get_project_name()
 
-    # Optimized multi-query strategy based on Core Memory re-ranking factors
-    # Leverages: keyword matching, semantic search, graph traversal, and temporal filtering
-    instruction = f"""🧠 SESSION STARTED: Execute these optimized memory searches for {project_name}:
-
-**Query 1** (Recent Decisions - Temporal Priority):
-"Recent architectural decisions, breaking changes, and technical trade-offs for {project_name} project"
-
-**Query 2** (Implementation Depth - Technical Priority):
-"Implementation patterns, hooks architecture, configuration system, and code structure for {project_name}"
-
-**Query 3** (Current Work - Recency Priority):
-"Current development work, active features, recent commits, and technical implementations for {project_name}"
-
-**Search Focus** (retrieve these):
-- Code patterns and implementation details
-- Configuration values and constraints
-- Architectural decisions with rationale
-- Technical trade-offs and why chosen
-- Specific component details (hooks, agents, commands, workflows)
-
-**Avoid Retrieving**:
-- Generic project overviews or mission statements
-- High-level component listings without details
-- Vague context lacking actionable specifics
-
-Execute all 3 queries before responding to first user message. Prioritize results with technical depth and recency."""
+    # Official Core Memory recommendation for session start hook
+    instruction = f"🧠 SESSION STARTED: Search memory for context about: {project_name} project, previous conversations, and related work. Do this before responding to user queries."
 
     output = {
         "hookSpecificOutput": {
