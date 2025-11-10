@@ -12,6 +12,9 @@
     "core-memory": {
       "type": "http",
       "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code"
+    },
+    "episodic-memory": {
+      "command": "episodic-memory-mcp-server"
     }
   }
 }
