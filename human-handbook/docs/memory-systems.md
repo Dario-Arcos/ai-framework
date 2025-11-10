@@ -241,3 +241,88 @@ Para detalles técnicos completos del proxy, troubleshooting y configuración av
 → [Team Core Proxy Repository](https://github.com/Dario-Arcos/team-core-proxy)
 
 ---
+
+## ¿Cuál Usar Cuándo?
+
+### Escenarios Comunes
+
+**Escenario 1: "¿Cómo resolvimos este bug antes?"**
+✅ **Episodic Memory** - Busca en tus conversaciones pasadas
+
+**Escenario 2: "¿Cuál es la arquitectura oficial de autenticación?"**
+✅ **Team Memory** - Consulta decisiones del proyecto
+
+**Escenario 3: "¿Qué experimenté con Docker la semana pasada?"**
+✅ **Episodic Memory** - Tu trabajo personal no afecta memoria oficial
+
+**Escenario 4: "¿Por qué elegimos PostgreSQL sobre MongoDB?"**
+✅ **Team Memory** - Decisiones arquitectónicas documentadas
+
+**Escenario 5: "¿Qué discutí con Claude sobre refactoring?"**
+✅ **Episodic Memory** - Conversaciones completas indexadas
+
+### Workflow Recomendado
+
+```
+1. Búsqueda rápida personal
+   → Episodic Memory (fast, local)
+
+2. Si no encuentras o necesitas validar
+   → Team Memory (source of truth oficial)
+
+3. Encontraste solución nueva e importante
+   → Notifica al admin para agregar a Team Memory
+```
+
+### Anti-Patrones
+
+❌ **NO uses Team Memory para:** Experimentos, trabajo en progreso, conversaciones exploratorias
+
+❌ **NO uses Episodic Memory para:** Decisiones oficiales del proyecto (no es source of truth)
+
+✅ **SÍ usa ambos:** Son complementarios, no excluyentes
+
+---
+
+## Troubleshooting
+
+### Episodic Memory no indexa conversaciones
+
+**Check:**
+1. `episodic-memory sync` ejecutado al menos una vez
+2. Conversaciones no tienen marker `DO_NOT_INDEX`
+3. MCP server activo en `/mcp`
+
+**Debug:**
+```bash
+episodic-memory stats
+# Debe mostrar conversaciones indexadas
+```
+
+### Team Memory no conecta
+
+**Check:**
+1. Token válido en `.claude/.mcp.json`
+2. Server no está en `disabledMcpjsonServers`
+3. Conexión de red a Railway proxy
+
+**Debug:**
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  https://team-core-proxy.up.railway.app/health
+# Expected: {"status":"ok"}
+```
+
+### Performance degradation
+
+Si notas lentitud con múltiples MCPs activos:
+- Deshabilita MCPs no críticos en `settings.local.json`
+- Mantén solo memory systems + 1-2 tools esenciales
+- Ver [Context Budget en MCP Servers](/docs/mcp-servers#context-budget-responsabilidad)
+
+---
+
+::: info Última Actualización
+**Fecha**: 2025-11-10 | **Sistemas**: Team Memory (proxy) + Episodic Memory (local)
+:::
+
