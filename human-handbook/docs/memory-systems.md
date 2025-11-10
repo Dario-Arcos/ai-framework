@@ -163,3 +163,81 @@ Las conversaciones marcadas se archivan pero NO se indexan.
 → [MCP Servers - Configuración avanzada](/docs/mcp-servers)
 
 ---
+
+## Team Memory
+
+### ¿Qué es?
+
+Acceso read-only a la memoria oficial del proyecto vía proxy Railway. Permite al equipo consultar decisiones, arquitectura y facts del proyecto sin capacidad de modificación. La alimentación es planificada y controlada por el admin.
+
+**Casos de uso:**
+- Consultar decisiones arquitectónicas del proyecto
+- Buscar patrones establecidos por el equipo
+- Onboarding de nuevos miembros (contexto inmediato)
+- Mantener consistencia en todo el equipo
+
+### Quick Setup (requiere admin)
+
+**1. Obtener token:**
+
+Solicita el token de acceso a tu admin del proyecto.
+
+**2. Configurar en `.claude/.mcp.json` (gitignored):**
+
+```json
+{
+  "mcpServers": {
+    "team-memory": {
+      "type": "http",
+      "url": "https://team-core-proxy.up.railway.app/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TEAM_TOKEN_HERE"
+      }
+    }
+  }
+}
+```
+
+**3. Activar en `.claude/settings.local.json`:**
+
+```json
+{
+  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory"]
+  // team-memory activo (no está en la lista)
+}
+```
+
+**4. Restart:** `Ctrl+D` → `claude`
+
+**5. Verificar:** `/mcp` debe mostrar `team-memory: ✓ Connected`
+
+### Uso desde Claude Code
+
+**Búsqueda:**
+```
+Busca en memoria del equipo: patrones de autenticación
+```
+
+**Limitación:** Solo read-only. No puedes agregar información (no hay `memory_ingest`).
+
+### Diferencia con Episodic Memory
+
+| Aspecto | Team Memory | Episodic Memory |
+|---------|-------------|-----------------|
+| **Contenido** | Facts curados del proyecto | Todas tus conversaciones |
+| **Búsqueda** | Conceptual (knowledge graph) | Semántica (full-text) |
+| **Privacidad** | Compartido (equipo) | Personal (solo tú) |
+| **Modificación** | No (read-only) | Sí (local) |
+
+**Recomendación:** Usa ambos complementariamente:
+- Team Memory: Para consultar decisiones oficiales
+- Episodic Memory: Para rastrear tu trabajo personal
+
+### Setup Completo
+
+Para detalles técnicos completos del proxy, troubleshooting y configuración avanzada:
+
+→ [MCP Servers - Team Memory Server](/docs/mcp-servers#team-memory-server-local-config)
+→ [Team Core Proxy Repository](https://github.com/Dario-Arcos/team-core-proxy)
+
+---
