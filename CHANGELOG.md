@@ -6,9 +6,17 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
-## [No Publicado]
+## [Unreleased]
 
-- [Cambios futuros se documentan aquí]
+### Added
+- Documentación completa de Memory Systems (Team Memory + Episodic Memory)
+- Guía de decisión problem-first para elegir sistema de memoria
+- Configuración MCP para episodic-memory
+- Tabla comparativa técnica entre sistemas
+- Troubleshooting para problemas comunes
+
+### Changed
+- Sidebar organizado: Memory Systems en Guides (conceptual), MCP Servers en Tools (técnico)
 
 ---
 
