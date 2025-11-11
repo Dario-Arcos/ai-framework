@@ -228,7 +228,7 @@ def scan_template_files(template_dir):
     Architecture:
         - WHITELIST ensures only approved files are copied
         - Excludes .claude.template/agents/ and commands/ (in plugin root)
-        - Excludes .mcp.json (now in plugin root)
+        - Excludes .mcp.json.template (opt-in: user copies manually)
 
     Returns:
         List of tuples: [(template_path, target_path), ...]
