@@ -83,23 +83,30 @@ Asegúrate de tener Claude Code CLI instalado y funcionando antes de proceder.
 
 El plugin maneja automáticamente:
 - Instalación del paquete npm
-- Configuración del MCP server en `.mcp.json`
-- Activación del servidor
+- Configuración lista en `.claude/.mcp.json.template`
+- Usuario activa copiando template y habilitando en settings
 
 ::: tip Instalación Alternativa
 Para instalación manual vía npm o métodos alternativos, consulta el [repositorio oficial](https://github.com/obra/episodic-memory).
 :::
 
-**2. Verificar configuración MCP automática:**
+**2. Copiar template MCP al proyecto:**
 
-El plugin habrá creado/actualizado `.mcp.json`:
+```bash
+cp .claude/.mcp.json.template .mcp.json
+```
+
+El archivo `.mcp.json` incluirá:
 
 ```json {3-7}
 {
   "mcpServers": {
     "episodic-memory": {
       "command": "episodic-memory-mcp-server" // [!code highlight]
-    }
+    },
+    "playwright": { ... },
+    "shadcn": { ... },
+    "core-memory": { ... }
   }
 }
 ```
@@ -108,8 +115,8 @@ El plugin habrá creado/actualizado `.mcp.json`:
 
 ```json {2}
 {
-  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory"] // [!code highlight]
-  // episodic-memory activo (no está en la lista) // [!code highlight]
+  "enabledMcpjsonServers": ["episodic-memory"] // [!code highlight]
+  // Solo episodic-memory habilitado // [!code highlight]
 }
 ```
 

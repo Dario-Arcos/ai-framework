@@ -6,18 +6,19 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 
 ---
 
-## Servidores Instalados
+## Servidores Disponibles
 
-| Server          | Propósito                                    | Package/URL                      | Estado Default | Context Cost |
-| --------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
-| **playwright**  | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ⚠️ Deshabilitado | Alto (~15 tools) |
-| **shadcn**      | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ⚠️ Deshabilitado | Medio (~7 tools) |
-| **core-memory** | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | ⚠️ Deshabilitado | Medio (~6 tools) |
-| **team-memory** | Team memory (read-only via proxy)            | `team-core-proxy.railway.app`    | ⚠️ Deshabilitado | Medio (~2 tools) |
+| Server              | Propósito                                    | Package/URL                      | Estado Default | Context Cost |
+| ------------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
+| **playwright**      | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ❌ No instalado | Alto (~15 tools) |
+| **shadcn**          | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ❌ No instalado | Medio (~7 tools) |
+| **core-memory**     | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | ❌ No instalado | Medio (~6 tools) |
+| **episodic-memory** | Local episodic memory                        | `episodic-memory-mcp-server`     | ❌ No instalado | Medio (~4 tools) |
 
-**Por defecto:** Todos deshabilitados (optimización de contexto)
-**Activación:** Explícita en `.claude/settings.local.json`
-**Local:** `team-memory` además requiere `.claude/.mcp.json` con token privado
+**Por defecto:** Zero MCPs instalados (opt-in explícito)
+**Instalación:** Copiar `.claude/.mcp.json.template` → `.mcp.json` (proyecto)
+**Activación:** Habilitar en `.claude/settings.local.json`
+**Local privado:** `team-memory` requiere `.claude/.mcp.json` con token (no versionable)
 
 ---
 
@@ -56,31 +57,46 @@ Cada MCP activo agrega tools al system prompt de Claude Code. El presupuesto de 
 
 ## Activar Servidores Opt-In
 
-**Por defecto:** Todos los MCPs están deshabilitados (optimización de contexto).
+**Por defecto:** Zero MCPs instalados (optimización de contexto).
 
-**Activación:** Remueve servers de `disabledMcpjsonServers` en `.claude/settings.local.json`.
+**Flujo de activación:** Template → Copiar → Habilitar → Restart
 
 ### Ejemplo: Activar Playwright + Shadcn
 
-**1. Crear/editar `.claude/settings.local.json`:**
+**1. Copiar template al proyecto:**
+
+```bash
+cp .claude/.mcp.json.template .mcp.json
+```
+
+**2. Habilitar en `.claude/settings.local.json`:**
 
 ```json
 {
-  "disabledMcpjsonServers": ["core-memory", "team-memory"]
-  // playwright y shadcn ahora activos (removidos de blacklist)
+  "enabledMcpjsonServers": ["playwright", "shadcn"]
 }
 ```
 
-**2. Restart:** `Ctrl+D` → `claude`
+**3. Restart:** `Ctrl+D` → `claude`
 
-**3. Verificar:** `/mcp` debe mostrar:
+**4. Verificar:** `/mcp` debe mostrar:
 ```
 playwright: ✓ Connected
 shadcn: ✓ Connected
 ```
 
 ::: tip Context-Aware Activation
-Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `settings.local.json` cuando cambies de proyecto.
+Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `enabledMcpjsonServers` cuando cambies de proyecto.
+:::
+
+::: details Ver .mcp.json.template
+El template incluye 4 servidores preconfigurados:
+- `playwright`: Browser automation
+- `shadcn`: Shadcn/ui components
+- `core-memory`: Persistent memory
+- `episodic-memory`: Local memory
+
+Incluye instrucciones inline (`$usage`) y descripción por servidor (`$description`).
 :::
 
 ### Core Memory (Personal)
@@ -91,16 +107,24 @@ Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com
 
 ## Agregar Nuevo Servidor
 
-**Workflow:** `.mcp.json` → `.claude/settings.local.json` → Restart
+**Workflow:** Copiar template → Agregar custom → Habilitar → Restart
 
 ::: details Ejemplo: Agregar GitHub Server
 
-**1. Configurar en `.mcp.json`:**
+**1. Copiar template (si no existe `.mcp.json`):**
+
+```bash
+cp .claude/.mcp.json.template .mcp.json
+```
+
+**2. Agregar servidor en `.mcp.json`:**
 
 ```json
 {
   "mcpServers": {
-    "github": {
+    "playwright": { ... },  // servidores del template
+    "shadcn": { ... },
+    "github": {  // tu servidor custom
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
@@ -109,16 +133,15 @@ Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com
 }
 ```
 
-**2. Activar en `.claude/settings.local.json`:**
+**3. Habilitar en `.claude/settings.local.json`:**
 
 ```json
 {
-  "disabledMcpjsonServers": ["core-memory", "team-memory"]
-  // playwright, shadcn, github activos
+  "enabledMcpjsonServers": ["github"]
 }
 ```
 
-**3. Restart:** `Ctrl+D` → `claude`
+**4. Restart:** `Ctrl+D` → `claude`
 
 :::
 
@@ -154,8 +177,7 @@ Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com
 
 ```json
 {
-  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory"]
-  // solo team-memory activo
+  "enabledMcpjsonServers": ["team-memory"]
 }
 ```
 
@@ -202,13 +224,17 @@ Busca en memoria: [tu query]
 
 **Check:**
 
-1. Server NO está en `disabledMcpjsonServers` (o lista está vacía)
-2. `.mcp.json` tiene configuración del server
+1. `.mcp.json` existe (copiado desde `.claude/.mcp.json.template`)
+2. Server está en `enabledMcpjsonServers` en `.claude/settings.local.json`
 3. Restart después de cambios
 
 **Debug:**
 ```bash
-cat .claude/settings.local.json | grep disabledMcpjsonServers
+# Verificar que template fue copiado
+ls -la .mcp.json
+
+# Verificar servidores habilitados
+cat .claude/settings.local.json | grep enabledMcpjsonServers
 ```
 
 :::
@@ -247,5 +273,5 @@ Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agre
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-05 | **Servers**: Todos opt-in (context optimization)
+**Fecha**: 2025-11-11 | **Cambios**: Template approach + enabledMcpjsonServers (opt-in explícito)
 :::
