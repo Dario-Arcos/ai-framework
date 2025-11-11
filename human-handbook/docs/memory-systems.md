@@ -75,58 +75,25 @@ Búsqueda semántica local de tus conversaciones completas con Claude Code. A di
 Asegúrate de tener Claude Code CLI instalado y funcionando antes de proceder.
 :::
 
-**1. Instalar vía Claude Code Plugin (recomendado):**
+**Instalación automática via ai-framework:**
 
 ```bash
-/plugin install episodic-memory@superpowers-marketplace
+/ai-framework:utils:setup-episodic-memory
 ```
 
-El plugin maneja automáticamente:
-- Instalación del paquete npm
-- Configuración lista en `.claude/.mcp.json.template`
-- Usuario activa copiando template y habilitando en settings
+El comando instala y configura automáticamente:
+- ✅ Paquete npm global: `episodic-memory`
+- ✅ Hook session-end para sync automático
+- ✅ Retention extendida (99999 días)
+- ✅ MCP server habilitado
 
-::: tip Instalación Alternativa
-Para instalación manual vía npm o métodos alternativos, consulta el [repositorio oficial](https://github.com/obra/episodic-memory).
+::: tip Compatibilidad
+Compatible con team-memory (diferentes tool names). Puedes usar ambos simultáneamente sin conflictos.
 :::
 
-**2. Copiar template MCP al proyecto:**
+**Restart:** `Ctrl+D` → `claude`
 
-```bash
-cp .claude/.mcp.json.template .mcp.json
-```
-
-El archivo `.mcp.json` incluirá:
-
-```json {3-7}
-{
-  "mcpServers": {
-    "episodic-memory": {
-      "command": "episodic-memory-mcp-server" // [!code highlight]
-    },
-    "playwright": { ... },
-    "shadcn": { ... },
-    "core-memory": { ... }
-  }
-}
-```
-
-**3. Activar en `.claude/settings.local.json`:**
-
-```json {2}
-{
-  "enabledMcpjsonServers": ["episodic-memory"] // [!code highlight]
-  // Solo episodic-memory habilitado // [!code highlight]
-}
-```
-
-::: danger Evitar Conflictos
-NO habilites `core-memory` y `episodic-memory` simultáneamente. Usa uno u otro según tu caso de uso.
-:::
-
-**4. Restart:** `Ctrl+D` → `claude`
-
-**5. Verificar:** `/mcp` debe mostrar `episodic-memory: ✓ Connected`
+**Verificar:** `/mcp` debe mostrar `episodic-memory: ✓ Connected`
 
 ### Uso desde Claude Code
 

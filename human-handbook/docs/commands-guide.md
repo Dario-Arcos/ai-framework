@@ -12,7 +12,7 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 | [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
 | [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
 | [Superpowers](#superpowers)                                   | 3        | Brainstorm → Plan → Execute            |
-| [Utilidades](#utilidades)                                     | 7        | Understand → Research → Polish         |
+| [Utilidades](#utilidades)                                     | 8        | Understand → Research → Polish         |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos).
@@ -895,6 +895,38 @@ Instala dependencias esenciales faltantes con platform detection.
 
 ---
 
+### `/ai-framework:utils:setup-episodic-memory`
+
+::: tip Propósito
+Instala y configura episodic-memory para búsqueda semántica de conversaciones Claude Code.
+:::
+
+**Usage:**
+
+```bash
+/ai-framework:utils:setup-episodic-memory
+```
+
+**Qué instala:**
+- Paquete npm global: `episodic-memory`
+- Hook session-end para sync automático
+- Retention policy: 99999 días
+- MCP server habilitado en settings.local.json
+
+**Proceso:** Pre-check installation → Install npm package → Verify binary → Create hook → Configure retention → Enable MCP → Validate configuration → Final report
+
+::: tip Compatibilidad
+Compatible con team-memory (diferentes tool names: `search`/`read` vs `memory_search`/`memory_ingest`). Puedes usar ambos simultáneamente.
+:::
+
+**Idempotente:** Safe to run multiple times, skips if already installed.
+
+**Output:** Installation success report + configuración aplicada + instrucciones restart
+
+**Docs:** Ver [Memory Systems](/docs/memory-systems) para guía completa de uso.
+
+---
+
 ### `/ai-framework:utils:cleancode-format`
 
 ::: tip Propósito
@@ -977,8 +1009,8 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 | **PRP-cycle**  | 2        | Business layer                       |
 | **SDD-cycle**  | 9        | Engineering layer (orden específico) |
 | **git-github** | 5        | Delivery layer                       |
-| **utils**      | 8        | Utilidades transversales             |
-| **TOTAL**      | 24       | Comandos disponibles                 |
+| **utils**      | 9        | Utilidades transversales             |
+| **TOTAL**      | 25       | Comandos disponibles                 |
 
 ---
 

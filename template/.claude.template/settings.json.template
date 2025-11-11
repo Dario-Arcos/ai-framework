@@ -1,5 +1,5 @@
 {
-  "cleanupPeriodDays": 7,
+  "cleanupPeriodDays": 30,
   "enabledMcpjsonServers": [],
   "disabledMcpjsonServers": [],
   "includeCoAuthoredBy": false,
