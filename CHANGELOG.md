@@ -17,6 +17,11 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ### Changed
 - Sidebar organizado: Memory Systems en Guides (conceptual), MCP Servers en Tools (técnico)
+- Comando `/pullrequest` mejorado con workflow user-centric
+  - Usuario ve ambos reviews completos antes de decidir
+  - Fix automático guiado issue-by-issue con AskUserQuestion
+  - Sin bloqueos automáticos (usuario controla todo)
+  - Optimizado: 590 → 507 líneas (-14%)
 
 ---
 
