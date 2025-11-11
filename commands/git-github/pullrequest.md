@@ -9,21 +9,6 @@ Workflow automatizado para crear PR con validación de calidad y seguridad.
 
 **Input**: `$ARGUMENTS` = target branch (ej: "main")
 
-## Format Detection
-
-Detecta automáticamente formato de commits:
-
-- **Corporate**: `Tipo|IdTarea|YYYYMMDD|Descripción` → preserva como PR title
-- **Conventional**: `type(scope): description` → preserva como PR title
-
-Detection: Si primer commit match `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}` = corporate, sino conventional.
-
-## Temporary Branch Naming
-
-Cuando crea branch temporal desde protected branch (main, master, develop, staging, production):
-
-**Formato**: `temp-{keywords}-{timestamp}` (max 60 chars, lowercase-hyphen, timestamp: YYYYMMDDHHmmss)
-
 ## Paso 1: Validación Inicial
 
 Ejecutar en bash (usa `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh):
@@ -194,58 +179,18 @@ Ejecutar Task tool en **paralelo**:
 
 ### Review 1: Plan Alignment & Quality
 
-```
-Prompt: "Review implementation in current branch vs origin/$target_branch.
+Use Task tool with code-reviewer agent to review implementation vs origin/$target_branch.
 
-Analyze:
-1. Plan alignment (if planning document exists in .specify/ or docs/)
-2. Code quality and best practices
-3. Architecture and design patterns
-4. Documentation completeness
-
-Return structured findings categorized as:
-- Critical (must fix before deployment)
-- Important (should fix, affects maintainability)
-- Suggestions (nice to have, optional improvements)
-
-Focus on maintainability, testability, and adherence to project standards defined in CLAUDE.md."
-
-Agent: code-reviewer
-```
+Agent instructions handle: plan alignment, code quality, architecture, documentation.
+Returns: Critical | Important | Suggestions findings.
 
 ### Review 2: Production Readiness (CI/CD Prevention)
 
-```
-Prompt: "Production-readiness review of changes in current branch vs origin/$target_branch.
+Use Task tool with ci-cd-pre-reviewer agent for production-readiness vs origin/$target_branch.
 
-This review MUST replicate CI/CD bot logic to prevent GitHub Actions failures.
-
-Analyze ALL categories:
-- SECURITY vulnerabilities (with false positive filtering)
-- BUG risks (logical errors, edge cases)
-- RELIABILITY issues (error handling, resilience)
-- PERFORMANCE problems (production impact)
-- CONSTITUTIONAL compliance (Δ LOC budget from CLAUDE.md §3)
-- MAINTAINABILITY concerns (when materially impactful)
-
-Return findings with EXACT format:
-- Category: SECURITY | BUG | RELIABILITY | PERFORMANCE | MAINTAINABILITY
-- Severity: BLOCKER | CRITICAL | MAJOR | MINOR | NIT
-- Confidence: 0.00-1.00 (drop findings < 0.80)
-- File: <path>:<line>
-- Why: 1-3 sentences tying evidence to impact
-- Fix: minimal concrete patch or precise steps
-
-Review Decision:
-- BLOCK if any BLOCKER severity
-- BLOCK if any CRITICAL with confidence ≥0.80
-- WARN if only MAJOR/MINOR/NIT
-- APPROVE if no valid findings
-
-Return '✅ APPROVED' if no issues, otherwise list all findings."
-
-Agent: ci-cd-pre-reviewer
-```
+Agent instructions handle: SECURITY, BUG, RELIABILITY, PERFORMANCE, CONSTITUTIONAL, MAINTAINABILITY.
+Returns: BLOCKER/CRITICAL/MAJOR/MINOR/NIT findings with confidence scores.
+Decision: BLOCK if BLOCKER or CRITICAL ≥0.80, WARN if only MAJOR/MINOR/NIT, APPROVE if none.
 
 ## Paso 3.5: Presentar Resultados y Decisión del Usuario
 
@@ -296,15 +241,9 @@ esac
 
 ## Paso 3.6: Fix Automático Guiado (Solo si usuario eligió "Fix automático")
 
-**Estrategia:** Parsear findings de ambos reviews, ordenar por severidad, iterar con AskUserQuestion.
+**Parse findings de ambos reviews, ordenar: Critical → Important → Suggestions**
 
-**1. Extraer y parsear findings:**
-
-Los findings están en las variables de Task results:
-- `{code_review_output}` contiene findings categorizados (Critical, Important, Suggestions)
-- `{ci_cd_review_output}` contiene findings con formato (Category, Severity, Confidence, File, Why, Fix)
-
-**2. Por CADA finding (orden: Critical → Important → Suggestions):**
+**Por CADA finding:**
 
 Para cada finding encontrado, mostrar al usuario:
 
@@ -426,18 +365,10 @@ Ejecutar en bash:
      first_commit=$(git config --local pr.temp.first-commit)
      timestamp=$(date +%Y%m%d%H%M%S)
 
-     # Generate branch suffix: simple approach
-     # Convert to lowercase, remove special chars, take first 3-4 words
+     # Generate branch suffix from first commit (max 39 chars)
      first_commit_clean=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/ /g')
-     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//')
-
-     # Truncate to max 39 chars (60 total - 21 overhead = 39 for suffix)
-     branch_suffix=$(echo "$branch_suffix" | cut -c1-39 | sed 's/-$//')
-
-     # Fallback if empty
-     if [ -z "$branch_suffix" ]; then
-       branch_suffix="feature"
-     fi
+     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//' | cut -c1-39 | sed 's/-$//')
+     branch_suffix="${branch_suffix:-feature}"
 
      temp_branch="temp-${branch_suffix}-${timestamp}"
 
@@ -503,24 +434,10 @@ fi
 
 # 3. Generate test items based on primary type
 case "$primary_type" in
-  feat)
-    test_items="- [ ] Nueva funcionalidad probada
-- [ ] Tests agregados
-- [ ] Docs actualizada"
-    ;;
-  fix)
-    test_items="- [ ] Bug reproducido y verificado
-- [ ] Tests de regresión agregados
-- [ ] Staging verificado"
-    ;;
-  refactor)
-    test_items="- [ ] Tests existentes pasan
-- [ ] Funcionalidad equivalente verificada"
-    ;;
-  *)
-    test_items="- [ ] Cambios verificados localmente
-- [ ] Build exitoso"
-    ;;
+  feat) test_items="- [ ] Nueva funcionalidad probada\n- [ ] Tests agregados\n- [ ] Docs actualizada" ;;
+  fix) test_items="- [ ] Bug reproducido y verificado\n- [ ] Tests de regresión agregados\n- [ ] Staging verificado" ;;
+  refactor) test_items="- [ ] Tests existentes pasan\n- [ ] Funcionalidad equivalente verificada" ;;
+  *) test_items="- [ ] Cambios verificados localmente\n- [ ] Build exitoso" ;;
 esac
 
 # 4. Generate PR body
