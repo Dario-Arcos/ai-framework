@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-Core Memory Session Search Hook
+Memory Session Search Hook
 
-Injects instruction to search Core Memory for project context
+Injects instruction to search available memory systems for project context
 at the beginning of each Claude Code session.
 
-Uses official Core recommendation pattern.
+Supports: team-memory, core-memory, episodic-memory
 
-v1.1.0: Auto-detection of memory availability (2025-11-11)
-- Verifies team-memory/core-memory enabled in settings.json
-- Graceful degradation: skip injection if memory not available
+v1.2.0: Multi-memory support + denylist precedence (2025-11-11)
+- Auto-detects any available memory system (team/core/episodic)
+- Respects disabledMcpjsonServers precedence (denylist > enabled)
+- Per-server validation (enabled AND not disabled)
+- Graceful degradation: skip injection if no memory available
 - Enhanced logging with status tracking
 """
 import json
@@ -79,16 +81,20 @@ def is_memory_available():
                 settings_local = json.load(f)
 
             # Merge: settings.local overrides settings
-            # Only override enabledMcpjsonServers if present in local
             if "enabledMcpjsonServers" in settings_local:
                 settings["enabledMcpjsonServers"] = settings_local["enabledMcpjsonServers"]
+            if "disabledMcpjsonServers" in settings_local:
+                settings["disabledMcpjsonServers"] = settings_local["disabledMcpjsonServers"]
 
         enabled_servers = settings.get("enabledMcpjsonServers", [])
+        disabled_servers = settings.get("disabledMcpjsonServers", [])
 
-        # Check for team-memory OR core-memory
-        memory_available = (
-            "team-memory" in enabled_servers or
-            "core-memory" in enabled_servers
+        # Check for team-memory OR core-memory OR episodic-memory
+        # Per-server check: enabled AND not disabled
+        memory_servers = {"team-memory", "core-memory", "episodic-memory"}
+        memory_available = any(
+            srv in enabled_servers and srv not in disabled_servers
+            for srv in memory_servers
         )
 
         if memory_available:
