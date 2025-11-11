@@ -97,7 +97,7 @@ your-project/
 - **Workflow commands** — SDD cycle, Git/GitHub automation, Project utilities
 - **Proven patterns (Skills)** — Algorithmic art, Claude Code expert, Skill creator
 - **Lifecycle hooks** — SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
-- **MCP servers** — Playwright, Shadcn (configured in plugin)
+- **MCP servers** — Playwright, Shadcn, Core-Memory, Episodic-Memory (opt-in)
 
 ---
 
@@ -107,7 +107,7 @@ your-project/
 
 **Settings:** `.claude/settings.local.json` > `settings.json` (personal always wins)
 
-**MCP Servers:** `project/.mcp.json` > `plugin/.mcp.json` (add custom servers) — [Docs](https://docs.claude.com/en/docs/claude-code/mcp)
+**MCP Servers:** Optional (zero by default). Copy `.claude/.mcp.json.template` → `.mcp.json` to enable Playwright/Shadcn/Core-Memory — [Docs](https://dario-arcos.github.io/ai-framework/docs/mcp-servers)
 
 **Personal instructions:** `CLAUDE.local.md` (optional, auto-gitignored) — [Best practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 
