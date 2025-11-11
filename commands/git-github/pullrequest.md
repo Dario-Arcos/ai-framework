@@ -9,21 +9,6 @@ Workflow automatizado para crear PR con validación de calidad y seguridad.
 
 **Input**: `$ARGUMENTS` = target branch (ej: "main")
 
-## Format Detection
-
-Detecta automáticamente formato de commits:
-
-- **Corporate**: `Tipo|IdTarea|YYYYMMDD|Descripción` → preserva como PR title
-- **Conventional**: `type(scope): description` → preserva como PR title
-
-Detection: Si primer commit match `{word}|{UPPERCASE-DIGITS}|{8digits}|{text}` = corporate, sino conventional.
-
-## Temporary Branch Naming
-
-Cuando crea branch temporal desde protected branch (main, master, develop, staging, production):
-
-**Formato**: `temp-{keywords}-{timestamp}` (max 60 chars, lowercase-hyphen, timestamp: YYYYMMDDHHmmss)
-
 ## Paso 1: Validación Inicial
 
 Ejecutar en bash (usa `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh):
@@ -194,109 +179,169 @@ Ejecutar Task tool en **paralelo**:
 
 ### Review 1: Plan Alignment & Quality
 
-```
-Prompt: "Review implementation in current branch vs origin/$target_branch.
+Use Task tool with code-reviewer agent to review implementation vs origin/$target_branch.
 
-Analyze:
-1. Plan alignment (if planning document exists in .specify/ or docs/)
-2. Code quality and best practices
-3. Architecture and design patterns
-4. Documentation completeness
-
-Return structured findings categorized as:
-- Critical (must fix before deployment)
-- Important (should fix, affects maintainability)
-- Suggestions (nice to have, optional improvements)
-
-Focus on maintainability, testability, and adherence to project standards defined in CLAUDE.md."
-
-Agent: code-reviewer
-```
+Agent instructions handle: plan alignment, code quality, architecture, documentation.
+Returns: Critical | Important | Suggestions findings.
 
 ### Review 2: Production Readiness (CI/CD Prevention)
 
-```
-Prompt: "Production-readiness review of changes in current branch vs origin/$target_branch.
+Use Task tool with ci-cd-pre-reviewer agent for production-readiness vs origin/$target_branch.
 
-This review MUST replicate CI/CD bot logic to prevent GitHub Actions failures.
+Agent instructions handle: SECURITY, BUG, RELIABILITY, PERFORMANCE, CONSTITUTIONAL, MAINTAINABILITY.
+Returns: BLOCKER/CRITICAL/MAJOR/MINOR/NIT findings with confidence scores.
+Decision: BLOCK if BLOCKER or CRITICAL ≥0.80, WARN if only MAJOR/MINOR/NIT, APPROVE if none.
 
-Analyze ALL categories:
-- SECURITY vulnerabilities (with false positive filtering)
-- BUG risks (logical errors, edge cases)
-- RELIABILITY issues (error handling, resilience)
-- PERFORMANCE problems (production impact)
-- CONSTITUTIONAL compliance (Δ LOC budget from CLAUDE.md §3)
-- MAINTAINABILITY concerns (when materially impactful)
+## Paso 3.5: Presentar Resultados y Decisión del Usuario
 
-Return findings with EXACT format:
-- Category: SECURITY | BUG | RELIABILITY | PERFORMANCE | MAINTAINABILITY
-- Severity: BLOCKER | CRITICAL | MAJOR | MINOR | NIT
-- Confidence: 0.00-1.00 (drop findings < 0.80)
-- File: <path>:<line>
-- Why: 1-3 sentences tying evidence to impact
-- Fix: minimal concrete patch or precise steps
+**1. Mostrar AMBOS reviews completos al usuario:**
 
-Review Decision:
-- BLOCK if any BLOCKER severity
-- BLOCK if any CRITICAL with confidence ≥0.80
-- WARN if only MAJOR/MINOR/NIT
-- APPROVE if no valid findings
+Output completo de ambos reviews en formato legible.
 
-Return '✅ APPROVED' if no issues, otherwise list all findings."
+**2. Usar AskUserQuestion:**
 
-Agent: ci-cd-pre-reviewer
-```
+Question: "Reviews completados. ¿Cómo proceder?"
 
-### Evaluación de Resultados
+Options:
+- "Crear PR ahora"
+  Description: "Continuar con push y PR. Issues se documentan en PR body para follow-up."
 
-Ejecutar en bash:
+- "Fix automático (guiado)"
+  Description: "Claude te pregunta issue por issue si arreglar (Critical → Important → Suggestions)."
+
+- "Cancelar y fix manual"
+  Description: "Cancelar workflow. Arreglas manualmente y re-ejecutas /pullrequest main."
+
+**3. Ejecutar decisión:**
 
 ```bash
-# Check code-reviewer results
-code_review_critical=false
-if echo "$code_review_result" | grep -Eq 'Critical'; then
-  code_review_critical=true
-fi
+# Variable $user_choice contiene la opción seleccionada
 
-# Check ci-cd-pre-reviewer results (blockers)
-has_blockers=false
-if echo "$ci_cd_review_result" | grep -Eq 'Severity.*:.*BLOCKER'; then
-  has_blockers=true
-elif echo "$ci_cd_review_result" | grep -Eq 'Severity.*:.*CRITICAL'; then
-  if echo "$ci_cd_review_result" | grep -Eq 'Confidence.*:.*(0\.[89]|1\.0)'; then
-    has_blockers=true
-  fi
-fi
+case "$user_choice" in
+  "Crear PR ahora")
+    echo "✅ Continuando con creación de PR..."
+    # Continuar con Paso 4 directamente
+    ;;
 
-# Block PR if blockers detected
-if [ "$has_blockers" = "true" ]; then
-  echo "❌ PR BLOQUEADO: Issues críticos detectados por ci-cd-pre-reviewer"
-  echo "   (BLOCKER severity o CRITICAL con confidence ≥0.8)"
-  echo ""
-  echo "Findings:"
-  echo "$ci_cd_review_result"
-  git config --local --remove-section pr.temp 2>/dev/null
-  exit 1
-fi
+  "Fix automático (guiado)")
+    echo "🔧 Iniciando fix guiado..."
+    # Continuar con Paso 3.6
+    ;;
 
-# Warn if code-reviewer found critical issues
-if [ "$code_review_critical" = "true" ]; then
-  echo "⚠️  WARNING: code-reviewer encontró issues críticos"
-  echo "Findings:"
-  echo "$code_review_result"
-  echo ""
-  read -p "¿Continuar con PR? (y/n): " continue_choice
-  if [ "$continue_choice" != "y" ]; then
+  "Cancelar y fix manual")
     git config --local --remove-section pr.temp 2>/dev/null
-    exit 1
-  fi
-fi
+    rm -f .git/pr-temp-commits.txt
+    echo "✅ Workflow cancelado"
+    echo "   Branch actual: $(git branch --show-current)"
+    echo "   Arregla issues y re-ejecuta: /pullrequest main"
+    exit 0
+    ;;
+esac
 ```
 
-**Lógica de bloqueo:**
-- ci-cd-pre-reviewer BLOCKER → automático (sin preguntar)
-- ci-cd-pre-reviewer CRITICAL + confidence ≥0.8 → automático
-- code-reviewer Critical → pregunta al usuario
+## Paso 3.6: Fix Automático Guiado (Solo si usuario eligió "Fix automático")
+
+**Parse findings de ambos reviews, ordenar: Critical → Important → Suggestions**
+
+**Por CADA finding:**
+
+Para cada finding encontrado, mostrar al usuario:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 Issue {N}/{total} - {SEVERITY}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File: {file:line}
+Problem: {description}
+Fix suggestion: {fix_suggestion}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Usar AskUserQuestion:
+
+Question: "¿Arreglar este issue {SEVERITY}?"
+
+Options:
+- "Sí, fix ahora"
+  Description: "Claude despachará subagent para arreglar este issue específico."
+
+- "No, skip"
+  Description: "Saltar este issue, continuar con el siguiente."
+
+- "Terminar fixes"
+  Description: "Detener iteración, proceder con decisión final (Paso 3.7)."
+
+**Si usuario elige "Sí, fix ahora":**
+
+```bash
+# Dispatch Task subagent para aplicar fix
+echo "🔧 Despachando subagent para fix..."
+```
+
+Usar Task tool:
+```
+subagent_type: general-purpose
+description: "Fix: {brief_description}"
+prompt: "Fix the following issue found in code review:
+
+**File:** {file:line}
+**Problem:** {description}
+**Severity:** {severity}
+**Suggested fix:** {fix_suggestion}
+
+Apply the fix carefully:
+1. Read the file to understand context
+2. Apply the specific fix suggested
+3. Verify the fix is correct
+4. Commit with message: 'fix: {brief_description}'
+
+Report back:
+- What you fixed
+- Commit SHA
+- Any issues encountered"
+```
+
+**Si usuario elige "Terminar fixes":**
+```bash
+echo "✅ Iteración de fixes terminada"
+# Continuar con Paso 3.7
+```
+
+**3. Después de iterar todos los findings:**
+
+Continuar con Paso 3.7.
+
+## Paso 3.7: Post-Fix Decision
+
+**Después de completar fixes (o terminar iteración), usar AskUserQuestion:**
+
+Question: "Fixes completados. ¿Qué hacer ahora?"
+
+Options:
+- "Re-ejecutar reviews"
+  Description: "Ejecutar code-reviewer + ci-cd-pre-reviewer de nuevo para validar fixes aplicados."
+
+- "Crear PR ahora"
+  Description: "Continuar con push y PR (confiar en los fixes aplicados)."
+
+**Ejecutar decisión:**
+
+```bash
+case "$user_choice" in
+  "Re-ejecutar reviews")
+    echo "🔄 Re-ejecutando reviews..."
+    # Volver a Paso 3 (ejecutar ambos Task reviews en paralelo)
+    # Después de reviews, volver a Paso 3.5
+    ;;
+
+  "Crear PR ahora")
+    echo "✅ Continuando con creación de PR..."
+    # Continuar con Paso 4
+    ;;
+esac
+```
+
+**Nota:** Si usuario elige "Re-ejecutar reviews", el workflow vuelve a Paso 3, y después de los reviews vuelve a Paso 3.5, permitiendo otro ciclo de fixes si es necesario.
 
 ## Paso 4: Push Branch
 
@@ -320,18 +365,10 @@ Ejecutar en bash:
      first_commit=$(git config --local pr.temp.first-commit)
      timestamp=$(date +%Y%m%d%H%M%S)
 
-     # Generate branch suffix: simple approach
-     # Convert to lowercase, remove special chars, take first 3-4 words
+     # Generate branch suffix from first commit (max 39 chars)
      first_commit_clean=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/ /g')
-     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//')
-
-     # Truncate to max 39 chars (60 total - 21 overhead = 39 for suffix)
-     branch_suffix=$(echo "$branch_suffix" | cut -c1-39 | sed 's/-$//')
-
-     # Fallback if empty
-     if [ -z "$branch_suffix" ]; then
-       branch_suffix="feature"
-     fi
+     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//' | cut -c1-39 | sed 's/-$//')
+     branch_suffix="${branch_suffix:-feature}"
 
      temp_branch="temp-${branch_suffix}-${timestamp}"
 
@@ -397,24 +434,10 @@ fi
 
 # 3. Generate test items based on primary type
 case "$primary_type" in
-  feat)
-    test_items="- [ ] Nueva funcionalidad probada
-- [ ] Tests agregados
-- [ ] Docs actualizada"
-    ;;
-  fix)
-    test_items="- [ ] Bug reproducido y verificado
-- [ ] Tests de regresión agregados
-- [ ] Staging verificado"
-    ;;
-  refactor)
-    test_items="- [ ] Tests existentes pasan
-- [ ] Funcionalidad equivalente verificada"
-    ;;
-  *)
-    test_items="- [ ] Cambios verificados localmente
-- [ ] Build exitoso"
-    ;;
+  feat) test_items="- [ ] Nueva funcionalidad probada\n- [ ] Tests agregados\n- [ ] Docs actualizada" ;;
+  fix) test_items="- [ ] Bug reproducido y verificado\n- [ ] Tests de regresión agregados\n- [ ] Staging verificado" ;;
+  refactor) test_items="- [ ] Tests existentes pasan\n- [ ] Funcionalidad equivalente verificada" ;;
+  *) test_items="- [ ] Cambios verificados localmente\n- [ ] Build exitoso" ;;
 esac
 
 # 4. Generate PR body
