@@ -1,7 +1,7 @@
 {
-  "cleanupPeriodDays": 7,
+  "cleanupPeriodDays": 30,
   "enabledMcpjsonServers": [],
-  "disabledMcpjsonServers": ["playwright", "shadcn", "core-memory", "team-memory"],
+  "disabledMcpjsonServers": [],
   "includeCoAuthoredBy": false,
 
   "permissions": {
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "You are a Stop validation gate. Evaluate if Claude should stop based on: $ARGUMENTS. Check if all tasks are complete. ALWAYS provide feedback to the user in Spanish, explaining what was accomplished and if there are pending tasks. Be specific and actionable."
+            "prompt": "Evaluate if Claude should stop: $ARGUMENTS. Check if tasks are complete. Provide brief Spanish feedback to user."
           }
         ]
       }

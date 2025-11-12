@@ -1,0 +1,32 @@
+{
+  "$comment": "OPTIONAL MCP SERVERS - ai-framework provides these MCP integrations",
+  "$usage": [
+    "1. Copy this file to your project root as .mcp.json",
+    "2. Enable/disable specific servers in .claude/settings.local.json:",
+    "   { \"enabledMcpjsonServers\": [\"playwright\"] }",
+    "   { \"disabledMcpjsonServers\": [\"shadcn\", \"core-memory\"] }",
+    "3. Claude Code will prompt for approval on first use"
+  ],
+  "$security": "Never add tokens/secrets here if committing to git. Use .claude/.mcp.json for private configs.",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"],
+      "$description": "Browser automation, E2E testing, screenshots"
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"],
+      "$description": "Shadcn/ui component library integration"
+    },
+    "core-memory": {
+      "type": "http",
+      "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code",
+      "$description": "Persistent memory across sessions (requires account)"
+    },
+    "episodic-memory": {
+      "command": "episodic-memory-mcp-server",
+      "$description": "Local episodic memory — Use /ai-framework:utils:setup-episodic-memory for automatic setup"
+    }
+  }
+}
