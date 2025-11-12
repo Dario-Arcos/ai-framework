@@ -33,7 +33,7 @@ NO BROWSER AUTOMATION WITHOUT VERIFIED SETUP FIRST
 - No interactive exploration
 - Miss nested documentation, examples, API details
 
-**IMPERATIVO usar browser-tools cuando:**
+**MUST use browser-tools when:**
 - ✅ Need to read COMPLETE documentation (multi-page, nested sections)
 - ✅ Investigating complex APIs with interactive examples
 - ✅ Deep research requiring navigation through multiple related pages
