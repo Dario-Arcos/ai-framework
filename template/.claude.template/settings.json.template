@@ -76,17 +76,5 @@
     "type": "command",
     "command": "npx --yes ccstatusline@latest",
     "padding": 0
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Evaluate if Claude should stop: $ARGUMENTS. Check if tasks are complete. Provide brief Spanish feedback to user."
-          }
-        ]
-      }
-    ]
   }
 }
