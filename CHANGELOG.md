@@ -138,7 +138,7 @@ _Más skills en cada actualización_
 
 **Comandos:**
 
-- `/ai-framework:utils:cleancode-format`: Formatear código manualmente (prettier, black, shfmt)
+- `/cleancode-format`: Formatear código manualmente (prettier, black, shfmt)
 
 ### Cambiado
 
@@ -164,7 +164,7 @@ _Más skills en cada actualización_
 ### Eliminado
 
 - ⚠️ **BREAKING**: Hook automático de formateo `clean_code.py`
-  - **Cómo migrar**: Usar `/ai-framework:utils:cleancode-format` cuando necesites formatear código
+  - **Cómo migrar**: Usar `/cleancode-format` cuando necesites formatear código
   - **Por qué**: El formateo automático generaba ruido en code reviews
 
 ---

@@ -14,10 +14,10 @@ Actualiza la sección `[No Publicado]` del CHANGELOG.md con análisis detallado 
 ## Ejemplos de Uso
 
 ```bash
-/ai-framework:utils:changelog "todos los PRs desde última versión"
-/ai-framework:utils:changelog "PR #23"
-/ai-framework:utils:changelog "desde v2.0.0"
-/ai-framework:utils:changelog "últimos 3 PRs mergeados"
+/changelog "todos los PRs desde última versión"
+/changelog "PR #23"
+/changelog "desde v2.0.0"
+/changelog "últimos 3 PRs mergeados"
 ```
 
 ## Template Keep a Changelog (Español)

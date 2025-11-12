@@ -22,7 +22,7 @@ Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso p
 
 ## Ciclo PRP (Business Layer)
 
-### `/ai-framework:PRP-cycle:prp-new`
+### `/prp-new`
 
 ::: tip Propósito
 Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructurado, minimalista (50-100 líneas), business-focused.
@@ -31,7 +31,7 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 **Usage:**
 
 ```bash
-/ai-framework:PRP-cycle:prp-new {feature_name}
+/prp-new {feature_name}
 ```
 
 **Estructura PRP (Minimalista):**
@@ -54,11 +54,11 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 - **Scope**: ¿Qué NO estamos building en V1?
   :::
 
-**Next Steps:** `➜ /ai-framework:PRP-cycle:prp-sync {feature_name}`
+**Next Steps:** `➜ /prp-sync {feature_name}`
 
 ---
 
-### `/ai-framework:PRP-cycle:prp-sync`
+### `/prp-sync`
 
 ::: tip Propósito
 Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
@@ -67,15 +67,15 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 **Usage:**
 
 ```bash
-/ai-framework:PRP-cycle:prp-sync {feature_name}
-/ai-framework:PRP-cycle:prp-sync {feature_name} --milestone {number}
+/prp-sync {feature_name}
+/prp-sync {feature_name} --milestone {number}
 ```
 
 **Workflow:** Parse args → Validate PRP → Create GitHub issue (parent) → Update frontmatter con `github_synced`
 
 **Output:** GitHub Issue (parent) + actualiza frontmatter + mapping file
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.specify --from-issue {issue_number}`
+**Next Steps:** `➜ /speckit.specify --from-issue {issue_number}`
 
 ---
 
@@ -85,7 +85,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 Comandos funcionan mejor en orden específico. Cada paso prepara el siguiente.
 :::
 
-### `/ai-framework:SDD-cycle:speckit.specify`
+### `/speckit.specify`
 
 ::: tip Propósito
 Crea especificación técnica desde descripción natural, GitHub Issue, o PRP.
@@ -95,13 +95,13 @@ Crea especificación técnica desde descripción natural, GitHub Issue, o PRP.
 
 ```bash
 # Desde descripción natural
-/ai-framework:SDD-cycle:speckit.specify "Implement OAuth 2.0 with Google and GitHub"
+/speckit.specify "Implement OAuth 2.0 with Google and GitHub"
 
 # Desde GitHub Issue
-/ai-framework:SDD-cycle:speckit.specify --from-issue 247
+/speckit.specify --from-issue 247
 
 # Desde PRP local
-/ai-framework:SDD-cycle:speckit.specify --from-prp user-authentication
+/speckit.specify --from-prp user-authentication
 ```
 
 **Proceso:** Crea branch `001-feature-name` (número incremental) → Genera spec.md (WHAT/WHY, no HOW) → Validación automática
@@ -112,11 +112,11 @@ El comando hace checkout de la branch. Tu workspace cambia automáticamente.
 
 **Output:** Branch nueva + spec.md + checklist de validación
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.clarify` (recomendado)
+**Next Steps:** `➜ /speckit.clarify` (recomendado)
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.clarify`
+### `/speckit.clarify`
 
 ::: tip Propósito
 Detecta ambigüedades en spec y pregunta interactivamente hasta 5 clarificaciones prioritarias.
@@ -125,7 +125,7 @@ Detecta ambigüedades en spec y pregunta interactivamente hasta 5 clarificacione
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.clarify
+/speckit.clarify
 ```
 
 **Proceso:** Escaneo ambigüedades → Preguntas interactivas (una a la vez, con recomendaciones) → Actualización incremental del spec
@@ -144,11 +144,11 @@ Detecta ambigüedades en spec y pregunta interactivamente hasta 5 clarificacione
 
 **Output:** spec.md actualizada + sección Clarifications
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.plan`
+**Next Steps:** `➜ /speckit.plan`
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.plan`
+### `/speckit.plan`
 
 ::: tip Propósito
 Genera artifacts de diseño técnico y decisiones de implementación.
@@ -157,7 +157,7 @@ Genera artifacts de diseño técnico y decisiones de implementación.
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.plan
+/speckit.plan
 ```
 
 **Genera:**
@@ -174,11 +174,11 @@ Todas las clarificaciones resueltas. Falla si encuentra `[NEEDS CLARIFICATION]`.
 
 **Output:** 5 artifacts + agent context actualizado
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.tasks`
+**Next Steps:** `➜ /speckit.tasks`
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.tasks`
+### `/speckit.tasks`
 
 ::: tip Propósito
 Genera tasks.md ejecutable, organizado por user stories, con paralelización marcada [P].
@@ -187,7 +187,7 @@ Genera tasks.md ejecutable, organizado por user stories, con paralelización mar
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.tasks
+/speckit.tasks
 ```
 
 **Formato Obligatorio:**
@@ -209,11 +209,11 @@ Solo se generan tasks de tests si están explícitamente solicitadas en spec o s
 
 **Output:** `tasks.md` + report con oportunidades de paralelización
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.analyze` (opcional)
+**Next Steps:** `➜ /speckit.analyze` (opcional)
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.analyze`
+### `/speckit.analyze`
 
 ::: tip Propósito
 Análisis de consistencia entre artefactos. Valida spec.md + plan.md + tasks.md.
@@ -222,7 +222,7 @@ Análisis de consistencia entre artefactos. Valida spec.md + plan.md + tasks.md.
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.analyze
+/speckit.analyze
 ```
 
 ::: warning STRICTLY READ-ONLY
@@ -240,11 +240,11 @@ Do NOT modify any files. Output structured analysis report.
 
 **Output:** Markdown report con findings table + coverage summary + metrics
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.checklist` (opcional) o `➜ /ai-framework:SDD-cycle:speckit.implement`
+**Next Steps:** `➜ /speckit.checklist` (opcional) o `➜ /speckit.implement`
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.implement`
+### `/speckit.implement`
 
 ::: tip Propósito
 Ejecuta tasks.md fase por fase con paralelización automática y TDD enforcement.
@@ -253,7 +253,7 @@ Ejecuta tasks.md fase por fase con paralelización automática y TDD enforcement
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.implement
+/speckit.implement
 ```
 
 **Proceso:** Validación checklists → Carga contexto → Setup automático → Ejecución fase por fase (Setup → Foundational → User Stories → Polish) → Validación final
@@ -271,11 +271,11 @@ Checklists incompletos bloquean ejecución (puedes override manualmente).
 
 **Output:** Implementación completa + tasks.md actualizada con `[X]`
 
-**Next Steps:** `➜ /ai-framework:SDD-cycle:speckit.sync` (opcional)
+**Next Steps:** `➜ /speckit.sync` (opcional)
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.checklist`
+### `/speckit.checklist`
 
 ::: tip Propósito
 Genera checklist customizada para validar quality de requirements ("Unit Tests for Requirements").
@@ -284,7 +284,7 @@ Genera checklist customizada para validar quality de requirements ("Unit Tests f
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.checklist "{domain} requirements quality"
+/speckit.checklist "{domain} requirements quality"
 ```
 
 ::: danger CRITICAL CONCEPT
@@ -330,11 +330,11 @@ specify → clarify → plan → tasks → analyze
 Después de generar checklist, DEBES marcar checkboxes manualmente revisando tu spec/plan. implement bloqueará si checklists están incomplete.
 :::
 
-**Next Steps:** Marcar checkboxes → `➜ /ai-framework:SDD-cycle:speckit.implement`
+**Next Steps:** Marcar checkboxes → `➜ /speckit.implement`
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.sync`
+### `/speckit.sync`
 
 ::: tip Propósito
 Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a parent PRP.
@@ -343,11 +343,11 @@ Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a pa
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.sync {parent_issue_number}
+/speckit.sync {parent_issue_number}
 ```
 
 ::: warning IMPORTANT
-Requiere parent PRP issue. Si no tienes PRP issue, ejecuta `/ai-framework:PRP-cycle:prp-sync` primero.
+Requiere parent PRP issue. Si no tienes PRP issue, ejecuta `/prp-sync` primero.
 :::
 
 **Proceso:** Parse parent issue → Validate spec → Prepare issue content → Create GitHub issue + link to parent → Update frontmatter
@@ -363,11 +363,11 @@ Ejecutar DESPUÉS de implementación completa y validada. Esto ensures:
 
 **Output:** GitHub Issue (child) + frontmatter updated + mapping file
 
-**Next Steps:** `➜ /ai-framework:git-github:commit` → `/ai-framework:git-github:pullrequest`
+**Next Steps:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
-### `/ai-framework:SDD-cycle:speckit.constitution`
+### `/speckit.constitution`
 
 ::: tip Propósito
 Crea o actualiza constitución del proyecto con principios fundamentales.
@@ -376,7 +376,7 @@ Crea o actualiza constitución del proyecto con principios fundamentales.
 **Usage:**
 
 ```bash
-/ai-framework:SDD-cycle:speckit.constitution
+/speckit.constitution
 ```
 
 ::: danger RESTRICCIÓN
@@ -391,7 +391,7 @@ NO EJECUTAR sin autorización directa del usuario.
 
 ## Git & GitHub
 
-### `/ai-framework:git-github:commit`
+### `/git-commit`
 
 ::: tip Propósito
 Commits semánticos con agrupación automática y soporte corporativo.
@@ -401,16 +401,16 @@ Commits semánticos con agrupación automática y soporte corporativo.
 
 ```bash
 # 1. Formato Convencional (proyectos open source)
-/ai-framework:git-github:commit "feat(auth): add OAuth2 support"
+/git-commit "feat(auth): add OAuth2 support"
 
 # 2. Task ID solo (tipo automático desde archivos modificados)
-/ai-framework:git-github:commit "TRV-345 implementar autenticación"
+/git-commit "TRV-345 implementar autenticación"
 
 # 3. Tipo + Task ID (RECOMENDADO - control total)
-/ai-framework:git-github:commit "refactor: TRV-345 mejorar módulo auth"
+/git-commit "refactor: TRV-345 mejorar módulo auth"
 
 # 4. Auto-commit (cuando no tienes Task ID)
-/ai-framework:git-github:commit "all changes"
+/git-commit "all changes"
 ```
 
 ::: tip Mejor Práctica
@@ -427,11 +427,11 @@ Tipo|TaskID|YYYYMMDD|Descripción
 
 **Output:** Commits agrupados por tipo con mensajes semánticos
 
-**Next Steps:** `➜ /ai-framework:git-github:pullrequest`
+**Next Steps:** `➜ /git-pullrequest`
 
 ---
 
-### `/ai-framework:git-github:pullrequest`
+### `/git-pullrequest`
 
 ::: tip Propósito
 Crea PR con security review automático, detección de formato corporativo y título personalizable.
@@ -441,10 +441,10 @@ Crea PR con security review automático, detección de formato corporativo y tí
 
 ```bash
 # Desde feature branch → PR a main
-/ai-framework:git-github:pullrequest main
+/git-pullrequest main
 
 # Desde rama protegida → Crea temp branch automática
-/ai-framework:git-github:pullrequest main
+/git-pullrequest main
 ```
 
 **Proceso:**
@@ -460,11 +460,11 @@ Si encuentra vulnerabilidades HIGH, comando FALLA y NO crea PR. Debes corregir p
 
 **Output:** PR URL + security review report
 
-**Next Steps:** Después de merge → `/ai-framework:git-github:cleanup`
+**Next Steps:** Después de merge → `/git-cleanup`
 
 ---
 
-### `/ai-framework:git-github:cleanup`
+### `/git-cleanup`
 
 ::: tip Propósito
 Limpia feature branch y sincroniza con base branch después de merge.
@@ -473,8 +473,8 @@ Limpia feature branch y sincroniza con base branch después de merge.
 **Usage:**
 
 ```bash
-/ai-framework:git-github:cleanup
-/ai-framework:git-github:cleanup main
+/git-cleanup
+/git-cleanup main
 ```
 
 **Proceso:** Valida estado → Detecta base branch → Workflow de limpieza (checkout base → delete feature branch → pull origin)
@@ -494,7 +494,7 @@ GitHub elimina automáticamente branch remota al mergear PR.
 **Usa Worktree:** Múltiples features paralelo, bug fix urgente sin interrumpir, experimentación POC
 :::
 
-### `/ai-framework:git-github:worktree:create`
+### `/worktree-create`
 
 ::: tip Propósito
 Crea worktree aislado en directorio sibling con rama nueva y upstream configurado.
@@ -503,7 +503,7 @@ Crea worktree aislado en directorio sibling con rama nueva y upstream configurad
 **Usage:**
 
 ```bash
-/ai-framework:git-github:worktree:create "{objetivo}" {parent-branch}
+/worktree-create "{objetivo}" {parent-branch}
 ```
 
 **Proceso:** Argument validation → Working directory validation → Parent branch validation → Generate consistent names → Check collisions → Prepare parent → Create worktree → Open IDE automatically → Logging
@@ -527,7 +527,7 @@ PASO 3 - Iniciar nueva sesión: claude /workflow:session-start
 
 ---
 
-### `/ai-framework:git-github:worktree:cleanup`
+### `/worktree-cleanup`
 
 ::: tip Propósito
 Elimina worktrees con validación de ownership y cleanup triple (worktree/local/remote).
@@ -536,8 +536,8 @@ Elimina worktrees con validación de ownership y cleanup triple (worktree/local/
 **Usage:**
 
 ```bash
-/ai-framework:git-github:worktree:cleanup              # Discovery mode
-/ai-framework:git-github:worktree:cleanup {worktree1}  # Cleanup específico
+/worktree-cleanup              # Discovery mode
+/worktree-cleanup {worktree1}  # Cleanup específico
 ```
 
 **Restricciones:**
@@ -556,7 +556,7 @@ Elimina worktrees con validación de ownership y cleanup triple (worktree/local/
 
 ## Utilidades
 
-### `/ai-framework:utils:understand`
+### `/understand`
 
 ::: tip Propósito
 Análisis comprehensivo de arquitectura, patrones y dependencies.
@@ -565,8 +565,8 @@ Análisis comprehensivo de arquitectura, patrones y dependencies.
 **Usage:**
 
 ```bash
-/ai-framework:utils:understand
-/ai-framework:utils:understand "specific area"
+/understand
+/understand "specific area"
 ```
 
 **Phases:**
@@ -617,7 +617,7 @@ KEY INSIGHTS
 
 ## Superpowers
 
-### `/ai-framework:superpowers:brainstorm`
+### `/brainstorm`
 
 ::: tip Propósito
 Activa brainstorming skill para refinamiento Socrático de diseño antes de implementación.
@@ -626,7 +626,7 @@ Activa brainstorming skill para refinamiento Socrático de diseño antes de impl
 **Usage:**
 
 ```bash
-/ai-framework:superpowers:brainstorm
+/brainstorm
 ```
 
 **Workflow:** Refina ideas rough → diseños completamente formados mediante cuestionamiento colaborativo, exploración de alternativas, validación incremental.
@@ -637,7 +637,7 @@ Activa brainstorming skill para refinamiento Socrático de diseño antes de impl
 
 ---
 
-### `/ai-framework:superpowers:write-plan`
+### `/write-plan`
 
 ::: tip Propósito
 Activa Writing-Plans skill para crear planes de implementación detallados.
@@ -646,7 +646,7 @@ Activa Writing-Plans skill para crear planes de implementación detallados.
 **Usage:**
 
 ```bash
-/ai-framework:superpowers:write-plan
+/write-plan
 ```
 
 **Workflow:** Diseño completo → plan detallado con file paths exactos, code examples completos, verification steps.
@@ -655,7 +655,7 @@ Activa Writing-Plans skill para crear planes de implementación detallados.
 
 ---
 
-### `/ai-framework:superpowers:execute-plan`
+### `/execute-plan`
 
 ::: tip Propósito
 Activa Executing-Plans skill para ejecutar planes en batches controlados con review checkpoints.
@@ -664,7 +664,7 @@ Activa Executing-Plans skill para ejecutar planes en batches controlados con rev
 **Usage:**
 
 ```bash
-/ai-framework:superpowers:execute-plan
+/execute-plan
 ```
 
 **Workflow:** Load plan → critical review → batch execution → review entre batches → completion report.
@@ -673,7 +673,7 @@ Activa Executing-Plans skill para ejecutar planes en batches controlados con rev
 
 ---
 
-### `/ai-framework:utils:docs`
+### `/docs`
 
 ::: tip Propósito
 Analiza y actualiza documentación usando specialist agents.
@@ -682,8 +682,8 @@ Analiza y actualiza documentación usando specialist agents.
 **Usage:**
 
 ```bash
-/ai-framework:utils:docs                 # Analizar toda la docs
-/ai-framework:utils:docs README API      # Focus específico
+/docs                 # Analizar toda la docs
+/docs README API      # Focus específico
 ```
 
 **Proceso:** Analyze docs → Identify gaps/outdated content → Delegate a documentation specialist → Update/create docs
@@ -692,7 +692,7 @@ Analiza y actualiza documentación usando specialist agents.
 
 ---
 
-### `/ai-framework:utils:polish`
+### `/polish`
 
 ::: tip Propósito
 Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mientras mejora calidad.
@@ -701,7 +701,7 @@ Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mient
 **Usage:**
 
 ```bash
-/ai-framework:utils:polish {file_paths}
+/polish {file_paths}
 ```
 
 ::: danger CRITICAL DISCLAIMER
@@ -734,7 +734,7 @@ Este comando es para **REFINEMENT**, not **FUNCTIONAL REDUCTION**.
 
 ---
 
-### `/ai-framework:utils:deep-research`
+### `/deep-research`
 
 ::: tip Propósito
 Professional audit con metodología sistemática y validación de múltiples fuentes.
@@ -743,7 +743,7 @@ Professional audit con metodología sistemática y validación de múltiples fue
 **Usage:**
 
 ```bash
-/ai-framework:utils:deep-research "{investigation topic}"
+/deep-research "{investigation topic}"
 ```
 
 **Professional Audit Protocol:**
@@ -777,7 +777,7 @@ Professional audit con metodología sistemática y validación de múltiples fue
 
 ---
 
-### `/ai-framework:utils:changelog`
+### `/changelog`
 
 ::: tip Propósito
 Actualiza CHANGELOG.md con PRs mergeados desde último release (Keep a Changelog format).
@@ -786,18 +786,18 @@ Actualiza CHANGELOG.md con PRs mergeados desde último release (Keep a Changelog
 **Usage:**
 
 ```bash
-/ai-framework:utils:changelog
+/changelog
 ```
 
 **Proceso:** Validación herramientas/archivos → Auto-detección PRs pendientes → Actualización CHANGELOG → Commit automático
 
 **Output:** CHANGELOG.md actualizado + commit automático
 
-**Next Steps:** `➜ /ai-framework:utils:release`
+**Next Steps:** `➜ /release`
 
 ---
 
-### `/ai-framework:utils:release`
+### `/release`
 
 ::: tip Propósito
 Workflow completo de release: bump versión → actualizar CHANGELOG → sync → commit/tag → push.
@@ -806,7 +806,7 @@ Workflow completo de release: bump versión → actualizar CHANGELOG → sync �
 **Usage:**
 
 ```bash
-/ai-framework:utils:release
+/release
 ```
 
 **Pre-requisitos:** CHANGELOG.md actualizado + sección `[No Publicado]` con cambios + package.json con `version`
@@ -821,7 +821,7 @@ Workflow completo de release: bump versión → actualizar CHANGELOG → sync �
 
 ---
 
-### `/ai-framework:utils:project-init`
+### `/project-init`
 
 ::: tip Propósito
 Initialize o update project context con deep analysis y recomendaciones de agentes.
@@ -830,11 +830,11 @@ Initialize o update project context con deep analysis y recomendaciones de agent
 **Usage:**
 
 ```bash
-/ai-framework:utils:project-init
-/ai-framework:utils:project-init deep   # Force deep analysis
+/project-init
+/project-init deep   # Force deep analysis
 ```
 
-**Reuses:** `/ai-framework:utils:understand` phases 1-5 para systematic discovery
+**Reuses:** `/understand` phases 1-5 para systematic discovery
 
 **Proceso:**
 
@@ -871,7 +871,7 @@ Next: Claude ahora conoce tu proyecto en profundidad.
 
 ---
 
-### `/ai-framework:utils:setup-dependencies`
+### `/setup-dependencies`
 
 ::: tip Propósito
 Instala dependencias esenciales faltantes con platform detection.
@@ -880,7 +880,7 @@ Instala dependencias esenciales faltantes con platform detection.
 **Usage:**
 
 ```bash
-/ai-framework:utils:setup-dependencies
+/setup-dependencies
 ```
 
 **Proceso:** Detect platform → Dependency registry → Discover missing deps → Display status → Confirm installation → Group by installer → Install by package manager → Verify installation → Report results
@@ -895,7 +895,7 @@ Instala dependencias esenciales faltantes con platform detection.
 
 ---
 
-### `/ai-framework:utils:cleancode-format`
+### `/cleancode-format`
 
 ::: tip Propósito
 Formateo on-demand de archivos usando formatters apropiados (prettier, black, shfmt).
@@ -904,9 +904,9 @@ Formateo on-demand de archivos usando formatters apropiados (prettier, black, sh
 **Usage:**
 
 ```bash
-/ai-framework:utils:cleancode-format                           # Git modified
-/ai-framework:utils:cleancode-format src/auth.py src/utils.ts  # Específicos
-/ai-framework:utils:cleancode-format src/                      # Directorio
+/cleancode-format                           # Git modified
+/cleancode-format src/auth.py src/utils.ts  # Específicos
+/cleancode-format src/                      # Directorio
 ```
 
 **Formatters Soportados:**
@@ -941,7 +941,7 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 | **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                                    |
 | **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`              |
 | **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest` |
-| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/ai-framework:git-github:cleanup`)                                                              |
+| **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/git-cleanup`)                                                              |
 
 ::: tip Comandos Opcionales
 `[analyze]`, `[checklist]`, `[sync]` son opcionales. checklist es quality gate antes de implementar.
@@ -952,13 +952,13 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 ## Tips de Uso
 
 ::: tip Paso Valioso
-`/ai-framework:SDD-cycle:speckit.clarify` - detecta problemas antes de implementar. ROI 100:1 (2 min save 4 hours)
+`/speckit.clarify` - detecta problemas antes de implementar. ROI 100:1 (2 min save 4 hours)
 :::
 
 ::: tip SIEMPRE
 
 - Usar worktrees para trabajo paralelo - evita branch pollution
-- Dejar `/ai-framework:git-github:pullrequest` ejecutar security review
+- Dejar `/git-pullrequest` ejecutar security review
   :::
 
 ::: info OPCIONAL

@@ -437,7 +437,7 @@ if (process.env.CI && !isAbsolutePath(workingDirectory)) {
 
 **Workflow**:
 1. Get git SHAs: `BASE_SHA=$(git rev-parse origin/main)`, `HEAD_SHA=$(git rev-parse HEAD)`
-2. Dispatch `ai-framework:Code Review & Security:code-reviewer` subagent
+2. Dispatch `ai-framework/code-reviewer` subagent
 3. Fill template: `{WHAT_WAS_IMPLEMENTED}`, `{PLAN_OR_REQUIREMENTS}`, `{BASE_SHA}`, `{HEAD_SHA}`
 4. Act on feedback: Critical → immediate fix, Important → before proceeding, Minor → note for later
 

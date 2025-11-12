@@ -161,7 +161,7 @@ Analiza trabajo y recomienda agents óptimos con rationale detallado. NO ejecuta
 **Usage:**
 
 ```bash
-/ai-framework:Task agent-strategy-advisor "Analiza tasks.md"
+Task tool with agent-strategy-advisor "Analiza tasks.md"
 ```
 
 **Anti-Overengineering:** S ≤ 80 LOC → Main Claude suficiente · Agent overhead = 5-10 min → ROI > 1.5x

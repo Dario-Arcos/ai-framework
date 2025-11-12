@@ -117,14 +117,14 @@ Files formatted: <list>
 
 ```bash
 # Format all git modified files
-/ai-framework:utils:cleancode-format
+/cleancode-format
 
 # Format specific files
-/ai-framework:utils:cleancode-format src/auth.py src/utils.ts
+/cleancode-format src/auth.py src/utils.ts
 
 # Format entire directory
-/ai-framework:utils:cleancode-format src/
+/cleancode-format src/
 
 # Format multiple patterns
-/ai-framework:utils:cleancode-format src/ tests/unit/
+/cleancode-format src/ tests/unit/
 ```

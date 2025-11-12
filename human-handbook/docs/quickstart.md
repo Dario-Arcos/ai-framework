@@ -82,7 +82,7 @@ Reinicia Claude Code después de cualquier cambio en plugins (enable/disable/upd
 ### Initialize Project Context
 
 ```bash
-/ai-framework:utils:project-init
+/project-init
 ```
 
 Analiza tu codebase y configura recomendaciones de agentes.
@@ -100,7 +100,7 @@ Generated: .specify/memory/project-context.md
 ### Install Dependencies (Opcional)
 
 ```bash
-/ai-framework:utils:setup-dependencies
+/setup-dependencies
 ```
 
 Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
@@ -112,11 +112,11 @@ Instala tools opcionales (notifications, formatters). Responde `S` para proceder
 ### Quick Path
 
 ```bash
-/ai-framework:SDD-cycle:speckit.specify "add user email validation"
-/ai-framework:SDD-cycle:speckit.clarify
-/ai-framework:SDD-cycle:speckit.plan
-/ai-framework:SDD-cycle:speckit.tasks
-/ai-framework:SDD-cycle:speckit.implement
+/speckit.specify "add user email validation"
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+/speckit.implement
 ```
 
 ::: tip Recomendación Importante
@@ -126,8 +126,8 @@ El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que tom
 ### Create PR
 
 ```bash
-/ai-framework:git-github:commit "feat: add email validation"
-/ai-framework:git-github:pullrequest develop
+/git-commit "feat: add email validation"
+/git-pullrequest develop
 ```
 
 Security review automático ejecuta antes de crear PR.

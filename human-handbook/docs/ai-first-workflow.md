@@ -32,7 +32,7 @@ GitHub (Delivery Layer)
 **Cuándo:** Una feature a la vez, desarrollo lineal.
 
 ```bash
-/ai-framework:SDD-cycle:speckit.specify "feature"
+/speckit.specify "feature"
 # → Branch en mismo directorio
 ```
 
@@ -45,7 +45,7 @@ GitHub (Delivery Layer)
 **Cuándo:** Múltiples features paralelas, bug fix urgente, experimentación.
 
 ```bash
-/ai-framework:git-github:worktree:create "feature" main
+/worktree-create "feature" main
 # → Directorio separado, nueva ventana IDE
 ```
 
@@ -72,7 +72,7 @@ Cada paso previene problema específico que cuesta horas. No es burocracia - es 
 ### 1. Specify → Spec Técnica
 
 ```bash
-/ai-framework:SDD-cycle:speckit.specify "add OAuth auth"
+/speckit.specify "add OAuth auth"
 ```
 
 Convierte descripción en spec estructurada. Output: `specs/001-feature/spec.md`
@@ -82,7 +82,7 @@ Convierte descripción en spec estructurada. Output: `specs/001-feature/spec.md`
 ### 2. Clarify → Detectar Ambigüedades
 
 ```bash
-/ai-framework:SDD-cycle:speckit.clarify
+/speckit.clarify
 ```
 
 **Por qué importa - Ejemplo:**
@@ -109,7 +109,7 @@ You: "OAuth"
 ### 3. Plan → Design Artifacts
 
 ```bash
-/ai-framework:SDD-cycle:speckit.plan
+/speckit.plan
 ```
 
 Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
@@ -121,7 +121,7 @@ Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 ### 4. Tasks → Implementation Breakdown
 
 ```bash
-/ai-framework:SDD-cycle:speckit.tasks
+/speckit.tasks
 ```
 
 Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
@@ -133,7 +133,7 @@ Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
 ### 5. Analyze → Consistency Check (Optional)
 
 ```bash
-/ai-framework:SDD-cycle:speckit.analyze
+/speckit.analyze
 ```
 
 Valida spec ↔ plan ↔ tasks consistency. Detecta gaps temprano.
@@ -146,7 +146,7 @@ Valida spec ↔ plan ↔ tasks consistency. Detecta gaps temprano.
 ### 5.5. Checklist → Quality Gate (Optional)
 
 ```bash
-/ai-framework:SDD-cycle:speckit.checklist "UX requirements quality"
+/speckit.checklist "UX requirements quality"
 ```
 
 Genera "unit tests for requirements". Valida que tus requirements estén bien escritos.
@@ -176,7 +176,7 @@ Detectas requirements malos ANTES de codear. Corriges spec. Evitas re-work.
 ### 6. Implement → TDD + Execution
 
 ```bash
-/ai-framework:SDD-cycle:speckit.implement
+/speckit.implement
 ```
 
 Ejecuta tasks con TDD enforcement, assigned agents, parallel execution.
@@ -193,7 +193,7 @@ Con framework: Test → Fail → Code → Pass (predecible)
 ### 7. Sync → GitHub Documentation (Optional)
 
 ```bash
-/ai-framework:SDD-cycle:speckit.sync {parent_issue_number}
+/speckit.sync {parent_issue_number}
 ```
 
 Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent issue.
@@ -219,9 +219,9 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 **Cuándo:** La feature necesita aprobación de stakeholders.
 
 ```bash
-/ai-framework:PRP-cycle:prp-new "feature-name"
-/ai-framework:PRP-cycle:prp-sync "feature-name"
-/ai-framework:SDD-cycle:speckit.specify --from-issue {number}
+/prp-new "feature-name"
+/prp-sync "feature-name"
+/speckit.specify --from-issue {number}
 # → Continue steps 2-6 normalmente
 # → Al final: speckit.sync (documenta en GitHub)
 ```
@@ -235,7 +235,7 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 **Cuándo:** Bug fixes, refactorings, internal tools.
 
 ```bash
-/ai-framework:SDD-cycle:speckit.specify "fix race condition"
+/speckit.specify "fix race condition"
 # → Continue steps 2-6 normalmente
 # → Skip sync (no PRP parent issue)
 ```
@@ -298,8 +298,8 @@ worktree:create → understand → specify → clarify → plan → tasks → im
 ## Post-Merge
 
 ```bash
-/ai-framework:utils:changelog      # Auto-detect merged PRs
-/ai-framework:git-github:cleanup   # Delete branch, sync base
+/changelog      # Auto-detect merged PRs
+/git-cleanup   # Delete branch, sync base
 ```
 
 Si usaste worktree, cleanup regresa automáticamente a main.
@@ -315,7 +315,7 @@ Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamient
 Answer questions even if obvious. 2 min ahora > 2 hours later.
 
 **Security Review:**
-`/ai-framework:git-github:pullrequest` auto-runs security review. Blocks PR si HIGH vulnerability found.
+`/git-pullrequest` auto-runs security review. Blocks PR si HIGH vulnerability found.
 
 **Commit Strategy:**
 `commit "all changes"` auto-groups por categoría. Better que 1 giant mixed commit.
@@ -337,7 +337,7 @@ Answer questions even if obvious. 2 min ahora > 2 hours later.
 Si no estás seguro qué agentes usar para una tarea compleja, puedes consultar al `agent-strategy-advisor`:
 
 ```bash
-/ai-framework:Task agent-strategy-advisor "Analiza mi tasks.md y recomienda agentes"
+Task tool with agent-strategy-advisor "Analiza mi tasks.md y recomienda agentes"
 ```
 
 **Este agente NO ejecuta tareas**, solo analiza y recomienda:

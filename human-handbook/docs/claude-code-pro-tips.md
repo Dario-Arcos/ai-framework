@@ -390,7 +390,7 @@ Claude Code integra con GitHub CLI:
 1. "Analiza PR #210"     → Claude usa gh para datos
 2. Claude presenta evaluación crítica
 3. "Corrige X e Y"       → Aplica solo fixes confirmados
-4. Claude commitea con /ai-framework:git-github:commit
+4. Claude commitea con /git-commit
 ```
 
 ---
