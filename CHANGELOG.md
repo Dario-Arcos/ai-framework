@@ -6,22 +6,68 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
-## [Unreleased]
+## [No Publicado]
 
-### Added
-- Documentación completa de Memory Systems (Team Memory + Episodic Memory)
-- Guía de decisión problem-first para elegir sistema de memoria
-- Configuración MCP para episodic-memory
-- Tabla comparativa técnica entre sistemas
-- Troubleshooting para problemas comunes
+- [Cambios futuros se documentan aquí]
 
-### Changed
-- Sidebar organizado: Memory Systems en Guides (conceptual), MCP Servers en Tools (técnico)
-- Comando `/pullrequest` mejorado con workflow user-centric
-  - Usuario ve ambos reviews completos antes de decidir
-  - Fix automático guiado issue-by-issue con AskUserQuestion
-  - Sin bloqueos automáticos (usuario controla todo)
-  - Optimizado: 590 → 507 líneas (-14%)
+---
+
+## [3.1.0] - 2025-11-12
+
+> **⚠️ CRÍTICO - REINSTALACIÓN OBLIGATORIA**
+>
+> Esta versión requiere **BORRAR completamente el plugin** y reinstalarlo desde cero. **NO es suficiente actualizar**.
+>
+> **Proceso de migración:**
+> ```bash
+> # 1. Remover plugin actual
+> /plugin marketplace remove ai-framework
+> /plugin uninstall ai-framework@ai-framework
+>
+> # 2. Reinstalar desde marketplace
+> /plugin marketplace add Dario-Arcos/ai-framework
+> /plugin install ai-framework@ai-framework-marketplace
+>
+> # 3. Restart Claude Code
+> ```
+>
+> **Razón**: La estructura flat de comandos/agents requiere reinstalación limpia para aplicar correctamente la nueva arquitectura de nombres.
+
+### Añadido
+
+- Documentación completa de Memory Systems con guías de setup para Team Memory y Episodic Memory, comparativa técnica detallada (knowledge graph vs vector search), guía de decisión problem-first, y troubleshooting para problemas comunes (PR #28, #29, #30)
+- Comando `/setup-episodic-memory` para instalación y configuración automatizada de episodic-memory plugin con validación de dependencias y setup hooks (PR #29)
+- Recomendación de procesamiento completo inicial en documentación de episodic-memory con comando `index-conversations --cleanup --concurrency 8` para indexar todas las conversaciones inmediatamente
+- Estructura disciplinaria completa en 4 skills custom (browser-tools, claude-code-expert, skill-creator, algorithmic-art) con Core Principle, Iron Law, When to Use/NOT to Use, Red Flags, Common Rationalizations y Real-World Impact alineados al patrón superpowers
+- Sección CRÍTICA en browser-tools skill explicando uso imperativo cuando WebFetch/WebSearch son insuficientes para research profundo multi-página
+
+### Cambiado
+
+- ⚠️ **BREAKING**: Estructura de plugin aplanada - commands y agents movidos de estructura jerárquica a flat (27 commands, 47 agents) con nombres explícitos en frontmatter para invocación simple sin namespace
+  - Antes: `/ai-framework:utils:setup-dependencies`, `/ai-framework:systematic-debugger`
+  - Ahora: `/setup-dependencies`, `/systematic-debugger`
+  - Migración: Actualizar scripts/aliases que usen comandos antiguos
+- Configuración MCP optimizada con modelo opt-in por defecto - solo Playwright habilitado inicialmente, shadcn/core-memory/team-memory requieren habilitación explícita vía `enabledMcpjsonServers` en settings
+- Método de instalación de episodic-memory migrado de npm install a plugin marketplace para instalación zero-dependency
+- Sidebar del handbook reorganizado con Memory Systems en Guides (conceptual) y MCP Servers en Tools (técnico) para mejor organización mental (PR #30)
+- Template `.mcp.json` simplificado con documentación inline clara sobre configuración de servidores HTTP vs command-based
+- Comando `/git-pullrequest` mejorado con workflow user-centric: reviews completos visibles antes de decisiones, fix automático guiado issue-by-issue vía AskUserQuestion, sin bloqueos automáticos (usuario controla todo), optimizado 590 → 507 líneas (-14%) (PR #28)
+- Documentación actualizada globalmente (128+ cambios) para reflejar nueva estructura flat de comandos y agentes
+- Skills guide rediseñado con UX premium usando componentes VitePress (tabs, cards, custom containers) para mejor navegabilidad
+
+### Arreglado
+
+- Hook session-start corregido para prevenir falsos positivos en detección de reglas gitignore con lógica mejorada de pattern matching
+- Detección de episodic-memory en hooks con lógica denylist corregida para evitar errores de configuración
+- Namespace de skills corregido de `superpowers:` a `ai-framework:` para consistencia con plugin name
+- Consistencia de lenguaje en browser-tools skill (Español para secciones de usuario, English para código)
+- Workflow develop-mirror corregido usando git reset en lugar de merge para mantener sincronización limpia con main
+
+### Eliminado
+
+- Hook Stop removido debido a comportamiento errático que causaba ejecuciones impredecibles
+- Archivo `.mcp.json` del plugin eliminado en favor de template approach para evitar sobrescritura de configuración de usuario
+- Directorio `docs/plans/` removido de tracking git (debe estar gitignored)
 
 ---
 
