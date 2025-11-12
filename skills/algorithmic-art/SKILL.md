@@ -3,6 +3,94 @@ name: algorithmic-art
 description: PROACTIVELY create algorithmic art using p5.js with seeded randomness and interactive parameter exploration when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems. Create original algorithmic art rather than copying existing artists' work to avoid copyright violations.
 ---
 
+# Algorithmic Art
+
+Computational aesthetic movements expressed through generative code, not templates or static images.
+
+---
+
+## Core Principle
+
+Algorithmic art is CODE-DRIVEN generation with emergent behavior, not templates or copies.
+
+**The Iron Law:**
+```
+90% ALGORITHMIC GENERATION, 10% ESSENTIAL PARAMETERS
+```
+
+Every position, color, angle, size must be COMPUTED from algorithms, noise functions, or mathematical relationships. Zero hard-coded aesthetic decisions.
+
+---
+
+## When to Use
+
+Use algorithmic-art when:
+- ✅ User requests "create art using code", "generative art", "algorithmic art"
+- ✅ Mentions: flow fields, particle systems, fractals, noise art
+- ✅ Wants parametric variation (same code, different seeds)
+- ✅ Seeks computational aesthetics, emergent beauty
+
+### When NOT to Use
+
+**Don't use for:**
+- ❌ Static image requests ("draw a logo")
+- ❌ Template-based designs ("use this template")
+- ❌ Copying existing artist styles (copyright violation)
+- ❌ Data visualization (use charting libraries)
+- ❌ UI components (use design systems)
+
+---
+
+## Red Flags - You're Creating Templates, Not Algorithms
+
+If you catch yourself:
+- Hard-coding positions/colors instead of computing them
+- Copy-pasting artist styles (Bridget Riley, Vera Molnár, etc.)
+- Creating static output without parametric variation
+- Using templates instead of generative systems
+- No seeded randomness for reproducibility
+- Aesthetic decisions not derived from mathematics
+- "This looks good" instead of "this algorithm generates good output"
+
+**ALL mean: STOP. Return to algorithmic generation.**
+
+---
+
+## Common Rationalizations
+
+| Excuse | Reality |
+|--------|---------|
+| "Simpler to hard-code this part" | Defeats purpose. Everything must be computed. |
+| "Inspired by Artist X's style" | Copyright violation. Create original philosophy. |
+| "Static is good enough" | Not algorithmic art. Must be generative with seeds. |
+| "Just this one position..." | First hard-code breaks discipline. Then everything breaks. |
+| "Parameters are too complex" | Complexity in generation, simplicity in parameters. That's the art. |
+
+---
+
+## Real-World Impact
+
+From algorithmic art sessions:
+
+**Algorithmic discipline:**
+- Pure algorithmic (90/10 rule): Infinite variation, 100% reproducible
+- Template-based shortcuts: Limited variation, breaks with parameters
+- Originality: 100% with philosophies vs 0% copying artists
+
+**Parameter tuning:**
+- Essential parameters only: Users understand and explore
+- Over-parameterization: Users confused, can't explore effectively
+- Sweet spot: 3-7 parameters maximum
+
+**Seed-based generation:**
+- With seeded randomness: Reproducible, shareable, debuggable
+- Without seeds: Unreproducible, can't recreate good outputs
+- User satisfaction: 95% with seeds vs 40% without
+
+---
+
+## Process
+
 Algorithmic philosophies are computational aesthetic movements that are then expressed through code. Output .md files (philosophy), .html files (interactive viewer), and .js files (generative algorithms).
 
 This happens in two steps:

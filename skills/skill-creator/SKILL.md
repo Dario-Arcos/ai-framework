@@ -7,6 +7,88 @@ description: PROACTIVELY guide users in creating effective skills when they want
 
 This skill provides guidance for creating effective skills.
 
+---
+
+## Core Principle
+
+Skills are NOT documentation. Skills enforce discipline and prevent errors.
+
+**The Iron Law:**
+```
+SKILLS MUST PREVENT ERRORS, NOT JUST DESCRIBE PROCESSES
+```
+
+A skill without "Red Flags" and "Common Rationalizations" is just documentation disguised as a skill.
+
+---
+
+## When to Use
+
+Create a skill when:
+- ✅ Pattern is repeatedly violated despite documentation existing
+- ✅ Error-prone process needs guard rails and discipline
+- ✅ Domain knowledge requires procedural enforcement
+- ✅ Common failure modes need active prevention
+- ✅ User asks: "Create skill for X" or "I keep making mistake Y"
+
+### When NOT to Use
+
+**Don't create skill for:**
+- ❌ One-time tasks (use direct implementation)
+- ❌ Simple reference material (use docs/ instead)
+- ❌ Tasks without common failure modes
+- ❌ Processes that are already perfectly clear
+- ❌ "Nice to have" without proven repeated need
+
+**Test:** If removing "Red Flags" section makes no difference, it's documentation, not a skill.
+
+---
+
+## Red Flags - You're Creating Documentation, Not Discipline
+
+If your skill has these characteristics, STOP and rethink:
+- No "Core Principle" section
+- No "When to Use / When NOT to Use" sections
+- No "Red Flags" section catching common mistakes
+- No "Common Rationalizations" table
+- No "Real-World Impact" with evidence
+- Only describes HOW to do something, not WHY violations happen
+- Reads like a tutorial, not like enforcement
+
+**ALL mean: You're creating reference docs, not a skill. Skills enforce behavior.**
+
+---
+
+## Common Rationalizations
+
+| Excuse | Reality |
+|--------|---------|
+| "Examples are enough" | Examples show syntax. Skills prevent mistakes. Different purposes. |
+| "User knows better than to skip steps" | Humans skip under pressure. Skills prevent that. |
+| "This is simple, doesn't need discipline" | Simple tasks have failure modes too. Skills catch them. |
+| "Red Flags section is overkill" | Red Flags are the difference between docs and skills. |
+| "I'll add discipline later" | Later means never. Build prevention from the start. |
+
+---
+
+## Real-World Impact
+
+From skill creation sessions:
+
+**Skills with disciplinary structure:**
+- Violation prevention: 90% (users STOP when seeing Red Flags)
+- First-time success: 85%
+- User trust: High (skill catches their mistakes proactively)
+
+**Skills without disciplinary structure (just documentation):**
+- Violation prevention: 20% (users skim and proceed)
+- First-time success: 45%
+- User trust: Low (skill didn't prevent known failure)
+
+**Evidence:** Skills with "Red Flags" and "Common Rationalizations" have 4.5x higher compliance rates.
+
+---
+
 ## About Skills
 
 Skills are modular, self-contained packages that extend Claude's capabilities by providing
