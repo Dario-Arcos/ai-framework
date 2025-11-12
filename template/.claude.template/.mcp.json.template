@@ -1,13 +1,5 @@
 {
-  "$comment": "OPTIONAL MCP SERVERS - ai-framework provides these MCP integrations",
-  "$usage": [
-    "1. Copy this file to your project root as .mcp.json",
-    "2. Enable/disable specific servers in .claude/settings.local.json:",
-    "   { \"enabledMcpjsonServers\": [\"playwright\"] }",
-    "   { \"disabledMcpjsonServers\": [\"shadcn\", \"core-memory\"] }",
-    "3. Claude Code will prompt for approval on first use"
-  ],
-  "$security": "Never add tokens/secrets here if committing to git. Use .claude/.mcp.json for private configs.",
+  "$comment": "Copy to project root as .mcp.json — Full docs: human-handbook/docs/mcp-servers.md",
   "mcpServers": {
     "playwright": {
       "command": "npx",
