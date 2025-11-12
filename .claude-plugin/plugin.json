@@ -3,7 +3,8 @@
   "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
   "version": "3.0.0",
   "author": {
-    "name": "Dario Arcos"
+    "name": "Dario Arcos",
+    "email": "contact@darioarcos.dev"
   },
   "homepage": "https://github.com/Dario-Arcos/ai-framework",
   "repository": "https://github.com/Dario-Arcos/ai-framework",
@@ -14,6 +15,7 @@
     "tdd",
     "agents",
     "workflow-automation",
-    "claude-code"
+    "claude-code",
+    "flat-structure"
   ]
 }
