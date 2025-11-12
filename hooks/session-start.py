@@ -44,6 +44,7 @@ def find_project_dir():
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
     ".claude.template/settings.json.template",
+    ".claude.template/.mcp.json.template",
     ".claude.template/rules/",
     ".specify.template/memory/",
     ".specify.template/scripts/",
@@ -64,6 +65,22 @@ CRITICAL_GITIGNORE_RULES = [
     "/hooks/*.db",
     "/hooks/__pycache__/",
 ]
+
+
+def is_rule_active_in_gitignore(content, rule):
+    """Check if gitignore rule is active using line-based matching.
+
+    Avoids false positives from commented rules or substring matches.
+    """
+    for line in content.splitlines():
+        line = line.strip()
+        # Skip empty lines and comments
+        if not line or line.startswith("#"):
+            continue
+        # Exact match (not substring)
+        if line == rule:
+            return True
+    return False
 
 
 def ensure_gitignore_rules(plugin_root, project_dir):
@@ -87,21 +104,20 @@ def ensure_gitignore_rules(plugin_root, project_dir):
 
     # Append critical rules if missing
     try:
-        gitignore_path = str(project_gitignore)
-        content_file = open(gitignore_path, "r", encoding="utf-8")
-        content = content_file.read()
-        content_file.close()
+        with open(project_gitignore, "r", encoding="utf-8") as f:
+            content = f.read()
 
+        # Line-based matching to avoid false positives (commented rules, substrings)
         missing_rules = [
-            rule for rule in CRITICAL_GITIGNORE_RULES if rule not in content
+            rule for rule in CRITICAL_GITIGNORE_RULES
+            if not is_rule_active_in_gitignore(content, rule)
         ]
 
         if missing_rules:
-            append_file = open(gitignore_path, "a", encoding="utf-8")
-            append_file.write("\n# AI Framework runtime files (auto-added)\n")
-            for rule in missing_rules:
-                append_file.write(rule + "\n")
-            append_file.close()
+            with open(project_gitignore, "a", encoding="utf-8") as f:
+                f.write("\n# AI Framework runtime files (auto-added)\n")
+                for rule in missing_rules:
+                    f.write(rule + "\n")
 
     except (OSError, IOError):
         pass
@@ -141,17 +157,31 @@ def migrate_legacy_gitignore(project_dir):
 
         migrated = False
         for rule, reason in legacy_rules.items():
-            # Patrón activo: \n/specs/\n (regla no comentada)
-            active_pattern = f"\n{rule}\n"
+            # Check if rule is active using line-based matching
+            rule_active = is_rule_active_in_gitignore(content, rule)
 
             # Patrón migrado: comentario con marker [v2.0]
             migrated_pattern = f"# [v2.0] {reason} - see USER ARTIFACTS section\n# {rule}"
 
             # Si regla está activa Y NO está migrada → migrar
-            if active_pattern in content and migrated_pattern not in content:
-                replacement = f"\n# [v2.0] {reason} - see USER ARTIFACTS section\n# {rule}\n"
-                content = content.replace(active_pattern, replacement, 1)
-                migrated = True
+            if rule_active and migrated_pattern not in content:
+                # Comment out the active rule with migration marker
+                lines = content.splitlines(keepends=True)
+                new_lines = []
+                rule_found = False
+
+                for line in lines:
+                    stripped = line.strip()
+                    # Found the active rule - replace with commented version
+                    if not rule_found and stripped == rule:
+                        new_lines.append(f"# [v2.0] {reason} - see USER ARTIFACTS section\n")
+                        new_lines.append(f"# {rule}\n")
+                        rule_found = True
+                        migrated = True
+                    else:
+                        new_lines.append(line)
+
+                content = "".join(new_lines)
 
         # Si se migró algo, agregar sección USER ARTIFACTS (si no existe)
         if migrated and "# USER ARTIFACTS (version control" not in content:
@@ -228,7 +258,7 @@ def scan_template_files(template_dir):
     Architecture:
         - WHITELIST ensures only approved files are copied
         - Excludes .claude.template/agents/ and commands/ (in plugin root)
-        - Excludes .mcp.json.template (opt-in: user copies manually)
+        - Includes .mcp.json.template (opt-in: user copies and renames when needed)
 
     Returns:
         List of tuples: [(template_path, target_path), ...]
