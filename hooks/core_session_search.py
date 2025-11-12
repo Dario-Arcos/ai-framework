@@ -5,14 +5,14 @@ Memory Session Search Hook
 Injects instruction to search available memory systems for project context
 at the beginning of each Claude Code session.
 
-Supports: team-memory, core-memory, episodic-memory
+Supports: team-memory, core-memory
 
-v1.2.0: Multi-memory support + denylist precedence (2025-11-11)
-- Auto-detects any available memory system (team/core/episodic)
+v1.3.0: Plugin compatibility (2025-11-11)
+- Detects team-memory and core-memory (via enabledMcpjsonServers)
+- episodic-memory excluded (plugin-based, auto-enables via plugin hooks)
 - Respects disabledMcpjsonServers precedence (denylist > enabled)
 - Per-server validation (enabled AND not disabled)
 - Graceful degradation: skip injection if no memory available
-- Enhanced logging with status tracking
 """
 import json
 import os
@@ -89,9 +89,10 @@ def is_memory_available():
         enabled_servers = settings.get("enabledMcpjsonServers", [])
         disabled_servers = settings.get("disabledMcpjsonServers", [])
 
-        # Check for team-memory OR core-memory OR episodic-memory
+        # Check for team-memory OR core-memory
         # Per-server check: enabled AND not disabled
-        memory_servers = {"team-memory", "core-memory", "episodic-memory"}
+        # Note: episodic-memory excluded (plugin-based, uses own hooks)
+        memory_servers = {"team-memory", "core-memory"}
         memory_available = any(
             srv in enabled_servers and srv not in disabled_servers
             for srv in memory_servers

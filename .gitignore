@@ -16,6 +16,7 @@
 
 # MCP server data directories
 /.playwright-mcp/
+/.mcp.json
 
 # ============================================================================
 # FRAMEWORK RUNTIME (logs, databases, temp files)

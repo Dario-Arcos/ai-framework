@@ -18,7 +18,7 @@
     },
     "episodic-memory": {
       "command": "episodic-memory-mcp-server",
-      "$description": "Local episodic memory — Use /ai-framework:utils:setup-episodic-memory for automatic setup"
+      "$description": "Local episodic memory — Install via /plugin install episodic-memory@superpowers-marketplace"
     }
   }
 }

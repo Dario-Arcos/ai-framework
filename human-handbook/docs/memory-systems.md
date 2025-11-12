@@ -72,28 +72,46 @@ Búsqueda semántica local de tus conversaciones completas con Claude Code. A di
 ### Quick Install
 
 ::: warning Prerequisito
-Asegúrate de tener Claude Code CLI instalado y funcionando antes de proceder.
+Requiere superpowers-marketplace instalado.
 :::
 
-**Instalación automática via ai-framework:**
+**Instalación via Claude Code Plugin:**
 
 ```bash
-/ai-framework:utils:setup-episodic-memory
+# Paso 1: Agregar marketplace (si no lo tienes)
+/plugin marketplace add obra/superpowers-marketplace
+
+# Paso 2: Instalar plugin
+/plugin install episodic-memory@superpowers-marketplace
+
+# Paso 3: Restart Claude Code
+Ctrl+D → claude
 ```
 
-El comando instala y configura automáticamente:
-- ✅ Paquete npm global: `episodic-memory`
+**El plugin configura automáticamente:**
+- ✅ Binario episodic-memory
 - ✅ Hook session-end para sync automático
-- ✅ Retention extendida (99999 días)
-- ✅ MCP server habilitado
+- ✅ MCP server con tools search/read
+- ✅ Indexación al finalizar cada sesión
 
 ::: tip Compatibilidad
-Compatible con team-memory (diferentes tool names). Puedes usar ambos simultáneamente sin conflictos.
+Compatible con team-memory y core-memory (tool names diferentes). Puedes usar los tres simultáneamente sin conflictos.
 :::
 
-**Restart:** `Ctrl+D` → `claude`
+**Verificar instalación:**
 
-**Verificar:** `/mcp` debe mostrar `episodic-memory: ✓ Connected`
+```bash
+/mcp  # Debe mostrar: episodic-memory: ✓ Connected
+```
+
+**Primera sincronización:**
+
+El plugin indexará conversaciones automáticamente. Para sync manual inmediato:
+
+```bash
+episodic-memory sync
+episodic-memory stats  # Ver estadísticas
+```
 
 ### Uso desde Claude Code
 
@@ -563,6 +581,6 @@ Si notas lentitud con múltiples MCPs activos, estás excediendo el context budg
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-10 | **Sistemas**: Team Memory (proxy) + Episodic Memory (local)
+**Fecha**: 2025-11-11 | **Cambios**: Método plugin para episodic-memory (npm install deprecated)
 :::
 
