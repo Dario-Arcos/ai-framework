@@ -1,5 +1,5 @@
 {
-  "name": "ai-framework",
+  "name": "ai-framework-marketplace",
   "owner": {
     "name": "Dario Arcos"
   },
@@ -11,8 +11,8 @@
     {
       "name": "ai-framework",
       "source": {
-        "source": "github",
-        "repo": "Dario-Arcos/ai-framework"
+        "source": "url",
+        "url": "https://github.com/Dario-Arcos/ai-framework.git"
       },
       "version": "3.0.0",
       "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
