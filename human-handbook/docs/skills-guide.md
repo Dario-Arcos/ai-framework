@@ -1,184 +1,862 @@
-# Guía de Expert Skills
+# Guía de Skills
 
 ::: tip ¿Qué son las Skills?
-Capacidades especializadas que extienden Claude con conocimiento experto en dominios específicos. Se activan automáticamente según el contexto.
+Capacidades especializadas que extienden Claude con conocimiento experto y workflows probados. Se activan automáticamente según el contexto o mediante invocación explícita.
 :::
 
 ---
 
-## Skills Disponibles
+<style>
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
 
-| Skill | Tipo | Activación |
-|-------|------|-----------|
-| [claude-code-expert](#claude-code-expert) | 🔧 Development | Crear/modificar agents, commands, hooks, MCP |
-| [browser-tools](#browser-tools) | 🌐 Web | Browser automation, testing, profiling, scraping |
-| [skill-creator](#skill-creator) | 🏗️ Meta | Crear/actualizar skills |
-| [core-memory-expert](#core-memory-expert) | 💾 Memory | Setup/config RedPlanet Core memory |
-| [algorithmic-art](#algorithmic-art) | 🎨 Creative | Arte algorítmico, p5.js, flow fields |
+@media (max-width: 768px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
-::: details Superpowers Skills (Integración Completa)
-**Testing:** test-driven-development, condition-based-waiting, testing-anti-patterns
+.skills-grid > div {
+  margin: 0;
+}
+</style>
 
-**Debugging:** systematic-debugging, root-cause-tracing, verification-before-completion, defense-in-depth
+## Inicio Rápido
 
-**Collaboration:** brainstorming, writing-plans, executing-plans, dispatching-parallel-agents, requesting-code-review, receiving-code-review, using-git-worktrees, finishing-a-development-branch, subagent-driven-development
-
-**Meta:** sharing-skills, testing-skills-with-subagents, using-superpowers
-
-[Ver documentación completa de superpowers →](https://github.com/obra/superpowers)
+::: tip Encuentra tu skill
+Selecciona tu situación para ver las skills recomendadas
 :::
+
+<div class="skills-grid">
+
+<div>
+
+### Implementación
+::: details Voy a implementar una feature
+- <Badge type="tip" text="Testing" /> `test-driven-development` - TDD obligatorio: test → fail → implement → pass
+- <Badge type="info" text="Design" /> `brainstorming` - Refina idea antes de codear con preguntas iterativas
+:::
+
+</div>
+
+<div>
+
+### Debugging
+::: details Tengo un bug o test fallando
+- <Badge type="danger" text="Debug" /> `systematic-debugging` - Framework 4 fases: root cause primero, luego fix
+- <Badge type="danger" text="Debug" /> `root-cause-tracing` - Trace backward por call stack al trigger original
+- <Badge type="warning" text="Quality" /> `verification-before-completion` - Verifica con comando ANTES de declarar "fixed"
+- <Badge type="warning" text="Security" /> `defense-in-depth` - Valida en cada layer para hacer bugs imposibles
+:::
+
+</div>
+
+<div>
+
+### Planificación
+::: details Necesito planificar implementación compleja
+- <Badge type="info" text="Design" /> `brainstorming` - Explora 2-3 alternativas con trade-offs
+- <Badge type="info" text="Collab" /> `writing-plans` - Plan detallado ejecutable con rutas exactas
+- <Badge type="info" text="Collab" /> `executing-plans` - Ejecuta plan existente en batches con reviews
+:::
+
+</div>
+
+<div>
+
+### Code Review
+::: details Listo para review o recibí feedback
+- <Badge type="tip" text="Quality" /> `requesting-code-review` - Dispara subagent code-reviewer
+- <Badge type="tip" text="Quality" /> `receiving-code-review` - Procesa feedback con rigor técnico
+:::
+
+</div>
+
+<div>
+
+### Testing Avanzado
+::: details Tests tienen timing issues o usan mocks incorrectamente
+- <Badge type="tip" text="Testing" /> `condition-based-waiting` - Reemplaza timeouts con polling de condiciones
+- <Badge type="warning" text="Testing" /> `testing-anti-patterns` - Evita testear mocks, test-only methods
+:::
+
+</div>
+
+<div>
+
+### Workflow Git
+::: details Necesito aislamiento o branch management
+- <Badge type="info" text="Git" /> `using-git-worktrees` - Workspace aislado sin switch de branch
+- <Badge type="info" text="Git" /> `finishing-a-development-branch` - Integración limpia: merge/PR/cleanup
+:::
+
+</div>
+
+<div>
+
+### Herramientas
+::: details Crear componentes o automatización
+- <Badge type="tip" text="Dev Tools" /> `claude-code-expert` - Genera agents/commands/hooks production-ready
+- <Badge type="info" text="Web" /> `browser-tools` - Automation Chrome/Puppeteer vía CDP
+- <Badge type="tip" text="Meta" /> `skill-creator` - Crea skill personalizada paso a paso
+:::
+
+</div>
+
+<div>
+
+### Memoria & Contexto
+::: details Necesito persistencia entre sesiones
+- <Badge type="info" text="Memory" /> `core-memory-expert` - Setup RedPlanet Core (Cloud o self-hosted)
+:::
+
+</div>
+
+<div>
+
+### Creative
+::: details Arte generativo o visualizaciones algorítmicas
+- <Badge type="tip" text="Creative" /> `algorithmic-art` - p5.js con seeded randomness y viewer interactivo
+:::
+
+</div>
+
+<div>
+
+### Parallelization
+::: details Múltiples tareas independientes o failures no relacionadas
+- <Badge type="info" text="Collab" /> `dispatching-parallel-agents` - Múltiples subagents concurrentes
+- <Badge type="info" text="Collab" /> `subagent-driven-development` - Subagent por task + review entre tasks
+:::
+
+</div>
+
+</div>
 
 ---
 
-## claude-code-expert
+## Skills por Categoría
 
-::: tip Tipo: Development Tool
-Genera componentes Claude Code production-ready con validación automática (6 quality gates: syntax, security, logic, constitutional, integration, production).
+| Categoría | Skills | Uso Recomendado |
+|-----------|--------|-----------------|
+| [Testing](#testing) | 3 | TDD, eliminación flaky tests, testing anti-patterns |
+| [Debugging](#debugging) | 4 | Debugging sistemático, root cause, verificación, defense-in-depth |
+| [Collaboration](#collaboration) | 9 | Brainstorming, plans, reviews, git workflows, parallel agents |
+| [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
+| [Memory & Knowledge](#memory--knowledge) | 1 | RedPlanet Core setup, persistent context |
+| [Creative](#creative) | 1 | Arte generativo p5.js con filosofías algorítmicas |
+| [Meta](#meta) | 3 | Superpowers enforcement, skill contribution, testing skills |
+
+---
+
+### Testing
+
+#### test-driven-development
+
+::: tip Testing | Mandatory
+**Cuándo**: Al implementar cualquier feature, bugfix o refactor
+**Qué hace**: Garantiza que tests verifican comportamiento real escribiendo test primero, viéndolo fallar (RED), luego implementando código mínimo para pasar (GREEN), y refactorizando (REFACTOR)
 :::
 
-**Proceso:** WebFetch docs oficiales → Analiza patrones proyecto → Genera componente → Valida automáticamente
-
-::: details Ejemplos de Uso
-
+**Ejemplo**:
 ```bash
-# Agent especializado
-"Crea un agente para optimización de PostgreSQL"
-
-# Comando workflow
-"Agrega comando para migraciones de schema"
-
-# Hook
-"Implementa hook que valide commit messages"
-
-# MCP server
-"Integra Notion vía MCP para docs"
+"Implementa validación de email en formulario"
+# 1. Escribe test de validación
+# 2. Ejecuta test (debe fallar = RED)
+# 3. Implementa validación mínima
+# 4. Test pasa (GREEN)
+# 5. Refactoriza si necesario
 ```
 
-:::
+**Principio**: Si no viste el test fallar, no sabes si testea lo correcto
 
-**Genera:** Agents, Commands, Hooks, MCP Servers
+**Workflow**: RED (test falla) → GREEN (test pasa) → REFACTOR (mejora código)
 
 ---
 
-## skill-creator
+#### condition-based-waiting
 
-::: tip Tipo: Meta-Skill
-Proceso guiado de 6 pasos para crear skills personalizadas siguiendo best practices.
+::: tip Testing | Advanced
+**Cuándo**: Tests tienen race conditions, timing dependencies o comportamiento flaky (pasan a veces, fallan bajo carga)
+**Qué hace**: Reemplaza timeouts arbitrarios (`setTimeout`, `sleep`) con polling de condiciones reales, esperando cambios de estado específicos
 :::
 
-**Workflow:**
+**Ejemplo**:
+```typescript
+// ❌ Antes: Guess timing
+await new Promise(r => setTimeout(r, 2000));
 
-1. **Validación** - Define problema, audiencia, verifica duplicados
-2. **Recursos** - Scripts, referencias, assets necesarios
-3. **Estructura** - `python scripts/init_skill.py skill-name`
-4. **Edición** - Frontmatter, descripción, workflow, ejemplos
-5. **Validación** - `python scripts/validate_skill.py skill-name`
-6. **Empaquetado** - `python scripts/package_skill.py skill-name`
-
-::: details Ejemplos de Uso
-
-```bash
-# Framework específico
-"Crea skill para desarrollo con Astro.js"
-
-# Integración externa
-"Skill para integración con Jira"
-
-# Análisis
-"Skill para performance web con Lighthouse"
+// ✅ Después: Wait for condition
+await waitFor(() => element.isVisible());
 ```
 
-:::
-
-**Genera:** `skills/skill-name/` con SKILL.md + scripts + referencias + assets
-
----
-
-## browser-tools
-
-::: tip Tipo: Web Tool
-Control Chrome/Chromium via CDP para testing, profiling, scraping, debugging. Puppeteer API completo, zero context overhead.
-:::
-
-**Capacidades:** E2E testing, network interception, performance profiling, coverage analysis, multi-tab orchestration, web scraping
-
-**Platform:** macOS only (Chrome paths específicos, rsync)
-
-**Setup:** `cd skills/browser-tools/tools && npm install` (una vez)
-
-**Tools:** start.js, nav.js, eval.js, screenshot.js, stop.js
-
-::: danger CRITICAL
-**NUNCA usar `killall Chrome`** — cierra TODAS tus sesiones. Usa `./tools/stop.js` (solo cierra debugging instance en puerto 9223).
-:::
-
-**Cuándo usar:** Context budget crítico, E2E testing ad-hoc, profiling programático, scraping complejo
+**Elimina**: Flaky tests causados por timing guessing
+**Usa**: Polling de condición real que importa
 
 ---
 
-## core-memory-expert
+#### testing-anti-patterns
 
-::: tip Tipo: Memory System
-Setup/config RedPlanet Core como memory layer. Cloud deployment (<2min) o self-hosted (Docker).
+::: warning Testing | Preventive
+**Cuándo**: Antes de agregar mocks, crear métodos test-only en producción, o testear implementación vs comportamiento
+**Qué hace**: Previene errores comunes: testear mocks en vez de comportamiento real, contaminar código producción con lógica test-only, mockear sin entender dependencias
 :::
 
-**Capacidades:** Persistent context, knowledge graphs, conversation history, user preferences, project decisions
+**Leyes de hierro**:
+1. NUNCA testear comportamiento de mocks
+2. NUNCA agregar métodos test-only a clases producción
+3. NUNCA mockear sin entender dependencias
 
-**Deployment:** Cloud (zero config) o Self-hosted (Docker + PostgreSQL)
+**Ejemplo**:
+```typescript
+// ❌ Testea que mock existe
+expect(screen.getByTestId('sidebar-mock')).toBeInTheDocument();
 
-**Components:** Setup scripts, REST API reference, Spaces CLI, agent templates
+// ✅ Testea comportamiento real o no mockees
+expect(screen.getByRole('navigation')).toBeInTheDocument();
+```
 
-**Cuándo usar:** Necesitas memoria persistente entre sesiones, contexto long-term, knowledge graphs
+**Principio**: Si no puedes testear sin mock, el diseño está mal
 
 ---
 
-## algorithmic-art
+### Debugging
 
-::: tip Tipo: Creative Tool
-Arte generativo p5.js con filosofías algorítmicas. Cada pieza define su principio estético y comportamiento computacional único.
+#### systematic-debugging
+
+::: danger Debug | Mandatory
+**Cuándo**: Ante cualquier bug, test fallando, comportamiento inesperado o problema de performance
+**Qué hace**: Framework 4 fases (root cause investigation, pattern analysis, hypothesis testing, implementation) que garantiza entender problema antes de intentar fix
 :::
 
-**Proceso:** Define filosofía algorítmica → Implementa p5.js → Genera viewer interactivo (seed navigation + controles paramétricos + export)
+**Ley de hierro**: NO FIXES SIN ROOT CAUSE INVESTIGATION PRIMERO
 
-::: details Ejemplos de Uso
+**Fases**:
+1. **Root Cause**: Identifica causa inmediata con evidencia
+2. **Pattern Analysis**: ¿Ocurre siempre? ¿Solo en CI? ¿Bajo qué condiciones?
+3. **Hypothesis Testing**: Propón teorías, prueba sistemáticamente
+4. **Implementation**: Fix verificado que elimina root cause
 
+**Ejemplo**:
 ```bash
-# Flow fields
+"Test falla con 'undefined property'"
+# Fase 1: ¿Qué línea? ¿Qué objeto? ¿Cuándo se ejecuta?
+# Fase 2: ¿Siempre falla? ¿Solo en paralelo?
+# Fase 3: ¿Timing? ¿Estado compartido? ¿Init faltante?
+# Fase 4: Fix en origen con test que previene regresión
+```
+
+---
+
+#### root-cause-tracing
+
+::: danger Debug | Investigation
+**Cuándo**: Error ocurre profundo en ejecución y necesitas trace back al trigger original
+**Qué hace**: Trace sistemático hacia atrás por call stack, agregando instrumentación cuando necesario, para identificar fuente de data inválida o comportamiento incorrecto
+:::
+
+**Workflow**: Error profundo → Instrumentar layers → Trace backward → Fix origen
+
+**Ejemplo**:
+```bash
+"Error en DB layer: invalid UUID format"
+# → Add logging: ¿de dónde viene UUID?
+# → Trace back: controller → service → handler
+# → Identifica: input no validado en controller
+# → Fix en origen, no en DB layer (sintoma)
+```
+
+**Principio**: Fix síntoma = bug vuelve. Fix origen = bug imposible
+
+**Combinar con**: `defense-in-depth` para validar en cada layer
+
+---
+
+#### verification-before-completion
+
+::: warning Quality | Mandatory
+**Cuándo**: Antes de declarar work complete, bug fixed, tests passing, o crear commit/PR
+**Qué hace**: Requiere ejecutar comando de verificación y confirmar output ANTES de hacer cualquier claim de éxito. Evidencia antes de afirmaciones, siempre
+:::
+
+**Ley de hierro**: NO COMPLETION CLAIMS SIN FRESH VERIFICATION EVIDENCE
+
+**Gate function**:
+1. **IDENTIFY**: ¿Qué comando prueba este claim?
+2. **RUN**: Ejecuta comando COMPLETO (fresh, not cached)
+3. **READ**: Full output, exit code, count failures
+4. **VERIFY**: ¿Output confirma el claim?
+5. **ONLY THEN**: Haz el claim
+
+**Ejemplo**:
+```bash
+# ❌ "Tests should pass now"
+# ✅ "Tests pass (output: 24 passed, 0 failed)"
+
+# ❌ "Bug is fixed" (code changed)
+# ✅ "Bug fixed (test now passes: [show output])"
+```
+
+**Principio**: Claims sin evidencia = dishonesty, not efficiency
+
+---
+
+#### defense-in-depth
+
+::: warning Security | Structural
+**Cuándo**: Invalid data causa failures profundos, requiere validación en múltiples system layers
+**Qué hace**: Valida en CADA layer por donde pasa data para hacer bugs estructuralmente imposibles (no solo "fixed")
+:::
+
+**4 Layers**:
+1. **Entry Point**: Rechaza input obviamente inválido en API boundary
+2. **Business Logic**: Data tiene sentido para esta operación
+3. **Environment Guards**: Previene context-specific dangers
+4. **Debug Logging**: Ayuda cuando otros layers fallan
+
+**Ejemplo**:
+```typescript
+// Layer 1: Entry validation
+if (!workingDirectory || workingDirectory.trim() === '') {
+  throw new Error('workingDirectory cannot be empty');
+}
+
+// Layer 2: Business logic
+if (!existsSync(workingDirectory)) {
+  throw new Error(`workingDirectory does not exist`);
+}
+
+// Layer 3: Environment guard
+if (process.env.CI && !isAbsolutePath(workingDirectory)) {
+  throw new Error('CI requires absolute paths');
+}
+```
+
+**Principio**: Single validation = "fixed bug". Multiple layers = "bug impossible"
+
+---
+
+### Collaboration
+
+#### brainstorming
+
+::: info Design | Foundation
+**Cuándo**: Antes de implementar, cuando idea es rough o necesitas explorar alternativas antes de codear
+**Qué hace**: Transforma ideas vagas en diseños completos mediante preguntas iterativas (una a la vez), exploración de 2-3 alternativas con trade-offs, validación incremental por secciones
+:::
+
+**Proceso**:
+1. **Understand**: Preguntas one-at-a-time (prefer multiple choice)
+2. **Explore**: 2-3 approaches con trade-offs + recomendación razonada
+3. **Present**: Diseño en secciones 200-300 palabras, valida cada una
+4. **Document**: Guarda en `docs/plans/YYYY-MM-DD-topic-design.md`
+
+**Ejemplo**:
+```bash
+"Necesito sistema de notificaciones"
+# → ¿Real-time vs batch? ¿Push vs pull?
+# → Propone 3 enfoques con ROI
+# → Presenta diseño incremental
+# → Genera design doc
+```
+
+**Principios**: One question at a time, YAGNI ruthlessly, incremental validation
+
+---
+
+#### writing-plans
+
+::: info Collab | Implementation
+**Cuándo**: Diseño completo, necesitas plan detallado ejecutable por AI/engineer con cero contexto del codebase
+**Qué hace**: Crea plan exhaustivo con rutas exactas de archivos, ejemplos completos de código, pasos de verificación, asumiendo ingeniero sin conocimiento del dominio
+:::
+
+**Granularidad**: Cada step = 1 acción (2-5 minutos)
+- "Write failing test" = step
+- "Run test to verify failure" = step
+- "Implement minimal code" = step
+- "Commit" = step
+
+**Ejemplo**:
+```markdown
+### Task 1: Auth Middleware
+
+1. Create `src/middleware/auth.ts`
+2. Write test in `src/middleware/auth.test.ts`:
+   [código completo, no pseudocódigo]
+3. Run `npm test` (should fail)
+4. Implement middleware: [código exacto]
+5. Run `npm test` (should pass)
+6. Commit: "Add auth middleware"
+```
+
+**Output**: `docs/plans/YYYY-MM-DD-feature.md` con header mandatorio + tasks bite-sized
+
+**Principios**: DRY, YAGNI, TDD, frequent commits, assume zero context
+
+---
+
+#### executing-plans
+
+::: info Collab | Execution
+**Cuándo**: Tienes plan completo de implementación y necesitas ejecución controlada en batches con review checkpoints
+**Qué hace**: Carga plan, revisa críticamente, ejecuta tareas en batches (default: 3), reporta para review entre batches, continua basado en feedback
+:::
+
+**Proceso**:
+1. **Load & Review**: Lee plan, identifica concerns, crea TodoWrite
+2. **Execute Batch**: Primeras 3 tasks (mark in_progress → implement → mark completed)
+3. **Report**: Muestra implementación + verification output + "Ready for feedback"
+4. **Continue**: Aplica changes si needed → next batch → repeat
+5. **Complete**: Usa `finishing-a-development-branch` al final
+
+**Ejemplo**:
+```bash
+"Ejecuta plan en docs/plans/2025-11-12-auth.md"
+# → Load + review críticamente
+# → Batch 1: Tasks 1-3
+# → Report + checkpoint
+# → Batch 2: Tasks 4-6
+# → Pattern continues
+```
+
+**Principio**: Batch execution con checkpoints para architect review
+
+---
+
+#### requesting-code-review
+
+::: tip Quality | Proactive
+**Cuándo**: Al completar task (subagent-driven dev), implementar major feature, o antes de merge
+**Qué hace**: Dispara subagent `code-reviewer` especializado que valida implementación contra plan/requirements antes de proceder
+:::
+
+**Workflow**:
+1. Get git SHAs: `BASE_SHA=$(git rev-parse origin/main)`, `HEAD_SHA=$(git rev-parse HEAD)`
+2. Dispatch `ai-framework:Code Review & Security:code-reviewer` subagent
+3. Fill template: `{WHAT_WAS_IMPLEMENTED}`, `{PLAN_OR_REQUIREMENTS}`, `{BASE_SHA}`, `{HEAD_SHA}`
+4. Act on feedback: Critical → immediate fix, Important → before proceeding, Minor → note for later
+
+**Ejemplo**:
+```bash
+"Feature auth completa, revisar antes de merge"
+# → code-reviewer analiza diff vs requirements
+# → Reporta: security issues, performance, tests coverage
+# → Aprueba o solicita changes con reasoning
+```
+
+**Mandatory**: After each task in subagent-driven dev, after major features, before merge
+
+---
+
+#### receiving-code-review
+
+::: tip Quality | Response
+**Cuándo**: Recibes feedback de code review, especialmente si parece unclear o técnicamente cuestionable
+**Qué hace**: Requiere rigor técnico y verificación, NO acuerdo performativo ni implementación ciega. Valida feedback, cuestiona si necesario, implementa correctamente
+:::
+
+**Response pattern**:
+1. **READ**: Complete feedback sin reaccionar
+2. **UNDERSTAND**: Restate requirement in own words (or ask)
+3. **VERIFY**: Check contra codebase reality
+4. **EVALUATE**: ¿Técnicamente sound para ESTE codebase?
+5. **RESPOND**: Technical acknowledgment o reasoned pushback
+6. **IMPLEMENT**: One item at a time, test each
+
+**Forbidden**: "You're absolutely right!", "Great point!", "Let me implement that now" (antes de verificar)
+
+**Ejemplo**:
+```bash
+Reviewer: "Change singleton pattern"
+# → ¿Por qué? ¿Evidencia de problema?
+# → ¿Mejora real o preferencia personal?
+# → Si válido: implement
+# → Si cuestionable: discuss alternatives con reasoning
+```
+
+**Principio**: Technical correctness > social comfort
+
+---
+
+#### using-git-worktrees
+
+::: info Git | Isolation
+**Cuándo**: Feature necesita aislamiento de workspace actual o antes de ejecutar implementation plans
+**Qué hace**: Crea worktrees aislados con smart directory selection (check existing, CLAUDE.md, o ask user) y safety verification
+:::
+
+**Directory priority**:
+1. Check `.worktrees/` (preferred) o `worktrees/`
+2. Check CLAUDE.md preference
+3. Ask user: `.worktrees/` (local) vs `~/.config/superpowers/worktrees/<project>/` (global)
+
+**Ejemplo**:
+```bash
+"Crear worktree para feature auth"
+# → Crea ../ai-framework-auth/
+# → Checkout branch feature/auth
+# → Workspace aislado del main
+# → Trabajo paralelo sin switch
+```
+
+**Uso típico**: Features grandes, múltiples branches simultáneos, executing-plans workflow
+
+---
+
+#### finishing-a-development-branch
+
+::: info Git | Integration
+**Cuándo**: Implementación completa, tests pasan, necesitas decidir cómo integrar el work
+**Qué hace**: Guía completion verificando tests primero, luego presentando opciones estructuradas para merge, PR, o cleanup
+:::
+
+**Workflow**:
+1. **Verify Tests**: Run test suite, STOP si fallan
+2. **Determine Base**: Identifica base branch (main/master)
+3. **Present Options**:
+   - **A**: Direct merge (si trivial, solo tú trabajando)
+   - **B**: Create PR (si requiere team review)
+   - **C**: Cleanup branch (si trabajo descartado)
+4. **Execute Choice**: Guía proceso seleccionado
+5. **Clean Up**: Remove worktree, delete branch
+
+**Ejemplo**:
+```bash
+"Feature completa, ¿qué sigue?"
+# → Tests: 24 passed ✓
+# → Options presented
+# → User selects "Create PR"
+# → Genera PR con summary + test plan
+```
+
+**Principio**: Verify tests → Present options → Execute choice → Clean up
+
+---
+
+#### dispatching-parallel-agents
+
+::: info Collab | Concurrency
+**Cuándo**: 3+ failures independientes sin shared state o dependencias que pueden investigarse sin contexto mutuo
+**Qué hace**: Dispara múltiples subagents Claude concurrentemente para investigar y fixear problemas independientes en paralelo
+:::
+
+**Cuándo usar**:
+- 3+ test files failing con diferentes root causes
+- Múltiples subsystems broken independientemente
+- Cada problema se entiende sin contexto de otros
+- No shared state entre investigations
+
+**Ejemplo**:
+```bash
+"3 tests fallan en módulos diferentes"
+# → Agent 1: investiga + fix test auth
+# → Agent 2: investiga + fix test payments
+# → Agent 3: investiga + fix test notifications
+# → Parallel execution, consolidated summary
+```
+
+**Don't use**: Si failures relacionados (fix uno → fix otros), need full system state, agents interferirían
+
+---
+
+#### subagent-driven-development
+
+::: info Collab | Fast Iteration
+**Cuándo**: Ejecutar implementation plan con tareas independientes en la sesión actual (no requiere parallel session como executing-plans)
+**Qué hace**: Dispara subagent fresh por cada tarea con code review entre tasks, enabling fast iteration con quality gates en cada step
+:::
+
+**vs executing-plans**: Misma sesión (no context switch), fresh subagent per task (no context pollution), code review automático after each, faster iteration
+
+**Proceso**:
+1. **Load Plan**: Create TodoWrite con todas las tasks
+2. **Execute Task**: Dispatch fresh general-purpose subagent
+3. **Review**: Use `requesting-code-review` skill
+4. **Next Task**: Repeat hasta completion
+
+**Ejemplo**:
+```bash
+Plan con 5 tareas independientes:
+# → Subagent Task 1 → Review → Merge
+# → Subagent Task 2 → Review → Merge
+# → Fresh context cada task
+# → Quality gate en cada step
+```
+
+**Ventaja**: Fresh context per task (no context rot), continuous progress con quality gates
+
+---
+
+### Development Tools
+
+#### claude-code-expert
+
+::: tip Dev Tools | Production
+**Cuándo**: Crear/modificar/update/fix agents, slash commands, hooks, o MCP integrations para Claude Code
+**Qué hace**: Genera componentes Claude Code production-ready con 6 quality gates automáticos (syntax, security, logic, constitutional, integration, production). WebFetch docs oficiales para syntax actual
+:::
+
+**Workflow**:
+1. **Identify Component**: Agent, slash command, hook, o MCP server
+2. **WebFetch Docs**: Official Claude Code docs para EXACT current syntax (training stale)
+3. **Analyze Patterns**: Lee project conventions
+4. **Generate**: Component con validación
+5. **6 Quality Gates**: Syntax, security, logic, constitutional, integration, production
+
+**Ejemplo**:
+```bash
+"Crea agent para optimización PostgreSQL"
+# → WebFetch Claude Code agent docs
+# → Analiza agents/ patterns
+# → Genera agent con tools, workflow, examples
+# → 6 quality gates automáticos
+```
+
+**Output**: `.claude/agents/*.md`, `commands/*.md`, `hooks/*.py`, o `.claude/.mcp.json` update
+
+**Critical**: Training data stale, SIEMPRE WebFetch docs oficiales primero
+
+---
+
+#### browser-tools
+
+::: info Web | Automation
+**Cuándo**: E2E testing, performance profiling, web scraping, debugging, network interception
+**Qué hace**: Control Chrome/Chromium vía CDP con Puppeteer API completo, zero context overhead (on-demand loading vs persistent MCP), multi-tab orchestration
+:::
+
+**Platform**: macOS only (Chrome paths específicos, rsync)
+
+**Setup** (una vez):
+```bash
+cd skills/browser-tools/tools
+npm install
+ls node_modules/puppeteer-core  # Verify
+```
+
+**Tools**: `start.js`, `nav.js`, `eval.js`, `screenshot.js`, `stop.js`
+
+**Ejemplo**:
+```bash
+"Test E2E checkout flow"
+# → Start Chrome debugging (port 9223)
+# → Navigate → interact → screenshot
+# → Assert expected behavior
+# → Stop debugging instance (NOT killall Chrome!)
+```
+
+**Critical Warning**: NUNCA `killall Chrome` (cierra TODAS tus sesiones). Usa `./tools/stop.js`
+
+---
+
+#### skill-creator
+
+::: tip Meta | Creation
+**Cuándo**: Necesitas skill personalizada para dominio/framework/workflow específico no cubierto por skills existentes
+**Qué hace**: Proceso guiado 6 pasos (validación, recursos, estructura, edición, validación, empaquetado) para crear skills siguiendo best practices
+:::
+
+**6 Pasos**:
+1. **Validación**: ¿Existe skill similar? ¿Problema claro? ¿Aplica broadly?
+2. **Recursos**: Scripts, docs, referencias, assets necesarios
+3. **Estructura**: `python scripts/init_skill.py skill-name`
+4. **Edición**: SKILL.md (frontmatter + instructions) + bundled resources
+5. **Validación**: `python scripts/validate_skill.py skill-name`
+6. **Empaquetado**: `python scripts/package_skill.py skill-name`
+
+**Ejemplo**:
+```bash
+"Crea skill para desarrollo Astro.js"
+# → Valida: no existe Astro skill
+# → Recursos: Astro docs, common patterns
+# → Estructura: skills/astro-dev/SKILL.md
+# → Edición: frontmatter + workflows + examples
+# → Validación: structure OK
+# → Package: ready for distribution
+```
+
+**Output**: `skills/skill-name/` con SKILL.md + scripts/ + references/ + assets/
+
+---
+
+### Memory & Knowledge
+
+#### core-memory-expert
+
+::: info Memory | Integration
+**Cuándo**: Setup/config RedPlanet Core memory layer, necesitas persistent context entre sesiones, knowledge graphs, conversation history
+**Qué hace**: Implementación world-class de RedPlanet Core (88.24% SOTA accuracy en LoCoMo benchmark). Setup Cloud (<2min zero-config) o self-hosted (Docker + PostgreSQL)
+:::
+
+**Deployment Options**:
+- **Cloud** (Recommended): `python3 scripts/setup_core_cloud.py` → auth → done
+- **Self-hosted**: Docker Compose con PostgreSQL
+
+**Key Capabilities**:
+- Temporal knowledge graphs (who said what, when, why)
+- Cross-tool memory (Claude, Cursor, VS Code, etc.)
+- Zero-friction setup via automated scripts
+- Integrations: GitHub, Linear, Slack (opt-in)
+
+**Ejemplo**:
+```bash
+"Setup Core Memory para proyecto"
+# → Opción A: Cloud (2min)
+# → Opción B: Self-hosted (Docker)
+# → Config .claude/.mcp.json
+# → Verify connection
+# → Start using memory tools
+```
+
+**Components**: Setup scripts (Cloud/self-hosted), REST API reference, Spaces CLI, agent templates
+
+---
+
+### Creative
+
+#### algorithmic-art
+
+::: tip Creative | Generative
+**Cuándo**: Arte generativo, algorithmic art, flow fields, sistemas de partículas, visualizaciones computacionales
+**Qué hace**: Genera arte p5.js basado en filosofías algorítmicas únicas. Crea viewer interactivo con seed navigation, controles paramétricos, y export capability. Reproducible (mismo seed = mismo output)
+:::
+
+**2-Step Process**:
+1. **Algorithmic Philosophy**: Define computational aesthetic movement (.md)
+2. **Express in Code**: p5.js generative art (.html + .js) con seeded randomness
+
+**Filosofía incluye**:
+- Computational processes y mathematical beauty
+- Seeded randomness, noise fields, organic systems
+- Particles, flows, fields, forces
+- Parametric variation y controlled chaos
+
+**Ejemplo**:
+```bash
 "Flow fields con partículas orgánicas"
-
-# Sistemas geométricos
-"Arte algorítmico con polígonos y ruido Perlin"
-
-# Inspiración artística
-"Arte inspirado en Bridget Riley (Op Art)"
+# → Philosophy: "Organic Turbulence" movement
+# → p5.js: Perlin noise flow field + particle system
+# → Viewer: seed controls + parameter sliders + export PNG
+# → Reproducible: seed 42 = siempre mismo output
 ```
 
+**Output**: Philosophy (.md) + HTML viewer interactivo
+
+**Critical**: Create ORIGINAL work, NO copiar existing artists (copyright)
+
+---
+
+### Meta
+
+#### using-superpowers
+
+::: danger Meta | Mandatory
+**Cuándo**: Automáticamente al inicio de CADA conversación vía SessionStart hook (superpowers-loader.sh)
+**Qué hace**: Establece workflows mandatorios: buscar/usar skills antes de ANY task, usar Skill tool antes de anunciar skill, brainstorming antes de coding, TodoWrite para checklists
 :::
 
-**Output:** Filosofía (.md) + HTML interactivo con reproducibilidad (mismo seed = mismo output)
+**Mandatory First Response Protocol**:
+1. ☐ List available skills in mind
+2. ☐ Ask: "Does ANY skill match this request?"
+3. ☐ If yes → Use Skill tool to read skill file
+4. ☐ Announce which skill using
+5. ☐ Follow skill exactly
+
+**Common Rationalizations = FAILURE**:
+- "This is just a simple question" → WRONG
+- "I can check files quickly" → WRONG
+- "Let me gather info first" → WRONG
+- "Skill is overkill" → WRONG
+- "I remember this skill" → WRONG (skills evolve)
+
+**Enforcement**: Skills > MCPs > Direct implementation. Si skill existe para task, MUST use or fail
+
+**Cargado**: Automáticamente en SessionStart, no requiere invocación manual
+
+---
+
+#### sharing-skills
+
+::: info Meta | Contribution
+**Cuándo**: Desarrollaste skill broadly useful (no project-specific) y quieres contribuirla upstream vía pull request
+**Qué hace**: Guía proceso completo: branching, edit/create skill, commit, push fork, create PR para contribuir al repositorio upstream
+:::
+
+**Prerequisite**: Skill debe estar tested usando `testing-skills-with-subagents` TDD process
+
+**Workflow**:
+1. **Sync**: `git checkout main && git pull upstream main`
+2. **Branch**: `git checkout -b add-skillname-skill`
+3. **Edit/Create**: Skill en `skills/skill-name/SKILL.md`
+4. **Commit**: Mensaje descriptivo
+5. **Push**: `git push origin add-skillname-skill`
+6. **PR**: `gh pr create` con template
+
+**Share when**: Broad applicability, well-tested, documented, follows guidelines
+
+**Keep personal**: Project-specific, experimental, sensitive info, too niche
+
+---
+
+#### testing-skills-with-subagents
+
+::: warning Meta | Quality
+**Cuándo**: Crear/editar skill, antes de deployment, para verificar funciona bajo presión y resiste rationalization
+**Qué hace**: Aplica RED-GREEN-REFACTOR cycle a process documentation. Baseline sin skill (watch fail), write skill addressing failures, iterate cerrando loopholes
+:::
+
+**TDD Mapping**:
+- **RED**: Run scenario SIN skill → watch agent fail → capture exact failures
+- **GREEN**: Write skill addressing baseline failures → verify compliance
+- **REFACTOR**: Find new rationalizations → add counters → re-verify
+
+**Ejemplo**:
+```bash
+"Validar skill TDD recién creada"
+# RED: Subagent sin TDD skill → salta tests, va directo a implement
+# GREEN: Con TDD skill → escribe test first, watch fail, implement
+# REFACTOR: Encuentra loopholes ("just this once") → strengthen skill
+```
+
+**Test skills que**:
+- Enforce discipline (TDD, testing requirements)
+- Tienen compliance cost (time, effort, rework)
+- Podrían ser racionalizadas ("skip just this once")
+- Contradict immediate goals (speed over quality)
+
+**Principio**: Si no viste agent fail sin skill, no sabes si skill previene right failures
 
 ---
 
 ## Cómo Usar Skills
 
-**Activación Automática:**
-
-```
-User Request → Detect Keywords → Match Triggers → Activate Skill
-```
-
-Claude detecta el contexto y activa la skill apropiada sin invocación explícita.
-
-**Invocación Manual (opcional):**
+**Activación automática**: Claude detecta contexto y carga skill apropiada sin invocación explícita.
 
 ```bash
-"Usando claude-code-expert skill: crea agent para X"
+# Solicitud natural
+"Voy a implementar validación de formulario"
+# → test-driven-development se activa automáticamente
 ```
 
-**Crear Nueva Skill:**
-
+**Invocación manual** (opcional):
 ```bash
-"Crea una skill para [dominio específico]"
+"Usando systematic-debugging: investiga por qué el test falla aleatoriamente"
+```
+
+::: tip Precedencia
+**Skills > MCPs > Implementación directa**
+
+Siempre verifica skills disponibles antes de implementar. Si skill existe para tu task, MUST use.
+:::
+
+**Crear nueva skill**:
+```bash
+"Crea skill para [dominio específico]"
 # → skill-creator guía el proceso interactivamente
 ```
 
@@ -186,77 +864,62 @@ Claude detecta el contexto y activa la skill apropiada sin invocación explícit
 
 ## Troubleshooting
 
-::: details Skill No Se Activa
+::: details Skill no se activa automáticamente
 
-**Problema:** Solicitud muy genérica
-
-```bash
-❌ "Ayúdame con código"
-✅ "Crea agent para análisis de código Python"
-```
-
-**Problema:** Skill no instalada
+**Causa común**: Solicitud demasiado genérica
 
 ```bash
-ls -la skills/  # Verificar instalación
+❌ "Ayuda con código"
+✅ "Implementa autenticación JWT siguiendo TDD"
 ```
 
+**Solución**: Menciona skill explícitamente si sospechas de activación:
+```bash
+"Usando test-driven-development: implementa validación email"
+```
 :::
 
-::: details Output Incorrecto
+::: details Output no cumple expectativas
 
-**Si claude-code-expert falla:**
+**Para claude-code-expert**: Docs oficiales pueden estar desactualizadas
 
 ```bash
-# Docs desactualizadas
-"WebFetch latest Claude Code documentation"
+"WebFetch latest Claude Code documentation antes de generar agent"
 ```
 
-**Si cualquier skill falla:**
+**Para cualquier skill**: Valida recursos existen
 
 ```bash
-# Validar recursos
 ls -la skills/skill-name/
+# Verifica SKILL.md + scripts/ + references/ + assets/
+```
+:::
+
+::: details Skill falta o versión antigua
+
+**Update framework**:
+
+```bash
+# Si instalado vía marketplace
+# Session restart carga nueva versión automáticamente
+
+# Si clon local
+cd /path/to/ai-framework
+git pull origin main
+# Session restart
 ```
 
+**Verificar versión**:
+```bash
+cat package.json | grep version
+```
 :::
 
 ---
 
-## Best Practices
-
-::: tip Recomendaciones
-
-**✅ Hacer:**
-
-- Solicitudes específicas con contexto
-- Validar output contra quality gates
-- Iterar basado en feedback
-
-**❌ Evitar:**
-
-- Solicitudes genéricas sin contexto
-- Ignorar warnings de validación
-- Duplicar funcionalidad existente
-  :::
-
----
-
-## Recursos
-
-**Scripts Esenciales:**
-
-- `init_skill.py` - Inicializar skill
-- `validate_skill.py` - Validar estructura
-- `package_skill.py` - Empaquetar para distribución
-
-**Documentación:**
-
-- 📖 Plugin Guide: `.claude-plugin/README.md`
-- ⚖️ Constitution: `.specify/memory/constitution.md`
-
----
-
-::: info Última Actualización
-**Fecha**: 2025-10-24 | **Skills**: 3 | **Status**: Production-Ready
+::: info Metadata
+**Última actualización**: 2025-11-12
+**Skills totales**: 24
+**Categorías**: Testing (3), Debugging (4), Collaboration (9), Development Tools (3), Memory (1), Creative (1), Meta (3)
+**Status**: Production-Ready
 :::
