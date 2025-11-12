@@ -113,6 +113,34 @@ episodic-memory sync
 episodic-memory stats  # Ver estadísticas
 ```
 
+::: tip ⚡ Recomendación: Procesamiento Completo Inicial
+**IMPORTANTE**: La primera vez que instalas o actualizas episodic-memory, ejecuta el procesamiento completo para indexar todas las conversaciones inmediatamente.
+
+**Por qué es importante:**
+- El hook automático procesa solo 10 conversaciones por sesión (incremental)
+- Si tienes cientos de conversaciones, tomaría múltiples sesiones indexarlas todas
+- El procesamiento completo inicial te da acceso inmediato a toda tu historia
+
+**Comando recomendado:**
+```bash
+# Procesa todas las conversaciones con 8 hilos paralelos
+index-conversations --cleanup --concurrency 8
+
+# Verificar resultado
+episodic-memory stats
+```
+
+**Tiempo estimado:** ~2-5 minutos para 100-500 conversaciones (depende de tu máquina)
+
+**Recursos usados:**
+- Modelo de embeddings LOCAL (~23 MB, descarga automática primera vez)
+- CPU: Procesamiento paralelo (8 hilos)
+- RAM: ~150-300 MB durante procesamiento
+- Disco: Base de datos SQLite + resúmenes
+
+Después de esta indexación inicial, el hook automático mantendrá todo sincronizado incrementalmente (10 conversaciones por sesión).
+:::
+
 ### Uso desde Claude Code
 
 ::: code-group
