@@ -6,6 +6,7 @@
  * - human-handbook/.vitepress/config.js (themeConfig.version + themeConfig.previousVersion)
  * - README.md (version references)
  * - .claude-plugin/plugin.json (plugin version)
+ * - .claude-plugin/marketplace.json (marketplace metadata + plugin version)
  * - Validates CHANGELOG.md entry exists for new version
  *
  * Triggered by: npm version [major|minor|patch|prerelease]
@@ -24,6 +25,7 @@ const CONFIG_JS_PATH = path.join(
 );
 const README_PATH = path.join(__dirname, "../README.md");
 const PLUGIN_JSON_PATH = path.join(__dirname, "../.claude-plugin/plugin.json");
+const MARKETPLACE_JSON_PATH = path.join(__dirname, "../.claude-plugin/marketplace.json");
 
 function main() {
   try {
@@ -48,11 +50,15 @@ function main() {
     updatePluginJSON(version);
     console.log(`[sync-versions] ✓ Updated plugin.json`);
 
-    // Step 6: Sync CHANGELOG to docs
+    // Step 6: Update .claude-plugin/marketplace.json
+    updateMarketplaceJSON(version);
+    console.log(`[sync-versions] ✓ Updated marketplace.json`);
+
+    // Step 7: Sync CHANGELOG to docs
     syncDocsChangelog();
     console.log(`[sync-versions] ✓ Synced docs/changelog.md`);
 
-    // Step 7: Validate CHANGELOG.md entry exists
+    // Step 8: Validate CHANGELOG.md entry exists
     validateChangelog(version);
     console.log(`[sync-versions] ✓ CHANGELOG.md validated`);
 
@@ -134,6 +140,26 @@ function updatePluginJSON(version) {
   plugin.version = version;
 
   fs.writeFileSync(PLUGIN_JSON_PATH, JSON.stringify(plugin, null, 2) + "\n", "utf8");
+}
+
+function updateMarketplaceJSON(version) {
+  if (!fs.existsSync(MARKETPLACE_JSON_PATH)) {
+    throw new Error(`marketplace.json not found at ${MARKETPLACE_JSON_PATH}`);
+  }
+
+  const marketplace = JSON.parse(fs.readFileSync(MARKETPLACE_JSON_PATH, "utf8"));
+
+  // Update marketplace metadata version
+  if (marketplace.metadata) {
+    marketplace.metadata.version = version;
+  }
+
+  // Update plugin entry version
+  if (marketplace.plugins && marketplace.plugins.length > 0) {
+    marketplace.plugins[0].version = version;
+  }
+
+  fs.writeFileSync(MARKETPLACE_JSON_PATH, JSON.stringify(marketplace, null, 2) + "\n", "utf8");
 }
 
 function syncDocsChangelog() {
