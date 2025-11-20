@@ -30,14 +30,16 @@ if (process.argv[2] && process.argv[2] !== "--profile") {
 // Don't kill user's Chrome - use isolated instance with different port
 // User's Chrome sessions remain untouched
 
-// Setup profile directory
-execSync(`mkdir -p "${process.env["HOME"]}/.cache/scraping"`, { stdio: "ignore" });
+// CRITICAL: Clean scraping directory to ensure isolated profile
+// Prevents "Who's using Chrome?" selector and session contamination
+execSync(`rm -rf "${process.env["HOME"]}/.cache/scraping"`, { stdio: "ignore" });
+execSync(`mkdir -p "${process.env["HOME"]}/.cache/scraping/Default"`, { stdio: "ignore" });
 
 if (useProfile) {
   try {
-    // Sync profile with rsync (much faster on subsequent runs)
+    // Sync ONLY Default profile (not all profiles) to avoid multi-profile selector
     execSync(
-      `rsync -a --delete "${process.env["HOME"]}/Library/Application Support/Google/Chrome/" "${process.env["HOME"]}/.cache/scraping/"`,
+      `rsync -a "${process.env["HOME"]}/Library/Application Support/Google/Chrome/Default/" "${process.env["HOME"]}/.cache/scraping/Default/"`,
       { stdio: "pipe" },
     );
   } catch (error) {
@@ -53,6 +55,7 @@ spawn(
   [
     "--remote-debugging-port=9223",
     `--user-data-dir=${process.env["HOME"]}/.cache/scraping`,
+    "--profile-directory=Default", // Force single profile (defense in depth)
   ],
   { detached: true, stdio: "ignore" },
 ).unref();
