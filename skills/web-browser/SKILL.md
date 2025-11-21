@@ -157,7 +157,15 @@ npm install
 ./tools/start.js --profile    # Copy your profile (cookies, logins)
 ```
 
-Start Chrome on `:9222` with remote debugging.
+Start Chrome on `:9223` with remote debugging. Uses dedicated port to avoid interfering with user's Chrome sessions.
+
+### Stop Chrome
+
+```bash
+./tools/stop.js
+```
+
+Gracefully stop the browser instance started by this skill.
 
 ### Navigate
 
