@@ -3,35 +3,45 @@
 import { spawn, execSync } from "node:child_process";
 import puppeteer from "puppeteer-core";
 
+const PORT = 9223;
+const PROFILE_DIR = `${process.env["HOME"]}/.cache/web-browser-skill`;
+
 const useProfile = process.argv[2] === "--profile";
 
 if (process.argv[2] && process.argv[2] !== "--profile") {
-  console.log("Usage: start.ts [--profile]");
+  console.log("Usage: start.js [--profile]");
   console.log("\nOptions:");
   console.log(
     "  --profile  Copy your default Chrome profile (cookies, logins)",
   );
   console.log("\nExamples:");
-  console.log("  start.ts            # Start with fresh profile");
-  console.log("  start.ts --profile  # Start with your Chrome profile");
+  console.log("  start.js            # Start with fresh profile");
+  console.log("  start.js --profile  # Start with your Chrome profile");
   process.exit(1);
 }
 
-// Kill existing Chrome
+// Try to connect to existing instance first
 try {
-  execSync("killall 'Google Chrome'", { stdio: "ignore" });
-} catch {}
-
-// Wait a bit for processes to fully die
-await new Promise((r) => setTimeout(r, 1000));
+  const browser = await puppeteer.connect({
+    browserURL: `http://localhost:${PORT}`,
+    defaultViewport: null,
+  });
+  await browser.disconnect();
+  console.log(`⚠️  Chrome already running on :${PORT}`);
+  console.log(`   Run 'stop.js' first if you want to change profile mode`);
+  process.exit(0);
+} catch {
+  // No existing instance, will start new one
+}
 
 // Setup profile directory
-execSync("mkdir -p ~/.cache/scraping", { stdio: "ignore" });
+execSync(`mkdir -p ${PROFILE_DIR}`, { stdio: "ignore" });
 
 if (useProfile) {
   // Sync profile with rsync (much faster on subsequent runs)
+  const defaultProfilePath = `${process.env["HOME"]}/Library/Application Support/Google/Chrome/`;
   execSync(
-    'rsync -a --delete "/Users/badlogic/Library/Application Support/Google/Chrome/" ~/.cache/scraping/',
+    `rsync -a --delete "${defaultProfilePath}" ${PROFILE_DIR}/`,
     { stdio: "pipe" },
   );
 }
@@ -40,8 +50,8 @@ if (useProfile) {
 spawn(
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   [
-    "--remote-debugging-port=9222",
-    `--user-data-dir=${process.env["HOME"]}/.cache/scraping`,
+    `--remote-debugging-port=${PORT}`,
+    `--user-data-dir=${PROFILE_DIR}`,
   ],
   { detached: true, stdio: "ignore" },
 ).unref();
@@ -51,7 +61,7 @@ let connected = false;
 for (let i = 0; i < 30; i++) {
   try {
     const browser = await puppeteer.connect({
-      browserURL: "http://localhost:9222",
+      browserURL: `http://localhost:${PORT}`,
       defaultViewport: null,
     });
     await browser.disconnect();
@@ -68,5 +78,5 @@ if (!connected) {
 }
 
 console.log(
-  `✓ Chrome started on :9222${useProfile ? " with your profile" : ""}`,
+  `✓ Chrome started on :${PORT}${useProfile ? " with your profile" : ""}`,
 );
