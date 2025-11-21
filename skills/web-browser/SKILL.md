@@ -1,30 +1,31 @@
 ---
-name: browser-tools
-description: "Control Chrome/Chromium via CDP for automated testing, performance profiling, web scraping, and debugging. Full Puppeteer API access: E2E testing, network interception, coverage analysis, multi-tab orchestration. Zero context overhead - loads on-demand unlike persistent MCP servers."
+name: web-browser
+description: "Use when needing to interact with web pages requiring navigation, forms, or JavaScript execution - minimal CDP tools for collaborative site exploration; zero context overhead (loads on-demand unlike persistent MCP servers)"
 ---
 
-# Browser Tools Skill
+# Web Browser Skill
 
-Full-featured browser automation via Chrome DevTools Protocol (CDP). Equivalent capabilities to Playwright MCP, zero context overhead.
+## Overview
 
-**Platform Support:** macOS only. Uses macOS-specific Chrome paths and rsync. For Linux/Windows support, see repository issues.
+Minimal browser automation via Chrome DevTools Protocol (CDP). Interactive exploration of web content when static fetching is insufficient.
+
+**Core principle:** Setup verification BEFORE use prevents runtime failures. Browser tools unlock interactive exploration impossible with WebFetch/WebSearch.
 
 ---
 
-## Core Principle
+## The Iron Law
 
-Setup verification BEFORE use prevents runtime failures. Interactive browser access unlocks deep documentation research impossible with WebFetch/WebSearch.
-
-**The Iron Law:**
 ```
 NO BROWSER AUTOMATION WITHOUT VERIFIED SETUP FIRST
 ```
+
+Must verify `npm install` succeeded in `tools/` subdirectory before attempting browser operations.
 
 ---
 
 ## When to Use
 
-### CRITICAL: Use browser-tools When WebFetch/WebSearch Are Insufficient
+### CRITICAL: Use web-browser When WebFetch/WebSearch Are Insufficient
 
 **WebFetch/WebSearch limitations:**
 - Surface-level snapshots only
@@ -33,19 +34,19 @@ NO BROWSER AUTOMATION WITHOUT VERIFIED SETUP FIRST
 - No interactive exploration
 - Miss nested documentation, examples, API details
 
-**MUST use browser-tools when:**
+**MUST use web-browser when:**
 - ✅ Need to read COMPLETE documentation (multi-page, nested sections)
 - ✅ Investigating complex APIs with interactive examples
 - ✅ Deep research requiring navigation through multiple related pages
 - ✅ Documentation behind authentication or requires cookies
 - ✅ Content generated dynamically via JavaScript
 
-**Example scenario requiring browser-tools:**
+**Example scenario requiring web-browser:**
 ```
 User: "Research the complete React Router 7 data loading API"
 
 ❌ WRONG: WebFetch one page, give superficial summary
-✅ CORRECT: Use browser-tools to:
+✅ CORRECT: Use web-browser to:
    1. Navigate through full docs structure
    2. Read loaders, actions, defer, Await sections
    3. Extract code examples from interactive demos
@@ -54,16 +55,16 @@ User: "Research the complete React Router 7 data loading API"
 
 ### Standard Use Cases
 
-Use browser-tools for:
-- **E2E testing** requiring real browser behavior
+Use web-browser for:
+- **Deep documentation research** requiring multi-page navigation
 - **Web scraping** with JavaScript-rendered content
-- **Performance profiling** with real metrics
-- **Screenshot automation** with visual verification
 - **Interactive debugging** of web applications
+- **Form filling** and button clicking automation
+- **Screenshot automation** with visual verification
 
-### When NOT to Use
+## When NOT to Use
 
-**Don't use browser-tools when:**
+**Don't use web-browser when:**
 - ❌ Simple HTTP requests suffice (use curl/WebFetch)
 - ❌ API available (use API directly)
 - ❌ Static HTML parsing (use grep on WebFetch result)
@@ -73,7 +74,7 @@ Use browser-tools for:
 ```
 Need web content?
   → Single page, no interaction? → WebFetch
-  → Multiple pages, deep dive? → browser-tools
+  → Multiple pages, deep dive? → web-browser
   → API available? → Use API
 ```
 
@@ -88,9 +89,8 @@ If you catch yourself thinking:
 - "Setup verification wastes time"
 - **"WebFetch summary is good enough" (for deep research)**
 - **"User wants quick answer" (when they need complete docs)**
-- "Just use killall to fix it"
 
-**ALL mean: STOP. Return to Core Principle.**
+**ALL mean: STOP. Return to Setup Verification.**
 
 ---
 
@@ -101,29 +101,8 @@ If you catch yourself thinking:
 | "Setup check wastes time" | 2 min verification prevents 30 min debugging |
 | "It worked last time" | Environment changes between sessions. Always verify. |
 | "I'll fix errors if they happen" | Prevention is 15x faster than debugging failures |
-| **"WebFetch is faster for research"** | **2 min WebFetch = superficial. 10 min browser-tools = complete.** |
+| **"WebFetch is faster for research"** | **2 min WebFetch = superficial. 10 min browser = complete.** |
 | **"User seems in a hurry"** | **Incomplete research wastes MORE time with wrong answers.** |
-| "killall is quicker" | Destroys user sessions. Breaks trust permanently. |
-
----
-
-## Real-World Impact
-
-From browser automation sessions:
-
-**Setup discipline:**
-- With verification: 2 min setup, 100% success rate
-- Without verification: 30 sec setup, 40% success, 90 sec average recovery
-- First-time success: 100% vs 40%
-
-**Deep research quality:**
-- WebFetch only: Surface-level understanding, 60% accuracy
-- browser-tools: Complete documentation coverage, 95% accuracy
-- Time saved by doing it right: Avoids 2-3 follow-up questions
-
-**Stop vs killall:**
-- Using stop.js: 100% safe, 2 sec
-- Using killall: 0% safe, destroys user work, breaks trust
 
 ---
 
@@ -131,28 +110,28 @@ From browser automation sessions:
 
 **Run ONCE before first use:**
 
-\`\`\`bash
-cd skills/browser-tools/tools
+```bash
+cd skills/web-browser/tools
 npm install
-\`\`\`
+```
 
 **Verify installation succeeded:**
 
-\`\`\`bash
+```bash
 ls node_modules/puppeteer-core  # Should exist
-\`\`\`
+```
 
 ### ⚠️ CRITICAL INSTALLATION WARNING
 
-**MUST install in `tools/` subdirectory, NOT in `browser-tools/`.**
+**MUST install in `tools/` subdirectory, NOT in `web-browser/`.**
 
 ```bash
 # ❌ WRONG - Will fail at runtime
-cd skills/browser-tools
+cd skills/web-browser
 npm install
 
 # ✅ CORRECT - Works first time
-cd skills/browser-tools/tools
+cd skills/web-browser/tools
 npm install
 ```
 
@@ -167,67 +146,72 @@ npm install
 
 **Under pressure, setup verification is faster than debugging failures.**
 
-## Start Chrome
+---
 
-\`\`\`bash
+## Tools
+
+### Start Chrome
+
+```bash
 ./tools/start.js              # Fresh profile
 ./tools/start.js --profile    # Copy your profile (cookies, logins)
-\`\`\`
+```
 
-Start Chrome on `:9223` with remote debugging (isolated from your main Chrome sessions).
+Start Chrome on `:9222` with remote debugging.
 
-## Navigate
+### Navigate
 
-\`\`\`bash
+```bash
 ./tools/nav.js https://example.com
 ./tools/nav.js https://example.com --new
-\`\`\`
+```
 
 Navigate current tab or open new tab.
 
-## Evaluate JavaScript
+### Evaluate JavaScript
 
-\`\`\`bash
+```bash
 ./tools/eval.js 'document.title'
 ./tools/eval.js 'document.querySelectorAll("a").length'
 ./tools/eval.js 'JSON.stringify(Array.from(document.querySelectorAll("a")).map(a => ({ text: a.textContent.trim(), href: a.href })).filter(link => !link.href.startsWith("https://")))'
-\`\`\`
+```
 
-Execute JavaScript in active tab (async context).  Be careful with string escaping, best to use single quotes.
+Execute JavaScript in active tab (async context). Be careful with string escaping, best to use single quotes.
 
-## Screenshot
+### Screenshot
 
-\`\`\`bash
+```bash
 ./tools/screenshot.js
-\`\`\`
+```
 
-Screenshot current viewport, returns temp file path
+Screenshot current viewport, returns temp file path.
 
-## Pick Elements
+### Pick Elements
 
-\`\`\`bash
+```bash
 ./tools/pick.js "Click the submit button"
-\`\`\`
+```
 
 Interactive element picker. Click to select, Cmd/Ctrl+Click for multi-select, Enter to finish.
 
-## Stop Chrome
+---
 
-\`\`\`bash
-./tools/stop.js
-\`\`\`
+## Real-World Impact
 
-Safely stops the debugging Chrome instance on `:9223` without touching your main Chrome sessions.
+From browser automation sessions:
 
-### ⚠️ CRITICAL: NEVER Use killall
+**Setup discipline:**
+- With verification: 2 min setup, 100% success rate
+- Without verification: 30 sec setup, 40% success, 90 sec average recovery
+- First-time success: 100% vs 40%
 
-**NEVER use `killall "Google Chrome"`** - it closes ALL your Chrome sessions:
-- ❌ Personal browsing tabs (work, email, social)
-- ❌ Other development sessions
-- ❌ Unsaved form data
-- ❌ Active downloads
-- ❌ **User trust when you destroy their work**
+**Deep research quality:**
+- WebFetch only: Surface-level understanding, 60% accuracy
+- web-browser: Complete documentation coverage, 95% accuracy
+- Time saved by doing it right: Avoids 2-3 follow-up questions
 
-**ALWAYS use `./tools/stop.js`** - it ONLY closes the debugging instance on port `:9223`.
+---
 
-**Why this matters:** Running `killall` under pressure to "just get it working" destroys user sessions and breaks trust. The extra 2 seconds to use `stop.js` prevents catastrophic data loss.
+## Credits
+
+Adapted from [agent-commands](https://github.com/mitsuhiko/agent-commands) by Armin Ronacher (mitsuhiko).

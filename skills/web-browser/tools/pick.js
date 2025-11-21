@@ -11,7 +11,7 @@ if (!message) {
 }
 
 const b = await puppeteer.connect({
-  browserURL: "http://localhost:9223",
+  browserURL: "http://localhost:9222",
   defaultViewport: null,
 });
 

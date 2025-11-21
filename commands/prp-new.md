@@ -1,4 +1,5 @@
 ---
+name: prp-new
 description: Create Product Requirements Prompt (minimal, business-focused) from natural language, GitHub issues, or context files
 argument-hint: [natural-language] or [from Github issue #N] or [from document path]
 allowed-tools: Bash(date -u +"%Y-%m-%dT%H:%M:%SZ"), Read, Write, LS, WebFetch

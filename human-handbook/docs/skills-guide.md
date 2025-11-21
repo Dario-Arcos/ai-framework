@@ -101,7 +101,7 @@ Selecciona tu situación para ver las skills recomendadas
 ### Herramientas
 ::: details Crear componentes o automatización
 - <Badge type="tip" text="Dev Tools" /> `claude-code-expert` - Genera agents/commands/hooks production-ready
-- <Badge type="info" text="Web" /> `browser-tools` - Automation Chrome/Puppeteer vía CDP
+- <Badge type="info" text="Web" /> `web-browser` - Control Chrome/Chromium vía CDP para exploración web interactiva
 - <Badge type="tip" text="Meta" /> `skill-creator` - Crea skill personalizada paso a paso
 :::
 
@@ -623,34 +623,34 @@ Plan con 5 tareas independientes:
 
 ---
 
-#### browser-tools
+#### web-browser
 
 ::: info Web | Automation
-**Cuándo**: E2E testing, performance profiling, web scraping, debugging, network interception
-**Qué hace**: Control Chrome/Chromium vía CDP con Puppeteer API completo, zero context overhead (on-demand loading vs persistent MCP), multi-tab orchestration
+**Cuándo**: Interacción colaborativa con sitios web (clicks, formularios, navegación)
+**Qué hace**: Control minimalista Chrome/Chromium vía CDP (Chrome DevTools Protocol), herramientas para exploración web interactiva
 :::
 
-**Platform**: macOS only (Chrome paths específicos, rsync)
+**Platform**: Multiplataforma (Chrome/Chromium)
 
 **Setup** (una vez):
 ```bash
-cd skills/browser-tools/tools
+cd skills/web-browser/tools
 npm install
 ls node_modules/puppeteer-core  # Verify
 ```
 
-**Tools**: `start.js`, `nav.js`, `eval.js`, `screenshot.js`, `stop.js`
+**Tools**: `start.js`, `nav.js`, `eval.js`, `screenshot.js`, `pick.js`
 
 **Ejemplo**:
 ```bash
-"Test E2E checkout flow"
-# → Start Chrome debugging (port 9223)
+"Explorar documentación de API"
+# → Start Chrome debugging (port 9222)
 # → Navigate → interact → screenshot
-# → Assert expected behavior
-# → Stop debugging instance (NOT killall Chrome!)
+# → Extract information con eval.js
+# → Cerrar Chrome manualmente cuando termines
 ```
 
-**Critical Warning**: NUNCA `killall Chrome` (cierra TODAS tus sesiones). Usa `./tools/stop.js`
+**Critical Note**: Esta skill NO incluye `stop.js`. Cierra Chrome manualmente o usa `lsof -ti :9222 | xargs kill -9`
 
 ---
 
