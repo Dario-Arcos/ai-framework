@@ -2,6 +2,12 @@
 """
 Start one or more servers, wait for them to be ready, run a command, then clean up.
 
+⚠️ SECURITY NOTE:
+   This script uses shell=True to support complex commands (cd, &&, pipes, etc.).
+   Input source: CLI arguments controlled by developer (not external/user input).
+   Risk level: LOW - This is a development/testing utility, not production code.
+   DO NOT use this script to execute untrusted or user-provided commands.
+
 Usage:
     # Single server
     python scripts/with_server.py --server "npm run dev" --port 5173 -- python automation.py
