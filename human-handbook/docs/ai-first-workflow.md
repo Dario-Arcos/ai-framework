@@ -331,37 +331,6 @@ Answer questions even if obvious. 2 min ahora > 2 hours later.
 
 ---
 
-## Herramienta Opcional: Agent Strategy Advisor
-
-::: tip Planificación Consultiva
-Si no estás seguro qué agentes usar para una tarea compleja, puedes consultar al `agent-strategy-advisor`:
-
-```bash
-Task tool with agent-strategy-advisor "Analiza mi tasks.md y recomienda agentes"
-```
-
-**Este agente NO ejecuta tareas**, solo analiza y recomienda:
-
-- Qué agentes usar para qué trabajo
-- Cuándo usar agentes vs. main Claude
-- ROI realista de paralelización
-- Estrategia de ejecución con justificación
-
-**Úsalo cuando**:
-
-- Planeas trabajo complejo y no sabes qué agentes usar
-- Quieres aprender el ecosistema de agentes
-- Necesitas justificación de estrategia para tu equipo
-
-**No lo uses cuando**:
-
-- Ya sabes qué agentes necesitas
-- Trabajo simple (<80 LOC)
-- Necesitas ejecución inmediata (no planificación)
-  :::
-
----
-
 ::: info Última Actualización
 **Fecha**: 2025-10-16 | **Ecosistema**: PRP-SDD-GitHub
 :::

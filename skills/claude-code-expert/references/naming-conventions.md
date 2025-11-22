@@ -13,8 +13,8 @@
 **Examples**:
 
 - ✅ `code-reviewer`
-- ✅ `python-pro`
 - ✅ `backend-architect`
+- ✅ `security-reviewer`
 - ❌ `CodeQualityReviewer` (CamelCase not allowed)
 - ❌ `code_quality_reviewer` (underscores not allowed)
 
@@ -98,8 +98,8 @@
 **Examples**:
 
 - ✅ `claude-code-expert`
-- ✅ `pdf-editor`
-- ✅ `web-search-specialist`
+- ✅ `algorithmic-art`
+- ✅ `skill-creator`
 - ❌ `ClaudeCodeExpert` (CamelCase not allowed)
 - ❌ `claude_code_expert` (underscores not allowed)
 

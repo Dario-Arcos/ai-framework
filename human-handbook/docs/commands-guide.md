@@ -983,7 +983,7 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-08 | **Comandos Documentados**: 24 | **Categorías**: 4 | **Workflow**: 6 pasos core SDD
+**Fecha**: 2025-11-22 | **Workflow**: Ciclo SDD completo
 
 **Cambios recientes**:
 - ❌ Eliminado `/three-experts` - Sin uso (0 executions en >1 año)

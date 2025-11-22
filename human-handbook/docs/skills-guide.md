@@ -918,8 +918,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-11-12
-**Skills totales**: 24
-**Categorías**: Testing (3), Debugging (4), Collaboration (9), Development Tools (3), Memory (1), Creative (1), Meta (3)
+**Última actualización**: 2025-11-22
+**Categorías**: Testing, Debugging, Collaboration, Development Tools, Memory, Creative, Meta
 **Status**: Production-Ready
 :::

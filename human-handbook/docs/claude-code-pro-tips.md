@@ -360,9 +360,9 @@ to review changes in current branch vs develop"
 "Use the performance-engineer agent specifically
 to analyze this database query optimization"
 
-# Research profundo
-"Use the web-search-specialist agent to research
-React Server Components best practices in 2025"
+# Debugging sistemático
+"Use the systematic-debugger agent to investigate
+this complex authentication failure with distributed tracing"
 ```
 
 ::: tip Cuándo Usar Invocación Explícita
@@ -474,8 +474,8 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 **Framework:**
 
 - [AI-First Workflow](./ai-first-workflow) — Workflows completos
-- [Commands Guide](./commands-guide) — 25 comandos
-- [Agents Guide](./agents-guide) — 45 specialized agents
+- [Commands Guide](./commands-guide) — Comandos especializados
+- [Agents Guide](./agents-guide) — Agentes especializados por dominio
 
 **Docs oficiales:**
 

@@ -6,19 +6,16 @@ Especialistas AI que ejecutan tareas complejas con expertise en dominios especí
 
 ---
 
-| Categoría                                                             | Agentes | Uso Recomendado                                       |
-| --------------------------------------------------------------------- | ------- | ----------------------------------------------------- |
-| [Architecture & System Design](#architecture-system-design)           | 8       | Diseño de APIs, arquitectura de sistemas, multi-cloud |
-| [Code Review & Security](#code-review-security)                       | 5       | Revisión de código, seguridad, edge cases             |
-| [Database Management](#database-management)                           | 2       | Optimización de BD, administración cloud              |
-| [DevOps & Deployment](#devops-deployment)                             | 4       | CI/CD, GitOps, troubleshooting, DX                    |
-| [Documentation & Technical Writing](#documentation-technical-writing) | 5       | Documentación técnica, APIs, tutoriales               |
-| [Incident Response & Network](#incident-response-network)             | 2       | Respuesta a incidentes, ingeniería de redes           |
-| [Performance & Observability](#performance-observability)             | 3       | Optimización de rendimiento, observabilidad           |
-| [Shadcn-UI Components](#shadcn-ui-components)                         | 4       | Componentes UI con shadcn/ui                          |
-| [Testing & Debugging](#testing-debugging)                             | 4       | TDD, testing automatizado, debugging sistemático      |
-| [User Experience & Design](#user-experience-design)                   | 3       | UX premium, animaciones GSAP, design review           |
-| [Web & Application](#web-application)                                 | 5       | TypeScript, Python, JavaScript, PHP, Ruby             |
+| Categoría                                                             | Uso Recomendado                                 |
+| --------------------------------------------------------------------- | ----------------------------------------------- |
+| [Architecture & System Design](#architecture-system-design)           | Diseño de APIs, arquitectura de sistemas        |
+| [Code Review & Security](#code-review-security)                       | Revisión de código, seguridad, edge cases       |
+| [Database Management](#database-management)                           | Administración cloud databases                  |
+| [Documentation & Technical Writing](#documentation-technical-writing) | Documentación técnica comprehensiva             |
+| [Performance & Observability](#performance-observability)             | Optimización de rendimiento, observabilidad     |
+| [Testing & Debugging](#testing-debugging)                             | TDD, testing automatizado, debugging sistemático |
+| [User Experience & Design](#user-experience-design)                   | UX premium, design review                       |
+| [Memory & Context](#memory-context)                                   | Búsqueda de contexto persistente                |
 
 ---
 
@@ -117,57 +114,6 @@ AWS/Azure/GCP, Terraform/OpenTofu/CDK, optimización FinOps
 
 ---
 
-### `graphql-architect`
-
-::: tip GraphQL Moderno
-Federation, optimización performance, seguridad enterprise
-:::
-
-**Stack:** Apollo Federation v2 · Schema-first design · DataLoader (N+1) · Field-level auth · Subscriptions (WebSocket/SSE)
-
----
-
-### `hybrid-cloud-architect`
-
-::: tip Soluciones Híbridas
-Multi-cloud (AWS/Azure/GCP) + private clouds (OpenStack/VMware)
-:::
-
-**Public:** AWS/Azure/GCP cross-cloud · **Private:** OpenStack (Nova/Neutron/Cinder) · VMware vSphere
-**Hybrid:** Azure Arc · AWS Outposts · Google Anthos · Edge computing
-
----
-
-### `kubernetes-architect`
-
-::: tip Cloud-Native Infrastructure
-GitOps workflows (ArgoCD/Flux), orquestación enterprise containers
-:::
-
-**Platforms:** EKS/AKS/GKE · OpenShift/Rancher/Tanzu · Multi-cluster management
-**GitOps:** ArgoCD · Flux v2 · Progressive delivery (canary/blue-green) · External Secrets Operator
-
----
-
-### `agent-strategy-advisor`
-
-::: tip Herramienta Consultiva
-Analiza trabajo y recomienda agents óptimos con rationale detallado. NO ejecuta tareas.
-:::
-
-**Input:** tasks.md, free-form text, user stories
-**Output:** Strategic plan con work analysis, agent recommendations, execution strategy, ROI assessment
-
-**Usage:**
-
-```bash
-Task tool with agent-strategy-advisor "Analiza tasks.md"
-```
-
-**Anti-Overengineering:** S ≤ 80 LOC → Main Claude suficiente · Agent overhead = 5-10 min → ROI > 1.5x
-
----
-
 ## Code Review & Security
 
 ### `code-reviewer`
@@ -256,20 +202,6 @@ Silent failures, data corruption, boundary conditions
 
 ## Database Management
 
-### `database-optimizer`
-
-::: tip Performance Tuning
-Query optimization, indexing strategies, arquitecturas escalables
-:::
-
-**Query:** EXPLAIN ANALYZE · Subquery/JOIN optimization · Window functions · Cross-database (PostgreSQL/MySQL/SQL Server/Oracle) · NoSQL (MongoDB/DynamoDB)
-
-**Indexing:** B-tree/Hash/GiST/GIN · Composite indexes · Full-text search · JSON indexes · Cloud-native indexing
-
-**Monitoring:** pg_stat_statements · Performance Schema · APM integration · Query cost analysis · AWS Performance Insights
-
----
-
 ### `database-admin`
 
 ::: tip Cloud DB Administration
@@ -281,64 +213,6 @@ AWS/Azure/GCP databases, automation, reliability engineering
 **Technologies:** Relational (PostgreSQL/MySQL) · NoSQL (MongoDB/Cassandra/Redis) · NewSQL (CockroachDB/Spanner) · Time-series (InfluxDB/TimescaleDB) · Graph (Neo4j/Neptune)
 
 **IaC:** Terraform/CloudFormation · Schema management (Flyway/Liquibase) · Backup automation · GitOps for databases
-
----
-
-## DevOps & Deployment
-
-### `deployment-engineer`
-
-::: tip CI/CD & GitOps
-Pipelines modernos, workflows GitOps, automatización deployment
-:::
-
-**Platforms:** GitHub Actions · GitLab CI/CD · Azure DevOps · Jenkins · AWS CodePipeline · Tekton
-
-**GitOps:** ArgoCD · Flux v2 · Progressive delivery · Helm/Kustomize · External Secrets Operator
-
-**Containers:** Multi-stage builds · BuildKit · Podman/containerd · Image signing (Cosign) · Security scanning (Trivy)
-
----
-
-### `devops-troubleshooter`
-
-::: danger Incident Response
-Respuesta rápida, debugging avanzado, observabilidad moderna
-:::
-
-**Observability:** ELK/Loki · DataDog/New Relic/Dynatrace · Prometheus/Grafana · Jaeger/Zipkin/X-Ray · OpenTelemetry
-
-**Container/K8s:** kubectl mastery · Pod troubleshooting · Service mesh debugging (Istio/Linkerd) · CNI troubleshooting
-
-**Network:** tcpdump/Wireshark · DNS resolution · Load balancer debugging · SSL/TLS issues · Firewall troubleshooting
-
----
-
-### `dx-optimizer`
-
-::: tip Developer Experience
-Tooling, setup simplificado, workflows optimizados
-:::
-
-**Áreas:** Environment setup (<5 min onboarding) · Automation (tareas repetitivas) · Tooling (IDE config, git hooks, CLI) · Documentation (setup funcional, troubleshooting)
-
-**Metrics:** Time from clone to running · Pasos manuales eliminados · Build/test execution time · Developer satisfaction
-
----
-
-### `terraform-specialist`
-
-::: tip IaC Avanzado
-Terraform/OpenTofu automation, gestión de estado, patrones enterprise
-:::
-
-**Core:** Dynamic blocks · for_each loops · Complex type constraints · Remote backends · Workspace strategies
-
-**Modules:** Hierarchical design · Composition patterns · Terratest testing · Semantic versioning
-
-**State:** S3/Azure Storage/GCS backends · State encryption · DynamoDB locking · State operations (import/move/remove)
-
-**Security:** tfsec · Checkov · Terrascan · Sentinel/OPA policy enforcement
 
 ---
 
@@ -355,90 +229,6 @@ Manuales técnicos comprehensivos desde codebases existentes
 **Secciones:** Executive summary · Architecture overview · Design decisions · Core components · Data models · Integration points · Security · Deployment · Development guide
 
 **Output:** 10-100+ páginas, bird's-eye → implementation specifics, diagrams exhaustivos
-
----
-
-### `api-documenter`
-
-::: tip API Documentation
-OpenAPI 3.1, AI-powered tools, developer portals
-:::
-
-**Standards:** OpenAPI 3.1+ · AsyncAPI · GraphQL SDL · JSON Schema · Webhook docs · API lifecycle
-
-**AI Tools:** Mintlify · ReadMe AI · Automated updates · Code example generation · Content translation
-
-**Platforms:** Swagger UI/Redoc · Stoplight Studio · Postman collections · Docusaurus · API Explorer
-
-**Developer Portal:** Multi-API organization · Auth/API key mgmt · Community features · Analytics · Search optimization
-
----
-
-### `mermaid-expert`
-
-::: tip Visual Diagrams
-Flowcharts, sequences, ERDs, architecture diagrams
-:::
-
-**Types:** flowchart, sequenceDiagram, classDiagram, stateDiagram-v2, erDiagram, gantt, gitGraph, timeline
-
-**Process:** Elegir diagram type → Mantener legibilidad → Styling consistente → Labels significativos → Testing rendering
-
----
-
-### `reference-builder`
-
-::: tip Referencias Exhaustivas
-API docs, configuration guides, complete technical specs
-:::
-
-**Coverage:** Exhaustive parameters · Precise categorization · Cross-referencing · Examples · Edge cases
-
-**Types:** API references (methods, returns, errors) · Config guides (parameters, defaults, dependencies) · Schema docs (fields, validation, relationships)
-
-**Entry Format:** Type, Default, Required, Since, Description, Parameters, Returns, Throws, Examples, See Also
-
----
-
-### `tutorial-engineer`
-
-::: tip Learning Experiences
-Step-by-step tutorials, educational content, hands-on examples
-:::
-
-**Process:** Learning objectives → Concept decomposition → Exercise design → Progressive sections
-
-**Structure:** Opening (objectives, prerequisites, time, result) · Progressive (concept → minimal example → guided practice → variations → challenges → troubleshooting) · Closing (summary, next steps)
-
-**Principles:** Show don't tell · Fail forward · Incremental complexity · Context first
-
----
-
-## Incident Response & Network
-
-### `incident-responder`
-
-::: danger Incident Management
-Rapid problem resolution, observability moderna, SRE practices
-:::
-
-**First 5 min:** Assess severity (user/business impact, scope) · Incident command (IC, Comms Lead, Tech Lead) · Stabilization (throttling, rollback, scaling)
-
-**Investigation:** Distributed tracing (OpenTelemetry/Jaeger) · Metrics correlation (Prometheus/Grafana) · Log aggregation (ELK/Splunk) · APM analysis · RUM
-
----
-
-### `network-engineer`
-
-::: tip Cloud Networking
-Modern cloud networking, security architectures, performance optimization
-:::
-
-**Cloud:** AWS (VPC, Transit Gateway) · Azure (Virtual networks, NSGs) · GCP (VPC networks, Cloud NAT) · Multi-cloud connectivity · Edge networking
-
-**Load Balancing:** AWS ALB/NLB · Azure Load Balancer/Application Gateway · Nginx/HAProxy/Envoy/Traefik · Global LB · API gateways (Kong/Ambassador)
-
-**DNS:** BIND/PowerDNS · Route 53/Azure DNS/Cloud DNS · Service discovery (Consul/etcd/K8s DNS) · DNSSEC · CDN integration
 
 ---
 
@@ -469,70 +259,6 @@ Production-ready monitoring, logging, tracing, SLI/SLO management
 **Tracing:** Jaeger · Zipkin · AWS X-Ray · OpenTelemetry · Service mesh observability · Performance bottlenecks
 
 **Logging:** ELK Stack · Fluentd/Fluent Bit · Splunk · Loki/Grafana · Log parsing · Centralized logging
-
----
-
-### `web-search-specialist`
-
-::: tip Deep Research
-Advanced search techniques, multi-source verification, trend analysis
-:::
-
-**Strategies:** Query optimization (exact matches, exclusions, timeframes) · Domain filtering (allowed/blocked) · WebFetch deep dive
-
-**Process:** Understand objective → 3-5 query variations → Search broadly → Refine → Verify across sources → Track contradictions
-
-**Output:** Research methodology · Curated findings con URLs · Credibility assessment · Synthesis · Contradictions/gaps · Structured summaries
-
----
-
-## Shadcn-UI Components
-
-### `shadcn-requirements-analyzer`
-
-::: tip Component Analysis
-Traduce UI features en structured shadcn component requirements
-:::
-
-**Workflow:** Check registries (`mcp__shadcn__get_project_registries`) → Analyze request → Map components → Validate (`mcp__shadcn__search_items_in_registries`) → Design hierarchy → Document requirements
-
-**Output:** `design-docs/[task-name]/requirements.md` con Feature name, Components required, Hierarchy, Implementation notes, Data flow, Accessibility, Validation rules
-
----
-
-### `shadcn-component-researcher`
-
-::: tip Component Research
-Gather component details, examples, installation commands
-:::
-
-**Workflow:** Read requirements → Deep research (`mcp__shadcn__view_items_in_registries`) → Examples (`mcp__shadcn__get_item_examples_from_registries`) → Install commands (`mcp__shadcn__get_add_command_for_items`) → Document
-
-**Output:** `design-docs/[task-name]/component-research.md` con source code, API docs, dependencies, examples, installation, alternatives
-
----
-
-### `shadcn-implementation-builder`
-
-::: tip Production Components
-TypeScript/React components con state management y validation
-:::
-
-**Workflow:** Read requirements → Build architecture (TypeScript, interfaces, state, error handling, accessibility) → Quality validation (`mcp__shadcn__get_audit_checklist`) → File generation
-
-**Quality:** Full TypeScript (no `any`) · Error handling · Loading states · WCAG compliance · Mobile-first · React best practices · Zod validation
-
----
-
-### `shadcn-quick-helper`
-
-::: tip Quick Assistance
-Rapid component additions, installation commands, basic usage
-:::
-
-**Workflow:** Verify setup → Parse natural language ("button" → "button", "modal" → "dialog") → Discover → Get details → Examples → Generate command
-
-**Quick Response:** Installation command · Basic usage · Key props · Common patterns · Next steps
 
 ---
 
@@ -568,20 +294,6 @@ AI-powered Playwright test generation via visual exploration
 **Phases:** Environment detection → Visual discovery (screenshots + accessibility) → Test generation (atomic files, modern patterns) → Reality-test validation (≥90% success, max 5 iterations) → Honest reporting
 
 **Discovery:** Screenshot (visual prominence) + Snapshot (roles, labels) → Identify interactive elements → Discover flows (primary CTAs, forms, navigation, errors) → Progressive exploration
-
----
-
-### `tdd-orchestrator`
-
-::: tip TDD Master
-Red-green-refactor discipline, multi-agent coordination
-:::
-
-**Discipline:** Red-green-refactor enforcement · TDD rhythm · Test-first verification · Refactoring safety nets · Cycle time optimization · Anti-pattern detection
-
-**Coordination:** Specialized testing agents (unit/integration/E2E) · Cross-team TDD sync · Agent delegation · Multi-repository governance
-
-**Practices:** Classic TDD (Chicago) · London School (mockist) · ATDD · BDD · Outside-in/Inside-out · Hexagonal architecture TDD
 
 ---
 
@@ -638,85 +350,19 @@ UX, visual design, accessibility, front-end implementation
 
 ---
 
-### `gsap-animation-architect`
+## Memory & Context
 
-::: tip GSAP Specialist
-Advanced animations, scroll-driven experiences, performance optimization
+### `memory-search`
+
+::: tip Búsqueda de Contexto
+Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 :::
 
-**Competencies:** Timeline orchestration · ScrollTrigger · Performance (transform/opacity) · Custom easing · Stagger patterns · Pin-based sections · Responsive animations
+**Propósito:** Recuperar contexto relevante, decisiones previas, y conocimiento acumulado del proyecto
 
-**Production:** Memory leak prevention (cleanup) · Centralized config · 60fps (GPU-accelerated) · Accessibility (prefers-reduced-motion) · Mobile optimization · Code splitting
+**Integración:** Se invoca automáticamente mediante hooks (SessionStart, UserPromptSubmit) para cargar contexto relevante
 
-**Standards:** TypeScript · React hooks (useGSAP) · ScrollTrigger.refresh() · Cleanup (kill individual triggers) · matchMedia · markers removed production
-
-**Anti-Patterns:** ❌ Global ScrollTrigger.killAll() · ❌ Animate width/height · ❌ New instances every render · ❌ Missing cleanup · ❌ Ignore prefers-reduced-motion
-
-**Verify docs:** https://gsap.com/docs/v3/ · https://gsap.com/react/
-
----
-
-## Web & Application
-
-### `typescript-pro`
-
-::: tip TypeScript Master
-Advanced types, generics, strict type safety, enterprise patterns
-:::
-
-**Focus:** Advanced types (generics, conditional, mapped) · Strict config · Type inference · Decorators · Module systems · Framework integration
-
-**Output:** Strongly-typed code · Generic functions/classes · Custom utility types · Tests con type assertions · TSConfig optimization · Type declarations (.d.ts)
-
----
-
-### `python-pro`
-
-::: tip Python 3.12+ Expert
-Modern features, async programming, performance optimization
-:::
-
-**Modern:** Python 3.12+ (improved errors, performance) · Async/await (asyncio/aiohttp/trio) · Dataclasses/Pydantic · Pattern matching · Type hints/generics · Descriptors/metaclasses · Generators/itertools
-
-**Tooling:** uv (package manager) · ruff (formatting/linting) · mypy/pyright (type checking) · pyproject.toml · Pre-commit hooks
-
-**Testing:** pytest + plugins · Hypothesis (property-based) · Fixtures/factories · Coverage (pytest-cov) · pytest-benchmark · CI (GitHub Actions)
-
----
-
-### `javascript-pro`
-
-::: tip Modern JavaScript
-ES6+, async patterns, Node.js APIs
-:::
-
-**Focus:** ES6+ (destructuring, modules, classes) · Async (promises, async/await, generators) · Event loop · Node.js APIs · Browser APIs · TypeScript migration
-
-**Output:** Modern JS con error handling · Async code sin race conditions · Module structure · Jest tests · Performance profiling · Polyfill strategy
-
----
-
-### `php-pro`
-
-::: tip PHP 8+ Master
-Generators, iterators, SPL, modern OOP
-:::
-
-**Focus:** Generators/iterators (memory-efficient) · SPL data structures (SplQueue/SplStack/SplHeap) · PHP 8+ (match, enums, attributes) · Type system (union, intersection, never, mixed) · Advanced OOP (traits, late static binding) · Stream contexts · Performance profiling
-
-**Approach:** Built-in functions first · Generators para large datasets · Strict typing · SPL cuando performance benefits · Profile antes optimizar
-
----
-
-### `ruby-pro`
-
-::: tip Ruby Master
-Metaprogramming, Rails patterns, performance optimization
-:::
-
-**Focus:** Metaprogramming (modules, mixins, DSLs) · Rails patterns (ActiveRecord, controllers, views) · Gem development · Performance profiling · RSpec/Minitest · RuboCop
-
-**Output:** Idiomatic Ruby · Rails MVC · RSpec/Minitest tests · Gem specs · Performance benchmarks (benchmark-ips) · Refactoring suggestions
+**Uso Manual:** Para búsquedas específicas cuando necesitas recuperar información histórica del proyecto
 
 ---
 
@@ -730,24 +376,23 @@ Metaprogramming, Rails patterns, performance optimization
 
 ### Combinaciones Poderosas
 
-| Combinación                                    | Resultado                            |
-| ---------------------------------------------- | ------------------------------------ |
-| `backend-architect` + `database-optimizer`     | Scalable architecture                |
-| `code-reviewer` + `security-reviewer`  | Quality + Security gates             |
-| `test-automator` + `playwright-test-generator` | Complete testing automation          |
-| `shadcn-*` agents                              | Complete UI component implementation |
+| Combinación                                    | Resultado                   |
+| ---------------------------------------------- | --------------------------- |
+| `backend-architect` + `database-admin`         | Scalable architecture       |
+| `code-reviewer` + `security-reviewer`          | Quality + Security gates    |
+| `test-automator` + `playwright-test-generator` | Complete testing automation |
+| `premium-ux-designer` + `design-review`        | Elite UX implementation     |
 
 ### Flujo Óptimo
 
 **Diseño** → Architecture/design agents
 **Implementación** → Development agents
-**Quality** → Review agents (quality, security, edge-case)
+**Quality** → Review agents (code, security, edge-case)
 **Testing** → Test automation agents
-**Deployment** → DevOps agents
 **Observability** → Performance/observability agents
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-24 | **Agentes**: 45 | **Categorías**: 11
+**Fecha**: 2025-11-22
 :::

@@ -212,9 +212,9 @@ Busca en memoria: [tu query]
 
 ## Uso con Framework
 
-**Playwright:** Browser automation via `/agent:design-review` (screenshots automáticos)
+**Playwright:** Browser automation via `design-review` agent (screenshots automáticos)
 
-**Shadcn:** Component integration via `/agent:shadcn-quick-helper` (install commands)
+**Shadcn:** Component library integration para desarrollo UI con shadcn/ui v4
 
 ---
 

@@ -83,10 +83,10 @@ El framework aplica enforcement en tres capas:
 
 ::: details Orchestration Layer
 **Componentes especializados:**
-- 45 specialized agents por dominio técnico
-- 26 workflow commands para ciclos reproducibles
-- 5 lifecycle hooks con interception points
-- 19 skills con workflows estructurados
+- Specialized agents por dominio técnico
+- Workflow commands para ciclos reproducibles
+- Lifecycle hooks con interception points
+- Skills con workflows estructurados
 :::
 
 ::: details Execution Layer
