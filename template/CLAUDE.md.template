@@ -1,6 +1,6 @@
 # Project Configuration
 
-**Version**: 4.0.1 | **Last Updated**: 2025-11-23
+**Version**: 4.0.2 | **Last Updated**: 2025-11-23
 
 ---
 
@@ -19,15 +19,7 @@
 
 ## GUARDRAILS: Input Layer (BEFORE)
 
-### 1. Memory-First
-
-Search Core Memory before responding to ANY request:
-- Previous discussions on this topic
-- Related project context
-- Similar problems solved before
-- Established patterns/decisions
-
-### 2. Skills-First
+### 1. Skills-First
 
 Validate available skills before executing ANY task:
 1. List relevant skills
@@ -36,7 +28,7 @@ Validate available skills before executing ANY task:
 
 **Precedence**: Skills > MCPs > Direct implementation
 
-### 3. Problem Framing
+### 2. Problem Framing
 
 Frame every task before acting:
 - [ ] Goal restated in ≤3 bullets
@@ -205,7 +197,6 @@ Use TodoWrite for tasks with ≥3 steps:
 Before delivering ANY response, verify:
 
 ### Input Layer
-- [ ] Searched Core Memory?
 - [ ] Validated/used available skills?
 - [ ] Framed problem (≤3 bullets)?
 - [ ] Declared size (S/M/L/XL)?
@@ -232,7 +223,7 @@ After completing work:
 ✓ Validated: CLAUDE.md §[sections verified]
 ```
 
-Example: `✓ Validated: CLAUDE.md Input (Memory+Skills), Execution (Parallel+TDD), Output (Objective+Quality)`
+Example: `✓ Validated: CLAUDE.md Input (Skills+Framing), Execution (Parallel+TDD), Output (Objective+Quality)`
 
 ---
 
