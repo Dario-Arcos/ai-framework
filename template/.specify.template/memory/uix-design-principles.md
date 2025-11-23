@@ -1,9 +1,8 @@
 # UIX Design Standards
 
-**Authority**: Tier 3 (UI/UX Design Standards)
-**Scope**: For UI development agents (premium-ux-designer, design-review, shadcn agents)
-**Source**: Inspired by Stripe, Airbnb, Linear
-**Version**: 2.0.0 | **Last Updated**: 2025-11-07
+**UI/UX Standards**: For UI development agents (premium-ux-designer, design-review, shadcn)
+**Design Inspiration**: Stripe, Airbnb, Linear
+**Version**: 2.1.0 | **Last Updated**: 2025-11-23
 
 ---
 

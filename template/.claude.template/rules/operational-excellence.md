@@ -1,8 +1,8 @@
 # 🎯 OPERATIONAL EXCELLENCE GUIDE
 
-**Authority**: Tier 3 (Execution Guidance)
-**Implements**: `.specify/memory/constitution.md` Article III, `CLAUDE.md` §1-8
-**Version**: 1.1.0 | **Last Updated**: 2025-11-07
+**Execution Guidance**: Practical rules implementing constitutional principles
+**Aligns with**: `.specify/memory/constitution.md` Article III, `CLAUDE.md`
+**Version**: 1.2.0 | **Last Updated**: 2025-11-23
 
 ---
 

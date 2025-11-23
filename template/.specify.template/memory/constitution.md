@@ -1,9 +1,8 @@
 # AI Framework Constitution
 
-**Authority**: Tier 1 (HIGHEST LAW - Strategic Governance)
-**Delegates tactical details to**: `CLAUDE.md` (operating protocol)
-**Implemented by**: All framework documents, agents, and workflows
-**Version**: 2.3.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-11-07
+**Strategic Governance**: Highest authority for AI Framework
+**Tactical Execution**: Delegated to `CLAUDE.md`
+**Version**: 2.4.0 | **Ratified**: 2025-09-20 | **Last Amended**: 2025-11-23
 
 ---
 

@@ -1,8 +1,8 @@
 # Product Design Principles
 
-**Authority**: Tier 3 (Design Philosophy)
-**Source**: Inspired by Steve Jobs design philosophy, adapted for AI-first development
-**Version**: 2.0.0 | **Last Updated**: 2025-11-07
+**Design Philosophy**: Inspired by Steve Jobs, adapted for AI-first development
+**Scope**: Product-level design guidance (not code-level)
+**Version**: 2.1.0 | **Last Updated**: 2025-11-23
 
 ---
 

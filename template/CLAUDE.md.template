@@ -1,6 +1,6 @@
 # Project Configuration
 
-**Version**: 4.0.0 | **Last Updated**: 2025-11-23
+**Version**: 4.0.1 | **Last Updated**: 2025-11-23
 
 ---
 
@@ -196,13 +196,7 @@ Use TodoWrite for tasks with ≥3 steps:
 - English: Code, API docs, technical comments
 - Spanish: Human docs, user guides, SDD artifacts
 
-**Essential References**:
-- Constitution: @.specify/memory/constitution.md
-- Project Context: @.specify/memory/project-context.md
-- Operational Excellence: @.claude/rules/operational-excellence.md
-- Product Design: @.specify/memory/product-design-principles.md
-- UIX Design: @.specify/memory/uix-design-principles.md
-- Effective Agents: @.claude/rules/effective-agents-guide.md
+**Project Context**: @.specify/memory/project-context.md
 
 ---
 
