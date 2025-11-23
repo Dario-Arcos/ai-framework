@@ -1,184 +1,257 @@
 # Project Configuration
 
-**Authority**: Tier 2 (Tactical Implementation)
-**Delegates to**: `.specify/memory/constitution.md` (strategic governance - HIGHEST LAW)
-**Referenced by**: `.claude/rules/operational-excellence.md`, `hooks/anti_drift.py`
-**Version**: 2.0.0 | **Last Updated**: 2025-11-07
+**Version**: 4.0.0 | **Last Updated**: 2025-11-23
 
 ---
 
-> **Golden Rule**: "Find the smallest set of high-signal tokens that maximize desired outcomes"
->
-> _Source: Anthropic Effective Context Engineering (Sept 2025)_
+## Core Operating Principles
+
+**Value/Complexity**: Ratio ≥ 2 required for all work.
+
+**ROI-Driven Decisions**:
+- Propose 2-3 approaches for non-trivial tasks
+- Score: `benefit (1-5) | complexity (1-5) | ROI = benefit − complexity`
+- Choose highest ROI; tie-break toward simpler
+
+**Strategic Governance**: `.specify/memory/constitution.md` (highest authority)
 
 ---
 
-AI-first development workspace with constitutional governance framework.
+## GUARDRAILS: Input Layer (BEFORE)
 
-## Operating Protocol
+### 1. Memory-First
 
-"Everything should be made as simple as possible, but not simpler."
-
-1. **First principle**: Your value = ratio **value/complexity ≥ 2**.
-
-2. **Frame the problem**
-
-   - Restate the goal in ≤ 3 bullet points.
-   - Size class: **S** ≤ 2 h · **M** ≤ 1 day · **L** > 1 day.
-
-3. **Complexity budget**
-
-   | Size | Δ LOC | New files | New deps | Δ CPU/RAM |
-   |------|------:|----------:|---------:|----------:|
-   | S    |  ≤ 80 |       ≤ 1 |        0 |     ≤ 1 % |
-   | M    | ≤ 250 |       ≤ 3 |      ≤ 1 |     ≤ 3 % |
-   | L    | ≤ 600 |       ≤ 5 |      ≤ 2 |     ≤ 5 % |
-
-   **Δ LOC = additions - deletions** (net change in lines of code)
-
-   **Budget exceeded?** Decompose into smaller tasks or justify exception with ROI analysis.
-
-4. **Guided exploration**
-
-   Propose **2-3** approaches. For each:
-   `benefit (1-5) | complexity (1-5) | ROI = benefit − complexity`.
-   Choose the highest ROI; tie-break toward the simpler one.
-
-5. **Implementation rules**
-
-   - **Reuse first** — list reused components/functions.
-   - **New abstraction ⇒ justification ≥ 30 % duplication or future-cost reduction.**
-   - **TDD loop** — red → green → refactor.
-   - **Self-audit** — confirm §3 metrics are met.
-
-6. **Parallel-first execution**
-
-   **Mindset**: Assume parallelization. Identify dependencies to sequentialize, not independence to parallelize.
-
-   **Rule**: Execute operations concurrently unless sequential dependency proven.
-
-   **Examples**:
-   - ✅ `Read(file1) + Read(file2) + Grep(pattern)` in single message
-   - ✅ `Task(security-review) + Task(performance-review)` in single message
-   - ❌ `Read(file) → Edit(file)` sequential (dependency exists)
-
-   **If uncertain**: Parallelize (safer than blocking).
-
-7. **AI-first**: All plans executable by AI with human oversight.
-
-8. **Execution Principles** (apply to every step)
-
-   **Before Acting:**
-   - [ ] Framed problem in ≤3 bullets?
-   - [ ] Declared size class (S/M/L)?
-   - [ ] Proposed 2-3 approaches with ROI?
-   - [ ] If ambiguous: use AskUserQuestion to clarify
-
-   **Core Values:**
-   - **Objectivity**: Prioritize truth over agreement
-   - **Minimalism**: Simplest solution that works
-   - **Communication**: Clear Spanish, no promotional content
-   - **Implementation**: Investigate before creating, justify abstractions (≥30%)
-   - **Validation**: Self-critique before delivery
-
-   **When Uncertain:**
-   - Use AskUserQuestion to clarify ambiguities
-   - Consider available subagents for complex tasks
-   - Use diagrams when helpful
-
-## Interaction Language
-
-1. **Always use Spanish** as the language of communication with the user
-2. **Only in the first message of a session**, show: _(You can change the interaction language by asking me whenever you want.)_
-
-## Mandatory AI-First Tools
-
-### Skills-First
-
-Before executing ANY user request, validate available skills. List relevant skills for the task.
-
-**Precedence**: Skills > MCPs > Direct implementation.
-
-### Core Memory Search
-
-Before responding to ANY user request, use `memory-search` to retrieve:
-- Previous discussions about this topic
+Search Core Memory before responding to ANY request:
+- Previous discussions on this topic
 - Related project context
 - Similar problems solved before
+- Established patterns/decisions
 
-## Conversation Compaction Guidelines
+### 2. Skills-First
 
-When compacting conversations (e.g., `/compact`), apply these rules:
+Validate available skills before executing ANY task:
+1. List relevant skills
+2. If relevant skill exists → Use Skill tool
+3. Follow skill instructions exactly
 
-### Always preserve
+**Precedence**: Skills > MCPs > Direct implementation
 
-- **Project objective** and measurable success criteria.
-- **High-level roadmap** (milestones, deadlines).
-- **Material code changes**: file paths, diffs, migrations.
-- **Open TODO / backlog items** with assignees and due dates.
-- **Key file or directory paths** referenced in the conversation.
+### 3. Problem Framing
 
-### Omit or condense
+Frame every task before acting:
+- [ ] Goal restated in ≤3 bullets
+- [ ] Size declared (S/M/L/XL)
+- [ ] 2-3 approaches with ROI (unless trivial)
+- [ ] If ambiguous → Use AskUserQuestion
 
-- Casual conversation or small talk.
-- Verbose CLI/test logs or stack traces unless directly required.
-- Duplicate or trivial messages.
+---
 
-## Documentation References
+## GUARDRAILS: Execution Layer (DURING)
 
-**Essential guides for Claude Code ecosystem:**
+### 1. Parallel-First
 
-- **Constitution**: @.specify/memory/constitution.md
-- **Project Context**: @.specify/memory/project-context.md
-- **Operational Excellence**: @.claude/rules/operational-excellence.md
-- **Product Design Principles**: @.specify/memory/product-design-principles.md
-- **UIX Design Principles**: @.specify/memory/uix-design-principles.md
-- **Effective AI Agents**: @.claude/rules/effective-agents-guide.md
+Execute concurrently unless sequential dependency proven.
 
-## Git Operations
+**Examples**:
+- ✅ `Read(file1) + Read(file2) + Grep(pattern)` in single message
+- ✅ `Task(security-review) + Task(performance-review)` in single message
+- ❌ `Read(file) → Edit(file)` (dependency exists)
 
-- **Commit Authorization**: Always request explicit user authorization before executing `git commit`. Ask user before committing changes.
-- **Push Authorization**: Always request explicit user authorization before executing `git push`. Ask user before pushing to remote.
-- **Explicit Request Required**: Perform git commit/push operations only when user explicitly requests them with clear intent.
-- **User-Controlled Operations**: User controls all git operations. Request authorization before any commit or push.
-- **Trust & Governance**: Unauthorized git commit/push violates user trust and project governance.
+**If uncertain**: Parallelize.
 
-## Quality Standards
+### 2. TDD Loop
 
-- **Language Consistency**: Use English for code/AI documentation, Spanish for human documentation. Maintain language consistency within each file.
-- **Quality Gates**: Use code-reviewer proactively for security and performance validation.
+Test → Fail → Implement → Pass → Refactor (red-green-refactor)
 
-## Code Review Guidelines
+1. Write test first
+2. Verify test fails
+3. Implement minimal solution
+4. Refactor for clarity
 
-- Priority: **SECURITY**, **BUG**, **RELIABILITY**, **PERFORMANCE** with production impact.
-- Focus on changes that affect clarity or security. Style/nits are secondary.
-- Limit suggestions to code within the diff scope.
+### 3. Progress Tracking
 
-### Exclusions
+Use TodoWrite for tasks with ≥3 steps:
+- Create todos at start
+- Update real-time (pending → in_progress → completed)
+- Exactly ONE in_progress at a time
+- Mark complete IMMEDIATELY after finishing
 
-- `build/`, `dist/`, `vendor/`, `**/*.lock`, assets (`*.png`/`*.jpg`/`*.svg`), `coverage/`, `snapshots/`
+### 4. Context Awareness
+
+**Long-Horizon Tasks**:
+- Maintain state via structured files (tests.json, progress.md)
+- Use git for checkpoint tracking
+- Document decisions continuously
+
+**Token Budget**:
+> Your context window will be automatically compacted. Never stop tasks early due to token concerns. Always complete tasks fully.
+
+**Startup Protocol** (after context refresh):
+1. Review progress files
+2. Check git log
+3. Run tests
+4. Continue from documented next steps
+
+### 5. Implementation Standards
+
+**Reuse First**:
+- List reused components explicitly
+- Prefer existing libraries
+
+**Abstraction**: Requires ≥30% duplication OR demonstrable future ROI
+
+**Reality Check**:
+- Did I run/build the code?
+- Did I trigger the exact feature changed?
+- Did I see expected result?
+- Would I bet $100 this works?
+
+---
+
+## GUARDRAILS: Output Layer (AFTER)
+
+### 1. Objective Validation ("Riel" Anti-Descarrilamiento)
+
+- [ ] Solved EXACT problem user stated?
+- [ ] Addressed ALL parts of request?
+- [ ] Verified solution actually works (not "should work")?
+
+**If NO**: Task incomplete. Continue or escalate.
+
+### 2. Completeness Check
+
+- [ ] All requested features implemented
+- [ ] All edge cases handled (or documented as limitations)
+- [ ] Tests passing (if test suite exists)
+- [ ] Documentation updated (if user-facing)
+
+**Code Changes**: Actually run code. Verify behavior. No "logic looks correct"—demand evidence.
+
+### 3. Quality Verification
+
+- [ ] Within complexity budget
+- [ ] Simplest solution (YAGNI)
+- [ ] No security vulnerabilities
+- [ ] Language consistency maintained
+- [ ] Professional reputation test passed
+
+---
+
+## Context & Budget Management
+
+### Complexity Budget
+
+| Size | Δ LOC | New files | New deps | Δ CPU/RAM | Duration |
+|------|------:|----------:|---------:|----------:|----------|
+| S    |  ≤ 80 |       ≤ 1 |        0 |     ≤ 1 % |  ≤ 2 h   |
+| M    | ≤ 250 |       ≤ 3 |      ≤ 1 |     ≤ 3 % |  ≤ 1 day |
+| L    | ≤ 600 |       ≤ 5 |      ≤ 2 |     ≤ 5 % |  ≤ 3 days|
+| XL   | ≤1500 |      ≤ 10 |      ≤ 3 |    ≤ 10 % |  > 3 days|
+
+**Δ LOC = additions - deletions**
+
+**Budget exceeded**: Decompose OR justify with ROI + user approval.
+
+### Conversation Compaction
+
+**Preserve**:
+- Project objective, success criteria
+- Roadmap (milestones, deadlines)
+- Code changes (paths, diffs, migrations)
+- Open TODO/backlog items
+- Architectural decisions
+
+**Omit**:
+- Casual conversation
+- Verbose tool outputs
+- Duplicate/superseded messages
+
+---
+
+## Operational Standards
+
+### Interaction Language
+
+1. Always use Spanish for user communication
+2. First message only: _(Puedes cambiar el idioma cuando quieras.)_
+
+### Git Operations
+
+**NEVER** `git commit` or `git push` without explicit user authorization.
+
+### Code Review
+
+**Priority**: SECURITY → BUG → RELIABILITY → PERFORMANCE
+
+**Quality Gates**:
+- Use code-reviewer agent proactively
+- Focus on clarity/security changes
+- Style/nits secondary
+
+**Exclusions**: `build/`, `dist/`, `vendor/`, `**/*.lock`, assets, `coverage/`, `snapshots/`
+
+### Documentation
+
+**Language**:
+- English: Code, API docs, technical comments
+- Spanish: Human docs, user guides, SDD artifacts
+
+**Essential References**:
+- Constitution: @.specify/memory/constitution.md
+- Project Context: @.specify/memory/project-context.md
+- Operational Excellence: @.claude/rules/operational-excellence.md
+- Product Design: @.specify/memory/product-design-principles.md
+- UIX Design: @.specify/memory/uix-design-principles.md
+- Effective Agents: @.claude/rules/effective-agents-guide.md
 
 ---
 
 ## Self-Validation Protocol
 
-Before delivering response, verify:
+Before delivering ANY response, verify:
 
-**Complexity Check:**
-- [ ] Within S/M/L budget (§3)?
+### Input Layer
+- [ ] Searched Core Memory?
+- [ ] Validated/used available skills?
+- [ ] Framed problem (≤3 bullets)?
+- [ ] Declared size (S/M/L/XL)?
+- [ ] Proposed 2-3 approaches with ROI (unless trivial)?
+
+### Execution Layer
+- [ ] Parallelized independent operations?
+- [ ] Followed TDD loop (test-first) for code?
+- [ ] Tracked progress via TodoWrite (if multi-step)?
 - [ ] Listed reused components?
 - [ ] Justified new abstractions (≥30% OR future ROI)?
 
-**Quality Check:**
-- [ ] Framed problem in ≤3 bullets (§2)?
-- [ ] Proposed 2-3 approaches with ROI (§4)?
-- [ ] Would I bet my professional reputation on this?
+### Output Layer
+- [ ] **Objective**: Solved EXACT problem?
+- [ ] **Completeness**: Addressed ALL parts?
+- [ ] **Reality check**: Verified works (not "should")?
+- [ ] **Quality**: Simplest, within budget, secure?
+- [ ] **Reputation test**: Confident presenting?
 
-**Compliance Declaration:**
+### Compliance Declaration
 
-After completing work, declare:
+After completing work:
 ```
-✓ Validated: CLAUDE.md §[X,Y,Z]
+✓ Validated: CLAUDE.md §[sections verified]
 ```
 
-Example: `✓ Validated: CLAUDE.md §3 (Complexity M), §5 (Reuse first), §8 (Self-critique)`
+Example: `✓ Validated: CLAUDE.md Input (Memory+Skills), Execution (Parallel+TDD), Output (Objective+Quality)`
+
+---
+
+## AI-First Execution
+
+**Communication**: Direct, grounded, fact-based (not self-congratulatory). Professional objectivity (truth over agreement).
+
+**Default Behavior**:
+- Implement changes (not only suggest) unless user requests conservative approach
+- Never speculate about unopened code—read files first
+- Verify information across multiple sources
+
+**When Uncertain**:
+- Use AskUserQuestion
+- Consider subagents for complex tasks
+- Default to information/recommendations if intent unclear
