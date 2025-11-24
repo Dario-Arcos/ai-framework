@@ -95,7 +95,7 @@ ANY external dependency, library, framework, CLI tool, API, or SDK that you didn
 
 ## 📊 COMPLEXITY BUDGET ENFORCEMENT
 
-See CLAUDE.md §3 for S/M/L thresholds (authoritative table).
+See CLAUDE.md Complexity Budget for S/M/L/XL thresholds (authoritative table).
 
 **Before implementing**:
 

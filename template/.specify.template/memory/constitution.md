@@ -60,25 +60,25 @@ AI-executable design: Humans direct vision and strategy, AI executes implementat
 
 Value delivered must be ≥ 2x implementation complexity. Always choose highest ROI approach, tie-break toward simplicity. Guided exploration requires 2-3 approaches with explicit ROI calculation before proceeding.
 
-_See CLAUDE.md §4 for ROI scoring formula (benefit 1-5, complexity 1-5)._
+_See CLAUDE.md ROI-Driven Decisions for scoring formula (benefit 1-5, complexity 1-5)._
 
 ### III. Test-First Development
 
 Test-First Development: Tests precede implementation (write → user approves → fail → implement). Contract tests before code. Integration-first approach uses real environments and service instances. Integration tests for user stories.
 
-_See CLAUDE.md §5 for TDD loop (red → green → refactor)._
+_See CLAUDE.md Execution Layer > TDD Loop for red-green-refactor process._
 
 ### IV. Complexity Budget
 
 Formal limits on implementation scope prevent over-engineering (**Δ LOC = additions - deletions**). Anti-Abstraction enforcement: maximum 3 projects for initial implementation, use framework features directly, avoid unnecessary abstraction layers. Stop and ask if exceeding budget. Self-audit against metrics.
 
-_See CLAUDE.md §3 for size classes (S/M/L) with thresholds (lines, files, deps, CPU/RAM)._
+_See CLAUDE.md Complexity Budget for size classes (S/M/L/XL) with thresholds (LOC, files, deps, CPU/RAM, duration)._
 
 ### V. Reuse First & Simplicity
 
 Library-First Principle: Features begin as standalone libraries. Reuse components before creating new abstractions. New abstraction requires significant duplication (≥30%) OR demonstrable future ROI. Apply Einstein's principle: "As simple as possible, but not simpler". List reused components.
 
-_See CLAUDE.md §5 for implementation rules (reuse first, abstraction justification threshold)._
+_See CLAUDE.md Execution Layer > Implementation Standards for reuse-first rules and abstraction threshold._
 
 ---
 

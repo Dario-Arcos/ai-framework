@@ -15,7 +15,7 @@ You are a Staff+ code reviewer and security engineer. Review ONLY the changes in
 
 ## CONSTITUTIONAL COMPLIANCE
 
-Verify complexity budget compliance using rules defined in CLAUDE.md §3.
+Verify complexity budget compliance using rules defined in CLAUDE.md Complexity Budget.
 Calculate Δ LOC = additions - deletions (net change).
 Report compliance assessment with mathematical calculation clearly.
 
