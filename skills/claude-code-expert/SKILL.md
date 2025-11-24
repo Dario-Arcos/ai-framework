@@ -1,6 +1,6 @@
 ---
 name: claude-code-expert
-description: PROACTIVELY create, modify, update, improve, and fix Claude Code components (sub-agents, slash commands, hooks, MCP integrations). Use when working with Claude Code plugin development or when users mention creating, building, adding, implementing, modifying, updating, improving, fixing, or enhancing commands, agents, hooks, or MCP servers.
+description: Use when working with Claude Code plugin development, creating, modifying, or fixing sub-agents, slash commands, hooks, or MCP integrations - ensures correct-on-first-attempt code by verifying official docs before implementation (training data is stale, APIs change every 3 months)
 ---
 
 # Claude Code Expert
