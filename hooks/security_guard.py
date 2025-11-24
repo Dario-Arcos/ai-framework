@@ -1,27 +1,5 @@
 #!/usr/bin/env python3
-"""
-Security Guard Hook - PreToolUse Preventive Security Gate
-
-PROBLEM SOLVED:
-  Claude may inadvertently write code with security vulnerabilities:
-  - Hardcoded credentials (API keys, passwords, tokens)
-  - Dangerous code patterns (eval(), SQL injection, command injection)
-  - Code quality issues (TypeScript 'any', debug statements)
-
-SOLUTION:
-  Scan tool parameters BEFORE execution (PreToolUse hook) to prevent
-  vulnerable code from being written to files.
-
-DESIGN RATIONALE:
-  - PreToolUse (not PostToolUse): Block BEFORE writing to file
-  - Real blocking: deny permission for critical security issues
-  - Reduced false positives: Only block truly critical patterns
-  - Clear user feedback: Show specific issues and line numbers
-
-ARCHITECTURAL NECESSITY:
-  Without preventive blocking, vulnerabilities would be written to files
-  and require manual remediation. This hook stops them at the gate.
-"""
+"""Security scanner - Blocks Edit/Write/MultiEdit with vulnerabilities (PreToolUse)"""
 import json
 import re
 import sys

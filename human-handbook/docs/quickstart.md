@@ -105,6 +105,26 @@ Generated: .specify/memory/project-context.md
 
 Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
 
+### Desktop Notifications (Recomendado)
+
+El framework envía notificaciones cuando Claude necesita tu atención:
+
+**Cuándo notifica:**
+- 🔒 Claude espera tu aprobación (permissions, confirmations)
+- ✅ Tarea completada (con duración)
+- 🔴 Bloqueado esperando tu input
+
+**Instalación** (incluida en `/setup-dependencies`):
+```bash
+brew install terminal-notifier  # macOS only
+```
+
+**Beneficio**: Trabaja en otra ventana, recibe alert cuando Claude te necesita.
+
+::: tip macOS Only
+Notifications requieren macOS. En Linux/Windows, Claude Code UI muestra estado.
+:::
+
 ---
 
 ## Primera Feature (5 minutos)

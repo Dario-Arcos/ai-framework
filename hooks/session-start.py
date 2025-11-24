@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-AI Framework Auto-Installer - SessionStart Hook
-Executes on every Claude Code session start.
-Installs framework files to user's project on first run only.
-"""
+"""AI Framework auto-installer - Templates sync on SessionStart"""
 import os
 import sys
 import shutil

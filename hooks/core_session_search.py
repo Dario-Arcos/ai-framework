@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-Memory Session Search Hook
-
-Injects instruction to search available memory systems for project context
-at the beginning of each Claude Code session.
-
-Supports: team-memory, core-memory
-
-v1.3.0: Plugin compatibility (2025-11-11)
-- Detects team-memory and core-memory (via enabledMcpjsonServers)
-- episodic-memory excluded (plugin-based, auto-enables via plugin hooks)
-- Respects disabledMcpjsonServers precedence (denylist > enabled)
-- Per-server validation (enabled AND not disabled)
-- Graceful degradation: skip injection if no memory available
-"""
+"""Memory search hint injection - SessionStart"""
 import json
 import os
 from pathlib import Path
