@@ -1,44 +1,5 @@
 #!/usr/bin/env python3
-"""
-Anti-Drift Hook v3.0 - Evidence-Based Behavioral Consistency
-
-CHANGES FROM v2.0:
-  - Added Critical Evaluation checkpoint (Truth-Seeking anti-sycophancy)
-  - Consolidated Objective + Truth-seeking in AT COMPLETION
-  - Updated size to include XL (S/M/L/XL)
-  - Increased token count: 55 → 73 tokens (+33%, justified by critical anti-sycophancy)
-  - Checklist maintains 5 items (optimal per Pronovost 2006)
-
-CHANGES FROM v1.0:
-  - Eliminated forceful language (MUST/NEVER → actionable checklist)
-  - Added self-validation requirement (explicit compliance declaration)
-  - Reduced initial token count (150 → 50 tokens, 67% reduction)
-  - Positive framing throughout (no negative prompting)
-  - Version tracking in logs
-  - Replaced 'List reused components' with 'Skills-First' (v2.0.1)
-  - Moved complexity budget to AT COMPLETION (v2.0.2)
-  - Added Core Memory search reminder BEFORE RESPONDING (v2.0.2)
-
-EVIDENCE BASE:
-  - Anthropic Context Engineering (Sept 2025): Lightweight goal reminders, smallest high-signal tokens
-  - Research "Drift No More?" (Oct 2024): Simple reminders reliably reduce divergence
-  - Anthropic Workshop (2024): Forceful negative prompting can backfire
-  - OpenAI GPT-4.1 Guidelines: Instructions at beginning + end (position matters)
-  - Cowan (2001): Working memory capacity 4±1 items optimal
-  - Pronovost (2006): 5-item checklist = 66% error reduction, 11%→0% infection rate
-  - Checklist research: Pre-checks have higher preventive impact than post-checks
-
-DESIGN RATIONALE:
-  - CLAUDE.md read at session start (vulnerable to context rot)
-  - This hook executes per-prompt (immune to context window rotation)
-  - Lightweight checklist > complex enforcement (research-validated)
-  - Self-validation creates explicit compliance (vs. implicit assumptions)
-
-ARCHITECTURAL NECESSITY:
-  Without this hook, consistency degrades after ~50 prompts as CLAUDE.md
-  exits context window. Lightweight reminders maintain behavioral invariants
-  throughout session lifecycle without creating additional drift.
-"""
+"""Anti-Drift Hook v3.0 - Injects behavioral consistency checklist per-prompt"""
 import sys, json, os
 from pathlib import Path
 from datetime import datetime
