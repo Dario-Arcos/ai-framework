@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 """
-Anti-Drift Hook v2.0 - Evidence-Based Behavioral Consistency
+Anti-Drift Hook v3.0 - Evidence-Based Behavioral Consistency
+
+CHANGES FROM v2.0:
+  - Added Critical Evaluation checkpoint (Truth-Seeking anti-sycophancy)
+  - Consolidated Objective + Truth-seeking in AT COMPLETION
+  - Updated size to include XL (S/M/L/XL)
+  - Increased token count: 55 → 73 tokens (+33%, justified by critical anti-sycophancy)
+  - Checklist maintains 5 items (optimal per Pronovost 2006)
 
 CHANGES FROM v1.0:
   - Eliminated forceful language (MUST/NEVER → actionable checklist)
   - Added self-validation requirement (explicit compliance declaration)
-  - Reduced token count (150 → 50 tokens, 67% reduction)
+  - Reduced initial token count (150 → 50 tokens, 67% reduction)
   - Positive framing throughout (no negative prompting)
   - Version tracking in logs
-  - Replaced 'List reused components' with 'Skills-First' (v2.0.1 - Nov 2025)
-  - Moved complexity budget to AT COMPLETION (v2.0.2 - Nov 2025)
-  - Added Core Memory search reminder BEFORE RESPONDING (v2.0.2 - Nov 2025)
+  - Replaced 'List reused components' with 'Skills-First' (v2.0.1)
+  - Moved complexity budget to AT COMPLETION (v2.0.2)
+  - Added Core Memory search reminder BEFORE RESPONDING (v2.0.2)
 
 EVIDENCE BASE:
   - Anthropic Context Engineering (Sept 2025): Lightweight goal reminders, smallest high-signal tokens
@@ -91,10 +98,10 @@ def log_result():
                 json.dumps(
                     {
                         "timestamp": datetime.now().isoformat(),
-                        "version": "2.0.2",
+                        "version": "3.0.0",
                         "guidelines_injected": True,
-                        "checklist_items": 4,
-                        "changes": "Core Memory search moved to BEFORE, complexity budget to AT COMPLETION"
+                        "checklist_items": 5,
+                        "changes": "Added Critical Evaluation (Truth-Seeking) + Objective+Truth-seeking validation, size includes XL"
                     }
                 )
                 + "\n"
@@ -110,17 +117,17 @@ def main():
         sys.exit(0)  # Silent fail, don't block Claude
 
     # LIGHTWEIGHT GOAL REMINDERS (evidence-based: Anthropic Sept 2025)
-    # Token count: ~55 tokens (v2.0.2)
-    # Checklist optimal length: 4 items (Cowan 2001, Pronovost 2006)
+    # Token count: ~73 tokens (v3.0.0)
+    # Checklist optimal length: 5 items (Pronovost 2006: 66% error reduction)
     guidelines = """BEFORE RESPONDING:
 
-□ Core Memory: use memory-search for: previous discussions about this topic, related project context, and similar problems solved before
+□ Core Memory: use memory-search for: previous discussions, related context, similar problems
 □ Skills: List available skills, use if applicable
-□ Frame problem (≤3 bullets) + size (S/M/L)
-□ If ambiguous: use AskUserQuestion
+□ Critical Evaluation: Question user's approach if evidence suggests better alternatives (Truth-Seeking)
+□ Frame problem (≤3 bullets) + size (S/M/L/XL)
 
 AT COMPLETION:
-□ Check complexity budget (CLAUDE.md §3)
+□ Objective achieved + Truth-seeking: Solved EXACT problem? Prioritized accuracy over agreement?
 Declare: "✓ Validated: CLAUDE.md §[X,Y,Z]"
 
 Full context: CLAUDE.md (authoritative operating protocol)
