@@ -48,10 +48,6 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Evaluate if Claude should stop: $ARGUMENTS. Check if all tasks are complete."
-          },
-          {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop"
           }
