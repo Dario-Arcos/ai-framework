@@ -40,7 +40,7 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.anthropic.com/en/docs/claude-code/sdk#command-line for available options
           claude_args: |
-            --model sonnet
+            --model opus
             --system-prompt "ROLE
             You are a Staff+ code reviewer and security engineer. Review ONLY the changes in this PR (diff-aware). Analyze code changes and provide comprehensive security and code quality assessment.
 
