@@ -320,19 +320,27 @@ Methodical bug identification, root cause analysis, coordinated delegation
 
 ## User Experience & Design
 
-### `premium-ux-designer`
+### `design-iterator`
 
-::: tip Premium Interfaces
-Transforma interfaces ordinary en expensive-looking experiences
+::: tip Iterative Design Refinement
+Refinamiento sistemático y progresivo de componentes web mediante análisis visual e iteraciones
 :::
 
-**Visual:** Sophisticated design · Subtle animations/micro-interactions · Typography/spacing/color psychology · Shadows/gradients/layering · Custom icons · Luxury principles (whitespace, premium typography)
+**Metodología:** Para cada iteración: Screenshot (solo elemento target) → Análisis (3-5 mejoras) → Implementar → Documentar → Repetir
 
-**UX:** Simplify flows · Reduce cognitive load (progressive disclosure, smart defaults) · Optimize conversion · Intuitive navigation · Clear affordances · Smart forms · Behavioral psychology
+**Visual Hierarchy:** Headline sizing/weight · Color contrast · Whitespace · Section separation
 
-**Technical:** Modern CSS/Framer Motion · 60fps animations · Responsive premium feel · Core Web Vitals optimization
+**Modern Patterns:** Gradient backgrounds · Micro-interactions/hover states · Badge/tag styling · Icon treatments · Border radius consistency
 
-**Methodology:** Audit → Define standards → Prioritize impact → Progressive enhancement → Validate → Performance optimization
+**Typography:** Font pairing · Line height/letter spacing · Text color variations · Italic emphasis
+
+**Layout:** Hero card patterns · Asymmetric grids · Alternating visual rhythm · Responsive breakpoints
+
+**Polish:** Shadow depth/color · Animated elements · Social proof · Trust indicators
+
+**Competitor Research:** Stripe (gradients, premium) · Linear (dark, minimal) · Vercel (typography-forward) · Notion (friendly, illustrations)
+
+**Uso:** Invocar con número de iteraciones (default: 10). Ideal cuando 1-2 cambios simples no resuelven el problema de diseño
 
 ---
 
@@ -381,7 +389,7 @@ Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 | `backend-architect` + `database-admin`         | Scalable architecture       |
 | `code-reviewer` + `security-reviewer`          | Quality + Security gates    |
 | `test-automator` + `playwright-test-generator` | Complete testing automation |
-| `premium-ux-designer` + `design-review`        | Elite UX implementation     |
+| `design-iterator` + `design-review`            | Elite UX implementation     |
 
 ### Flujo Óptimo
 
@@ -394,5 +402,5 @@ Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-22
+**Fecha**: 2025-11-24
 :::

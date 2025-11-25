@@ -60,7 +60,53 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+### TDD Compliance (per Constitution Article II)
+
+**Tests are MANDATORY**: Per CLAUDE.md §TDD Loop and Constitution Article II, every implementation
+task MUST have a preceding [TEST] task. Structure:
+
+```text
+- [ ] T00X [TEST] Write test for ComponentName in tests/path/test_component.py
+- [ ] T00Y Implement ComponentName in src/path/component.py
+```
+
+**TDD Exception**: If TDD is impractical, user MUST declare an exception in tasks.md header:
+
+```markdown
+### TDD Exception Declaration
+
+| Field | Value |
+|-------|-------|
+| **Reason** | [legacy-code | hotfix-critical | generated-code | prototype-throwaway | user-directive] |
+| **Justification** | [Specific explanation why TDD is impractical] |
+| **Mitigation** | [Alternative quality assurance: manual QA, post-deploy tests, etc.] |
+| **Approved** | [User confirmation timestamp] |
+```
+
+**Valid Reasons**:
+- `legacy-code`: Existing codebase without test infrastructure; refactoring exceeds scope
+- `hotfix-critical`: Production emergency where time < comprehensive testing
+- `generated-code`: Auto-generated code not amenable to unit testing
+- `prototype-throwaway`: Explicitly temporary code to be discarded
+- `user-directive`: User explicitly requests skipping tests (requires warning display)
+
+**Behavior**:
+- Without exception declaration: REJECT task generation; request tests or exception
+- With `user-directive`: Display warning before proceeding:
+
+```text
+⚠️  TDD EXCEPTION: User Directive
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You are bypassing TDD requirements. This decision:
+- Violates CLAUDE.md §TDD Loop best practices
+- May result in undetected bugs and regressions
+- Transfers quality assurance responsibility to manual testing
+- Will be permanently documented in this artifact
+
+Proceeding as requested.
+```
+
+- With other valid exception: Proceed with exception logged in artifact
 
 ### Checklist Format (REQUIRED)
 

@@ -52,7 +52,40 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **IF EXISTS**: Read research.md for technical decisions and constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
 
-4. **Project Setup Verification**:
+4. **TDD Compliance Gate** (per Constitution Article II & IV):
+
+   Scan tasks.md and verify TDD compliance:
+
+   **Check A - Exception Declaration**: Look for `### TDD Exception Declaration` header in tasks.md
+
+   **Check B - Test Task Coverage**: For each implementation task, verify a preceding [TEST] task exists
+
+   **Decision Matrix**:
+
+   | Exception Declared | Test Tasks Present | Action |
+   |-------------------|-------------------|--------|
+   | No | Yes (all covered) | ✅ Proceed |
+   | No | No or partial | ❌ BLOCK: Display error and halt |
+   | Yes (valid reason) | N/A | ⚠️ Proceed with warning logged |
+   | Yes (user-directive) | N/A | ⚠️ Display warning, proceed |
+
+   **If BLOCKED**, display:
+   ```text
+   ❌ TDD COMPLIANCE FAILURE
+   ━━━━━━━━━━━━━━━━━━━━━━━━━
+   Implementation tasks found without preceding [TEST] tasks.
+   Per Constitution Article II, TDD is mandatory.
+
+   Options:
+   1. Run `/speckit.tasks` again to generate test tasks
+   2. Add TDD Exception Declaration to tasks.md header
+
+   Cannot proceed until TDD compliance is satisfied.
+   ```
+
+   **If user-directive exception**, display warning from Constitution Article II Section 4.1 before proceeding.
+
+5. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
    
    **Detection & Creation Logic**:
@@ -91,27 +124,27 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **Prettier**: `node_modules/`, `dist/`, `build/`, `coverage/`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
    - **Terraform**: `.terraform/`, `*.tfstate*`, `*.tfvars`, `.terraform.lock.hcl`
 
-5. Parse tasks.md structure and extract:
+6. Parse tasks.md structure and extract:
    - **Task phases**: Setup, Tests, Core, Integration, Polish
    - **Task dependencies**: Sequential vs parallel execution rules
    - **Task details**: ID, description, file paths, parallel markers [P]
    - **Execution flow**: Order and dependency requirements
 
-6. Execute implementation following the task plan:
+7. Execute implementation following the task plan:
    - **Phase-by-phase execution**: Complete each phase before moving to the next
    - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together  
    - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
    - **File-based coordination**: Tasks affecting the same files must run sequentially
    - **Validation checkpoints**: Verify each phase completion before proceeding
 
-7. Implementation execution rules:
+8. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, configuration
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, endpoints
    - **Integration work**: Database connections, middleware, logging, external services
    - **Polish and validation**: Unit tests, performance optimization, documentation
 
-8. Progress tracking and error handling:
+9. Progress tracking and error handling:
    - Report progress after each completed task
    - Halt execution if any non-parallel task fails
    - For parallel tasks [P], continue with successful tasks, report failed ones
@@ -119,7 +152,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Suggest next steps if implementation cannot proceed
    - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
 
-9. Completion validation:
+10. Completion validation:
    - Verify all required tasks are completed
    - Check that implemented features match the original specification
    - Validate that tests pass and coverage meets requirements

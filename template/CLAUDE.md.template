@@ -1,6 +1,6 @@
 # Project Configuration
 
-**Version**: 4.1.0 | **Last Updated**: 2025-11-23
+**Version**: 4.2.0 | **Last Updated**: 2025-11-24
 
 ---
 
@@ -25,8 +25,6 @@ Your value is measured by objective success, not user satisfaction. Prioritize t
 
 Agents that never disagree optimize for comfort, not outcomes.
 
-**Strategic Governance**: `.specify/memory/constitution.md` (highest authority)
-
 ---
 
 ## GUARDRAILS: Input Layer (BEFORE)
@@ -46,7 +44,8 @@ Frame every task before acting:
 - [ ] Goal restated in ≤3 bullets
 - [ ] Size declared (S/M/L/XL)
 - [ ] 2-3 approaches with ROI (unless trivial)
-- [ ] If ambiguous → Use AskUserQuestion
+- [ ] If M/L/XL → Use plan mode or Plan subagent before implementing
+- [ ] If ambiguous OR multiple valid options → AskUserQuestion
 
 ### 3. Critical Evaluation
 
@@ -204,8 +203,10 @@ Before delivering ANY response, verify:
 - [ ] Validated/used available skills?
 - [ ] Framed problem (≤3 bullets)?
 - [ ] Declared size (S/M/L/XL)?
+- [ ] Used plan mode for M/L/XL tasks?
 - [ ] Evaluated user's approach critically (if applicable)?
 - [ ] Proposed 2-3 approaches with ROI (unless trivial)?
+- [ ] Used AskUserQuestion for multi-option decisions?
 
 ### Execution Layer
 - [ ] Parallelized independent operations?
