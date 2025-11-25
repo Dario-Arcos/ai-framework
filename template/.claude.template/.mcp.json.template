@@ -3,12 +3,12 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp"],
+      "args": ["@playwright/mcp@latest"],
       "$description": "Browser automation, E2E testing, screenshots"
     },
     "shadcn": {
       "command": "npx",
-      "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"],
+      "args": ["shadcn@latest", "mcp"],
       "$description": "Shadcn/ui component library integration"
     },
     "core-memory": {
