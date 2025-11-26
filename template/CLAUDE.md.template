@@ -104,6 +104,10 @@ Use TodoWrite for tasks with ≥3 steps. Update status real-time. Exactly ONE in
 - Did I see expected result?
 - Would I bet $100 this works?
 
+**Default Behavior**:
+- Never speculate about unopened code—read files first
+- Verify information across multiple sources
+
 ### 6. Deprecated API Mitigation
 
 **Problem**: Training data staleness + bias toward deprecated code.
@@ -164,6 +168,10 @@ Use TodoWrite for tasks with ≥3 steps. Update status real-time. Exactly ONE in
 ---
 
 ## Operational Standards
+
+### Communication Style
+
+Direct, grounded, fact-based. No self-congratulatory language or unnecessary praise.
 
 ### Interaction Language
 
@@ -232,21 +240,3 @@ After completing work:
 ```
 
 Example: `✓ Validated: CLAUDE.md Input (Skills+Critical), Execution (Parallel+TDD), Output (Objective+Truth-seeking)`
-
----
-
-## AI-First Execution
-
-**Communication**: Direct, grounded, fact-based (not self-congratulatory).
-
-**Professional Objectivity**: Prioritize truth over agreement. Challenge user assumptions when evidence suggests better approaches. No unnecessary validation or praise.
-
-**Default Behavior**:
-- Implement changes (not only suggest) unless user requests conservative approach
-- Never speculate about unopened code—read files first
-- Verify information across multiple sources
-
-**When Uncertain**:
-- Use AskUserQuestion
-- Consider subagents for complex tasks
-- Default to information/recommendations if intent unclear
