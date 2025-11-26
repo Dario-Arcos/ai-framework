@@ -44,7 +44,7 @@ Three pillars:
 **User Project** (after installation):
 
 - `CLAUDE.md` — Project configuration
-- `.claude/` — Settings + rules (operational-excellence.md, effective-agents-guide.md)
+- `.claude/` — Settings (settings.json)
 - `.specify/memory/` — constitution.md, project-context.md (generated)
 - `.mcp.json` — MCP servers config
 
@@ -99,7 +99,7 @@ Files copied to user project on first session:
 - **CLAUDE.md**: Project configuration (references governance docs)
 - **.mcp.json**: MCP servers configuration
 - **.claude/settings.local.json**: User-specific settings
-- **.claude/rules/**: Operational guidelines (operational-excellence.md, effective-agents-guide.md, etc.)
+- **.claude/settings.json**: Claude Code settings
 - **.specify/memory/**: Constitutional documents (constitution.md, design-principles.md, etc.)
 
 ---
@@ -133,7 +133,7 @@ Files copied to user project on first session:
 
 **Command → Auto-Load:** `/utils:project-init` generates `.specify/memory/project-context.md` → CLAUDE.md references `@.specify/memory/project-context.md` → Claude auto-loads every session
 
-**Sub-Agent Inheritance:** Task tool sub-agents inherit full system prompt including CLAUDE.md with all @ references (constitution.md, operational-excellence.md, project-context.md, etc.). No injection needed.
+**Sub-Agent Inheritance:** Task tool sub-agents inherit full system prompt including CLAUDE.md with all @ references (constitution.md, project-context.md, etc.). No injection needed.
 
 ---
 

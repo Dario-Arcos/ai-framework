@@ -41,7 +41,6 @@ ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
     ".claude.template/settings.json.template",
     ".claude.template/.mcp.json.template",
-    ".claude.template/rules/",
     ".specify.template/memory/",
     ".specify.template/scripts/",
     ".specify.template/templates/",

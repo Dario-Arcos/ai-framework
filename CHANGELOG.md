@@ -45,6 +45,10 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 - **Scripts bash**: Aplicado fix CDPATH desde spec-kit v0.0.85 (check-prerequisites, create-new-feature, setup-plan, update-agent-context)
 - **Skill web-browser**: Removido `killall` inseguro, migrado a puerto dedicado 9223 con comando stop explícito
 
+### Eliminado
+
+- **Carpeta `.claude/rules/`**: Eliminados `operational-excellence.md` y `effective-agents-guide.md` - archivos huérfanos que se sincronizaban pero nunca eran leídos por Claude (sin referencias `@`). Contenido ya cubierto por CLAUDE.md
+
 ---
 
 ## [3.1.0] - 2025-11-12
