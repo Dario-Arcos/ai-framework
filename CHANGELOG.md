@@ -12,6 +12,41 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [4.0.0] - 2025-11-25
+
+> **21 commits directos a main** desde c40dbf4
+
+### Añadido
+
+- **CLAUDE.md v4.0.0**: Arquitectura guardrails 3-layer (Input→Execution→Output) reemplazando estructura monolítica anterior. Input layer valida skills y frame problema, Execution layer aplica TDD/parallel-first, Output layer verifica objetivos y quality gates
+- **CLAUDE.md v4.1.0**: Truth-Seeking mandate (priorizar verdad sobre acuerdo con usuario) + API Deprecation Mitigation (verificación obligatoria de docs oficiales antes de usar dependencias externas para mitigar training data staleness)
+- **Hook anti_drift v3.0.0**: Validación Truth-Seeking integrada + soporte tamaño XL en complexity budget (≤1500 LOC, ≤10 files, ≤3 deps)
+- **Skills reorganizados**: 5 skills con estructura completa (SKILL.md + assets) - `core-memory-expert` (setup RedPlanet Cloud/self-hosted), `frontend-design` (interfaces premium), `algorithmic-art` (p5.js generativo), `writing-clearly-and-concisely` (reglas Strunk), `skill-creator` (guía creación skills)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: **Constitution v3.0.0** - Alcance reducido exclusivamente a workflow speckit (spec→plan→tasks→implement), ya no gobierna framework completo. Establece subordinación explícita a CLAUDE.md como fuente de verdad primaria. TDD enforcement real con mecanismo de excepciones documentadas (`legacy-code`, `hotfix-critical`, `generated-code`, `prototype-throwaway`, `user-directive`) requiriendo justificación + mitigación + aprobación
+- **CLAUDE.md template v4.2.0**: Removida referencia a constitution.md como "highest authority", añadido plan mode obligatorio para tareas M/L/XL, AskUserQuestion estricto para decisiones multi-opción
+- **Speckit commands**: `speckit.tasks.md` actualizado con TDD Compliance section (tests MANDATORY, no OPTIONAL), `speckit.implement.md` añadido TDD Compliance Gate (step 4) con decision matrix para excepciones
+- **Documentación masiva**: Eliminados 26 agentes inexistentes de docs (agents-guide, ai-first-workflow, commands-guide, etc.), removidos conteos hardcoded, tier system eliminado, Essential References minimizado
+- **Hook anti_drift**: Reducida documentación verbose manteniendo funcionalidad
+- **Hook superpowers-loader**: Refactorizado a inline loading como patrón referente
+- **Hooks docstrings**: Eliminada verbosidad excesiva, documentado ccnotify para notificaciones
+- **CI code review**: Model actualizado de `sonnet` a `opus` para mayor profundidad de análisis
+- **Agents references**: Actualizadas referencias en code-reviewer.md y systematic-debugger.md
+- **Agent design-iterator**: Reemplaza premium-ux-designer con enfoque iterativo de refinamiento
+
+### Arreglado
+
+- **MCP config template**: Sintaxis args actualizada de array a string format, shebang portable `#!/usr/bin/env python3` en scripts
+- **Skills descriptions**: Formato estandarizado a sintaxis "Use when..." para consistencia con Claude Code plugin spec
+- **Hook Stop**: Removido prompt hook no funcional que causaba comportamiento errático
+- **Docs references**: Corregidas referencias rotas a secciones CLAUDE.md (§3 → §Complexity Budget, etc.)
+- **Scripts bash**: Aplicado fix CDPATH desde spec-kit v0.0.85 (check-prerequisites, create-new-feature, setup-plan, update-agent-context)
+- **Skill web-browser**: Removido `killall` inseguro, migrado a puerto dedicado 9223 con comando stop explícito
+
+---
+
 ## [3.1.0] - 2025-11-12
 
 > **⚠️ CRÍTICO - REINSTALACIÓN OBLIGATORIA**
@@ -310,5 +345,5 @@ _Más skills en cada actualización_
 :::
 
 ::: info Última Actualización
-**Fecha**: 2025-11-09 | **Versión**: 3.0.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-11-25 | **Versión**: 4.0.0 | **Formato**: Keep a Changelog
 :::
