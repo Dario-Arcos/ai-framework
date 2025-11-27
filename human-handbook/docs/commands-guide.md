@@ -434,7 +434,7 @@ Tipo|TaskID|YYYYMMDD|Descripción
 ### `/git-pullrequest`
 
 ::: tip Propósito
-Crea PR con security review automático, detección de formato corporativo y título personalizable.
+Crea PR con quality gate basado en Observaciones Contextualizadas: pre-review inteligente sin falsos positivos.
 :::
 
 **Usage:**
@@ -442,23 +442,36 @@ Crea PR con security review automático, detección de formato corporativo y tí
 ```bash
 # Desde feature branch → PR a main
 /git-pullrequest main
-
-# Desde rama protegida → Crea temp branch automática
-/git-pullrequest main
 ```
 
-**Proceso:**
+**Proceso (3 fases):**
 
-1. **Security Review Automático** (BLOCKING) - Analiza vulnerabilidades, bloquea si HIGH severity
-2. **Título del PR** - Si detecta commits corporativos, pregunta: primer commit o custom
-3. **Branch Protection** - Si estás en main/master/develop, crea temp branch
-4. **PR Body Automático** - Summary + Changes + Files + Test Plan + Breaking Changes
+1. **Validación + Contexto**
+   - Valida target branch existe
+   - Extrae commits, stats, formato (conventional/corporate)
+   - Auto-detecta tipo primario (feat/fix/refactor)
 
-::: warning Security Review es BLOCKING
-Si encuentra vulnerabilidades HIGH, comando FALLA y NO crea PR. Debes corregir primero.
+2. **Review + Decisión** (ciclo con opción de fixes)
+   - Code review con skill `requesting-code-review`
+   - Observaciones auto-detectadas:
+     - ✅/⚠️ **Tests:** Cambios src sin tests
+     - ✅/⚠️ **Complejidad:** ΔLOC vs budget (S/M/L/XL)
+     - ✅/🔴 **Secrets:** Patrones de API keys en diff
+     - ✅/⚠️ **API Pública:** Modificaciones en endpoints
+     - ✅/⚠️ **Breaking Changes:** BREAKING en commits
+   - **Decisión:** Crear PR / Fix automático / Cancelar
+   - Si fix automático: subagent arregla → re-review obligatorio
+
+3. **Crear PR**
+   - Push branch (crea temp si es protegida)
+   - gh pr create con observaciones en body
+   - Output: PR URL
+
+::: info Observaciones ≠ Bloqueantes
+Las observaciones son **hechos con contexto**, no acusaciones. Tú decides si crear PR con issues documentados o arreglar primero.
 :::
 
-**Output:** PR URL + security review report
+**Output:** PR URL + resumen de observaciones
 
 **Next Steps:** Después de merge → `/git-cleanup`
 

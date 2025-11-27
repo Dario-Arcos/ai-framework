@@ -314,8 +314,8 @@ Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamient
 **Clarify Strategy:**
 Answer questions even if obvious. 2 min ahora > 2 hours later.
 
-**Security Review:**
-`/git-pullrequest` auto-runs security review. Blocks PR si HIGH vulnerability found.
+**Quality Gate:**
+`/git-pullrequest` ejecuta pre-review con Observaciones Contextualizadas. Detecta issues y ofrece fix automático con re-validación.
 
 **Commit Strategy:**
 `commit "all changes"` auto-groups por categoría. Better que 1 giant mixed commit.
