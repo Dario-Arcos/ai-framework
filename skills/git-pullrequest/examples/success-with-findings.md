@@ -38,18 +38,21 @@ Commits:
 - Comprehensive error handling for most scenarios
 - Good test coverage for happy paths
 
+### Security Review: 0 High, 0 Medium
+
+✅ No security vulnerabilities detected
+
 ### Observations
 
 | Check | Status | Detail |
 |-------|--------|--------|
 | Tests | ✅ | 2 test files modified |
-| Secrets | ✅ | No secrets detected |
 | API Changes | ⚠️ | 2 files in api/auth/ |
 | Breaking | ✅ | No BREAKING commits |
 | Complexity | ✅ | M: Δ166 ≤ 250 |
 
 ### Summary
-3 need attention (2 Important, 1 Minor), 4 OK
+3 code review issues (2 Important, 1 Minor), 1 observation needs attention
 ```
 
 ---
@@ -104,12 +107,15 @@ feat changes affecting **5** files (Δ166 LOC).
 - [Important] Refresh error handling: Added fallback, needs review
 - [Minor] Magic number: Acknowledged, will refactor in next PR
 
+### Security Review: 0 High, 0 Medium
+
+✅ No security vulnerabilities detected
+
 ### Observations
 
 | Check | Status |
 |-------|--------|
 | Tests | ✅ |
-| Secrets | ✅ |
 | API Changes | ⚠️ New endpoints in api/auth |
 | Breaking Changes | ✅ |
 | Complexity | ✅ (M: Δ166) |
@@ -160,17 +166,21 @@ feat changes affecting **5** files (Δ166 LOC).
       }
     ]
   },
+  "security_review": {
+    "high_count": 0,
+    "medium_count": 0,
+    "issues": []
+  },
   "observations": {
     "tests": { "status": "✅", "detail": "2 test files modified" },
-    "secrets": { "status": "✅", "detail": "No secrets detected" },
     "api": { "status": "⚠️", "detail": "2 files in api/auth/" },
     "breaking": { "status": "✅", "detail": "No BREAKING commits" },
     "complexity": { "status": "✅", "detail": "M: Δ166 ≤ 250" }
   },
   "summary": {
     "has_blockers": false,
-    "attention_count": 3,
-    "ok_count": 4
+    "total_issues": 3,
+    "attention_count": 1
   }
 }
 ```

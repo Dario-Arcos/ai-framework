@@ -214,7 +214,7 @@ Options:
   - label: "Create PR"
     description: "Push branch and create PR with current findings documented"
   - label: "Auto fix"
-    description: "Subagent fixes Critical+Important issues, then re-review"
+    description: "Subagent fixes Critical+Important+High+Medium security issues, then re-review"
   - label: "Cancel"
     description: "Exit. Fix manually and re-run /git-pullrequest {target_branch}"
 ```
