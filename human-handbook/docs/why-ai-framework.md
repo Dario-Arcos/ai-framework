@@ -135,7 +135,7 @@ Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 
 ```plaintext [Asistente (vanilla)]
 Developer → "Haz X" → Claude hace X → "Ahora Y" → Claude hace Y
-            [Micro-management continuo]  // [!code warning]
+            [Micro-gestión continua]  // [!code warning]
 ```
 
 ```plaintext [Ingeniero (framework)]
@@ -143,9 +143,9 @@ Developer → "Objetivo: Sistema de autenticación"
 Framework + Claude:
   ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)  // [!code highlight]
   ├─ Multi-approach ROI (beneficio vs complejidad)  // [!code highlight]
-  ├─ TDD implementation (tests → código)  // [!code highlight]
+  ├─ Implementación TDD (tests → código)  // [!code highlight]
   ├─ Quality gates (security + code review + constitutional)  // [!code highlight]
-  └─ Deployment (PR auto-created, reviews passed)  // [!code highlight]
+  └─ Despliegue (PR auto-creado, reviews aprobados)  // [!code highlight]
 
 [Developer: decisiones estratégicas | Claude: ejecución táctica]
 ```
@@ -153,7 +153,7 @@ Framework + Claude:
 :::
 
 ::: tip Resultado
-Developer liberado de micro-management.
+Developer liberado de micro-gestión.
 :::
 
 ---
@@ -168,7 +168,7 @@ Idea → Spec (días) → Design (días) → Dev (semanas) → QA (días)
 ```
 
 ```plaintext [Claude Code Vanilla]
-Idea → Claude genera → Developer corrige → Deploy (maybe)
+Idea → Claude genera → Developer corrige → Deploy (quizás)
       [Rápido pero frágil · Sin tests · Días, calidad ?]  // [!code warning]
 ```
 
@@ -176,7 +176,7 @@ Idea → Claude genera → Developer corrige → Deploy (maybe)
 Idea → /speckit.specify (minutos)  // [!code highlight]
      → /speckit.plan (minutos)  // [!code highlight]
      → /speckit.implement (horas)  // [!code highlight]
-     → Dual review → /pullrequest → Deploy  // [!code highlight]
+     → Dual review → /pullrequest → Despliegue  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]
 [Tests desde día 1 · Horas-días, production-ready]
@@ -186,12 +186,12 @@ Idea → /speckit.specify (minutos)  // [!code highlight]
 
 ### Comparación
 
-| Aspecto | Sin Framework | Con Framework |
-|---------|---------------|---------------|
-| Tests | A veces | Siempre (TDD enforced) |
-| Seguridad | Ad-hoc | Automática (scanning) |
-| Escalabilidad | Se degrada | Se mantiene (patterns) |
-| Compliance | Manual | Automático (budgets) |
+| Aspecto       | Sin Framework | Con Framework              |
+| ------------- | ------------- | -------------------------- |
+| Tests         | A veces       | Siempre (TDD enforced)     |
+| Seguridad     | Ad-hoc        | Automática (scanning)      |
+| Escalabilidad | Se degrada    | Se mantiene (patterns)     |
+| Compliance    | Manual        | Automático (budgets)       |
 
 ---
 
@@ -207,4 +207,4 @@ Con rieles: Motor potente → dirección precisa → **máximo aprovechamiento**
 
 **Claude Code te da las herramientas. AI Framework te da el sistema.**
 
-[Comenzar →](/docs/quickstart)
+[Empezar →](/docs/quickstart)

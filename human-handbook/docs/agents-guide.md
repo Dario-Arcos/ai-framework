@@ -128,24 +128,6 @@ Prevención de deuda técnica, principios universales de calidad
 
 ---
 
-### `ci-cd-pre-reviewer`
-
-::: danger Production Readiness Gate
-Replica lógica completa del CI/CD bot para prevenir failures de GitHub Actions
-:::
-
-**Categorías:** SECURITY (vulnerabilities con false positive filtering) · BUG (logical errors, edge cases) · RELIABILITY (error handling) · PERFORMANCE (production impact) · CONSTITUTIONAL (Δ LOC compliance)
-
-**Severity Levels:** BLOCKER (auto-block) · CRITICAL (≥0.8 confidence = block) · MAJOR (warn) · MINOR/NIT (informational)
-
-**False Positive Filtering:** 30 reglas (DOS exclusion, memory safety, theoretical race conditions, test files, documentation)
-
-**Output:** Category · Severity · Confidence (0.0-1.0, drop <0.80) · File:line · Why (1-3 sentences) · Fix (concrete patch)
-
-**Decision:** REQUEST CHANGES (BLOCKER/CRITICAL) · COMMENT (MAJOR/MINOR) · APPROVE (no issues)
-
----
-
 ### `architect-review`
 
 ::: tip Arquitectura Maestro
@@ -374,7 +356,7 @@ Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 
 ---
 
-## Tips de Uso
+## Consejos de Uso
 
 ::: tip Selección Rápida
 **Simple:** Agentes generales (backend-architect, frontend-developer)

@@ -69,7 +69,7 @@ Búsqueda semántica local de tus conversaciones completas con Claude Code. A di
 - Recuperar patrones de solución aplicados anteriormente
 - Buscar por contexto semántico, no solo keywords
 
-### Quick Install
+### Instalación Rápida
 
 ::: warning Prerequisito
 Requiere superpowers-marketplace instalado.
@@ -259,7 +259,7 @@ Acceso read-only a la memoria oficial del proyecto vía proxy Railway. Permite a
 - Onboarding de nuevos miembros (contexto inmediato)
 - Mantener consistencia en todo el equipo
 
-### Quick Setup (requiere admin)
+### Configuración Rápida (requiere admin)
 
 ::: warning Prerequisito Administrativo
 Team Memory requiere acceso autorizado al servidor del proyecto. Contacta a tu admin para obtener credenciales.
@@ -440,7 +440,7 @@ graph TD
 
 ---
 
-## Troubleshooting
+## Solución de Problemas
 
 ### Episodic Memory no indexa conversaciones
 

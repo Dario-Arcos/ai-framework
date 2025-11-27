@@ -49,9 +49,9 @@ GitHub (Delivery Layer)
 # → Directorio separado, nueva ventana IDE
 ```
 
-**Post-setup:** En nueva ventana: `Cmd+\``, verify `pwd`, run `claude`
+**Post-setup:** En nueva ventana: `Cmd+\``, verifica `pwd`, ejecuta `claude`
 
-**Benefit:** Workspace principal intacto.
+**Beneficio:** Workspace principal intacto.
 
 ---
 
@@ -114,7 +114,7 @@ You: "OAuth"
 
 Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Benefit:** Everyone trabaja con mismo data model. No "oh, asumí que User tenía este field".
+**Beneficio:** Todos trabajan con el mismo data model. No "oh, asumí que User tenía este field".
 
 ---
 
@@ -126,7 +126,7 @@ Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
 Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
 
-**Benefit:** No más "¿qué hago ahora?" Cada task es self-contained.
+**Beneficio:** No más "¿qué hago ahora?" Cada task es self-contained.
 
 ---
 
@@ -222,11 +222,11 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 /prp-new "feature-name"
 /prp-sync "feature-name"
 /speckit.specify --from-issue {number}
-# → Continue steps 2-6 normalmente
+# → Continuar pasos 2-6 normalmente
 # → Al final: speckit.sync (documenta en GitHub)
 ```
 
-**Benefit:** Business y Tech separated pero linked.
+**Beneficio:** Business y Tech separados pero vinculados.
 
 ---
 
@@ -236,11 +236,11 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 
 ```bash
 /speckit.specify "fix race condition"
-# → Continue steps 2-6 normalmente
-# → Skip sync (no PRP parent issue)
+# → Continuar pasos 2-6 normalmente
+# → Omitir sync (no PRP parent issue)
 ```
 
-**Benefit:** Faster start, no business overhead.
+**Beneficio:** Inicio más rápido, sin overhead de negocio.
 
 ---
 
@@ -275,7 +275,7 @@ worktree:create → understand → specify → clarify → plan → tasks → im
 ```
 
 **Skip opcionales:** analyze, checklist, sync (prioridad = speed)
-**Benefit:** Trabajo principal untouched, fix rápido
+**Beneficio:** Trabajo principal intacto, fix rápido
 
 ---
 
@@ -306,28 +306,28 @@ Si usaste worktree, cleanup regresa automáticamente a main.
 
 ---
 
-## Best Practices
+## Mejores Prácticas
 
-**Workflow Selection:**
+**Selección de Workflow:**
 Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamiento.
 
-**Clarify Strategy:**
-Answer questions even if obvious. 2 min ahora > 2 hours later.
+**Estrategia de Clarify:**
+Responde preguntas incluso si parecen obvias. 2 min ahora > 2 horas después.
 
-**Security Review:**
-`/git-pullrequest` auto-runs security review. Blocks PR si HIGH vulnerability found.
+**Quality Gate:**
+`/git-pullrequest` ejecuta pre-review con Observaciones Contextualizadas. Detecta issues y ofrece auto fix con re-validación.
 
-**Commit Strategy:**
-`commit "all changes"` auto-groups por categoría. Better que 1 giant mixed commit.
+**Estrategia de Commit:**
+`commit "all changes"` auto-agrupa por categoría. Mejor que 1 commit gigante mezclado.
 
 ---
 
 ## Para Profundizar
 
-- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos, usage, options
+- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos, uso, opciones
 - [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes, cuándo usar
 - [MCP Servers](./mcp-servers.md) — Playwright, Shadcn
-- [Pro Tips](./claude-code-pro-tips.md) — Advanced patterns
+- [Pro Tips](./claude-code-pro-tips.md) — Patrones avanzados
 
 ---
 
