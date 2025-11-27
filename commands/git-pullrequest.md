@@ -1,30 +1,38 @@
 ---
 name: git-pullrequest
-allowed-tools: Bash(git *), Bash(gh *), Task
-description: Crea PR con pre-review dual (code quality + security)
+allowed-tools: Bash(git *), Bash(gh *), Task, AskUserQuestion, Skill
+description: Create PR with intelligent pre-review using Contextual Observations
 ---
 
-# Pull Request
+# Pull Request v2.0
 
-Workflow automatizado para crear PR con validación de calidad y seguridad.
+Automated workflow to create PR with quality gate based on contextual observations.
 
-**Input**: `$ARGUMENTS` = target branch (ej: "main")
+**Input**: `$ARGUMENTS` = target branch (e.g., "main")
 
-## Paso 1: Validación Inicial
+---
 
-Ejecutar en bash (usa `bash <<'SCRIPT'...SCRIPT` para compatibilidad zsh):
+## PHASE 1: Validation + Context
+
+### Step 1.1: Validate and Extract Metadata
+
+Execute in bash (single consolidated block):
 
 ```bash
-# Parse and validate target branch
+#!/bin/bash
+set -e
+
+# Parse target branch
 target_branch="$ARGUMENTS"
 target_branch=$(echo "$target_branch" | xargs)
 
+# Validations
 if [ -z "$target_branch" ]; then
   echo "❌ Error: No target branch specified"
+  echo "   Usage: /git-pullrequest main"
   exit 1
 fi
 
-# Validate format
 if ! echo "$target_branch" | grep -Eq '^[a-zA-Z0-9/_-]+$'; then
   echo "❌ Error: Invalid branch name format"
   exit 1
@@ -36,9 +44,10 @@ if echo "$target_branch" | grep -Eq '^--'; then
 fi
 
 # Fetch and validate target branch exists
-git fetch origin
+echo "🔍 Validating target branch..."
+git fetch origin --quiet
 
-if ! git branch -r | grep -q "origin/$target_branch"; then
+if ! git rev-parse --verify "origin/$target_branch" >/dev/null 2>&1; then
   echo "❌ Error: Branch origin/$target_branch does not exist"
   exit 1
 fi
@@ -51,30 +60,38 @@ if [ "$commit_count" -eq 0 ]; then
   exit 1
 fi
 
-# Save state
+# Extract metadata
 current_branch=$(git branch --show-current)
 
-git config --local pr.temp.target-branch "$target_branch"
-git config --local pr.temp.current-branch "$current_branch"
-git config --local pr.temp.commit-count "$commit_count"
-```
+echo ""
+echo "📊 PR Context:"
+echo "   From: $current_branch"
+echo "   To: $target_branch"
+echo "   Commits: $commit_count"
+echo ""
 
-## Paso 2A: Análisis de Commits - Extracción de Metadata
+# Get commit list
+echo "Commits to include:"
+git log --pretty=format:'  %h %s' "origin/$target_branch..HEAD" --
+echo ""
+echo ""
 
-Ejecutar en bash para extraer metadata:
-
-```bash
-target_branch=$(git config --local pr.temp.target-branch)
-
-# 1. Extract commit logs (usar archivo temporal para evitar truncamiento git config)
-git_log_raw=$(git log --pretty=format:'- %s' "origin/$target_branch..HEAD" --)
-echo "$git_log_raw" > .git/pr-temp-commits.txt
-
-# Get first commit for format detection and title
+# Get first commit for format detection
 first_commit=$(git log --pretty=format:'%s' "origin/$target_branch..HEAD" -- | head -1)
-git config --local pr.temp.first-commit "$first_commit"
 
-# 2. Extract statistics
+# Detect format (corporate vs conventional)
+if echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|'; then
+  commit_format="corporate"
+  primary_type=$(echo "$first_commit" | cut -d'|' -f1)
+else
+  commit_format="conventional"
+  primary_type=$(echo "$first_commit" | grep -oE '^[a-z]+' | head -1)
+  if [ -z "$primary_type" ]; then
+    primary_type="feat"
+  fi
+fi
+
+# Get statistics
 stats=$(git diff --shortstat "origin/$target_branch..HEAD" --)
 
 if [ -z "$stats" ]; then
@@ -82,427 +99,441 @@ if [ -z "$stats" ]; then
   additions=0
   deletions=0
 else
-  files_changed=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+')
-  additions=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+')
-  deletions=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+')
+  files_changed=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
+  additions=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+  deletions=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 fi
 
-git config --local pr.temp.files-changed "${files_changed:-0}"
-git config --local pr.temp.additions "${additions:-0}"
-git config --local pr.temp.deletions "${deletions:-0}"
+delta_loc=$((additions - deletions))
 
-# 3. Detect format and extract primary type
-# Corporate format pattern: "word|CAPS-NUM|8digits|text"
-if echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\|'; then
-  commit_format="corporate"
-  primary_type=$(echo "$first_commit" | cut -d'|' -f1)
+echo "📈 Statistics:"
+echo "   Files changed: $files_changed"
+echo "   Lines: +$additions -$deletions (Δ$delta_loc)"
+echo "   Format: $commit_format"
+echo "   Type: $primary_type"
+echo ""
+
+# Check for breaking changes
+breaking=$(git log --pretty=format:'%B' "origin/$target_branch..HEAD" -- | grep -iE 'BREAKING' || echo "")
+```
+
+**Store in model context (no git config):**
+- `target_branch`, `current_branch`, `commit_count`
+- `first_commit`, `commit_format`, `primary_type`
+- `files_changed`, `additions`, `deletions`, `delta_loc`
+- `breaking` (if any)
+
+### Step 1.2: Commit Selection (if >1 commit)
+
+If `commit_count > 1`, use AskUserQuestion:
+
+```
+Question: "Found {commit_count} commits. Which commits to include in PR?"
+
+Options:
+A) "All commits"
+   Description: "Include all {commit_count} commits in the PR"
+
+B) "Select specific commits"
+   Description: "Manually specify commit SHAs or range"
+```
+
+If user selects B, ask for commit SHAs input and validate them.
+
+**Default:** If only 1 commit, use it automatically.
+
+---
+
+## PHASE 2: Review + Decision (Loop)
+
+### Step 2.1: Invoke requesting-code-review Skill
+
+Load the skill:
+
+```
+Skill: requesting-code-review
+```
+
+Prepare context for code-reviewer:
+
+```
+WHAT_WAS_IMPLEMENTED: "{commit_count} commits for {primary_type}: {commit_summary}"
+PLAN_OR_REQUIREMENTS: "Pre-PR quality gate for merge to {target_branch}"
+BASE_SHA: "origin/{target_branch}"
+HEAD_SHA: "HEAD"
+DESCRIPTION: "PR validation - {files_changed} files, ΔLOC={delta_loc}"
+```
+
+Dispatch code-reviewer subagent using Task tool:
+
+```
+subagent_type: code-reviewer
+description: "Pre-PR Review: {target_branch}"
+prompt: [Use template from skills/requesting-code-review/code-reviewer.md with filled placeholders]
+```
+
+### Step 2.2: Generate Contextual Observations
+
+#### A) Transform code-reviewer output
+
+Map severity:
+- Critical (Must Fix) → 🔴 Requiere
+- Important (Should Fix) → ⚠️ Atención
+- Minor (Nice to Have) → 💡 Sugerencia
+- No issues → ✅ OK
+
+#### B) Auto-detect additional observations
+
+**1. Test Coverage:**
+
+```bash
+# Detect test changes
+test_files=$(git diff --name-only "origin/$target_branch..HEAD" | grep -E '(test|spec)\.' | wc -l)
+src_files=$(git diff --name-only "origin/$target_branch..HEAD" | grep -vE '(test|spec)\.' | grep -E '\.(ts|js|py|go|rs)$' | wc -l)
+
+if [ "$src_files" -gt 0 ] && [ "$test_files" -eq 0 ]; then
+  # ⚠️ Atención - with context
 else
-  commit_format="conventional"
-  # Extract type from conventional: "type(scope): msg" or "type: msg"
-  primary_type=$(echo "$first_commit" | grep -oE '^[a-z]+' | head -1)
-  if [ -z "$primary_type" ]; then
-    primary_type="feat"
+  # ✅ OK - minimal
+fi
+```
+
+**2. Complexity Budget:**
+
+```bash
+# Determine budget based on delta_loc
+if [ "$delta_loc" -le 80 ]; then
+  size="S"
+  budget=80
+elif [ "$delta_loc" -le 250 ]; then
+  size="M"
+  budget=250
+elif [ "$delta_loc" -le 600 ]; then
+  size="L"
+  budget=600
+else
+  size="XL"
+  budget=1500
+fi
+
+if [ "$delta_loc" -gt "$budget" ]; then
+  # ⚠️ Atención - with context
+else
+  # ✅ OK - minimal
+fi
+```
+
+**3. Secrets Detection:**
+
+```bash
+# Check for secret patterns
+if git diff "origin/$target_branch..HEAD" | grep -iE '(API_KEY|SECRET|PASSWORD|TOKEN|PRIVATE_KEY|sk-|pk_|ghp_)' >/dev/null; then
+  # 🔴 Requiere - with context
+else
+  # ✅ OK - minimal
+fi
+```
+
+**4. Public API Changes:**
+
+```bash
+# Check for API changes
+if git diff --name-only "origin/$target_branch..HEAD" | grep -E '(api/|routes/|endpoints/)' >/dev/null; then
+  # ⚠️ Atención - with context
+fi
+```
+
+**5. Breaking Changes:**
+
+```bash
+if [ -n "$breaking" ]; then
+  # ⚠️ Atención - with context
+fi
+```
+
+### Step 2.3: Present Observations
+
+Format output:
+
+```markdown
+## Observaciones Pre-PR
+
+### Complejidad [{status}]
+ΔLOC = +{delta_loc} (budget {size}: ≤{budget})
+
+### Tests [{status}]
+{minimal_if_ok_or_detailed_if_attention}
+
+### Secrets [{status}]
+{minimal_if_ok_or_detailed_if_attention}
+
+### Code Review [{status}]
+**Detectado:** {count} issues del code-reviewer:
+{list_of_issues}
+
+**Assessment:** {ready_to_merge_status}
+
+---
+
+**Resumen:** {count_attention} observaciones requieren atención, {count_ok} OK.
+```
+
+**Format rules:**
+- ✅ OK items: Single line, no "Por qué importa"
+- ⚠️/🔴 Attention items: Full context with Detectado/Por qué importa/Verificar
+
+### Step 2.4: User Decision
+
+Use AskUserQuestion:
+
+```
+Question: "Observaciones completadas. ¿Cómo proceder?"
+
+Options:
+A) "Crear PR"
+   Description: "Continuar con push y creación de PR. Observaciones se documentan en PR body."
+
+B) "Fix automático"
+   Description: "Subagent arregla todos los issues, luego re-review automático."
+
+C) "Cancelar"
+   Description: "Cancelar workflow. Arreglar manualmente y re-ejecutar después."
+```
+
+### Step 2.5: Handle User Choice
+
+**If A (Crear PR):**
+→ Proceed to PHASE 3
+
+**If C (Cancelar):**
+```bash
+echo "✅ Workflow cancelado"
+echo "   Branch actual: $(git branch --show-current)"
+echo "   Para re-ejecutar: /git-pullrequest $target_branch"
+exit 0
+```
+
+**If B (Fix automático):**
+
+1. Load skill receiving-code-review:
+```
+Skill: receiving-code-review
+```
+
+2. Dispatch ONE general-purpose subagent:
+
+```
+subagent_type: general-purpose
+description: "Fix pre-PR review findings"
+prompt: """
+Fix the following issues found in pre-PR review:
+
+**Issues to fix:**
+{formatted_list_of_issues_with_file_line_and_suggestions}
+
+**Instructions (following receiving-code-review skill):**
+1. Read each file to understand full context
+2. Apply fixes in order: Critical → Important → Minor
+3. Verify each fix doesn't break existing functionality
+4. Run tests if they exist
+5. Commit all fixes together: "fix: address pre-PR review findings"
+
+**Report back:**
+- Files modified
+- Fixes applied
+- Test results (if applicable)
+- Any issues encountered or push-backs (with technical reasoning)
+"""
+```
+
+3. AFTER fix completes → AUTOMATIC re-review:
+   - Return to Step 2.1 (no user question)
+   - Re-run code-reviewer subagent
+   - Show new observations
+   - Return to Step 2.4 (decision)
+
+**Loop guarantee:** User can always exit via A or C.
+
+---
+
+## PHASE 3: Create PR
+
+### Step 3.1: Push Branch
+
+Execute in bash:
+
+```bash
+#!/bin/bash
+set -e
+
+current_branch="$CURRENT_BRANCH"
+target_branch="$TARGET_BRANCH"
+
+echo "🚀 Preparing to push..."
+
+# Check if current branch is protected
+protected_branches="main|master|develop|staging|production"
+if echo "$current_branch" | grep -Eq "^($protected_branches)$"; then
+  echo "⚠️  Current branch is protected: $current_branch"
+
+  # Generate temporary branch name
+  timestamp=$(date +%Y%m%d%H%M%S)
+  slug=$(echo "$FIRST_COMMIT" | tr '[:upper:]' '[:lower:]' | \
+         sed 's/[^a-z0-9 ]/-/g' | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | \
+         sed 's/-$//' | cut -c1-30 | sed 's/-$//')
+  slug="${slug:-feature}"
+
+  temp_branch="pr/${slug}-${timestamp}"
+
+  echo "   Creating temporary branch: $temp_branch"
+
+  # Validate branch doesn't exist
+  if git show-ref --verify --quiet "refs/heads/$temp_branch"; then
+    echo "❌ Error: Branch $temp_branch already exists"
+    exit 1
+  fi
+
+  # Create and push
+  git checkout -b "$temp_branch"
+  git push origin "$temp_branch" --set-upstream
+
+  branch_to_pr="$temp_branch"
+else
+  # Push current branch
+  branch_to_pr="$current_branch"
+
+  echo "   Pushing branch: $branch_to_pr"
+
+  # Check if has upstream
+  if ! git rev-parse --abbrev-ref "$branch_to_pr@{upstream}" >/dev/null 2>&1; then
+    git push origin "$branch_to_pr" --set-upstream
+  else
+    git push origin "$branch_to_pr"
   fi
 fi
 
-git config --local pr.temp.commit-format "$commit_format"
-git config --local pr.temp.primary-type "$primary_type"
-
-# 4. Extract breaking changes (optional)
-breaking=$(git log --pretty=format:'%B' "origin/$target_branch..HEAD" -- | grep -iE 'BREAKING' || echo "")
-if [ -n "$breaking" ]; then
-  git config --local pr.temp.breaking-changes "$breaking"
-fi
+echo "✅ Branch pushed: $branch_to_pr"
 ```
 
-## Paso 2B: Selección de Título del PR (solo formato corporate)
+### Step 3.2: Generate PR Body
 
-**Si `commit_format = "corporate"`**, preguntar al usuario sobre el título del PR:
+Construct PR body with observations:
 
-1. Leer valores guardados en git config:
-
-   ```bash
-   first_commit=$(git config --local pr.temp.first-commit)
-   commit_format=$(git config --local pr.temp.commit-format)
-   ```
-
-2. Si `commit_format = "corporate"`, mostrar al usuario:
-   - El primer commit detectado: `{first_commit}`
-   - Mensaje: "Este será el título del PR basado en el primer commit."
-
-3. Usar **AskUserQuestion tool** para preguntar al usuario:
-
-   **Question**: "¿Deseas usar el primer commit como título del PR o proporcionar un título personalizado?"
-
-   **Options**:
-   - **A**: "Usar primer commit" (default) — Descripción: "El PR usará: `{first_commit}`"
-   - **B**: "Título personalizado" — Descripción: "Proporcionarás un título en formato corporativo personalizado"
-
-4. Si usuario selecciona **Opción B**:
-   - Pedir input adicional: "Ingresa el título personalizado en formato: `tipo|TASK-ID|YYYYMMDD|descripción`"
-   - Ejemplo: `refactor|TRV-350|20251023|mejora sistema autenticación`
-   - Tipos válidos: feat, fix, refactor, chore, docs, test, security
-   - Proceder al Paso 2C para validar
-
-5. Si usuario selecciona **Opción A** o formato NO es corporate:
-   - Continuar al Paso 3 (sin Paso 2C)
-
-## Paso 2C: Validación y Almacenamiento de Título Personalizado
-
-**Solo ejecutar si usuario proporcionó título personalizado en Paso 2B.**
-
-Ejecutar en bash:
-
-```bash
-# Título personalizado proporcionado por usuario
-custom_title="$CUSTOM_TITLE_FROM_USER"
-
-# Validar formato corporativo: tipo|TASK-ID|YYYYMMDD|descripción
-if echo "$custom_title" | grep -Eq '^(feat|fix|refactor|chore|docs|test|security)\|[A-Z]+-[0-9]+\|[0-9]{8}\|.+$'; then
-  # Formato válido: guardar
-  git config --local pr.temp.custom-title "$custom_title"
-
-  # Extraer primary type del título personalizado
-  primary_type=$(echo "$custom_title" | cut -d'|' -f1)
-  git config --local pr.temp.primary-type "$primary_type"
-
-  echo "✅ Título personalizado guardado: $custom_title"
-else
-  echo "⚠️  Formato inválido. Usando primer commit como fallback."
-  echo "   Formato esperado: tipo|TASK-ID|YYYYMMDD|descripción"
-  echo "   Ejemplo: refactor|TRV-350|20251023|mejora autenticación"
-fi
-```
-
-## Paso 3: Reviews en Paralelo (BLOQUEANTE)
-
-Ejecutar Task tool en **paralelo**:
-
-### Review 1: Plan Alignment & Quality
-
-Use Task tool with code-reviewer agent to review implementation vs origin/$target_branch.
-
-Agent instructions handle: plan alignment, code quality, architecture, documentation.
-Returns: Critical | Important | Suggestions findings.
-
-### Review 2: Production Readiness (CI/CD Prevention)
-
-Use Task tool with ci-cd-pre-reviewer agent for production-readiness vs origin/$target_branch.
-
-Agent instructions handle: SECURITY, BUG, RELIABILITY, PERFORMANCE, CONSTITUTIONAL, MAINTAINABILITY.
-Returns: BLOCKER/CRITICAL/MAJOR/MINOR/NIT findings with confidence scores.
-Decision: BLOCK if BLOCKER or CRITICAL ≥0.80, WARN if only MAJOR/MINOR/NIT, APPROVE if none.
-
-## Paso 3.5: Presentar Resultados y Decisión del Usuario
-
-**1. Mostrar AMBOS reviews completos al usuario:**
-
-Output completo de ambos reviews en formato legible.
-
-**2. Usar AskUserQuestion:**
-
-Question: "Reviews completados. ¿Cómo proceder?"
-
-Options:
-- "Crear PR ahora"
-  Description: "Continuar con push y PR. Issues se documentan en PR body para follow-up."
-
-- "Fix automático (guiado)"
-  Description: "Claude te pregunta issue por issue si arreglar (Critical → Important → Suggestions)."
-
-- "Cancelar y fix manual"
-  Description: "Cancelar workflow. Arreglas manualmente y re-ejecutas /pullrequest main."
-
-**3. Ejecutar decisión:**
-
-```bash
-# Variable $user_choice contiene la opción seleccionada
-
-case "$user_choice" in
-  "Crear PR ahora")
-    echo "✅ Continuando con creación de PR..."
-    # Continuar con Paso 4 directamente
-    ;;
-
-  "Fix automático (guiado)")
-    echo "🔧 Iniciando fix guiado..."
-    # Continuar con Paso 3.6
-    ;;
-
-  "Cancelar y fix manual")
-    git config --local --remove-section pr.temp 2>/dev/null
-    rm -f .git/pr-temp-commits.txt
-    echo "✅ Workflow cancelado"
-    echo "   Branch actual: $(git branch --show-current)"
-    echo "   Arregla issues y re-ejecuta: /pullrequest main"
-    exit 0
-    ;;
-esac
-```
-
-## Paso 3.6: Fix Automático Guiado (Solo si usuario eligió "Fix automático")
-
-**Parse findings de ambos reviews, ordenar: Critical → Important → Suggestions**
-
-**Por CADA finding:**
-
-Para cada finding encontrado, mostrar al usuario:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔧 Issue {N}/{total} - {SEVERITY}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-File: {file:line}
-Problem: {description}
-Fix suggestion: {fix_suggestion}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-Usar AskUserQuestion:
-
-Question: "¿Arreglar este issue {SEVERITY}?"
-
-Options:
-- "Sí, fix ahora"
-  Description: "Claude despachará subagent para arreglar este issue específico."
-
-- "No, skip"
-  Description: "Saltar este issue, continuar con el siguiente."
-
-- "Terminar fixes"
-  Description: "Detener iteración, proceder con decisión final (Paso 3.7)."
-
-**Si usuario elige "Sí, fix ahora":**
-
-```bash
-# Dispatch Task subagent para aplicar fix
-echo "🔧 Despachando subagent para fix..."
-```
-
-Usar Task tool:
-```
-subagent_type: general-purpose
-description: "Fix: {brief_description}"
-prompt: "Fix the following issue found in code review:
-
-**File:** {file:line}
-**Problem:** {description}
-**Severity:** {severity}
-**Suggested fix:** {fix_suggestion}
-
-Apply the fix carefully:
-1. Read the file to understand context
-2. Apply the specific fix suggested
-3. Verify the fix is correct
-4. Commit with message: 'fix: {brief_description}'
-
-Report back:
-- What you fixed
-- Commit SHA
-- Any issues encountered"
-```
-
-**Si usuario elige "Terminar fixes":**
-```bash
-echo "✅ Iteración de fixes terminada"
-# Continuar con Paso 3.7
-```
-
-**3. Después de iterar todos los findings:**
-
-Continuar con Paso 3.7.
-
-## Paso 3.7: Post-Fix Decision
-
-**Después de completar fixes (o terminar iteración), usar AskUserQuestion:**
-
-Question: "Fixes completados. ¿Qué hacer ahora?"
-
-Options:
-- "Re-ejecutar reviews"
-  Description: "Ejecutar code-reviewer + ci-cd-pre-reviewer de nuevo para validar fixes aplicados."
-
-- "Crear PR ahora"
-  Description: "Continuar con push y PR (confiar en los fixes aplicados)."
-
-**Ejecutar decisión:**
-
-```bash
-case "$user_choice" in
-  "Re-ejecutar reviews")
-    echo "🔄 Re-ejecutando reviews..."
-    # Volver a Paso 3 (ejecutar ambos Task reviews en paralelo)
-    # Después de reviews, volver a Paso 3.5
-    ;;
-
-  "Crear PR ahora")
-    echo "✅ Continuando con creación de PR..."
-    # Continuar con Paso 4
-    ;;
-esac
-```
-
-**Nota:** Si usuario elige "Re-ejecutar reviews", el workflow vuelve a Paso 3, y después de los reviews vuelve a Paso 3.5, permitiendo otro ciclo de fixes si es necesario.
-
-## Paso 4: Push Branch
-
-Ejecutar en bash:
-
-1. **Check if current branch is protected**:
-
-   ```bash
-   current_branch=$(git config --local pr.temp.current-branch)
-   if echo "$current_branch" | grep -Eq '^(main|master|develop|staging|production)$'; then
-     is_protected=true
-   else
-     is_protected=false
-   fi
-   ```
-
-2. **If protected branch, create temporary branch**:
-
-   ```bash
-   if [ "$is_protected" = "true" ]; then
-     first_commit=$(git config --local pr.temp.first-commit)
-     timestamp=$(date +%Y%m%d%H%M%S)
-
-     # Generate branch suffix from first commit (max 39 chars)
-     first_commit_clean=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/ /g')
-     branch_suffix=$(echo "$first_commit_clean" | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | sed 's/-$//' | cut -c1-39 | sed 's/-$//')
-     branch_suffix="${branch_suffix:-feature}"
-
-     temp_branch="temp-${branch_suffix}-${timestamp}"
-
-     # Validate branch doesn't exist
-     if git show-ref --verify --quiet "refs/heads/$temp_branch"; then
-       echo "❌ Branch $temp_branch already exists"
-       git config --local --remove-section pr.temp 2>/dev/null
-       exit 1
-     fi
-
-     # Create and push
-     git checkout -b "$temp_branch"
-     git push origin "$temp_branch" --set-upstream
-
-     # Save branch name
-     git config --local pr.temp.branch-name "$temp_branch"
-   else
-     # Push current branch
-     branch_to_push="$current_branch"
-
-     # Check if has upstream
-     if ! git rev-parse --abbrev-ref "$branch_to_push@{upstream}" >/dev/null 2>&1; then
-       git push origin "$branch_to_push" --set-upstream
-     else
-       git push origin "$branch_to_push"
-     fi
-
-     git config --local pr.temp.branch-name "$branch_to_push"
-   fi
-   ```
-
-## Paso 5: Crear PR con gh CLI
-
-Ejecutar en bash:
-
-```bash
-# 1. Retrieve metadata from git config y archivo temporal
-target_branch=$(git config --local pr.temp.target-branch)
-commit_count=$(git config --local pr.temp.commit-count)
-git_log=$(cat .git/pr-temp-commits.txt)
-first_commit=$(git config --local pr.temp.first-commit)
-files_changed=$(git config --local pr.temp.files-changed)
-additions=$(git config --local pr.temp.additions)
-deletions=$(git config --local pr.temp.deletions)
-commit_format=$(git config --local pr.temp.commit-format)
-primary_type=$(git config --local pr.temp.primary-type)
-breaking=$(git config --local pr.temp.breaking-changes 2>/dev/null || echo "")
-
-# 2. Generate PR title based on format
-# Priority: custom_title > first_commit
-custom_title=$(git config --local pr.temp.custom-title 2>/dev/null || echo "")
-
-if [ -n "$custom_title" ]; then
-  # User provided custom title (Paso 2B/2C)
-  pr_title="$custom_title"
-elif [ "$commit_format" = "corporate" ]; then
-  # Preserve corporate format from first commit
-  pr_title="$first_commit"
-else
-  # Use conventional format from first commit
-  pr_title="$first_commit"
-fi
-
-# 3. Generate test items based on primary type
-case "$primary_type" in
-  feat) test_items="- [ ] Nueva funcionalidad probada\n- [ ] Tests agregados\n- [ ] Docs actualizada" ;;
-  fix) test_items="- [ ] Bug reproducido y verificado\n- [ ] Tests de regresión agregados\n- [ ] Staging verificado" ;;
-  refactor) test_items="- [ ] Tests existentes pasan\n- [ ] Funcionalidad equivalente verificada" ;;
-  *) test_items="- [ ] Cambios verificados localmente\n- [ ] Build exitoso" ;;
-esac
-
-# 4. Generate PR body
-temp_file=$(mktemp)
-cat > "$temp_file" <<EOF
+```markdown
 ## Summary
 
-Changes based on **$primary_type** commits affecting **$files_changed** files.
+{primary_type} changes affecting **{files_changed}** files (Δ{delta_loc} LOC).
 
-## Changes Made ($commit_count commits)
+## Changes ({commit_count} commits)
 
-$git_log
+{commit_list_formatted}
 
-## Files & Impact
+## Pre-PR Observations
 
-- **Files modified**: $files_changed
-- **Lines**: +$additions -$deletions
+{formatted_observations_from_step_2_3}
+
+### Quality Gate Summary
+- ✅ OK: {count_ok}
+- ⚠️ Atención: {count_attention}
+- 🔴 Requiere: {count_required}
 
 ## Test Plan
 
-$test_items
+{test_items_based_on_primary_type}
 
-$(if [ -n "$breaking" ]; then echo "## Breaking Changes"; echo "$breaking"; fi)
-EOF
-
-# 5. Create PR
-pr_url=$(gh pr create --title "$pr_title" --body-file "$temp_file" --base "$target_branch" 2>&1 | grep -oE 'https://[^ ]+')
-rm "$temp_file"
-
-# 6. Cleanup
-git config --local --remove-section pr.temp
-rm -f .git/pr-temp-commits.txt
-echo "✅ PR created: $pr_url"
+{breaking_changes_section_if_applicable}
 ```
 
-**Output**: PR URL
+**Test items by type:**
+- `feat`: Nueva funcionalidad probada, Tests agregados, Docs actualizada
+- `fix`: Bug reproducido, Tests de regresión, Staging verificado
+- `refactor`: Tests existentes pasan, Funcionalidad equivalente verificada
+- `default`: Cambios verificados localmente, Build exitoso
 
-## Seguridad
+### Step 3.3: Create PR with gh CLI
 
-**Prevención de Command Injection**:
-
-1. Todas las variables git quoted: `"$var"` nunca `$var`
-2. Git commands con separator: `git cmd "ref" --`
-3. Rechazar branches que empiezan con `--`
-4. Sanitizar outputs: `tr -d '\`$'`
-
-## Rollback
-
-En cualquier error:
+Execute in bash:
 
 ```bash
-git config --local --remove-section pr.temp 2>/dev/null
-rm -f .git/pr-temp-commits.txt 2>/dev/null
+#!/bin/bash
+set -e
+
+# Generate PR title (preserve format)
+pr_title="$FIRST_COMMIT"
+
+# Create temp file with body
+temp_file=$(mktemp)
+cat > "$temp_file" <<'EOF'
+{GENERATED_PR_BODY}
+EOF
+
+# Create PR
+echo "📝 Creating pull request..."
+
+pr_url=$(gh pr create \
+  --title "$pr_title" \
+  --body-file "$temp_file" \
+  --base "$target_branch" \
+  --head "$branch_to_pr" \
+  2>&1 | grep -oE 'https://github.com[^ ]+' || echo "")
+
+rm "$temp_file"
+
+if [ -z "$pr_url" ]; then
+  echo "❌ Error: Failed to create PR"
+  echo "   Run manually: gh pr create --base $target_branch --head $branch_to_pr"
+  exit 1
+fi
+
+echo ""
+echo "✅ PR created: $pr_url"
+echo ""
+echo "📊 Summary:"
+echo "   Branch: $branch_to_pr → $target_branch"
+echo "   Commits: $commit_count"
+echo "   Files: $files_changed (+$additions -$deletions)"
+echo "   Observations: $count_attention attention, $count_ok OK"
+echo ""
+```
+
+---
+
+## Security
+
+**Command Injection Prevention:**
+
+1. All variables quoted: `"$var"` never `$var`
+2. Git commands with separator: `git cmd "ref" --`
+3. Reject branches starting with `--`
+4. Input validation via regex
+5. No user input in eval or subshell without validation
+
+---
+
+## Error Handling
+
+On any error during execution:
+
+```bash
+echo "❌ Error occurred during PR creation"
+echo "   Current branch: $(git branch --show-current)"
+echo "   To retry: /git-pullrequest $target_branch"
 exit 1
 ```
 
-Si se creó feature branch temporal y falló push:
+If temporary branch was created but PR failed:
 
 ```bash
-git checkout "$original_branch"
-git branch -d "$temp_branch"
+# User can manually delete: git branch -d pr/...
+# Or re-run command from original branch
 ```
 
-## Notas
+---
 
-- **Git config state**: Usar `pr.temp.*` para pasar estado entre pasos
-- **Dual review bloqueante**: Security HIGH ≥0.8 confidence bloquea automáticamente
+## Notes
+
+- **No state persistence**: All context in model memory, not git config
+- **Skills integration**: Uses `requesting-code-review` and `receiving-code-review`
+- **Observations paradigm**: Reports facts with context, not accusations
+- **Governance**: User always authorizes, mandatory re-validation after fixes
+- **Format support**: Auto-detects conventional or corporate commit format
