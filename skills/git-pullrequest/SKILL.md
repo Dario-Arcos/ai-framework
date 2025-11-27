@@ -274,7 +274,11 @@ After fix completes:
 4. Present new findings (Phase 2.4)
 5. User decides again (Phase 2.5)
 
-**Loop exit:** Naturally terminates when both reviews return clean (no Critical/Important/High issues).
+**Loop exit strategy:**
+- **Natural termination**: Both reviews return clean (0 Critical/Important/High/Medium issues) → user selects "Create PR"
+- **User control**: User can select "Cancel" at any decision point to exit
+- **Expected iterations**: 1-2 (comprehensive first review should catch all issues)
+- **If >2 iterations**: Indicates incomplete review or fixes introducing new issues - user should investigate
 
 User always controls loop via decision options.
 
