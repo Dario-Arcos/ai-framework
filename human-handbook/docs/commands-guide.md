@@ -450,26 +450,34 @@ Crea PR con quality gate basado en Observaciones Contextualizadas: pre-review in
    - Valida target branch existe
    - Extrae commits, stats, formato (conventional/corporate)
    - Auto-detecta tipo primario (feat/fix/refactor)
+   - **Corporate format:** Detecta `type|TASK-ID|YYYYMMDD|desc` (e.g., `feat|TRV-350|20251023|add auth`)
 
 2. **Review + Decisión** (ciclo con opción de fixes)
-   - Code review con skill `requesting-code-review`
+   - Code review via skill `git-pullrequest` → dispatch code-reviewer subagent
    - Observaciones auto-detectadas:
      - ✅/⚠️ **Tests:** Cambios src sin tests
      - ✅/⚠️ **Complejidad:** ΔLOC vs budget (S/M/L/XL)
      - ✅/🔴 **Secrets:** Patrones de API keys en diff
      - ✅/⚠️ **API Pública:** Modificaciones en endpoints
      - ✅/⚠️ **Breaking Changes:** BREAKING en commits
-   - **Decisión:** Crear PR / Fix automático / Cancelar
-   - Si fix automático: subagent arregla → re-review obligatorio
+   - **Decisión:** Create PR / Auto fix / Cancel
+   - Si auto fix: subagent arregla → re-review obligatorio → usuario decide de nuevo
 
 3. **Crear PR**
    - Push branch (crea temp si es protegida)
+   - Si corporate format: Pregunta título (usar primer commit o custom)
    - gh pr create con observaciones en body
    - Output: PR URL
 
 ::: info Observaciones ≠ Bloqueantes
 Las observaciones son **hechos con contexto**, no acusaciones. Tú decides si crear PR con issues documentados o arreglar primero.
 :::
+
+**Examples disponibles** (en `skills/git-pullrequest/examples/`):
+- `success-no-findings.md` - Review limpio, directo a PR
+- `success-with-findings.md` - Issues encontrados, usuario procede
+- `auto-fix-loop.md` - Loop de auto fix con re-review
+- `manual-cancellation.md` - Usuario cancela para fix manual
 
 **Output:** PR URL + resumen de observaciones
 

@@ -89,7 +89,8 @@ Selecciona tu situación para ver las skills recomendadas
 <div>
 
 ### Workflow Git
-::: details Necesito aislamiento o branch management
+::: details Necesito aislamiento, PR con quality gate, o branch management
+- <Badge type="tip" text="Git" /> `git-pullrequest` - PR con quality gate: code review + observaciones + auto fix loop
 - <Badge type="info" text="Git" /> `using-git-worktrees` - Workspace aislado sin switch de branch
 - <Badge type="info" text="Git" /> `finishing-a-development-branch` - Integración limpia: merge/PR/cleanup
 :::
@@ -535,6 +536,53 @@ Reviewer: "Change singleton pattern"
 ```
 
 **Principio**: Verify tests → Present options → Execute choice → Clean up
+
+---
+
+#### git-pullrequest
+
+::: tip Git | Quality Gate
+**Cuándo**: Al crear PR, necesitas quality gate con code review y observaciones contextualizadas
+**Qué hace**: Valida cambios, dispara code-reviewer, genera observaciones (tests, secrets, API, complexity), presenta findings consolidados, ofrece auto fix loop, crea PR con documentación quality
+:::
+
+**Corporate Format Support:**
+```
+Pattern: type|TASK-ID|YYYYMMDD|description
+Example: feat|TRV-350|20251023|add user authentication
+```
+
+**Workflow**:
+1. **Validación**: Target branch existe, extrae commits, detecta formato
+2. **Quality Gate**: Code review + observaciones auto-detectadas
+3. **User Decision**: Create PR / Auto fix / Cancel
+4. **Auto Fix Loop** (opcional): Subagent arregla → re-review → usuario decide de nuevo
+5. **Create PR**: Push branch, genera body con findings, crea PR
+
+**User Decisions:**
+- **Create PR**: Push y crear PR con findings documentados
+- **Auto fix**: Subagent arregla Critical+Important issues → re-review obligatorio
+- **Cancel**: Salir con summary actionable de issues pendientes
+
+**Examples disponibles** (en `skills/git-pullrequest/examples/`):
+- `success-no-findings.md` - Review limpio, directo a PR
+- `success-with-findings.md` - Issues encontrados, usuario procede anyway
+- `auto-fix-loop.md` - Loop de auto fix con re-review hasta éxito
+- `manual-cancellation.md` - Usuario cancela para fix manual
+
+**Ejemplo**:
+```bash
+"Crear PR a main con quality gate"
+# → Analiza commits, detecta corporate format
+# → Code review + observaciones
+# → Usuario selecciona: Auto fix
+# → Subagent arregla issues
+# → Re-review (limpio)
+# → Usuario selecciona: Create PR
+# → PR creado con URL
+```
+
+**Principio**: Human always decides → Quality gate mandatory → Auto fix optional → Findings documented
 
 ---
 
