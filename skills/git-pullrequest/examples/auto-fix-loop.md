@@ -25,29 +25,34 @@ Commits:
 ```
 ## Quality Gate Results
 
-### Code Review: Not ready - Critical issues
+### Code Review: Ready with minor improvements
 
 **Top Issues:**
-1. [Critical] src/payments/validator.ts:23 - SQL injection vulnerability in card lookup
-2. [Important] src/payments/validator.ts:45 - Card number logged in plaintext
-3. [Minor] src/payments/validator.ts:8 - Unused import
+1. [Important] src/payments/validator.ts:45 - Card number logged in plaintext
+2. [Minor] src/payments/validator.ts:8 - Unused import
 
 **Strengths:**
 - Good test structure
 - Clear separation of validation logic
+
+### Security Review: 1 High, 0 Medium
+
+**Vulnerabilities:**
+1. [High] src/payments/validator.ts:23 - SQL injection vulnerability in card lookup
+   - String concatenation in SQL query allows injection
+   - Fix: Use parameterized queries with placeholders
 
 ### Observations
 
 | Check | Status | Detail |
 |-------|--------|--------|
 | Tests | ✅ | 1 test file added |
-| Secrets | ✅ | No secrets detected |
 | API Changes | ✅ | No API changes |
 | Breaking | ✅ | No BREAKING commits |
 | Complexity | ✅ | S: Δ63 ≤ 80 |
 
 ### Summary
-2 need attention (1 Critical, 1 Important), 4 OK
+2 issues (1 High Security, 1 Important), 0 observations need attention
 ⚠️ Blockers detected - review before proceeding
 ```
 
@@ -68,7 +73,8 @@ Commits:
 ```json
 [
   {
-    "severity": "Critical",
+    "severity": "High (Security)",
+    "source": "Security Review",
     "file": "src/payments/validator.ts",
     "line": 23,
     "problem": "SQL injection vulnerability in card lookup",
@@ -76,6 +82,7 @@ Commits:
   },
   {
     "severity": "Important",
+    "source": "Code Review",
     "file": "src/payments/validator.ts",
     "line": 45,
     "problem": "Card number logged in plaintext",
@@ -112,7 +119,7 @@ fix: address pre-PR review findings
 
 ## Phase 2: Quality Gate Results (Second Pass)
 
-*Loop returns to Phase 2.1 - code-reviewer dispatched again*
+*Loop returns to Phase 2.1 - BOTH code-reviewer AND security-reviewer dispatched in parallel*
 
 ```
 ## Quality Gate Results
@@ -120,23 +127,26 @@ fix: address pre-PR review findings
 ### Code Review: Ready to merge
 
 **Strengths:**
-- Security issues properly addressed
 - Good test structure
 - Clear separation of validation logic
 - Proper data masking implemented
+
+### Security Review: 0 High, 0 Medium
+
+✅ No security vulnerabilities detected (SQL injection fixed)
 
 ### Observations
 
 | Check | Status | Detail |
 |-------|--------|--------|
 | Tests | ✅ | 1 test file, all passing |
-| Secrets | ✅ | No secrets detected |
 | API Changes | ✅ | No API changes |
 | Breaking | ✅ | No BREAKING commits |
 | Complexity | ✅ | S: Δ68 ≤ 80 |
 
 ### Summary
-0 need attention, 5 OK
+0 issues, 0 observations need attention
+✅ All checks passed
 ```
 
 ---
@@ -165,6 +175,7 @@ Quality Gate: 0 addressed, 5 OK
 ## Key Points
 
 1. **User always in control**: Loop only continues if user selects "Auto fix"
-2. **Re-review after fix**: Code-reviewer runs again to verify fixes
-3. **User decides again**: After re-review, user chooses next action
-4. **Exit anytime**: User can select "Cancel" at any decision point
+2. **Parallel reviews**: Code-reviewer AND security-reviewer run in parallel (faster)
+3. **Re-review after fix**: BOTH reviews run again to verify fixes
+4. **Natural loop exit**: When both reviews return clean, user selects "Create PR"
+5. **Exit anytime**: User can select "Cancel" at any decision point

@@ -1,6 +1,6 @@
 ---
 name: git-pullrequest
-description: Use when creating a PR - validates changes, dispatches code-reviewer subagent, generates contextual observations, presents consolidated findings, and creates PR with quality documentation. Supports corporate commit format (type|TASK-ID|YYYYMMDD|desc). Human authorizes every decision point.
+description: Use when creating a PR - validates changes, dispatches code-reviewer + security-reviewer subagents in parallel, generates contextual observations, presents consolidated findings, and creates PR with quality documentation. Supports corporate commit format (type|TASK-ID|YYYYMMDD|desc). Human authorizes every decision point.
 ---
 
 # Git Pull Request Workflow
@@ -75,37 +75,58 @@ Commits:
 
 ---
 
+## Review Architecture: Three Complementary Layers
+
+**1. Observations (Phase 2.2)** - Pattern Matching
+- **What:** Facts via grep/regex (tests count, BREAKING keyword, API files, complexity)
+- **Speed:** Instant
+- **Coverage:** Known patterns only
+- **Example:** "0 test files added when source changed"
+
+**2. Code Review (Phase 2.1a)** - Logic & Architecture
+- **What:** Bugs, architectural issues, missing features, test quality
+- **Speed:** 30-60s (parallel with security)
+- **Coverage:** Semantic code analysis
+- **Example:** "Missing error handling in async function"
+
+**3. Security Review (Phase 2.1b)** - Vulnerabilities
+- **What:** SQL injection, hardcoded secrets, XSS, command injection, auth bypass
+- **Speed:** 30-60s (parallel with code review)
+- **Coverage:** Security-focused patterns + exploitability analysis
+- **Example:** "SQL injection via string concatenation"
+
+**Why three layers:** Observations catch obvious patterns fast. Code review catches logic issues. Security review catches vulnerabilities. Complementary, not redundant.
+
+---
+
 ## Phase 2: Quality Gate
 
-### 2.1 Dispatch Code Reviewer
+### 2.1 Dispatch Reviews (Parallel)
 
-Use Task tool with `ai-framework:code-reviewer` subagent.
+**Execute TWO reviews in parallel using single message with 2 Task tool calls:**
 
-**Prompt (fill placeholders):**
+**Review A: Code Quality & Architecture**
 
-```
-You are reviewing code changes for production readiness.
+Use `requesting-code-review` skill OR dispatch `ai-framework:code-reviewer` directly with:
 
-## What Was Implemented
-{commit_count} commits for PR to {target_branch}: {first_commit}
+- WHAT_WAS_IMPLEMENTED: `{commit_count} commits for PR to {target_branch}: {first_commit}`
+- PLAN_OR_REQUIREMENTS: `Pre-PR quality gate validation before merge to {target_branch}`
+- BASE_SHA: `origin/{target_branch}`
+- HEAD_SHA: `HEAD`
 
-## Requirements/Plan
-Pre-PR quality gate validation before merge to {target_branch}.
+**Review B: Security Analysis**
 
-## Git Range to Review
-**Base:** origin/{target_branch}
-**Head:** HEAD
+Dispatch `ai-framework:security-reviewer` subagent (runs current branch analysis automatically).
 
-Review the diff:
-git diff origin/{target_branch}..HEAD
+**Store outputs:**
 
-## Output Format
-Provide: Strengths, Issues (Critical/Important/Minor with file:line), Assessment (Ready to merge: Yes/No/With fixes).
-```
-
-**Store output as:**
+Code review:
 - `cr_strengths`, `cr_issues`, `cr_assessment`
 - `cr_has_critical`, `cr_has_important` (booleans)
+
+Security review:
+- `sr_issues` (High/Medium vulnerabilities)
+- `sr_has_high`, `sr_has_medium` (booleans)
 
 ### 2.2 Auto-Detect Observations
 
@@ -114,28 +135,73 @@ Run checks on `origin/{target_branch}..HEAD`:
 | Check | Condition | Status |
 |-------|-----------|--------|
 | Tests | src files changed without test files | ⚠️ if true |
-| Secrets | Diff contains API_KEY, SECRET, TOKEN, PASSWORD, sk-, ghp_ | 🔴 if found |
 | API | Files in api/, routes/, endpoints/ | ⚠️ if any |
 | Breaking | BREAKING in commit messages | ⚠️ if found |
 | Complexity | S≤80, M≤250, L≤600, XL>600 | ⚠️ if over budget |
 
+**Note:** Secrets detection handled by security-reviewer (Phase 2.1b).
+
 ### 2.3 Consolidate Findings
 
-Build structure (see `examples/success-with-findings.md` for concrete example):
+Build structure from THREE sources:
 
 ```
 findings = {
-  code_review: { assessment, critical_count, important_count, minor_count, strengths, issues },
-  observations: { tests, secrets, api, breaking, complexity },
-  summary: { has_blockers, attention_count, ok_count }
+  code_review: {
+    assessment: cr_assessment,
+    critical_count: len(cr_issues.critical),
+    important_count: len(cr_issues.important),
+    minor_count: len(cr_issues.minor),
+    strengths: cr_strengths,
+    issues: cr_issues
+  },
+  security_review: {
+    high_count: len(sr_issues.high),
+    medium_count: len(sr_issues.medium),
+    issues: sr_issues
+  },
+  observations: {
+    tests: { status, detail },
+    api: { status, detail },
+    breaking: { status, detail },
+    complexity: { status, detail }
+  },
+  summary: {
+    has_blockers: cr_has_critical OR sr_has_high,
+    total_issues: cr_critical_count + cr_important_count + cr_minor_count + sr_high_count + sr_medium_count,
+    attention_count: count of non-✅ observations
+  }
 }
 ```
 
-`has_blockers` = `cr_has_critical` OR `secrets.status == 🔴`
-
 ### 2.4 Present Findings
 
-Show table with all observations and code review summary. Include top 3 issues if any exist.
+**Structure:**
+
+```
+## Quality Gate Results
+
+### Code Review: {cr_assessment}
+{Top 3 code review issues if any}
+
+### Security Review: {sr_high_count} High, {sr_medium_count} Medium
+{Top 3 security issues if any}
+
+**Strengths:**
+{cr_strengths as bullet list}
+
+### Observations
+| Check | Status | Detail |
+|-------|--------|--------|
+| Tests | {status} | {detail} |
+| API Changes | {status} | {detail} |
+| Breaking | {status} | {detail} |
+| Complexity | {status} | {detail} |
+
+### Summary
+{total_issues} issues found, {attention_count} observations need attention
+{If has_blockers: "⚠️ Blockers detected - review before proceeding"}
+```
 
 ### 2.5 User Decision
 
@@ -165,56 +231,52 @@ Only if user chose "Auto fix". See `examples/auto-fix-loop.md` for complete flow
 
 ### 2b.1 Prepare Fix List
 
-Extract Critical and Important issues from `findings.code_review.issues`:
+Extract issues from BOTH reviews:
 
 ```
-fix_list = [{ severity, file, line, problem, suggestion }, ...]
+fix_list = []
+
+# Code review: Critical + Important
+for issue in cr_issues.critical:
+  fix_list.append({ severity: "Critical", source: "Code Review", ...issue })
+for issue in cr_issues.important:
+  fix_list.append({ severity: "Important", source: "Code Review", ...issue })
+
+# Security review: High + Medium
+for issue in sr_issues.high:
+  fix_list.append({ severity: "High (Security)", source: "Security Review", ...issue })
+for issue in sr_issues.medium:
+  fix_list.append({ severity: "Medium (Security)", source: "Security Review", ...issue })
 ```
 
-### 2b.2 Dispatch Fix Subagent
+### 2b.2 Apply Fixes Using receiving-code-review
 
-Use Task tool with `general-purpose` subagent:
+Use the `receiving-code-review` skill to process the fix_list.
 
-```
-Fix the following pre-PR review issues:
+Provide the consolidated fix list and let the skill enforce:
+1. READ files to understand context
+2. VERIFY suggestions technically correct
+3. IMPLEMENT one fix at a time
+4. TEST each fix
+5. PUSH BACK if suggestion breaks functionality
 
-## Issues to Fix (in order)
-
-{For each in fix_list:}
-### [{severity}] {file}:{line}
-- Problem: {problem}
-- Suggestion: {suggestion}
-
-## Instructions
-
-1. Read each file to understand full context before fixing
-2. Verify suggestion is technically correct for this codebase
-3. Fix one issue at a time, verify each fix works
-4. Run tests if available
-5. Push back on any suggestion that would break functionality (report why)
-
-## After Fixing
-
-Commit all fixes together:
+After all fixes, commit:
+```bash
 git add -A && git commit -m "fix: address pre-PR review findings"
-
-## Report Back
-
-- Files modified
-- Fixes applied (with brief description)
-- Any pushbacks (with technical reasoning)
-- Test results (if ran)
 ```
 
 ### 2b.3 Return to Quality Gate
 
 After fix completes:
-1. Return to Phase 2.1 (re-dispatch code-reviewer)
+1. Return to Phase 2.1 (re-dispatch BOTH code-reviewer AND security-reviewer in parallel)
 2. Re-run Phase 2.2 (observations)
-3. Present new findings (Phase 2.4)
-4. User decides again (Phase 2.5)
+3. Consolidate findings (Phase 2.3)
+4. Present new findings (Phase 2.4)
+5. User decides again (Phase 2.5)
 
-User always controls loop exit.
+**Loop exit:** Naturally terminates when both reviews return clean (no Critical/Important/High issues).
+
+User always controls loop via decision options.
 
 ---
 
@@ -271,16 +333,20 @@ Create temp file with this structure:
 **Strengths:**
 {cr_strengths as bullet list}
 
-{If cr_issues exist:}
+{If cr_issues or sr_issues exist:}
 **Issues Addressed:**
-{List issues that were fixed or acknowledged}
+{List code review issues that were fixed or acknowledged}
+{List security issues that were fixed or acknowledged}
+
+### Security Review: {sr_high_count} High, {sr_medium_count} Medium
+{If sr_issues: List resolved/acknowledged security findings}
+{Else: "✅ No security vulnerabilities detected"}
 
 ### Observations
 
 | Check | Status |
 |-------|--------|
 | Tests | {status} |
-| Secrets | {status} |
 | API Changes | {status} |
 | Breaking Changes | {status} |
 | Complexity | {status} ({size}: Δ{delta_loc}) |
@@ -331,6 +397,7 @@ Quality Gate: {attention_count} addressed, {ok_count} OK
 ## Key Principles
 
 1. **Human decides**: Never auto-proceed past quality gate
-2. **Loop with exit**: Auto fix always returns to user decision
-3. **Corporate support**: Detect and validate corporate commit format
-4. **Consistent output**: PR body structure is deterministic
+2. **Three-layer validation**: Code review + Security review + Observations (parallel execution)
+3. **Loop with exit**: Auto fix returns to user decision, exits naturally when reviews clean
+4. **Corporate support**: Detect and validate corporate commit format
+5. **Skills integration**: Uses requesting-code-review and receiving-code-review for consistency
