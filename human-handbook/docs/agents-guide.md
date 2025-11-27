@@ -356,7 +356,7 @@ Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 
 ---
 
-## Tips de Uso
+## Consejos de Uso
 
 ::: tip Selección Rápida
 **Simple:** Agentes generales (backend-architect, frontend-developer)

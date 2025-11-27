@@ -27,7 +27,7 @@ Capacidades especializadas que extienden Claude con conocimiento experto y workf
 
 ## Inicio Rápido
 
-::: tip Encuentra tu skill
+::: tip Encuentra tu Skill
 Selecciona tu situación para ver las skills recomendadas
 :::
 
@@ -910,7 +910,7 @@ Siempre verifica skills disponibles antes de implementar. Si skill existe para t
 
 ---
 
-## Troubleshooting
+## Solución de Problemas
 
 ::: details Skill no se activa automáticamente
 

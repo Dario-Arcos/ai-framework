@@ -6,7 +6,7 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 
 ---
 
-## Quick Reference
+## Referencia Rápida
 
 | Acción                    | Comando/Atajo         |
 | ------------------------- | --------------------- |
@@ -50,7 +50,7 @@ Comienza con nivel bajo, escala si el problema es más complejo. Claude se ajust
 compara @src/old-auth.js con @src/new-auth.js
 ```
 
-**Benefits:** Inmediato (no wait) · Preciso (exact file/dir) · Eficiente con scope de git
+**Beneficios:** Inmediato (no espera) · Preciso (archivo/dir exacto) · Eficiente con scope de git
 
 ---
 
@@ -414,7 +414,7 @@ git commit -m "checkpoint: antes de refactor X"
 # Si falla: git reset --hard HEAD
 ```
 
-**Benefit:** Git checkpoint + Claude `/rewind` = doble red de seguridad
+**Beneficio:** Git checkpoint + Claude `/rewind` = doble red de seguridad
 
 ---
 

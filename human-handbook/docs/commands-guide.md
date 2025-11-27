@@ -54,7 +54,7 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 - **Scope**: ¿Qué NO estamos building en V1?
   :::
 
-**Next Steps:** `➜ /prp-sync {feature_name}`
+**Siguientes Pasos:** `➜ /prp-sync {feature_name}`
 
 ---
 
@@ -75,7 +75,7 @@ Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
 
 **Output:** GitHub Issue (parent) + actualiza frontmatter + mapping file
 
-**Next Steps:** `➜ /speckit.specify --from-issue {issue_number}`
+**Siguientes Pasos:** `➜ /speckit.specify --from-issue {issue_number}`
 
 ---
 
@@ -112,7 +112,7 @@ El comando hace checkout de la branch. Tu workspace cambia automáticamente.
 
 **Output:** Branch nueva + spec.md + checklist de validación
 
-**Next Steps:** `➜ /speckit.clarify` (recomendado)
+**Siguientes Pasos:** `➜ /speckit.clarify` (recomendado)
 
 ---
 
@@ -144,7 +144,7 @@ Detecta ambigüedades en spec y pregunta interactivamente hasta 5 clarificacione
 
 **Output:** spec.md actualizada + sección Clarifications
 
-**Next Steps:** `➜ /speckit.plan`
+**Siguientes Pasos:** `➜ /speckit.plan`
 
 ---
 
@@ -174,7 +174,7 @@ Todas las clarificaciones resueltas. Falla si encuentra `[NEEDS CLARIFICATION]`.
 
 **Output:** 5 artifacts + agent context actualizado
 
-**Next Steps:** `➜ /speckit.tasks`
+**Siguientes Pasos:** `➜ /speckit.tasks`
 
 ---
 
@@ -209,7 +209,7 @@ Solo se generan tasks de tests si están explícitamente solicitadas en spec o s
 
 **Output:** `tasks.md` + report con oportunidades de paralelización
 
-**Next Steps:** `➜ /speckit.analyze` (opcional)
+**Siguientes Pasos:** `➜ /speckit.analyze` (opcional)
 
 ---
 
@@ -240,7 +240,7 @@ Do NOT modify any files. Output structured analysis report.
 
 **Output:** Markdown report con findings table + coverage summary + metrics
 
-**Next Steps:** `➜ /speckit.checklist` (opcional) o `➜ /speckit.implement`
+**Siguientes Pasos:** `➜ /speckit.checklist` (opcional) o `➜ /speckit.implement`
 
 ---
 
@@ -271,7 +271,7 @@ Checklists incompletos bloquean ejecución (puedes override manualmente).
 
 **Output:** Implementación completa + tasks.md actualizada con `[X]`
 
-**Next Steps:** `➜ /speckit.sync` (opcional)
+**Siguientes Pasos:** `➜ /speckit.sync` (opcional)
 
 ---
 
@@ -330,7 +330,7 @@ specify → clarify → plan → tasks → analyze
 Después de generar checklist, DEBES marcar checkboxes manualmente revisando tu spec/plan. implement bloqueará si checklists están incomplete.
 :::
 
-**Next Steps:** Marcar checkboxes → `➜ /speckit.implement`
+**Siguientes Pasos:** Marcar checkboxes → `➜ /speckit.implement`
 
 ---
 
@@ -363,7 +363,7 @@ Ejecutar DESPUÉS de implementación completa y validada. Esto ensures:
 
 **Output:** GitHub Issue (child) + frontmatter updated + mapping file
 
-**Next Steps:** `➜ /git-commit` → `/git-pullrequest`
+**Siguientes Pasos:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
@@ -427,7 +427,7 @@ Tipo|TaskID|YYYYMMDD|Descripción
 
 **Output:** Commits agrupados por tipo con mensajes semánticos
 
-**Next Steps:** `➜ /git-pullrequest`
+**Siguientes Pasos:** `➜ /git-pullrequest`
 
 ---
 
@@ -481,7 +481,7 @@ Las observaciones son **hechos con contexto**, no acusaciones. Tú decides si cr
 
 **Output:** PR URL + resumen de observaciones
 
-**Next Steps:** Después de merge → `/git-cleanup`
+**Siguientes Pasos:** Después de merge → `/git-cleanup`
 
 ---
 
@@ -814,7 +814,7 @@ Actualiza CHANGELOG.md con PRs mergeados desde último release (Keep a Changelog
 
 **Output:** CHANGELOG.md actualizado + commit automático
 
-**Next Steps:** `➜ /release`
+**Siguientes Pasos:** `➜ /release`
 
 ---
 
@@ -955,7 +955,7 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 ## Workflows Completos
 
-### Workflow Comparison Table
+### Tabla Comparativa de Workflows
 
 | Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -970,7 +970,7 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 ---
 
-## Tips de Uso
+## Consejos de Uso
 
 ::: tip Paso Valioso
 `/speckit.clarify` - detecta problemas antes de implementar. ROI 100:1 (2 min save 4 hours)

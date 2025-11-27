@@ -1,4 +1,4 @@
-# Quickstart: 30 Segundos a Productivo
+# Inicio Rápido: 30 Segundos a Productivo
 
 ::: tip Objetivo
 Instalar el framework y ejecutar tu primera feature en 5 minutos.
@@ -37,11 +37,11 @@ cd /path/to/your/project
 claude
 ```
 
-::: tip Auto-Install
+::: tip Instalación Automática
 El framework se auto-instala en la primera sesión.
 :::
 
-**Done.** 30 segundos.
+**Listo.** 30 segundos.
 
 ---
 
@@ -79,7 +79,7 @@ Reinicia Claude Code después de cualquier cambio en plugins (enable/disable/upd
 
 ## Post-Instalación (2 minutos)
 
-### Initialize Project Context
+### Inicializar Contexto del Proyecto
 
 ```bash
 /project-init
@@ -97,7 +97,7 @@ Recommended Agents: [Agents para tu proyecto]
 Generated: .specify/memory/project-context.md
 ```
 
-### Install Dependencies (Opcional)
+### Instalar Dependencias (Opcional)
 
 ```bash
 /setup-dependencies
@@ -105,7 +105,7 @@ Generated: .specify/memory/project-context.md
 
 Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
 
-### Desktop Notifications (Recomendado)
+### Notificaciones de Escritorio (Recomendado)
 
 El framework envía notificaciones cuando Claude necesita tu atención:
 
@@ -127,9 +127,9 @@ Notifications requieren macOS. En Linux/Windows, Claude Code UI muestra estado.
 
 ---
 
-## Primera Feature (5 minutos)
+## Primera Funcionalidad (5 minutos)
 
-### Quick Path
+### Ruta Rápida
 
 ```bash
 /speckit.specify "add user email validation"
@@ -143,7 +143,7 @@ Notifications requieren macOS. En Linux/Windows, Claude Code UI muestra estado.
 El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que toma.
 :::
 
-### Create PR
+### Crear PR
 
 ```bash
 /git-commit "feat: add email validation"
@@ -154,17 +154,17 @@ Security review automático ejecuta antes de crear PR.
 
 ---
 
-## Troubleshooting
+## Solución de Problemas
 
-| Issue                    | Solution                                    |
+| Problema                 | Solución                                    |
 | ------------------------ | ------------------------------------------- |
-| **Comandos no visibles** | Restart Claude Code                         |
-| **Hooks no ejecutan**    | Verify Python 3.8+: `python3 --version`     |
-| **Plugin not appearing** | `/plugin list` — debe aparecer ai-framework |
+| **Comandos no visibles** | Reinicia Claude Code                        |
+| **Hooks no ejecutan**    | Verifica Python 3.8+: `python3 --version`   |
+| **Plugin no aparece**    | `/plugin list` — debe aparecer ai-framework |
 
 ---
 
-## Next Steps
+## Siguientes Pasos
 
 **Documentación completa:**
 
@@ -173,15 +173,15 @@ Security review automático ejecuta antes de crear PR.
 - [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
 - [MCP Servers](./mcp-servers.md) — Extend capabilities
 
-**Requirements:**
+**Requisitos:**
 
-- ✅ [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/installation) (required)
-- ✅ [Git](https://git-scm.com/downloads) (required)
-- ✅ [Python 3.8+](https://www.python.org/downloads/) (required)
-- ⚠️ [GitHub CLI](https://cli.github.com/) (recommended para git/github commands)
+- ✅ [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/installation) (requerido)
+- ✅ [Git](https://git-scm.com/downloads) (requerido)
+- ✅ [Python 3.8+](https://www.python.org/downloads/) (requerido)
+- ⚠️ [GitHub CLI](https://cli.github.com/) (recomendado para comandos git/github)
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-23 | **Version**: 1.4.1
+**Fecha**: 2025-10-23 | **Versión**: 1.4.1
 :::

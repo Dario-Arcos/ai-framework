@@ -258,7 +258,7 @@ claude
 
 ---
 
-## Best Practices
+## Mejores Prácticas
 
 ::: tip Minimalismo
 Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agrega más solo cuando tengas necesidad clara.
