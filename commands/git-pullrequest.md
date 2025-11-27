@@ -123,24 +123,7 @@ breaking=$(git log --pretty=format:'%B' "origin/$target_branch..HEAD" -- | grep 
 - `files_changed`, `additions`, `deletions`, `delta_loc`
 - `breaking` (if any)
 
-### Step 1.2: Commit Selection (if >1 commit)
-
-If `commit_count > 1`, use AskUserQuestion:
-
-```
-Question: "Found {commit_count} commits. Which commits to include in PR?"
-
-Options:
-A) "All commits"
-   Description: "Include all {commit_count} commits in the PR"
-
-B) "Select specific commits"
-   Description: "Manually specify commit SHAs or range"
-```
-
-If user selects B, ask for commit SHAs input and validate them.
-
-**Default:** If only 1 commit, use it automatically.
+**All commits from current branch to target will be included in PR.**
 
 ---
 
@@ -174,7 +157,7 @@ prompt: [Use template from skills/requesting-code-review/code-reviewer.md with f
 
 ### Step 2.2: Generate Contextual Observations
 
-#### A) Transform code-reviewer output
+**A) Transform code-reviewer output**
 
 Map severity:
 - Critical (Must Fix) → 🔴 Requiere
@@ -182,100 +165,125 @@ Map severity:
 - Minor (Nice to Have) → 💡 Sugerencia
 - No issues → ✅ OK
 
-#### B) Auto-detect additional observations
+**B) Auto-detect additional observations**
 
-**1. Test Coverage:**
+Execute bash to detect:
 
 ```bash
-# Detect test changes
-test_files=$(git diff --name-only "origin/$target_branch..HEAD" | grep -E '(test|spec)\.' | wc -l)
-src_files=$(git diff --name-only "origin/$target_branch..HEAD" | grep -vE '(test|spec)\.' | grep -E '\.(ts|js|py|go|rs)$' | wc -l)
+#!/bin/bash
+
+# 1. Test Coverage
+test_files=$(git diff --name-only "origin/$target_branch..HEAD" -- | grep -E '(test|spec)\.' | wc -l | tr -d ' ')
+src_files=$(git diff --name-only "origin/$target_branch..HEAD" -- | grep -vE '(test|spec)\.' | grep -E '\.(ts|js|py|go|rs)$' | wc -l | tr -d ' ')
 
 if [ "$src_files" -gt 0 ] && [ "$test_files" -eq 0 ]; then
-  # ⚠️ Atención - with context
+  obs_tests_status="⚠️"
+  obs_tests_detail="$src_files archivos src modificados, 0 tests"
 else
-  # ✅ OK - minimal
+  obs_tests_status="✅"
+  obs_tests_detail="$test_files tests modificados"
 fi
-```
 
-**2. Complexity Budget:**
-
-```bash
-# Determine budget based on delta_loc
+# 2. Complexity Budget
 if [ "$delta_loc" -le 80 ]; then
-  size="S"
-  budget=80
+  size="S"; budget=80
 elif [ "$delta_loc" -le 250 ]; then
-  size="M"
-  budget=250
+  size="M"; budget=250
 elif [ "$delta_loc" -le 600 ]; then
-  size="L"
-  budget=600
+  size="L"; budget=600
 else
-  size="XL"
-  budget=1500
+  size="XL"; budget=1500
 fi
 
 if [ "$delta_loc" -gt "$budget" ]; then
-  # ⚠️ Atención - with context
+  obs_complexity_status="⚠️"
 else
-  # ✅ OK - minimal
+  obs_complexity_status="✅"
 fi
-```
 
-**3. Secrets Detection:**
-
-```bash
-# Check for secret patterns
-if git diff "origin/$target_branch..HEAD" | grep -iE '(API_KEY|SECRET|PASSWORD|TOKEN|PRIVATE_KEY|sk-|pk_|ghp_)' >/dev/null; then
-  # 🔴 Requiere - with context
+# 3. Secrets Detection
+if git diff "origin/$target_branch..HEAD" -- | grep -iE '(API_KEY|SECRET|PASSWORD|TOKEN|PRIVATE_KEY|sk-|pk_|ghp_)' >/dev/null 2>&1; then
+  obs_secrets_status="🔴"
 else
-  # ✅ OK - minimal
+  obs_secrets_status="✅"
 fi
-```
 
-**4. Public API Changes:**
-
-```bash
-# Check for API changes
-if git diff --name-only "origin/$target_branch..HEAD" | grep -E '(api/|routes/|endpoints/)' >/dev/null; then
-  # ⚠️ Atención - with context
+# 4. Public API Changes
+if git diff --name-only "origin/$target_branch..HEAD" -- | grep -E '(api/|routes/|endpoints/)' >/dev/null 2>&1; then
+  obs_api_status="⚠️"
+  obs_api_files=$(git diff --name-only "origin/$target_branch..HEAD" -- | grep -E '(api/|routes/|endpoints/)' | wc -l | tr -d ' ')
+else
+  obs_api_status="✅"
+  obs_api_files=0
 fi
-```
 
-**5. Breaking Changes:**
-
-```bash
+# 5. Breaking Changes
 if [ -n "$breaking" ]; then
-  # ⚠️ Atención - with context
+  obs_breaking_status="⚠️"
+else
+  obs_breaking_status="✅"
 fi
+
+echo "Observations detected:"
+echo "  Tests: $obs_tests_status"
+echo "  Complexity: $obs_complexity_status (Δ$delta_loc, budget $size: ≤$budget)"
+echo "  Secrets: $obs_secrets_status"
+echo "  API: $obs_api_status"
+echo "  Breaking: $obs_breaking_status"
 ```
+
+Store these variables for Step 2.3.
 
 ### Step 2.3: Present Observations
 
-Format output:
+Construct and present observations to user:
 
 ```markdown
 ## Observaciones Pre-PR
 
-### Complejidad [{status}]
-ΔLOC = +{delta_loc} (budget {size}: ≤{budget})
+### Complejidad [$obs_complexity_status]
+ΔLOC = +$delta_loc (budget $size: ≤$budget)
 
-### Tests [{status}]
-{minimal_if_ok_or_detailed_if_attention}
+### Tests [$obs_tests_status]
+$obs_tests_detail
+{IF ⚠️: Add "Por qué importa: Cambios sin tests aumentan riesgo de regresión"}
 
-### Secrets [{status}]
-{minimal_if_ok_or_detailed_if_attention}
+### Secrets [$obs_secrets_status]
+{IF ✅: "No se detectaron patrones de secrets"}
+{IF 🔴: Full context with Detectado/Por qué importa/Verificar}
 
-### Code Review [{status}]
-**Detectado:** {count} issues del code-reviewer:
-{list_of_issues}
+### API Pública [$obs_api_status]
+{IF ✅: "Sin cambios en API"}
+{IF ⚠️: "$obs_api_files archivos API modificados" + context}
 
-**Assessment:** {ready_to_merge_status}
+### Breaking Changes [$obs_breaking_status]
+{IF ✅: "Sin breaking changes detectados"}
+{IF ⚠️: Full context}
+
+### Code Review [status from code-reviewer]
+{Summary of code-reviewer findings: Critical/Important/Minor count}
+**Assessment:** {code-reviewer assessment}
 
 ---
 
 **Resumen:** {count_attention} observaciones requieren atención, {count_ok} OK.
+```
+
+**Calculate counters:**
+```bash
+count_ok=0
+count_attention=0
+
+for status in "$obs_complexity_status" "$obs_tests_status" "$obs_secrets_status" "$obs_api_status" "$obs_breaking_status"; do
+  if [ "$status" = "✅" ]; then
+    count_ok=$((count_ok + 1))
+  else
+    count_attention=$((count_attention + 1))
+  fi
+done
+
+# Add code-reviewer findings to counts
+# (Parse code-reviewer output and add to count_attention if Critical/Important exist)
 ```
 
 **Format rules:**
@@ -360,14 +368,14 @@ Fix the following issues found in pre-PR review:
 
 ### Step 3.1: Push Branch
 
-Execute in bash:
+Execute in bash (uses variables from Phase 1):
 
 ```bash
 #!/bin/bash
 set -e
 
-current_branch="$CURRENT_BRANCH"
-target_branch="$TARGET_BRANCH"
+# Variables from Phase 1 context (already in scope)
+# current_branch, target_branch, first_commit
 
 echo "🚀 Preparing to push..."
 
@@ -378,7 +386,7 @@ if echo "$current_branch" | grep -Eq "^($protected_branches)$"; then
 
   # Generate temporary branch name
   timestamp=$(date +%Y%m%d%H%M%S)
-  slug=$(echo "$FIRST_COMMIT" | tr '[:upper:]' '[:lower:]' | \
+  slug=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | \
          sed 's/[^a-z0-9 ]/-/g' | awk '{for(i=1;i<=4 && i<=NF;i++) printf "%s-",$i}' | \
          sed 's/-$//' | cut -c1-30 | sed 's/-$//')
   slug="${slug:-feature}"
@@ -444,22 +452,25 @@ Construct PR body with observations:
 {breaking_changes_section_if_applicable}
 ```
 
-**Test items by type:**
-- `feat`: Nueva funcionalidad probada, Tests agregados, Docs actualizada
-- `fix`: Bug reproducido, Tests de regresión, Staging verificado
-- `refactor`: Tests existentes pasan, Funcionalidad equivalente verificada
-- `default`: Cambios verificados localmente, Build exitoso
+**Test items generated based on `primary_type`:**
+- `feat` → Nueva funcionalidad probada, Tests agregados, Docs actualizada
+- `fix` → Bug reproducido, Tests de regresión, Staging verificado
+- `refactor` → Tests existentes pasan, Funcionalidad equivalente
+- `default` → Cambios verificados, Build exitoso
 
 ### Step 3.3: Create PR with gh CLI
 
-Execute in bash:
+Execute in bash (uses variables from previous steps):
 
 ```bash
 #!/bin/bash
 set -e
 
+# Variables in scope: first_commit, target_branch, branch_to_pr,
+# commit_count, files_changed, additions, deletions, count_attention, count_ok
+
 # Generate PR title (preserve format)
-pr_title="$FIRST_COMMIT"
+pr_title="$first_commit"
 
 # Create temp file with body
 temp_file=$(mktemp)
