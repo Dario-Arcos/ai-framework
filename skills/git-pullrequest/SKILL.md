@@ -238,7 +238,11 @@ fix_list = []
 
 # Code review: Critical + Important
 for issue in cr_issues.critical:
-  fix_list.append({ severity: "Critical", source: "Code Review", ...issue })
+  fix_list.append({
+    severity: "Critical",
+    source: "Code Review",  # Traceability: which review found this
+    ...issue  # Includes: file, line, problem, suggestion
+  })
 for issue in cr_issues.important:
   fix_list.append({ severity: "Important", source: "Code Review", ...issue })
 
@@ -251,14 +255,25 @@ for issue in sr_issues.medium:
 
 ### 2b.2 Apply Fixes Using receiving-code-review
 
-Use the `receiving-code-review` skill to process the fix_list.
+Invoke the `receiving-code-review` skill with the consolidated fix_list as feedback.
 
-Provide the consolidated fix list and let the skill enforce:
+The skill automatically enforces:
 1. READ files to understand context
 2. VERIFY suggestions technically correct
 3. IMPLEMENT one fix at a time
 4. TEST each fix
 5. PUSH BACK if suggestion breaks functionality
+
+Example invocation:
+```
+Skill: receiving-code-review
+
+Feedback to process: {fix_list with 4 issues}
+- [Critical] file.js:23 - SQL injection
+- [Important] file.js:45 - Missing error handling
+- [High (Security)] config.js:17 - Hardcoded API_KEY
+...
+```
 
 After all fixes, commit:
 ```bash
