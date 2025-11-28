@@ -8,7 +8,24 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Añadido
+
+- **Skill git-pullrequest**: Arquitectura de 3 capas con revisiones paralelas (code-reviewer + security-reviewer + observaciones contextuales), soporte formato corporativo (`tipo|TASK-ID|YYYYMMDD|desc`), loop auto-fix con re-validación obligatoria, 4 ejemplos de flujo completo (PR #32)
+- **Template settings**: Modo por defecto cambiado a `plan` (read-only para análisis y planificación) en lugar de `default` (PR #31)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: **Workflow git-pullrequest v2.0** - Paradigma Observaciones Contextuales reemplaza security review con falsos positivos. Eliminado agent ci-cd-pre-reviewer (92 líneas), reducido de 550 a 336 líneas en skill, 3 fases en lugar de 7+ pasos, PR body format actualizado con observaciones. Migrado de comando monolítico a arquitectura skill + wrapper (6 líneas comando) (commits: 348ac12, 29e6006, 9ab0792, b7e3a03)
+- **Skill git-pullrequest**: Integración de skills requesting-code-review y receiving-code-review para consistencia con framework, consolidación de findings de 3 fuentes (code + security + observations), detección de secrets movida de observations a security-reviewer para análisis con contexto de explotabilidad (commits: b7e3a03, bbac55a)
+- **Handbook**: Corrección masiva de inconsistencias idiomáticas español-inglés en 10 archivos (52 correcciones) preservando anglicismos técnicos apropiados - quickstart.md, ai-first-workflow.md, commands-guide.md, agents-guide.md, skills-guide.md, why-ai-framework.md, claude-code-pro-tips.md, mcp-servers.md, memory-systems.md (PR #32: commit f05b037)
+- **Template**: Eliminada sección redundante AI-First Execution del settings template (commit 8a6dd40)
+
+### Arreglado
+
+- **CRITICAL: git-pullrequest Phase 3.2** - Prevención de bypass de protected branches. Convertido de HIGH freedom (prosa ambigua) a LOW freedom (comandos bash explícitos), expandida lista de protected branches de 5 a 12 (main, master, develop, development, staging, stage, production, prod, release, releases, qa, uat, hotfix), añadido fallback para slug vacío, warning explícito al usuario, creación obligatoria de temp branch `pr/{slug}-{timestamp}` (commit 029005c)
+- **git-pullrequest skill**: Estrategia de salida de loop auto-fix documentada - terminación natural cuando ambos reviews limpios, iteraciones esperadas 1-2, investigación requerida si >2 iteraciones (commit f372a69)
+- **git-pullrequest skill**: Documentación de invocación del skill receiving-code-review con ejemplo concreto, propósito del campo `source` en fix_list para trazabilidad (commit 87fca48)
+- **git-pullrequest examples**: Consistencia con arquitectura 3 capas - 7 secciones actualizadas en 3 archivos (success-no-findings, success-with-findings, manual-cancellation) removiendo Secrets de Observations, añadiendo Security Review sections, actualizando JSON findings structure (commit bbac55a)
 
 ---
 
