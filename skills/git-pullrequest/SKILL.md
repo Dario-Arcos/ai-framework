@@ -325,11 +325,41 @@ Options:
 
 ### 3.2 Push Branch
 
-1. If on protected branch (main/master/develop/staging/production):
-   - Create temp branch: `pr/{slug}-{timestamp}`
-   - Checkout and push with `--set-upstream`
-2. Else:
-   - Push current branch (set upstream if needed)
+**CRITICAL: Check if on protected branch first**
+
+```bash
+current_branch=$(git branch --show-current)
+
+# Comprehensive list of protected branches (common in real teams)
+protected="^(main|master|develop|development|staging|stage|production|prod|release|releases|qa|uat|hotfix)$"
+```
+
+**If on protected branch:**
+
+```bash
+if echo "$current_branch" | grep -Eq "$protected"; then
+  # NEVER push to protected - create temp branch
+  timestamp=$(date +%Y%m%d%H%M%S)
+  slug=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/-/g' | tr -s '-' | cut -c1-30)
+  slug="${slug:-feature}"  # Fallback if empty
+  pr_branch="pr/${slug}-${timestamp}"
+
+  echo "⚠️ On protected branch: $current_branch"
+  echo "Creating temp branch: $pr_branch"
+
+  git checkout -b "$pr_branch"
+  git push origin "$pr_branch" --set-upstream
+else
+  # Feature branch - push normally
+  pr_branch="$current_branch"
+
+  if ! git rev-parse --abbrev-ref "@{upstream}" >/dev/null 2>&1; then
+    git push origin "$pr_branch" --set-upstream
+  else
+    git push origin "$pr_branch"
+  fi
+fi
+```
 
 ### 3.3 Generate PR Body
 
