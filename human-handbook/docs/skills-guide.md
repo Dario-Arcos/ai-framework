@@ -542,8 +542,8 @@ Reviewer: "Change singleton pattern"
 #### git-pullrequest
 
 ::: tip Git | Quality Gate
-**Cuándo**: Al crear PR, necesitas quality gate con code review y observaciones contextualizadas
-**Qué hace**: Valida cambios, dispara code-reviewer, genera observaciones (tests, secrets, API, complexity), presenta findings consolidados, ofrece auto fix loop, crea PR con documentación quality
+**Cuándo**: Al crear PR, necesitas quality gate con code + security review y observaciones contextualizadas
+**Qué hace**: Valida cambios, dispara code-reviewer + security-reviewer en paralelo, genera observaciones (tests, API, complexity, breaking), presenta findings consolidados de 3 capas, ofrece auto fix loop, crea PR con documentación quality
 :::
 
 **Corporate Format Support:**
@@ -554,14 +554,17 @@ Example: feat|TRV-350|20251023|add user authentication
 
 **Workflow**:
 1. **Validación**: Target branch existe, extrae commits, detecta formato
-2. **Quality Gate**: Code review + observaciones auto-detectadas
+2. **Quality Gate (3 capas en paralelo)**:
+   - Code review (lógica, arquitectura, bugs)
+   - Security review (SQL injection, secrets, XSS)
+   - Observations (tests, API, breaking, complexity)
 3. **User Decision**: Create PR / Auto fix / Cancel
-4. **Auto Fix Loop** (opcional): Subagent arregla → re-review → usuario decide de nuevo
-5. **Create PR**: Push branch, genera body con findings, crea PR
+4. **Auto Fix Loop** (opcional): Subagent arregla issues → re-review (ambos) → usuario decide de nuevo
+5. **Create PR**: Protected branch detection + temp branch si necesario, genera body con findings, crea PR
 
 **User Decisions:**
-- **Create PR**: Push y crear PR con findings documentados
-- **Auto fix**: Subagent arregla Critical+Important issues → re-review obligatorio
+- **Create PR**: Push y crear PR con findings de code + security reviews documentados
+- **Auto fix**: Subagent arregla Critical+Important (code) + High+Medium (security) issues → re-review obligatorio de ambos
 - **Cancel**: Salir con summary actionable de issues pendientes
 
 **Examples disponibles** (en `skills/git-pullrequest/examples/`):

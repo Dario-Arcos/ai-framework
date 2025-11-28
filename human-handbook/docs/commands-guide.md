@@ -453,20 +453,17 @@ Crea PR con quality gate basado en Observaciones Contextualizadas: pre-review in
    - **Corporate format:** Detecta `type|TASK-ID|YYYYMMDD|desc` (e.g., `feat|TRV-350|20251023|add auth`)
 
 2. **Review + Decisión** (ciclo con opción de fixes)
-   - Code review via skill `git-pullrequest` → dispatch code-reviewer subagent
-   - Observaciones auto-detectadas:
-     - ✅/⚠️ **Tests:** Cambios src sin tests
-     - ✅/⚠️ **Complejidad:** ΔLOC vs budget (S/M/L/XL)
-     - ✅/🔴 **Secrets:** Patrones de API keys en diff
-     - ✅/⚠️ **API Pública:** Modificaciones en endpoints
-     - ✅/⚠️ **Breaking Changes:** BREAKING en commits
+   - **Revisión en paralelo (3 capas)**:
+     - **Code review**: Lógica, arquitectura, bugs, tests (via code-reviewer)
+     - **Security review**: SQL injection, secrets, XSS, auth bypass (via security-reviewer)
+     - **Observaciones**: Tests, complejidad, API, breaking changes (auto-detectadas)
    - **Decisión:** Create PR / Auto fix / Cancel
-   - Si auto fix: subagent arregla → re-review obligatorio → usuario decide de nuevo
+   - Si auto fix: subagent arregla Critical+Important+High+Medium issues → re-review (ambos) → usuario decide
 
 3. **Crear PR**
-   - Push branch (crea temp si es protegida)
+   - **Protected branch detection**: Si estás en main, master, develop, development, staging, stage, production, prod, release, releases, qa, uat, o hotfix → crea temp branch `pr/{slug}-{timestamp}` automáticamente
    - Si corporate format: Pregunta título (usar primer commit o custom)
-   - gh pr create con observaciones en body
+   - gh pr create con findings de ambas reviews en body
    - Output: PR URL
 
 ::: info Observaciones ≠ Bloqueantes
