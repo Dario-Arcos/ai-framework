@@ -346,7 +346,7 @@ Team Memory es **solo lectura**. No puedes agregar información directamente (no
 
 Para detalles técnicos completos del proxy, troubleshooting y configuración avanzada:
 
-→ [MCP Servers - Team Memory Server](/docs/mcp-servers#team-memory-server-local-config)
+→ [MCP Servers](/docs/mcp-servers)
 → [Team Core Proxy Repository](https://github.com/Dario-Arcos/team-core-proxy)
 
 ---
@@ -601,7 +601,7 @@ Si notas lentitud con múltiples MCPs activos, estás excediendo el context budg
 
 - ✅ Mantén solo memory systems + 1-2 tools esenciales
 - ✅ Deshabilita MCPs no críticos para tu tarea actual
-- ✅ Consulta [Context Budget en MCP Servers](/docs/mcp-servers#context-budget-responsabilidad)
+- ✅ Consulta [Context Budget en MCP Servers](/docs/mcp-servers)
 - ⚠️ Múltiples memory systems simultáneos pueden causar confusión en Claude
 
 :::

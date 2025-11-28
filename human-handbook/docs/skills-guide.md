@@ -79,9 +79,10 @@ Selecciona tu situación para ver las skills recomendadas
 <div>
 
 ### Testing Avanzado
-::: details Tests tienen timing issues o usan mocks incorrectamente
+::: details Tests tienen timing issues, mocks incorrectos, o necesitas probar webapps
 - <Badge type="tip" text="Testing" /> `condition-based-waiting` - Reemplaza timeouts con polling de condiciones
 - <Badge type="warning" text="Testing" /> `testing-anti-patterns` - Evita testear mocks, test-only methods
+- <Badge type="tip" text="Testing" /> `webapp-testing` - Playwright toolkit con server lifecycle management
 :::
 
 </div>
@@ -110,18 +111,9 @@ Selecciona tu situación para ver las skills recomendadas
 
 <div>
 
-### Memoria & Contexto
-::: details Necesito persistencia entre sesiones
-- <Badge type="info" text="Memory" /> `core-memory-expert` - Setup RedPlanet Core (Cloud o self-hosted)
-:::
-
-</div>
-
-<div>
-
-### Creative
-::: details Arte generativo o visualizaciones algorítmicas
-- <Badge type="tip" text="Creative" /> `algorithmic-art` - p5.js con seeded randomness y viewer interactivo
+### Design
+::: details Interfaces frontend distintivas y de alta calidad
+- <Badge type="tip" text="Design" /> `frontend-design` - Interfaces production-grade con dirección estética bold (anti-AI slop)
 :::
 
 </div>
@@ -136,6 +128,15 @@ Selecciona tu situación para ver las skills recomendadas
 
 </div>
 
+<div>
+
+### Writing
+::: details Documentación, commits, mensajes de error, o prosa técnica
+- <Badge type="tip" text="Writing" /> `writing-clearly-and-concisely` - Reglas de Strunk para escritura clara y profesional
+:::
+
+</div>
+
 </div>
 
 ---
@@ -144,12 +145,12 @@ Selecciona tu situación para ver las skills recomendadas
 
 | Categoría | Skills | Uso Recomendado |
 |-----------|--------|-----------------|
-| [Testing](#testing) | 3 | TDD, eliminación flaky tests, testing anti-patterns |
+| [Testing](#testing) | 4 | TDD, flaky tests, anti-patterns, webapp E2E |
 | [Debugging](#debugging) | 4 | Debugging sistemático, root cause, verificación, defense-in-depth |
 | [Collaboration](#collaboration) | 9 | Brainstorming, plans, reviews, git workflows, parallel agents |
 | [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
-| [Memory & Knowledge](#memory--knowledge) | 1 | RedPlanet Core setup, persistent context |
-| [Creative](#creative) | 1 | Arte generativo p5.js con filosofías algorítmicas |
+| [Design](#design) | 1 | Interfaces frontend distintivas (anti-AI slop) |
+| [Writing](#writing) | 1 | Prosa clara y concisa (Strunk's Elements of Style) |
 | [Meta](#meta) | 3 | Superpowers enforcement, skill contribution, testing skills |
 
 ---
@@ -222,6 +223,48 @@ expect(screen.getByRole('navigation')).toBeInTheDocument();
 ```
 
 **Principio**: Si no puedes testear sin mock, el diseño está mal
+
+---
+
+#### webapp-testing
+
+::: tip Testing | E2E
+**Cuándo**: Testear aplicaciones web locales, verificar funcionalidad frontend, debugging UI, o capturar screenshots del browser
+**Qué hace**: Provee toolkit Playwright con server lifecycle management. Scripts helper para manejar servidores (start/stop automático)
+:::
+
+**Decision Tree**:
+```
+¿Es HTML estático?
+├─ Sí → Lee HTML directo para identificar selectores → Playwright script
+└─ No (webapp dinámica) → ¿Server ya corriendo?
+    ├─ No → python scripts/with_server.py --help
+    └─ Sí → Reconnaissance-then-action:
+        1. Navigate + wait for networkidle
+        2. Screenshot o inspect DOM
+        3. Identify selectors
+        4. Execute actions
+```
+
+**Helper Scripts**:
+- `scripts/with_server.py` - Maneja lifecycle de servidores (soporta múltiples)
+
+**Ejemplo**:
+```bash
+# Single server
+python scripts/with_server.py --server "npm run dev" --port 5173 -- python test.py
+
+# Multiple servers
+python scripts/with_server.py \
+  --server "cd backend && python server.py" --port 3000 \
+  --server "cd frontend && npm run dev" --port 5173 \
+  -- python test.py
+```
+
+**Best Practices**:
+- Siempre `page.wait_for_load_state('networkidle')` antes de inspeccionar DOM
+- Usar scripts como black boxes (--help primero)
+- Cerrar browser al terminar
 
 ---
 
@@ -735,70 +778,86 @@ ls node_modules/puppeteer-core  # Verify
 
 ---
 
-### Memory & Knowledge
+### Design
 
-#### core-memory-expert
+#### frontend-design
 
-::: info Memory | Integration
-**Cuándo**: Setup/config RedPlanet Core memory layer, necesitas persistent context entre sesiones, knowledge graphs, conversation history
-**Qué hace**: Implementación world-class de RedPlanet Core (88.24% SOTA accuracy en LoCoMo benchmark). Setup Cloud (<2min zero-config) o self-hosted (Docker + PostgreSQL)
+::: tip Design | Production
+**Cuándo**: Construir componentes web, páginas, o aplicaciones que requieren diseño distintivo y memorable
+**Qué hace**: Crea interfaces frontend production-grade con dirección estética bold que evita la estética genérica "AI slop". Implementa código funcional con atención excepcional a detalles estéticos
 :::
 
-**Deployment Options**:
-- **Cloud** (Recommended): `python3 scripts/setup_core_cloud.py` → auth → done
-- **Self-hosted**: Docker Compose con PostgreSQL
+**Design Thinking** (antes de codear):
+1. **Purpose**: ¿Qué problema resuelve? ¿Quién lo usa?
+2. **Tone**: Elegir dirección extrema: brutalmente minimal, maximalist chaos, retro-futuristic, luxury/refined, editorial/magazine, brutalist/raw, art deco, etc.
+3. **Constraints**: Framework, performance, accessibility
+4. **Differentiation**: ¿Qué lo hace INOLVIDABLE?
 
-**Key Capabilities**:
-- Temporal knowledge graphs (who said what, when, why)
-- Cross-tool memory (Claude, Cursor, VS Code, etc.)
-- Zero-friction setup via automated scripts
-- Integrations: GitHub, Linear, Slack (opt-in)
+**Focus Areas**:
+- **Typography**: Fonts distintivas, NO genéricas (evitar Arial, Inter, Roboto). Pair display font + refined body font
+- **Color & Theme**: Paleta cohesiva con CSS variables. Colores dominantes con acentos sharp > paletas tímidas
+- **Motion**: CSS-only preferido. Staggered reveals con animation-delay > micro-interactions dispersas
+- **Spatial Composition**: Layouts inesperados, asimetría, overlap, grid-breaking, negative space generoso
+- **Backgrounds**: Gradient meshes, noise textures, geometric patterns, layered transparencies, grain overlays
+
+**NEVER use**:
+- Fonts genéricas: Inter, Roboto, Arial, system fonts
+- Color schemes cliché: purple gradients on white
+- Layouts predecibles y cookie-cutter
+- Mismo estilo entre generaciones (variar light/dark, fonts, aesthetics)
 
 **Ejemplo**:
 ```bash
-"Setup Core Memory para proyecto"
-# → Opción A: Cloud (2min)
-# → Opción B: Self-hosted (Docker)
-# → Config .claude/.mcp.json
-# → Verify connection
-# → Start using memory tools
+"Crea landing page para startup fintech"
+# → Design Thinking: luxury/refined tone, professional audience
+# → Typography: distinctive serif headers + clean sans body
+# → Color: deep navy + gold accents (not purple gradient)
+# → Motion: staggered reveal on scroll, hover micro-interactions
+# → Output: Production-ready React/HTML with memorable aesthetic
 ```
 
-**Components**: Setup scripts (Cloud/self-hosted), REST API reference, Spaces CLI, agent templates
+**Principio**: Match implementation complexity to aesthetic vision. Maximalist = elaborate code. Minimalist = restraint + precision + careful spacing.
 
 ---
 
-### Creative
+### Writing
 
-#### algorithmic-art
+#### writing-clearly-and-concisely
 
-::: tip Creative | Generative
-**Cuándo**: Arte generativo, algorithmic art, flow fields, sistemas de partículas, visualizaciones computacionales
-**Qué hace**: Genera arte p5.js basado en filosofías algorítmicas únicas. Crea viewer interactivo con seed navigation, controles paramétricos, y export capability. Reproducible (mismo seed = mismo output)
+::: tip Writing | Communication
+**Cuándo**: Escribir prosa para humanos: documentación, commits, mensajes de error, explicaciones, reportes, UI text
+**Qué hace**: Aplica las reglas atemporales de Strunk (*The Elements of Style*) para escritura más clara, fuerte y profesional
 :::
 
-**2-Step Process**:
-1. **Algorithmic Philosophy**: Define computational aesthetic movement (.md)
-2. **Express in Code**: p5.js generative art (.html + .js) con seeded randomness
+**Cuándo usar**:
+- Documentation, README, technical explanations
+- Commit messages, PR descriptions
+- Error messages, UI copy, help text
+- Reports, summaries, cualquier explicación
 
-**Filosofía incluye**:
-- Computational processes y mathematical beauty
-- Seeded randomness, noise fields, organic systems
-- Particles, flows, fields, forces
-- Parametric variation y controlled chaos
+**Reglas Core (Principles of Composition)**:
+- **Use active voice** (Rule 10)
+- **Put statements in positive form** (Rule 11)
+- **Use definite, specific, concrete language** (Rule 12)
+- **Omit needless words** (Rule 13)
+- **Keep related words together** (Rule 16)
+- **Place emphatic words at end of sentence** (Rule 18)
+
+**Limited Context Strategy**:
+1. Escribe tu draft usando judgment
+2. Dispatch subagent con draft + `elements-of-style.md`
+3. Subagent copyedita y retorna revisión
 
 **Ejemplo**:
 ```bash
-"Flow fields con partículas orgánicas"
-# → Philosophy: "Organic Turbulence" movement
-# → p5.js: Perlin noise flow field + particle system
-# → Viewer: seed controls + parameter sliders + export PNG
-# → Reproducible: seed 42 = siempre mismo output
+# Antes (pasivo, vago)
+"The file was processed by the system"
+
+# Después (activo, concreto)
+"The parser extracted 42 records from config.yaml"
 ```
 
-**Output**: Philosophy (.md) + HTML viewer interactivo
-
-**Critical**: Create ORIGINAL work, NO copiar existing artists (copyright)
+**Principio**: Si escribes oraciones para humanos, usa esta skill
 
 ---
 
@@ -969,7 +1028,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-11-22
-**Categorías**: Testing, Debugging, Collaboration, Development Tools, Memory, Creative, Meta
+**Última actualización**: 2025-11-28
+**Categorías**: Testing, Debugging, Collaboration, Development Tools, Design, Writing, Meta
 **Status**: Production-Ready
 :::

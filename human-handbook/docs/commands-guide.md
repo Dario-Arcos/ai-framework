@@ -6,13 +6,13 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 
 ---
 
-| Categoría                                                     | Comandos | Flujo Típico                           |
-| ------------------------------------------------------------- | -------- | -------------------------------------- |
-| [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | 2        | Product Requirements → GitHub Tracking |
-| [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | 9        | Spec → Plan → Tasks → Implement        |
-| [Git & GitHub](#git-github)                                   | 5        | Commit → PR → Cleanup                  |
-| [Superpowers](#superpowers)                                   | 3        | Brainstorm → Plan → Execute            |
-| [Utilidades](#utilidades)                                     | 7        | Understand → Research → Polish         |
+| Categoría                                                     | Flujo Típico                           |
+| ------------------------------------------------------------- | -------------------------------------- |
+| [Ciclo PRP (Business Layer)](#ciclo-prp-business-layer)       | Product Requirements → GitHub Tracking |
+| [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | Spec → Plan → Tasks → Implement        |
+| [Git & GitHub](#git-github)                                   | Commit → PR → Cleanup                  |
+| [Superpowers](#superpowers)                                   | Brainstorm → Plan → Execute            |
+| [Utilidades](#utilidades)                                     | Understand → Research → Polish         |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos).
@@ -691,25 +691,6 @@ Activa Executing-Plans skill para ejecutar planes en batches controlados con rev
 
 ---
 
-### `/docs`
-
-::: tip Propósito
-Analiza y actualiza documentación usando specialist agents.
-:::
-
-**Usage:**
-
-```bash
-/docs                 # Analizar toda la docs
-/docs README API      # Focus específico
-```
-
-**Proceso:** Analyze docs → Identify gaps/outdated content → Delegate a documentation specialist → Update/create docs
-
-**Output:** Documentación actualizada con análisis de calidad
-
----
-
 ### `/polish`
 
 ::: tip Propósito
@@ -988,22 +969,6 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 ---
 
-## Estadísticas del Ecosistema
-
-| Categoría      | Comandos | Notas                                |
-| -------------- | -------- | ------------------------------------ |
-| **PRP-cycle**  | 2        | Business layer                       |
-| **SDD-cycle**  | 9        | Engineering layer (orden específico) |
-| **git-github** | 5        | Delivery layer                       |
-| **utils**      | 9        | Utilidades transversales             |
-| **TOTAL**      | 25       | Comandos disponibles                 |
-
----
-
 ::: info Última Actualización
-**Fecha**: 2025-11-22 | **Workflow**: Ciclo SDD completo
-
-**Cambios recientes**:
-- ❌ Eliminado `/three-experts` - Sin uso (0 executions en >1 año)
-- ❌ Eliminado `/update-docs` - Sin uso (ahora es `/docs`)
+**Fecha**: 2025-11-28
 :::
