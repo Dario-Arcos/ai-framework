@@ -203,7 +203,7 @@ graph TD
 ```mermaid
 graph LR
     subgraph PRP["PRP Cycle (Business)"]
-        P1["/prp-new"] --> P2["/prp-sync"]
+        P1["/prp-new"]
     end
 
     subgraph SDD["SDD Cycle (Engineering)"]

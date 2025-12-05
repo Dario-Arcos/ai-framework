@@ -25,57 +25,67 @@ Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso p
 ### `/prp-new`
 
 ::: tip Propósito
-Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructurado, minimalista (50-100 líneas), business-focused.
+**Discovery Engine** - Proceso conversacional para definir QUÉ problema resolver y POR QUÉ importa, antes de cualquier consideración técnica.
 :::
+
+**Filosofía:**
+
+```
+"No documentamos requisitos - descubrimos oportunidades"
+```
 
 **Usage:**
 
 ```bash
-/prp-new {feature_name}
+/prp-new                           # Desde cero
+/prp-new "contexto inicial"        # Con contexto previo
+/prp-new docs/research.md          # Desde documento existente
 ```
 
-**Estructura PRP (Minimalista):**
+**4 Fases de Discovery:**
 
-1. **Problem Statement** (5-10 líneas) - Formato estructurado AI-parseable
-2. **User Impact** (10-20 líneas) - Primary users, journey, pain points
-3. **Success Criteria** (5-10 líneas) - Quantitative + Qualitative con checkboxes
-4. **Constraints** (5-10 líneas) - Budget, timeline, team, compliance
-5. **Out of Scope** (5-10 líneas) - Qué NO estamos building en V1
+| Fase | Objetivo | Técnica |
+|------|----------|---------|
+| 1. CONTEXTO | Entender situación actual | Preguntas abiertas |
+| 2. PROBLEMA | Excavar hasta causa raíz | Five Whys adaptado |
+| 3. IMPACTO | Cuantificar consecuencias | Métricas de negocio |
+| 4. OPORTUNIDAD | Definir outcome deseado | Sin solución técnica |
 
-**Output:** `prps/{feature_name}/prp.md`
+**Validación Dual:**
 
-::: details Discovery Questions
+- **Usuario valida**: "¿Entendiste MI problema correctamente?"
+- **Claude valida**: "¿El output cumple estándares metodológicos world-class?"
 
-- **Problem**: ¿Qué problema específico? ¿Por qué ahora?
-- **Users**: ¿Quién experimenta este problema? ¿Personas primarias?
-- **Impact**: ¿Qué pasa si NO resolvemos esto?
-- **Success**: ¿Cómo medimos si esto funciona?
-- **Constraints**: ¿Budget, timeline, compliance requirements?
-- **Scope**: ¿Qué NO estamos building en V1?
-  :::
+**Output:** `prps/{project_name}/discovery.md`
 
-**Siguientes Pasos:** `➜ /prp-sync {feature_name}`
+::: details Estructura del Output
 
----
+```markdown
+## Opportunity Statement
+"[Stakeholder] necesita [outcome deseado]
+cuando [situación/contexto]
+porque actualmente [fricción/dolor]
+lo que causa [consecuencia de negocio]."
 
-### `/prp-sync`
+## Contexto
+**Síntesis**: [Resumen]
+**Evidencia**: > "Citas textuales del usuario"
 
-::: tip Propósito
-Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
+## Problema Raíz
+## Impacto
+## Outcome Deseado
+```
+
 :::
 
-**Usage:**
+::: tip Principios Clave
+- **Una pregunta a la vez** - No abrumar
+- **AskUserQuestion** para opciones múltiples
+- **Síntesis + Evidencia** - Preserva palabras exactas del usuario
+- **Cero soluciones técnicas** - Solo problema y oportunidad
+:::
 
-```bash
-/prp-sync {feature_name}
-/prp-sync {feature_name} --milestone {number}
-```
-
-**Workflow:** Parse args → Validate PRP → Create GitHub issue (parent) → Update frontmatter con `github_synced`
-
-**Output:** GitHub Issue (parent) + actualiza frontmatter + mapping file
-
-**Siguientes Pasos:** `➜ /speckit.specify --from-issue {issue_number}`
+**Siguientes Pasos:** Continuar con planificación técnica sistemática (specify, implementation plan, u otro flujo disponible)
 
 ---
 
@@ -271,7 +281,7 @@ Checklists incompletos bloquean ejecución (puedes override manualmente).
 
 **Output:** Implementación completa + tasks.md actualizada con `[X]`
 
-**Siguientes Pasos:** `➜ /speckit.sync` (opcional)
+**Siguientes Pasos:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
@@ -331,39 +341,6 @@ Después de generar checklist, DEBES marcar checkboxes manualmente revisando tu 
 :::
 
 **Siguientes Pasos:** Marcar checkboxes → `➜ /speckit.implement`
-
----
-
-### `/speckit.sync`
-
-::: tip Propósito
-Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a parent PRP.
-:::
-
-**Usage:**
-
-```bash
-/speckit.sync {parent_issue_number}
-```
-
-::: warning IMPORTANT
-Requiere parent PRP issue. Si no tienes PRP issue, ejecuta `/prp-sync` primero.
-:::
-
-**Proceso:** Parse parent issue → Validate spec → Prepare issue content → Create GitHub issue + link to parent → Update frontmatter
-
-**Timing Recommendation:**
-
-Ejecutar DESPUÉS de implementación completa y validada. Esto ensures:
-
-- GitHub Issue documenta lo construido (no especulación)
-- Spec + Plan + Tasks 100% accurate con final code
-- Stakeholders ven resultados, no work-in-progress
-- Zero need para re-sync
-
-**Output:** GitHub Issue (child) + frontmatter updated + mapping file
-
-**Siguientes Pasos:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
@@ -937,13 +914,13 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 | Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                                    |
-| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`              |
+| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest`                                    |
+| **Con PRP**       | `prp-new` → `specify --from-prp` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest`              |
 | **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest` |
 | **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/git-cleanup`)                                                              |
 
 ::: tip Comandos Opcionales
-`[analyze]`, `[checklist]`, `[sync]` son opcionales. checklist es quality gate antes de implementar.
+`[analyze]`, `[checklist]` son opcionales. checklist es quality gate antes de implementar.
 :::
 
 ---
@@ -964,11 +941,10 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 - `analyze` - Valida consistencia entre artefactos (después de tasks, antes de implement)
 - `checklist` - Quality gate para requirements (antes de implement, genera "unit tests for requirements")
-- `sync` - Documenta en GitHub lo que fue construido (después de implement)
   :::
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-28
+**Fecha**: 2025-12-05
 :::

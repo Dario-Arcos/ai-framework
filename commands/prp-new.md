@@ -1,256 +1,409 @@
 ---
 name: prp-new
-description: Create Product Requirements Prompt (minimal, business-focused) from natural language, GitHub issues, or context files
-argument-hint: [natural-language] or [from Github issue #N] or [from document path]
-allowed-tools: Bash(date -u +"%Y-%m-%dT%H:%M:%SZ"), Read, Write, LS, WebFetch
+description: Discovery Engine - Conversational process to define WHAT problem to solve and WHY it matters, before any technical consideration
+argument-hint: [context source] or empty to start from scratch
 ---
 
-# PRP New
+# PRP: Product Requirement Prompt
 
-Create minimal, business-focused Product Requirements Prompt.
+## Philosophy
 
-## Usage Examples
-
-**Natural language:**
 ```
-/PRP-cycle:prp-new Implement real-time notifications for user actions with email delivery
+"We don't document requirements - we discover opportunities"
 ```
 
-**GitHub issue:**
+This is a **Discovery Engine**, not a document builder. Guide the user through 4 phases of progressive excavation to define the problem and opportunity before any technical solution.
+
+**Responsibility Separation**:
+
+| Role | Validates |
+|------|-----------|
+| **User** | "Did you understand MY problem correctly?" |
+| **Claude** | "Does the output meet world-class methodological standards?" |
+
+## Process Overview
+
 ```
-/PRP-cycle:prp-new from Github issue #456
+Input (any context source or fresh start)
+    ↓
+PHASE 1: CONTEXT - Understand the situation
+    ↓
+PHASE 2: PROBLEM - Excavate to root cause (Five Whys)
+    ↓
+PHASE 3: IMPACT - Quantify business consequences
+    ↓
+PHASE 4: OPPORTUNITY - Define desired outcome (no technical solution)
+    ↓
+User Validation → Claude Validation → Output
 ```
 
-**Context file:**
-```
-/PRP-cycle:prp-new from document research/notifications-proposal.md
-```
+## Execution Instructions
 
-**Short prompt (will ask questions):**
-```
-/PRP-cycle:prp-new notification system
-```
+### Step 0: Context Detection
 
-## User Input
+**If `$ARGUMENTS` contains context source** (document, URL, image, text):
+- Extract relevant information
+- Identify what's already known vs gaps
+- Start discovery from gaps, not from zero
 
-```text
-$ARGUMENTS
-```
+**If `$ARGUMENTS` is empty**:
+- Start fresh with Phase 1
 
-Input can be:
-- **Natural language**: "Implement real-time notifications"
-- **GitHub Issue**: "from Github issue #123" or URL
-- **Context file**: "from document <path>"
-- **Short name**: "user-notifications" (will prompt for details)
+**If `$ARGUMENTS` is a short name** (e.g., "user-notifications"):
+- Use as project name
+- Start fresh with Phase 1
 
-## Instructions
+### Step 1: Generate Project Name
 
-### Step 1: Parse and Load Context
+If not provided, derive kebab-case name (2-4 words) from conversation after Phase 1:
+- Extract meaningful keywords
+- Use action-noun format (e.g., "consolidate-reports", "reduce-onboarding-time")
+- Store as `$PROJECT_NAME`
 
-**Identify input type and load context:**
+### Step 1.5: Validate Project Name
 
-**If natural language:**
-- Proceed to Step 2
-
-**If GitHub issue** (contains "github.com" or "issue #"):
-- Extract URL or number
-- WebFetch issue content
-- Extract title, body, labels
-- Proceed with loaded context
-
-**If context file** (contains "from document"):
-- Extract file path
-- Read file content
-- Proceed with loaded context
-
-**If short/empty:**
-- Note: Will ask comprehensive questions
-- Proceed to Step 2
-
-### Step 2: Generate Short Name
-
-Create kebab-case name (2-4 words):
-- Extract meaningful keywords from input
-- Use action-noun format (e.g., "add-user-auth", "fix-payment-bug")
-- Preserve technical terms (OAuth2, API, JWT)
-- Keep concise but descriptive
-
-**Examples:**
-- "Implement real-time notifications" → "realtime-notifications"
-- "Add OAuth2 integration" → "oauth2-integration"
-- "Fix payment timeout" → "fix-payment-timeout"
-
-Store as `$SHORT_NAME`.
-
-### Step 3: Validate and Check
-
-**Silently validate:**
+**Before proceeding, validate `$PROJECT_NAME`:**
 
 1. **Format validation:**
-   - Lowercase letters, numbers, hyphens only
-   - Must start with letter
-   - If invalid: "❌ Feature name must be kebab-case. Examples: user-auth, payment-v2"
+   - Lowercase letters (a-z), numbers (0-9), hyphens (-) only
+   - Must start with lowercase letter
+   - Length: 2-50 characters
+   - No path traversal: reject if contains `..`, `/`, `\`
 
-2. **Check existing:**
-   - If `prps/$SHORT_NAME/prp.md` exists
-   - Ask: "⚠️ PRP '$SHORT_NAME' exists. Overwrite? (yes/no)"
-   - If no: "Use different name or sync: `/PRP-cycle:prp-sync $SHORT_NAME`"
+2. **If validation fails:**
+   - Show error: "❌ Invalid project name. Must be kebab-case (lowercase, hyphens only). Examples: user-auth, consolidate-reports"
+   - Ask user for corrected name
+   - Do NOT proceed until valid
 
-3. **Directory check:**
-   - Ensure `prps/$SHORT_NAME/` can be created
-   - If fails: "❌ Cannot create PRP directory. Check permissions."
+3. **Validation pattern:** `^[a-z][a-z0-9-]{1,49}$`
 
-### Step 4: Discovery Session
+### Step 2: Execute 4 Phases
 
-Ask clarifying questions **only if critical info missing**. Limit: 3-4 questions.
+**CRITICAL RULES**:
+- ONE question at a time - never overwhelm
+- Use `AskUserQuestion` tool for multiple choice when options are clear
+- Use open questions for deep exploration
+- Do NOT advance until phase criteria is met
+- ZERO technical solutions - only problem and opportunity
 
-**Priority 1 (always ask if unclear):**
-- **Problem**: What problem? Why now?
-- **Users**: Who affected? Primary personas?
-- **Success**: How measure if works?
+---
 
-**Priority 2 (ask if impacts scope):**
-- **Impact**: What if we DON'T solve?
-- **Constraints**: Budget, timeline, compliance?
-- **Scope**: What NOT building in V1?
+#### PHASE 1: CONTEXT
 
-**Make informed guesses** for non-critical details based on:
-- Industry standards
-- Context from input
-- Common patterns
+**Objective**: Understand the current situation (not the problem yet).
 
-### Step 5: Create PRP Content
+**Question Types**:
+- "In what context does this need arise? What's happening today?"
+- "Who is involved in this situation?"
+- "How often does this occur?"
 
-**Philosophy: "Simplicity is the ultimate sophistication"**
+**Use AskUserQuestion when**:
+- Clarifying stakeholder types
+- Determining frequency ranges
+- Identifying scope boundaries
 
-- Describe WHAT and WHY, not HOW
-- Target: 50-100 lines
-- No implementation details (stack, architecture, config)
-- Focus on user value and business outcomes
+**Advancement Criteria**: Clear understanding of situation/scenario.
 
-**PRP Structure (5 sections only):**
+---
 
-#### 1. Problem Statement (5-10 lines)
+#### PHASE 2: PROBLEM
 
-Structured format:
-- **Problem**: What exists today?
-- **Affected Users**: Who experiences this?
-- **Frequency**: How often?
-- **Current Cost**: Time/money wasted?
-- **Why Now**: Why important NOW?
-- **Risk of Inaction**: What if we don't solve?
+**Objective**: Excavate to the real problem (not symptoms).
 
-#### 2. User Impact (10-20 lines)
+**Technique**: Adapted Five Whys - each answer generates the next question.
 
-**Primary Users:**
-- Persona 1: Need in one sentence
-- Persona 2: Need in one sentence
+**Question Types**:
+- "What happens when [situation]? What becomes difficult?"
+- "Why is that a problem? What does it prevent?"
+- "What have you tried before? Why didn't it work?"
 
-**User Journey:**
-1. User does X
-2. System provides Y
-3. User achieves Z
+**Advancement Criteria**: Underlying "Job to be Done" identified.
 
-**Pain Points:**
-- Current friction 1
-- Current friction 2
+---
 
-#### 3. Success Criteria (5-10 lines)
+#### PHASE 3: IMPACT
 
-**Quantitative:**
-- [ ] Metric 1: Baseline → Target (Measured by: method)
-- [ ] Metric 2: Baseline → Target (Measured by: method)
+**Objective**: Quantify/qualify business consequences.
 
-**Qualitative:**
-- [ ] Observable 1 (Verified by: method)
-- [ ] Observable 2 (Verified by: method)
+**Question Types**:
+- "What does this problem cost? (time, money, opportunity)"
+- "What happens if this is NOT solved in the next 6 months?"
+- "Who else suffers the consequences?"
 
-#### 4. Constraints (5-10 lines)
+**Use AskUserQuestion when**:
+- Selecting impact severity levels
+- Prioritizing affected stakeholders
 
-- **Budget**: $X or "zero cost"
-- **Timeline**: Deadline or "immediate"
-- **Team**: Size/skills available
-- **Compliance**: Regulatory requirements if any
-- **Complexity**: S (≤80 LOC), M (≤250 LOC), L (≤600 LOC)
+**Advancement Criteria**: Business impact clearly articulated.
 
-#### 5. Out of Scope V1 (5-10 lines)
+---
 
-Explicitly list what NOT building:
-- Feature X: Why excluded (defer V2, complexity, etc.)
-- Feature Y: Why excluded
+#### PHASE 4: OPPORTUNITY
 
-**Exclusions (belong in SDD-cycle):**
-- ❌ Stack decisions ("Use React")
-- ❌ Architecture diagrams
-- ❌ Data models, API endpoints
-- ❌ Performance targets ("<200ms")
-- ❌ Edge cases, error handling details
+**Objective**: Define desired outcome (without technical solution).
 
-**Keep business-level:**
-- ✅ "Users find docs quickly"
-- ❌ "Algolia search <200ms"
+**Question Types**:
+- "If this were magically solved, what would success look like?"
+- "How would you know the problem no longer exists?"
+- "What would change for [stakeholder]?"
 
-### Step 6: Save PRP with Frontmatter
+**Advancement Criteria**: Measurable/observable outcome defined.
 
-Save to `prps/$SHORT_NAME/prp.md`:
+---
+
+### Step 3: User Validation
+
+Present the Opportunity Statement and ask for confirmation:
+
+```
+Based on our conversation, I understand:
+
+**Opportunity Statement**:
+"[Stakeholder] needs [desired outcome]
+when [situation/context]
+because currently [friction/pain]
+which causes [business consequence]."
+
+Does this correctly reflect your situation and need?
+```
+
+Use `AskUserQuestion`:
+- Options: "Yes, correct" | "Needs adjustment" | "Start over"
+- If adjustment needed: ask what specifically, return to relevant phase
+
+### Step 4: Claude Internal Validation
+
+**Silently evaluate** (do NOT show to user):
+
+```
+World-Class Methodology Checklist:
+- [ ] Specific situation identified (not generic)?
+- [ ] Job to be Done found (not symptom)?
+- [ ] Business impact articulated (quantified or qualified)?
+- [ ] Measurable/observable outcome defined?
+- [ ] ZERO references to technical solutions?
+- [ ] Evidence captured for each phase (user quotes)?
+```
+
+**If ANY item fails**: Return to relevant phase and ask clarifying questions.
+**If ALL pass**: Proceed to output generation.
+
+### Step 5: Generate Output
+
+#### 5.1 Create Directory
+
+```bash
+mkdir -p prps/$PROJECT_NAME
+```
+
+#### 5.2 Write Discovery Document
+
+Save to `prps/$PROJECT_NAME/discovery.md`:
 
 ```markdown
 ---
-name: $SHORT_NAME
-description: [One-line PRP description]
-status: backlog
-created: [ISO timestamp]
-complexity_budget: S|M|L
-priority: P1|P2|P3
+name: $PROJECT_NAME
+status: discovered
+created: [ISO timestamp from: date -u +"%Y-%m-%dT%H:%M:%SZ"]
 ---
 
-# PRP: $SHORT_NAME
+# Discovery: $PROJECT_NAME
 
-[5 sections from Step 5]
+## Opportunity Statement
+
+"[Stakeholder] needs [desired outcome]
+when [situation/context]
+because currently [friction/pain]
+which causes [business consequence]."
+
+## Context
+
+**Synthesis**: [1-3 sentences summarizing Phase 1]
+
+**Evidence**:
+> "[Direct quote from user that captures the situation]"
+> "[Another relevant quote if applicable]"
+
+## Root Problem
+
+**Synthesis**: [1-3 sentences - the Job to be Done identified]
+
+**Evidence**:
+> "[Quote showing the real underlying need]"
+> "[Quote showing what they tried before / why it failed]"
+
+## Impact
+
+**Synthesis**: [1-3 sentences - business consequences]
+
+**Evidence**:
+> "[Quote quantifying or qualifying the cost]"
+> "[Quote about consequences of inaction]"
+
+## Desired Outcome
+
+**Synthesis**: [1-3 sentences - success criteria]
+
+**Evidence**:
+> "[Quote describing what success looks like]"
+> "[Quote about how they'd know it's solved]"
 
 ---
 
-**Next Steps**: `/PRP-cycle:prp-sync $SHORT_NAME`
+**Next**: Continue with systematic technical planning (specify, implementation plan, or other available workflow)
 ```
 
-**Frontmatter:**
-- `name`: Exact feature name
-- `description`: Concise summary
-- `status`: Always "backlog"
-- `created`: !bash date -u +"%Y-%m-%dT%H:%M:%SZ"
-- `complexity_budget`: S/M/L estimate
-- `priority`: P1 (Critical), P2 (Important), P3 (Nice-to-have)
+### Step 6: Confirm Completion
 
-### Step 7: Quality Validation
+Display to user:
 
-**Verify before saving:**
-- [ ] Length: 50-100 lines (excluding frontmatter)
-- [ ] No implementation details
-- [ ] Problem statement uses structured format
-- [ ] Success criteria have checkboxes + measurement methods
-- [ ] Problem and user impact clear
-- [ ] Out of scope defined
-- [ ] No placeholders (no "TBD")
-- [ ] Written for business stakeholders (non-technical)
-- [ ] Frontmatter complete
+```
+Discovery completed: prps/$PROJECT_NAME/discovery.md
 
-### Step 8: Confirm Creation
+**Opportunity Statement**:
+"[The full statement]"
 
-**After successful creation:**
+**Key Insights**:
+- Root problem: [One sentence]
+- Business impact: [One sentence]
+- Success criteria: [One sentence]
 
-1. Confirm: "✅ PRP created: prps/$SHORT_NAME/prp.md"
-2. Summary:
-   - Problem: [One sentence]
-   - Target: [Primary metric]
-   - Complexity: S/M/L
-   - Priority: P1/P2/P3
-3. Next: "Sync to GitHub? `/PRP-cycle:prp-sync $SHORT_NAME`"
+Ready to proceed with technical planning when you are.
+```
 
-## Error Recovery
+---
 
-**If any step fails:**
-- Explain what went wrong
-- Provide fix steps
-- Never leave partial/corrupted files
+## Real-World Example
 
-**Target**: Lean, business-focused PRP (100-200 lines). Technical details → SDD-cycle.
+### Scenario: User invokes `/prp-new` with no arguments
+
+**PHASE 1 - CONTEXT**:
+
+Claude: "What situation or challenge brings you here today? Tell me what's happening."
+
+User: "Every month closing our financial books is a nightmare. It takes forever."
+
+Claude: "Who is involved in this monthly close process?"
+
+User: "The finance team - 3 accountants and the CFO who needs to present to the board."
+
+Claude: "How long does it currently take to close the books each month?"
+
+User: "About 8-10 business days. Sometimes more if there are errors."
+
+*[Criteria met: Situation clear - monthly financial close taking 8-10 days]*
+
+---
+
+**PHASE 2 - PROBLEM**:
+
+Claude: "What makes the process take 8-10 days? What are the main blockers?"
+
+User: "We have to pull data from 4 different systems - SAP, Salesforce, our billing system, and Excel spreadsheets from regional offices."
+
+Claude: "Why can't this data be pulled faster? What happens when you try?"
+
+User: "Each system has different formats. We spend days just cleaning and reconciling the data. And if someone finds an error, we have to start over."
+
+Claude: "What have you tried to solve this?"
+
+User: "We tried building some macros in Excel but they break constantly. We also looked at hiring more people but budget is tight."
+
+*[Criteria met: Job to be Done = reliable, fast data consolidation across 4 systems]*
+
+---
+
+**PHASE 3 - IMPACT**:
+
+Claude: "What does this 8-10 day delay cost the company?"
+
+User: "The CFO can't make timely decisions. Last quarter we missed an investment window because we didn't have the numbers ready. That probably cost us $200K in returns."
+
+Claude: "What happens if this isn't solved in the next 6 months?"
+
+User: "The board is already frustrated. The CFO's job might be at risk honestly. And we're planning to acquire a smaller company - due diligence will be impossible at this pace."
+
+*[Criteria met: Impact = delayed decisions, $200K+ opportunity cost, M&A risk, CFO job security]*
+
+---
+
+**PHASE 4 - OPPORTUNITY**:
+
+Claude: "If this were magically solved tomorrow, what would success look like?"
+
+User: "Close in 2-3 days max. The CFO gets reliable numbers by the 5th business day. No more fire drills."
+
+Claude: "How would you know the problem is truly solved?"
+
+User: "The CFO stops asking 'where are my numbers?' The team isn't working weekends at month-end. We can actually do the acquisition due diligence without panic."
+
+*[Criteria met: Outcome = 2-3 day close, numbers by day 5, no weekend work, M&A capable]*
+
+---
+
+**OUTPUT GENERATED**:
+
+```markdown
+---
+name: accelerate-month-close
+status: discovered
+created: 2025-12-05T15:30:00Z
+---
+
+# Discovery: accelerate-month-close
+
+## Opportunity Statement
+
+"The finance team needs to close monthly books in 2-3 days
+when month-end arrives
+because currently data consolidation from 4 systems takes 8-10 days with frequent errors
+which causes delayed executive decisions, $200K+ missed opportunities, and M&A capability risk."
+
+## Context
+
+**Synthesis**: Monthly financial close involves 3 accountants and CFO, currently taking 8-10 business days due to multi-system complexity.
+
+**Evidence**:
+> "Every month closing our financial books is a nightmare. It takes forever."
+> "The finance team - 3 accountants and the CFO who needs to present to the board."
+
+## Root Problem
+
+**Synthesis**: Data lives in 4 disconnected systems (SAP, Salesforce, billing, regional Excel files) requiring manual consolidation and reconciliation. Errors force complete restarts.
+
+**Evidence**:
+> "We have to pull data from 4 different systems - SAP, Salesforce, our billing system, and Excel spreadsheets from regional offices."
+> "If someone finds an error, we have to start over."
+
+## Impact
+
+**Synthesis**: Delayed financial visibility costs $200K+ in missed investment opportunities, threatens CFO position, and blocks planned M&A activity.
+
+**Evidence**:
+> "Last quarter we missed an investment window because we didn't have the numbers ready. That probably cost us $200K in returns."
+> "We're planning to acquire a smaller company - due diligence will be impossible at this pace."
+
+## Desired Outcome
+
+**Synthesis**: Close books in 2-3 days with reliable numbers available by business day 5, eliminating weekend work and enabling M&A due diligence.
+
+**Evidence**:
+> "Close in 2-3 days max. The CFO gets reliable numbers by the 5th business day."
+> "The team isn't working weekends at month-end. We can actually do the acquisition due diligence without panic."
+
+---
+
+**Next**: Continue with systematic technical planning (specify, implementation plan, or other available workflow)
+```
+
+---
+
+## Key Principles
+
+1. **One question at a time** - Never overwhelm
+2. **AskUserQuestion for choices** - Native UX when options are clear
+3. **Open questions for depth** - Explore when space is undefined
+4. **No advancement without clarity** - Return to phase if gaps exist
+5. **Zero technical solutions** - Only problem and opportunity
+6. **Synthesis + Evidence** - Preserve user's exact words
+7. **User validates understanding** - Claude validates methodology
