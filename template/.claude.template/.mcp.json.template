@@ -15,10 +15,6 @@
       "type": "http",
       "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code",
       "$description": "Persistent memory across sessions (requires account)"
-    },
-    "episodic-memory": {
-      "command": "episodic-memory-mcp-server",
-      "$description": "Local episodic memory — Install via /plugin install episodic-memory@superpowers-marketplace"
     }
   }
 }
