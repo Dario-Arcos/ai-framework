@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anti-Drift Hook v3.0 - Injects behavioral consistency checklist per-prompt"""
+"""Anti-Drift Hook v4.0 - Injects 6 Killer Items reminder per-prompt (aligned with CLAUDE.md v4.3.0)"""
 import sys, json, os
 from pathlib import Path
 from datetime import datetime
@@ -59,10 +59,10 @@ def log_result():
                 json.dumps(
                     {
                         "timestamp": datetime.now().isoformat(),
-                        "version": "3.0.0",
+                        "version": "4.0.0",
                         "guidelines_injected": True,
-                        "checklist_items": 5,
-                        "changes": "Added Critical Evaluation (Truth-Seeking) + Objective+Truth-seeking validation, size includes XL"
+                        "killer_items": 6,
+                        "aligned_with": "CLAUDE.md v4.3.0"
                     }
                 )
                 + "\n"
@@ -77,21 +77,20 @@ def main():
     except (json.JSONDecodeError, MemoryError):
         sys.exit(0)  # Silent fail, don't block Claude
 
-    # LIGHTWEIGHT GOAL REMINDERS (evidence-based: Anthropic Sept 2025)
-    # Token count: ~73 tokens (v3.0.0)
-    # Checklist optimal length: 5 items (Pronovost 2006: 66% error reduction)
-    guidelines = """BEFORE RESPONDING:
+    # ANTI-DRIFT REMINDERS v4.0 (aligned with CLAUDE.md v4.3.0)
+    # Evidence: Goal priming meta-analysis d=0.35 (PMC5783538), Context Rot (Chroma Research)
+    # Design: Concise (~60 tokens), focuses on 6 Killer Items, avoids habituation
+    guidelines = """BEFORE: memory-search context | Skills if applicable | Frame + size (S/M/L/XL)
 
-□ Core Memory: use memory-search for: previous discussions, related context, similar problems
-□ Skills: List available skills, use if applicable
-□ Critical Evaluation: Question user's approach if evidence suggests better alternatives (Truth-Seeking)
-□ Frame problem (≤3 bullets) + size (S/M/L/XL)
+AFTER TASK COMPLETION - 6 Killer Items (evaluate internally):
+1. Objective: Solved EXACT problem stated?
+2. Verification: Tested it works (not "should work")?
+3. Calibration: Sweet spot (not mediocre/over-engineered)?
+4. Truth-Seeking: Challenged suboptimal approaches?
+5. Skills-First: Used applicable skills?
+6. Transparency: Declared limitations?
 
-AT COMPLETION:
-□ Objective achieved + Truth-seeking: Solved EXACT problem? Prioritized accuracy over agreement?
-Declare: "✓ Validated: CLAUDE.md §[X,Y,Z]"
-
-Full context: CLAUDE.md (authoritative operating protocol)
+Output: ✓ Certified (all pass) | ⚠ Certification Issues (any ✗)
 """
 
     # Return JSON format required by Claude Code (not plain text)
