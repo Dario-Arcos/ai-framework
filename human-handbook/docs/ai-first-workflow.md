@@ -67,7 +67,6 @@ Cada paso previene problema específico que cuesta horas. No es burocracia - es 
 | ----------- | ------------------------- | ------------------------------------------------------------ | -------------------------------- |
 | `analyze`   | Entre tasks e implement   | Valida consistencia entre spec/plan/tasks                    | Alto para features complejas     |
 | `checklist` | Entre analyze e implement | Quality gate para requirements (unit tests for requirements) | Alto para requirements complejos |
-| `sync`      | Después de implement      | Documenta en GitHub lo construido                            | Solo si usas PRP workflow        |
 
 ### 1. Specify → Spec Técnica
 
@@ -190,28 +189,6 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ---
 
-### 7. Sync → GitHub Documentation (Optional)
-
-```bash
-/speckit.sync {parent_issue_number}
-```
-
-Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent issue.
-
-**Cuándo ejecutar:** DESPUÉS de implementación completa y validada.
-
-**Por qué después de implementar:**
-
-- GitHub issue documenta lo que SÍ construiste (no especulación)
-- Spec + Plan + Tasks son 100% accurate con código final
-- Stakeholders ven resultados, no work-in-progress
-- Zero necesidad de re-sync
-
-**Skip si:** No usas PRP workflow, feature interna sin stakeholders.
-**Use si:** Feature con PRP parent issue, documentación para stakeholders.
-
----
-
 ## Con PRP o Sin PRP?
 
 ### Con PRP (Business-Driven)
@@ -220,10 +197,8 @@ Documenta en GitHub lo que fue construido. Vincula spec técnica a PRP parent is
 
 ```bash
 /prp-new "feature-name"
-/prp-sync "feature-name"
-/speckit.specify --from-issue {number}
+/speckit.specify --from-prp {feature-name}
 # → Continuar pasos 2-6 normalmente
-# → Al final: speckit.sync (documenta en GitHub)
 ```
 
 **Beneficio:** Business y Tech separados pero vinculados.

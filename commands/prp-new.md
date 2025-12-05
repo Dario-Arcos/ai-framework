@@ -94,7 +94,7 @@ Store as `$SHORT_NAME`.
 2. **Check existing:**
    - If `prps/$SHORT_NAME/prp.md` exists
    - Ask: "⚠️ PRP '$SHORT_NAME' exists. Overwrite? (yes/no)"
-   - If no: "Use different name or sync: `/PRP-cycle:prp-sync $SHORT_NAME`"
+   - If no: "Use different name or continue: `/SDD-cycle:speckit.specify --from-prp $SHORT_NAME`"
 
 3. **Directory check:**
    - Ensure `prps/$SHORT_NAME/` can be created
@@ -210,7 +210,7 @@ priority: P1|P2|P3
 
 ---
 
-**Next Steps**: `/PRP-cycle:prp-sync $SHORT_NAME`
+**Next Steps**: `/SDD-cycle:speckit.specify --from-prp $SHORT_NAME`
 ```
 
 **Frontmatter:**
@@ -244,7 +244,7 @@ priority: P1|P2|P3
    - Target: [Primary metric]
    - Complexity: S/M/L
    - Priority: P1/P2/P3
-3. Next: "Sync to GitHub? `/PRP-cycle:prp-sync $SHORT_NAME`"
+3. Next: "Continue with SDD? `/SDD-cycle:speckit.specify --from-prp $SHORT_NAME`"
 
 ## Error Recovery
 

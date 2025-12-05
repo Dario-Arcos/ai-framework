@@ -54,28 +54,7 @@ Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructur
 - **Scope**: ¿Qué NO estamos building en V1?
   :::
 
-**Siguientes Pasos:** `➜ /prp-sync {feature_name}`
-
----
-
-### `/prp-sync`
-
-::: tip Propósito
-Sincroniza PRP a GitHub como Parent Issue con opción de milestone assignment.
-:::
-
-**Usage:**
-
-```bash
-/prp-sync {feature_name}
-/prp-sync {feature_name} --milestone {number}
-```
-
-**Workflow:** Parse args → Validate PRP → Create GitHub issue (parent) → Update frontmatter con `github_synced`
-
-**Output:** GitHub Issue (parent) + actualiza frontmatter + mapping file
-
-**Siguientes Pasos:** `➜ /speckit.specify --from-issue {issue_number}`
+**Siguientes Pasos:** `➜ /speckit.specify --from-prp {feature_name}`
 
 ---
 
@@ -271,7 +250,7 @@ Checklists incompletos bloquean ejecución (puedes override manualmente).
 
 **Output:** Implementación completa + tasks.md actualizada con `[X]`
 
-**Siguientes Pasos:** `➜ /speckit.sync` (opcional)
+**Siguientes Pasos:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
@@ -331,39 +310,6 @@ Después de generar checklist, DEBES marcar checkboxes manualmente revisando tu 
 :::
 
 **Siguientes Pasos:** Marcar checkboxes → `➜ /speckit.implement`
-
----
-
-### `/speckit.sync`
-
-::: tip Propósito
-Sincroniza spec.md + plan.md + tasks.md a GitHub como child issue vinculado a parent PRP.
-:::
-
-**Usage:**
-
-```bash
-/speckit.sync {parent_issue_number}
-```
-
-::: warning IMPORTANT
-Requiere parent PRP issue. Si no tienes PRP issue, ejecuta `/prp-sync` primero.
-:::
-
-**Proceso:** Parse parent issue → Validate spec → Prepare issue content → Create GitHub issue + link to parent → Update frontmatter
-
-**Timing Recommendation:**
-
-Ejecutar DESPUÉS de implementación completa y validada. Esto ensures:
-
-- GitHub Issue documenta lo construido (no especulación)
-- Spec + Plan + Tasks 100% accurate con final code
-- Stakeholders ven resultados, no work-in-progress
-- Zero need para re-sync
-
-**Output:** GitHub Issue (child) + frontmatter updated + mapping file
-
-**Siguientes Pasos:** `➜ /git-commit` → `/git-pullrequest`
 
 ---
 
@@ -937,13 +883,13 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 | Workflow          | Comandos Core (ORDEN CORRECTO)                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`                                                    |
-| **Con PRP**       | `prp-new` → `prp-sync` → `specify --from-issue` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `[sync]`              |
+| **Feature nueva** | `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest`                                    |
+| **Con PRP**       | `prp-new` → `specify --from-prp` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest`              |
 | **Bug fix**       | `worktree:create` → `understand` → `specify` → `clarify` → `plan` → `tasks` → `[analyze]` → `[checklist]` → `implement` → `commit` → `pullrequest` |
 | **Post-merge**    | `changelog` → `worktree:cleanup` → `docs` (o usar `/git-cleanup`)                                                              |
 
 ::: tip Comandos Opcionales
-`[analyze]`, `[checklist]`, `[sync]` son opcionales. checklist es quality gate antes de implementar.
+`[analyze]`, `[checklist]` son opcionales. checklist es quality gate antes de implementar.
 :::
 
 ---
@@ -964,7 +910,6 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 - `analyze` - Valida consistencia entre artefactos (después de tasks, antes de implement)
 - `checklist` - Quality gate para requirements (antes de implement, genera "unit tests for requirements")
-- `sync` - Documenta en GitHub lo que fue construido (después de implement)
   :::
 
 ---
