@@ -60,6 +60,23 @@ If not provided, derive kebab-case name (2-4 words) from conversation after Phas
 - Use action-noun format (e.g., "consolidate-reports", "reduce-onboarding-time")
 - Store as `$PROJECT_NAME`
 
+### Step 1.5: Validate Project Name
+
+**Before proceeding, validate `$PROJECT_NAME`:**
+
+1. **Format validation:**
+   - Lowercase letters (a-z), numbers (0-9), hyphens (-) only
+   - Must start with lowercase letter
+   - Length: 2-50 characters
+   - No path traversal: reject if contains `..`, `/`, `\`
+
+2. **If validation fails:**
+   - Show error: "❌ Invalid project name. Must be kebab-case (lowercase, hyphens only). Examples: user-auth, consolidate-reports"
+   - Ask user for corrected name
+   - Do NOT proceed until valid
+
+3. **Validation pattern:** `^[a-z][a-z0-9-]{1,49}$`
+
 ### Step 2: Execute 4 Phases
 
 **CRITICAL RULES**:

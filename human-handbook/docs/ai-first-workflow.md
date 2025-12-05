@@ -191,31 +191,44 @@ Con framework: Test → Fail → Code → Pass (predecible)
 
 ## Con PRP o Sin PRP?
 
-### Con PRP (Business-Driven)
+### Con PRP (Discovery-Driven)
 
-**Cuándo:** La feature necesita aprobación de stakeholders.
+**Cuándo:** Necesitas definir claramente el problema antes de la solución técnica.
 
 ```bash
-/prp-new "feature-name"
-/speckit.specify --from-prp {feature-name}
-# → Continuar pasos 2-6 normalmente
+/prp-new
+# → 4 fases: Contexto → Problema → Impacto → Oportunidad
+# → Output: Opportunity Statement + discovery.md
+# → Continuar con planificación técnica
 ```
 
-**Beneficio:** Business y Tech separados pero vinculados.
+**Filosofía PRP:**
+
+```
+"No documentamos requisitos - descubrimos oportunidades"
+```
+
+**Proceso:**
+
+1. **CONTEXTO**: ¿Qué situación existe hoy?
+2. **PROBLEMA**: ¿Cuál es la causa raíz? (Five Whys)
+3. **IMPACTO**: ¿Qué consecuencias de negocio tiene?
+4. **OPORTUNIDAD**: ¿Cómo se ve el éxito? (sin solución técnica)
+
+**Beneficio:** Claridad absoluta del problema antes de pensar en código.
 
 ---
 
 ### Sin PRP (Tech-Driven)
 
-**Cuándo:** Bug fixes, refactorings, internal tools.
+**Cuándo:** Bug fixes, refactorings, internal tools donde el problema ya es obvio.
 
 ```bash
 /speckit.specify "fix race condition"
 # → Continuar pasos 2-6 normalmente
-# → Omitir sync (no PRP parent issue)
 ```
 
-**Beneficio:** Inicio más rápido, sin overhead de negocio.
+**Beneficio:** Inicio más rápido cuando el problema ya está claro.
 
 ---
 
@@ -307,5 +320,5 @@ Responde preguntas incluso si parecen obvias. 2 min ahora > 2 horas después.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-10-16 | **Ecosistema**: PRP-SDD-GitHub
+**Fecha**: 2025-12-05 | **Ecosistema**: PRP-SDD-GitHub
 :::

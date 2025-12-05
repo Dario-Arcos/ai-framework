@@ -25,36 +25,67 @@ Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso p
 ### `/prp-new`
 
 ::: tip Propósito
-Brainstorming interactivo para crear Product Requirements Prompt (PRP) estructurado, minimalista (50-100 líneas), business-focused.
+**Discovery Engine** - Proceso conversacional para definir QUÉ problema resolver y POR QUÉ importa, antes de cualquier consideración técnica.
 :::
+
+**Filosofía:**
+
+```
+"No documentamos requisitos - descubrimos oportunidades"
+```
 
 **Usage:**
 
 ```bash
-/prp-new {feature_name}
+/prp-new                           # Desde cero
+/prp-new "contexto inicial"        # Con contexto previo
+/prp-new docs/research.md          # Desde documento existente
 ```
 
-**Estructura PRP (Minimalista):**
+**4 Fases de Discovery:**
 
-1. **Problem Statement** (5-10 líneas) - Formato estructurado AI-parseable
-2. **User Impact** (10-20 líneas) - Primary users, journey, pain points
-3. **Success Criteria** (5-10 líneas) - Quantitative + Qualitative con checkboxes
-4. **Constraints** (5-10 líneas) - Budget, timeline, team, compliance
-5. **Out of Scope** (5-10 líneas) - Qué NO estamos building en V1
+| Fase | Objetivo | Técnica |
+|------|----------|---------|
+| 1. CONTEXTO | Entender situación actual | Preguntas abiertas |
+| 2. PROBLEMA | Excavar hasta causa raíz | Five Whys adaptado |
+| 3. IMPACTO | Cuantificar consecuencias | Métricas de negocio |
+| 4. OPORTUNIDAD | Definir outcome deseado | Sin solución técnica |
 
-**Output:** `prps/{feature_name}/prp.md`
+**Validación Dual:**
 
-::: details Discovery Questions
+- **Usuario valida**: "¿Entendiste MI problema correctamente?"
+- **Claude valida**: "¿El output cumple estándares metodológicos world-class?"
 
-- **Problem**: ¿Qué problema específico? ¿Por qué ahora?
-- **Users**: ¿Quién experimenta este problema? ¿Personas primarias?
-- **Impact**: ¿Qué pasa si NO resolvemos esto?
-- **Success**: ¿Cómo medimos si esto funciona?
-- **Constraints**: ¿Budget, timeline, compliance requirements?
-- **Scope**: ¿Qué NO estamos building en V1?
-  :::
+**Output:** `prps/{project_name}/discovery.md`
 
-**Siguientes Pasos:** `➜ /speckit.specify --from-prp {feature_name}`
+::: details Estructura del Output
+
+```markdown
+## Opportunity Statement
+"[Stakeholder] necesita [outcome deseado]
+cuando [situación/contexto]
+porque actualmente [fricción/dolor]
+lo que causa [consecuencia de negocio]."
+
+## Contexto
+**Síntesis**: [Resumen]
+**Evidencia**: > "Citas textuales del usuario"
+
+## Problema Raíz
+## Impacto
+## Outcome Deseado
+```
+
+:::
+
+::: tip Principios Clave
+- **Una pregunta a la vez** - No abrumar
+- **AskUserQuestion** para opciones múltiples
+- **Síntesis + Evidencia** - Preserva palabras exactas del usuario
+- **Cero soluciones técnicas** - Solo problema y oportunidad
+:::
+
+**Siguientes Pasos:** Continuar con planificación técnica sistemática (specify, implementation plan, u otro flujo disponible)
 
 ---
 
@@ -915,5 +946,5 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-28
+**Fecha**: 2025-12-05
 :::
