@@ -13,6 +13,7 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 | [Git & GitHub](#git-github)                                   | Commit → PR → Cleanup                  |
 | [Superpowers](#superpowers)                                   | Brainstorm → Plan → Execute            |
 | [Utilidades](#utilidades)                                     | Understand → Research → Polish         |
+| [Plugins Externos](#plugins-externos-opcional)                | Memory Search (requiere instalación)   |
 
 ::: tip Orden Recomendado
 Los comandos del **Ciclo SDD** funcionan mejor en orden específico. Cada paso prepara el siguiente. Ver [Workflows Completos](#workflows-completos).
@@ -908,6 +909,79 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 
 ---
 
+## Plugins Externos (Opcional)
+
+::: warning Requisito de Instalación
+Estos comandos requieren instalar plugins externos. **No están incluidos en ai-framework por defecto.**
+
+Si no tienes el plugin instalado, el comando no existirá en tu sesión de Claude Code.
+:::
+
+### `/episodic-memory:search-conversations`
+
+::: tip Propósito
+Busca conversaciones pasadas de Claude Code usando búsqueda semántica o textual. Permite recuperar contexto de sesiones anteriores.
+:::
+
+**Plugin Requerido:** [episodic-memory](https://github.com/obra/episodic-memory)
+
+**Instalación:**
+
+```bash
+/plugin install episodic-memory@superpowers-marketplace
+```
+
+**Usage:**
+
+```bash
+/episodic-memory:search-conversations
+```
+
+**Cómo Funciona:**
+
+1. El plugin indexa automáticamente tus conversaciones al finalizar cada sesión
+2. Puedes buscar en el histórico usando búsqueda semántica (por conceptos) o textual (exacta)
+3. Claude también puede buscar automáticamente cuando referencias trabajo pasado en conversación
+
+**Parámetros de Búsqueda (MCP Tool Subyacente):**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `query` | string \| array | Término(s) de búsqueda |
+| `mode` | 'vector' \| 'text' \| 'both' | Tipo de búsqueda (default: 'both') |
+| `limit` | 1-50 | Cantidad de resultados |
+| `after` / `before` | YYYY-MM-DD | Filtros de fecha |
+| `response_format` | 'markdown' \| 'json' | Formato de salida |
+
+**Casos de Uso:**
+
+```bash
+# Buscar decisiones sobre autenticación
+"¿Qué decidimos sobre el sistema de auth?"
+
+# Buscar soluciones a errores similares
+"¿Cómo resolvimos el error de conexión a DB?"
+
+# Recuperar contexto de un proyecto específico
+"¿Qué patrones establecimos para el API?"
+```
+
+::: tip Cuándo Usar
+- **Al inicio de sesión**: Recuperar contexto de trabajo previo
+- **Cuando estás atascado**: Buscar soluciones similares que ya resolviste
+- **Para consistencia**: Verificar decisiones arquitectónicas anteriores
+:::
+
+::: danger Sin Plugin = Sin Comando
+Si ejecutas `/episodic-memory:search-conversations` sin tener instalado el plugin, Claude Code no reconocerá el comando. Asegúrate de instalar primero:
+
+```bash
+/plugin install episodic-memory@superpowers-marketplace
+```
+:::
+
+---
+
 ## Workflows Completos
 
 ### Tabla Comparativa de Workflows
@@ -946,5 +1020,5 @@ Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos lega
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-05
+**Fecha**: 2025-12-06
 :::
