@@ -10,11 +10,6 @@
       "command": "npx",
       "args": ["shadcn@latest", "mcp"],
       "$description": "Shadcn/ui component library integration"
-    },
-    "core-memory": {
-      "type": "http",
-      "url": "https://core.heysol.ai/api/v1/mcp?source=Claude-Code",
-      "$description": "Persistent memory across sessions (requires account)"
     }
   }
 }
