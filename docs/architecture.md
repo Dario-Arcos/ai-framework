@@ -108,8 +108,6 @@ sequenceDiagram
         H->>H: Verify .gitignore
         CC->>H: superpowers-loader
         H-->>CC: Load skills context
-        CC->>H: core_session_search
-        H-->>CC: Search memory for context
     end
 
     rect rgb(243, 229, 245)
@@ -170,7 +168,10 @@ graph TD
     subgraph "SessionStart"
         SS1[session-start.py] -->|"Install templates"| T1[First run only]
         SS2[superpowers-loader.sh] -->|"Load skills"| T2[Every session]
-        SS3[core_session_search.py] -->|"Search memory"| T3[Every session]
+    end
+
+    subgraph "SessionEnd"
+        SE1[episodic-memory-sync.py] -->|"Sync conversations"| T3[If plugin installed]
     end
 
     subgraph "PreToolUse"
@@ -191,7 +192,7 @@ graph TD
 |------|-------|---------|---------|
 | `session-start.py` | SessionStart | No | Install framework on first run |
 | `superpowers-loader.sh` | SessionStart | No | Load skills into context |
-| `core_session_search.py` | SessionStart | No | Search memory for relevant context |
+| `episodic-memory-sync.py` | SessionEnd | No | Sync conversations (if episodic-memory installed) |
 | `security_guard.py` | PreToolUse | **Yes** | Block security vulnerabilities |
 | `anti_drift.py` | UserPromptSubmit | No | Remind to check CLAUDE.md |
 | `ccnotify.py` | Multiple | No | macOS desktop notifications |
@@ -314,4 +315,4 @@ Your skill instructions here...
 
 ---
 
-*Last updated: 2025-11-28*
+*Last updated: 2025-12-06*

@@ -18,6 +18,10 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 | Revertir cambios          | `ESC ESC` o `/rewind` |
 | Cambiar modo permisos     | `Shift+Tab`           |
 | Cambiar modelo            | `/model`              |
+| Bash directo (sin tokens) | `! comando`           |
+| Background (terminal)     | `Ctrl+B`              |
+| Background (web)          | `& mensaje`           |
+| Ver procesos background   | `/tasks`              |
 
 ---
 
@@ -51,6 +55,88 @@ compara @src/old-auth.js con @src/new-auth.js
 ```
 
 **Beneficios:** Inmediato (no espera) · Preciso (archivo/dir exacto) · Eficiente con scope de git
+
+---
+
+## Ejecución Eficiente
+
+### Bash Mode (`!` prefix)
+
+Ejecuta comandos shell directamente **sin interpretación de Claude**, ahorrando tokens:
+
+```bash
+! npm test
+! git status
+! ls -la src/
+```
+
+**Comportamiento:**
+
+- Comando ejecuta inmediatamente en shell
+- Output se añade al contexto de conversación
+- No requiere aprobación de Claude
+- Soporta `Ctrl+B` para background
+
+**Cuándo usar:** Comandos rápidos donde no necesitas que Claude interprete o modifique el comando.
+
+**Ahorro:** `! git status` usa ~0 tokens vs ~50+ tokens si Claude lo procesa conversacionalmente.
+
+---
+
+### Background Commands (`Ctrl+B`)
+
+Mueve comandos en ejecución al background mientras Claude sigue trabajando:
+
+```bash
+npm run dev        # Enter para ejecutar
+Ctrl+B             # Push to background
+```
+
+**Comportamiento:**
+
+- Proceso continúa ejecutándose independientemente
+- Claude puede seguir respondiendo prompts
+- Output buffereado, recuperable con `/tasks`
+- Auto-cleanup al cerrar Claude Code
+
+**Ideal para:** Dev servers, build processes, test suites, logs en tiempo real.
+
+**Comandos de gestión:**
+
+| Acción        | Atajo/Comando         |
+| ------------- | --------------------- |
+| Background    | `Ctrl+B` (2x en tmux) |
+| Ver procesos  | `/tasks`              |
+| Terminar      | `K`                   |
+
+---
+
+### Background Web Tasks (`&` prefix)
+
+Envía tareas a **Claude Code en la web** prefijando con `&`:
+
+```bash
+& Refactoriza todos los tests de integración siguiendo el nuevo patrón
+& Implementa feature X completa con tests y documentación
+```
+
+**Comportamiento:**
+
+- Tarea se ejecuta en infraestructura cloud de Anthropic
+- Terminal queda libre para otras tareas
+- Monitoreable desde [claude.ai/code](https://claude.ai/code) o Claude iOS
+- Notificación cuando termina
+
+**Casos de uso:**
+
+- **Tareas largas**: Refactorings masivos, migraciones
+- **Paralelo**: Múltiples features en branches diferentes
+- **Móvil**: Iniciar tarea, monitorear desde el teléfono
+- **Async**: Dejar corriendo mientras haces otras cosas
+
+::: warning Requisito
+Requiere cuenta Claude con acceso a Claude Code Web. La tarea se ejecuta en tu repositorio conectado.
+:::
 
 ---
 
@@ -247,8 +333,6 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 **Invocar:**
 
 ```bash
-/core-memory-expert
-# o
 "Use the skill-creator skill to help me build a new skill"
 ```
 
@@ -256,7 +340,6 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 
 | Skill | Propósito |
 |-------|-----------|
-| `core-memory-expert` | Setup Core Memory (Cloud <2min, self-hosted) |
 | `algorithmic-art` | Generative art con p5.js + seeded randomness |
 | `claude-code-expert` | Build/modify agents, commands, hooks |
 | `skill-creator` | Create new skills (guided workflow) |
@@ -277,12 +360,11 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 Skills son alternativa ligera. MCPs solo cuando workflow requiere integración continua.
 :::
 
-**Activar (remover de blacklist en `.claude/settings.local.json`):**
+**Activar en `.claude/settings.local.json`:**
 
 ```json
 {
-  "disabledMcpjsonServers": ["core-memory", "team-memory"]
-  // playwright y shadcn activos
+  "enabledMcpjsonServers": ["playwright", "shadcn"]
 }
 ```
 
@@ -294,8 +376,6 @@ Skills son alternativa ligera. MCPs solo cuando workflow requiere integración c
 |--------|--------------|-----|
 | `playwright` | Alto (~15 tools) | E2E testing continuo |
 | `shadcn` | Medio (~7 tools) | UI dev con componentes |
-| `core-memory` | Medio (~6 tools) | Memory persistente |
-| `team-memory` | Medio (~2 tools) | Shared memory |
 
 **Cuándo usar:** Necesitas tools disponibles en cada prompt (E2E testing, UI library lookup).
 
@@ -485,5 +565,5 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-05 | **Tips**: MCP opt-in + context budget awareness
+**Fecha**: 2025-12-06 | **Tips**: Ejecución eficiente (`!`, `Ctrl+B`, `&`)
 :::

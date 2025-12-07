@@ -12,13 +12,11 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 | ------------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
 | **playwright**      | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ❌ No instalado | Alto (~15 tools) |
 | **shadcn**          | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ❌ No instalado | Medio (~7 tools) |
-| **core-memory**     | Personal memory (admin/write access)         | `core.heysol.ai/api/v1/mcp`      | ❌ No instalado | Medio (~6 tools) |
-| **episodic-memory** | Local episodic memory                        | `episodic-memory-mcp-server`     | ❌ No instalado | Medio (~4 tools) |
+| **episodic-memory** | Local episodic memory (via plugin)           | `superpowers-marketplace`        | ❌ No instalado | Medio (~4 tools) |
 
 **Por defecto:** Zero MCPs instalados (opt-in explícito)
 **Instalación:** Copiar `.claude/.mcp.json.template` → `.mcp.json` (proyecto)
 **Activación:** Habilitar en `.claude/settings.local.json`
-**Local privado:** `team-memory` requiere `.claude/.mcp.json` con token (no versionable)
 
 ---
 
@@ -90,18 +88,12 @@ Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `enable
 :::
 
 ::: details Ver .mcp.json.template
-El template incluye 4 servidores preconfigurados:
+El template incluye 2 servidores preconfigurados:
 - `playwright`: Browser automation
 - `shadcn`: Shadcn/ui components
-- `core-memory`: Persistent memory
-- `episodic-memory`: Local memory
 
-Incluye instrucciones inline (`$usage`) y descripción por servidor (`$description`).
+Incluye descripción por servidor (`$description`).
 :::
-
-### Core Memory (Personal)
-
-Requiere autenticación OAuth. Ver [Core Memory Expert skill](https://github.com/Dario-Arcos/ai-framework/tree/main/skills/core-memory-expert).
 
 ---
 
@@ -144,59 +136,6 @@ cp .claude/.mcp.json.template .mcp.json
 **4. Restart:** `Ctrl+D` → `claude`
 
 :::
-
-::: details Team Memory Server (Local Config)
-
-**Context:** `team-memory` requiere token privado → No committeable en `.mcp.json` público.
-
-**Solución:** Configuración local en `.claude/.mcp.json` (gitignored).
-
-**Setup:**
-
-**1. Crear `.claude/.mcp.json`:**
-
-```json
-{
-  "mcpServers": {
-    "team-memory": {
-      "type": "http",
-      "url": "https://team-core-proxy.up.railway.app/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_TEAM_TOKEN_HERE"
-      }
-    }
-  }
-}
-```
-
-**2. Obtener token:**
-- Solicitar al admin del proyecto
-- Reemplazar `YOUR_TEAM_TOKEN_HERE` con token real
-
-**3. Activar en `.claude/settings.local.json`:**
-
-```json
-{
-  "enabledMcpjsonServers": ["team-memory"]
-}
-```
-
-**4. Restart:** `Ctrl+D` → `claude`
-
-**5. Verificar:** `/mcp` debe mostrar `team-memory: ✓ Connected`
-
-**Uso:**
-```
-Busca en memoria: [tu query]
-```
-
-**Nota:** Read-only. No puedes agregar memoria (tool `memory_ingest` no disponible).
-
-**Repo:** [team-core-proxy](https://github.com/Dario-Arcos/team-core-proxy)
-
-:::
-
----
 
 ## Catálogo & Recursos
 
