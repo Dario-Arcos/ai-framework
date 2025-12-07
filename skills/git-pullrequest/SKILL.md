@@ -267,7 +267,7 @@ for issue in sr_issues.medium:
 
 **Invoke the `receiving-code-review` skill** with the fix_list as feedback to process.
 
-The skill enforces verification for EACH issue:
+The skill defines the verification protocol. Implementer follows and documents this output for EACH issue:
 
 1. **READ** - Read the file to understand context around the issue
 2. **UNDERSTAND** - Restate the problem in own words

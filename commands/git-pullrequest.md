@@ -11,6 +11,9 @@ argument-hint: target-branch (e.g., "main")
 ## Determine Target Branch
 
 **If `$ARGUMENTS` provided:**
+- Validate format: must match `^[a-zA-Z0-9/_-]+$`
+- Reject if starts with `--` (security - prevents git flag injection)
+- If invalid: `❌ Invalid branch name. Use alphanumeric, /, -, _ only`
 - Use `$ARGUMENTS` as target branch (e.g., `/git-pullrequest main`)
 
 **If `$ARGUMENTS` empty:**
