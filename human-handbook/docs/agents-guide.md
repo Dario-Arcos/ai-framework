@@ -340,22 +340,6 @@ UX, visual design, accessibility, front-end implementation
 
 ---
 
-## Memory & Context
-
-### `memory-search`
-
-::: tip Búsqueda de Contexto
-Agente especializado en búsqueda de memoria persistente y contexto del proyecto
-:::
-
-**Propósito:** Recuperar contexto relevante, decisiones previas, y conocimiento acumulado del proyecto
-
-**Integración:** Se invoca automáticamente mediante hooks (SessionStart, UserPromptSubmit) para cargar contexto relevante
-
-**Uso Manual:** Para búsquedas específicas cuando necesitas recuperar información histórica del proyecto
-
----
-
 ## Consejos de Uso
 
 ::: tip Selección Rápida
@@ -384,5 +368,5 @@ Agente especializado en búsqueda de memoria persistente y contexto del proyecto
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-24
+**Fecha**: 2025-12-06
 :::
