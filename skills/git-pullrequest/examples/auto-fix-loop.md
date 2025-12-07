@@ -1,6 +1,8 @@
-# Example: Auto Fix Loop
+# Example: Auto Fix Loop (With Verification)
 
-Complete flow showing the auto fix loop: issues found → auto fix → re-review → success.
+Complete flow showing the virtuous cycle: detection → verification → implementation → re-validation → success.
+
+**Key concept:** The `receiving-code-review` skill verifies each issue before implementing, catching false positives.
 
 ---
 
@@ -87,32 +89,70 @@ Commits:
     "line": 45,
     "problem": "Card number logged in plaintext",
     "suggestion": "Mask card number, show only last 4 digits"
+  },
+  {
+    "severity": "Medium (Security)",
+    "source": "Security Review",
+    "file": "src/payments/validator.ts",
+    "line": 67,
+    "problem": "Potential timing attack in card comparison",
+    "suggestion": "Use constant-time comparison function"
   }
 ]
 ```
 
-### 2b.2 Fix Subagent Dispatched
+### 2b.2 Verify and Apply Fixes (Using receiving-code-review)
 
-Subagent receives prompt and executes fixes...
-
-### 2b.3 Fix Subagent Report
+**Invoke `receiving-code-review` skill** to verify each issue before implementing:
 
 ```
-## Fix Report
+Skill: receiving-code-review
 
-**Files modified:**
-- src/payments/validator.ts
+Feedback to process (from code-reviewer + security-reviewer):
+1. [High (Security)] SQL injection at validator.ts:23
+2. [Important] Card number logging at validator.ts:45
+3. [Medium (Security)] Timing attack at validator.ts:67
+```
 
-**Fixes applied:**
-1. [Critical] Line 23: Replaced string concatenation with parameterized query using prepared statement
-2. [Important] Line 45: Added maskCardNumber() helper, now logs "****-****-****-1234"
+**Verification output:**
 
-**Pushbacks:** None
+```
+Processing 3 issues with verification...
 
-**Test results:** All 12 tests passing
+1/3 [High (Security)] SQL injection - src/payments/validator.ts:23
+    READ: Line 23 shows `const query = "SELECT * FROM cards WHERE num=" + cardNum`
+    VERIFY: ✅ Confirmed - direct string concatenation with user input
+    EVALUATE: ✅ Parameterized query is the correct fix
+    → Implementing: Changed to prepared statement with placeholder
+    TEST: ✅ All 12 tests passing
+    → ✅ Fixed
 
-**Commit created:**
-fix: address pre-PR review findings
+2/3 [Important] Card number logging - src/payments/validator.ts:45
+    READ: Line 45 shows `console.log("Processing: " + cardNumber)`
+    VERIFY: ✅ Confirmed - full 16-digit card number in logs
+    EVALUATE: ✅ Masking approach is correct
+    → Implementing: Added maskCard() helper, logs "****-****-****-1234"
+    TEST: ✅ All 12 tests passing
+    → ✅ Fixed
+
+3/3 [Medium (Security)] Timing attack - src/payments/validator.ts:67
+    READ: Lines 65-70 show card validation logic
+    VERIFY: ⚠️ Line 67 uses `crypto.timingSafeEqual()` already
+    EVALUATE: This is a FALSE POSITIVE - constant-time comparison exists
+    → ⚠️ Skipped: False positive - timingSafeEqual already in use at line 67
+```
+
+### 2b.3 Commit Verified Fixes
+
+```bash
+git add -A && git commit -m "fix: address verified pre-PR review findings
+
+Applied (verified):
+- [High] SQL injection in validator.ts:23 - parameterized query
+- [Important] Card number logging in validator.ts:45 - masked output
+
+Skipped (false positive):
+- [Medium] Timing attack - already uses timingSafeEqual at line 67"
 ```
 
 ---
@@ -167,7 +207,7 @@ fix: address pre-PR review findings
 URL: https://github.com/org/repo/pull/144
 Branch: feature/payment-validation → main
 Commits: 3 (including fix commit)
-Quality Gate: 0 addressed, 5 OK
+Quality Gate: 0 issues, 4 observations OK
 ```
 
 ---
@@ -175,7 +215,27 @@ Quality Gate: 0 addressed, 5 OK
 ## Key Points
 
 1. **User always in control**: Loop only continues if user selects "Auto fix"
-2. **Parallel reviews**: Code-reviewer AND security-reviewer run in parallel (faster)
-3. **Re-review after fix**: BOTH reviews run again to verify fixes
-4. **Natural loop exit**: When both reviews return clean, user selects "Create PR"
-5. **Exit anytime**: User can select "Cancel" at any decision point
+2. **Parallel detection**: Code-reviewer AND security-reviewer run in parallel
+3. **Verified fixes**: `receiving-code-review` verifies each issue before implementing
+4. **False positive filtering**: Verification catches issues that don't exist (like the timing attack)
+5. **Re-validation**: BOTH reviewers run again after fixes to ensure quality
+6. **Natural loop exit**: When both reviews return clean, user selects "Create PR"
+7. **Exit anytime**: User can select "Cancel" at any decision point
+
+## The Virtuous Cycle in Action
+
+```
+Detection: 3 issues found (1 High, 1 Important, 1 Medium)
+    │
+    ▼
+Verification: 1 false positive caught (timing attack)
+    │
+    ▼
+Implementation: 2 valid fixes applied
+    │
+    ▼
+Re-validation: 0 issues remaining
+    │
+    ▼
+Result: Clean PR with verified, high-quality fixes
+```
