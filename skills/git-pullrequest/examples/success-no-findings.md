@@ -67,7 +67,7 @@ Commits:
 URL: https://github.com/org/repo/pull/142
 Branch: feature/add-logging → main
 Commits: 2
-Quality Gate: 0 addressed, 5 OK
+Quality Gate: 0 issues, 4 observations OK
 ```
 
 ---
@@ -108,7 +108,7 @@ feat changes affecting **3** files (Δ33 LOC).
 
 ## Test Plan
 
-- [x] New functionality tested
-- [x] Tests added
+- [ ] New functionality tested
+- [ ] Tests added
 - [ ] Docs updated
 ```

@@ -75,7 +75,7 @@ Commits:
 URL: https://github.com/org/repo/pull/143
 Branch: feature/oauth-integration → main
 Commits: 3
-Quality Gate: 3 addressed, 4 OK
+Quality Gate: 3 issues documented, 3/4 observations OK
 ```
 
 ---
@@ -122,8 +122,8 @@ feat changes affecting **5** files (Δ166 LOC).
 
 ## Test Plan
 
-- [x] New functionality tested
-- [x] Tests added
+- [ ] New functionality tested
+- [ ] Tests added
 - [ ] Docs updated
 ```
 

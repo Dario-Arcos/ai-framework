@@ -124,7 +124,7 @@ Fix commit created: fix: address pre-PR review findings
 
 ### Critical
 1. migrations/002_users.sql:78 - Missing transaction wrapper
-   → Subagent could not safely add transaction (requires manual review)
+   → ⚠️ Skipped: Requires architectural change (manual review needed)
 
 ## Next Steps
 

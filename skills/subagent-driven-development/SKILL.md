@@ -65,11 +65,10 @@ Task tool (general-purpose):
 Task tool (ai-framework:code-reviewer):
   Use template at requesting-code-review/code-reviewer.md
 
-  WHAT_WAS_IMPLEMENTED: [from subagent's report]
-  PLAN_OR_REQUIREMENTS: Task N from [plan-file]
+  DESCRIPTION: [task summary from subagent's report]
+  PLAN_REFERENCE: Task N from [plan-file]
   BASE_SHA: [commit before task]
   HEAD_SHA: [current commit]
-  DESCRIPTION: [task summary]
 ```
 
 **Code reviewer returns:** Strengths, Issues (Critical/Important/Minor), Assessment

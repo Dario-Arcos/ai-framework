@@ -1,6 +1,6 @@
 ---
 name: git-pullrequest
-description: Use when creating a PR - validates changes, dispatches code-reviewer + security-reviewer subagents in parallel, generates contextual observations, presents consolidated findings, and creates PR with quality documentation. Supports corporate commit format (type|TASK-ID|YYYYMMDD|desc). Human authorizes every decision point.
+description: Use when creating a PR - validates changes, dispatches code-reviewer + security-reviewer agents in parallel, generates contextual observations, presents consolidated findings, and creates PR with quality documentation. Supports corporate commit format (type|TASK-ID|YYYYMMDD|desc). Human authorizes every decision point.
 ---
 
 # Git Pull Request Workflow
@@ -21,12 +21,13 @@ Create PRs with integrated quality gate. Human always decides.
 
 ### 1.1 Validate and Fetch
 
-1. Validate target branch format (alphanumeric, `/`, `-`, `_`)
-2. Reject branches starting with `--` (security)
-3. Run `git fetch origin --quiet`
-4. Verify `origin/{target_branch}` exists
-5. Count commits: `git rev-list --count origin/{target}..HEAD`
-6. Error if no commits
+1. Validate target branch format: `^[a-zA-Z0-9/_-]+$` (alphanumeric, `/`, `-`, `_`)
+2. Reject branches starting with `--` (security - prevents git flag injection)
+3. Verify remote exists: `git remote get-url origin` (error if no remote configured)
+4. Run `git fetch origin --quiet`
+5. Verify `origin/{target_branch}` exists: `git rev-parse --verify origin/{target_branch}`
+6. Count commits: `git rev-list --count origin/{target_branch}..HEAD`
+7. Error if no commits (0 count)
 
 ### 1.2 Extract Metadata
 
@@ -35,25 +36,26 @@ Store in working memory:
 | Variable | Command |
 |----------|---------|
 | `current_branch` | `git branch --show-current` |
-| `commit_count` | `git rev-list --count origin/{target}..HEAD` |
-| `first_commit` | `git log -1 --pretty=format:'%s' origin/{target}..HEAD` |
-| `commit_list` | `git log --pretty=format:'- %h %s' origin/{target}..HEAD` |
-| `files_changed` | From `git diff --shortstat` |
-| `additions` | From `git diff --shortstat` |
-| `deletions` | From `git diff --shortstat` |
-| `delta_loc` | `additions - deletions` |
-| `primary_type` | First word of `first_commit` (default: feat) |
+| `commit_count` | `git rev-list --count origin/{target_branch}..HEAD` |
+| `first_commit` | `git log --reverse --pretty=format:'%s' origin/{target_branch}..HEAD \| head -1` |
+| `commit_list` | `git log --pretty=format:'- %h %s' origin/{target_branch}..HEAD` |
+| `files_changed` | From `git diff --shortstat origin/{target_branch}..HEAD` |
+| `additions` | From `git diff --shortstat origin/{target_branch}..HEAD` |
+| `deletions` | From `git diff --shortstat origin/{target_branch}..HEAD` |
+| `delta_loc` | `additions - deletions` (used for complexity check) |
+| `primary_type` | First word of `first_commit` before `(` or `:` (default: feat) |
 
 ### 1.3 Detect Corporate Format
 
 Check if `first_commit` matches corporate pattern:
 
 ```
-Pattern: ^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|.+$
+Pattern (regex): ^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|.+$
+Bash check: echo "$first_commit" | grep -Eq '^[a-z]+\|[A-Z]+-[0-9]+\|[0-9]{8}\|.+$'
 Example: feat|TRV-350|20251023|add user authentication
 ```
 
-**Valid types:** feat, fix, refactor, chore, docs, test, security
+**Valid types:** feat, fix, refactor, chore, docs, test, style, perf, ci, build, security
 
 If match:
 - `is_corporate = true`
@@ -107,16 +109,19 @@ Commits:
 
 **Review A: Code Quality & Architecture**
 
-Use `requesting-code-review` skill OR dispatch `ai-framework:code-reviewer` directly with:
+Dispatch `ai-framework:code-reviewer` agent with these parameters (matches template at `requesting-code-review/code-reviewer.md`):
 
-- WHAT_WAS_IMPLEMENTED: `{commit_count} commits for PR to {target_branch}: {first_commit}`
-- PLAN_OR_REQUIREMENTS: `Pre-PR quality gate validation before merge to {target_branch}`
+- DESCRIPTION: `{commit_count} commits for PR to {target_branch}: {first_commit}`
+- PLAN_REFERENCE: `Pre-PR quality gate validation before merge to {target_branch}`
 - BASE_SHA: `origin/{target_branch}`
 - HEAD_SHA: `HEAD`
 
 **Review B: Security Analysis**
 
-Dispatch `ai-framework:security-reviewer` subagent (runs current branch analysis automatically).
+Dispatch `ai-framework:security-reviewer` agent. The agent automatically:
+1. Runs `git diff --merge-base origin/HEAD` to get changes
+2. Analyzes against `origin/{target_branch}` (pass as context if needed)
+3. Returns findings in markdown format with severity levels
 
 **Store outputs:**
 
@@ -134,10 +139,10 @@ Run checks on `origin/{target_branch}..HEAD`:
 
 | Check | Condition | Status |
 |-------|-----------|--------|
-| Tests | src files changed without test files | ⚠️ if true |
-| API | Files in api/, routes/, endpoints/ | ⚠️ if any |
-| Breaking | BREAKING in commit messages | ⚠️ if found |
-| Complexity | S≤80, M≤250, L≤600, XL>600 | ⚠️ if over budget |
+| Tests | Files in `src/` or `lib/` changed AND no files in `test/`, `tests/`, `__tests__/`, or `*.test.*`, `*.spec.*` added | ⚠️ if true |
+| API | Any files modified in `api/`, `routes/`, `endpoints/`, or files matching `**/api/**` | ⚠️ if any |
+| Breaking | Commit messages contain "BREAKING CHANGE" or "BREAKING:" | ⚠️ if found |
+| Complexity | Based on `delta_loc`: S (≤80), M (≤250), L (≤600), XL (>600) | ⚠️ if XL |
 
 **Note:** Secrets detection handled by security-reviewer (Phase 2.1b).
 
@@ -214,7 +219,7 @@ Options:
   - label: "Create PR"
     description: "Push branch and create PR with current findings documented"
   - label: "Auto fix"
-    description: "Subagent fixes Critical+Important+High+Medium security issues, then re-review"
+    description: "Fix Critical+Important (code) and High+Medium (security) issues, then re-review. Minor issues not auto-fixed."
   - label: "Cancel"
     description: "Exit. Fix manually and re-run /git-pullrequest {target_branch}"
 ```
@@ -225,9 +230,11 @@ Options:
 
 ---
 
-## Phase 2b: Auto Fix
+## Phase 2b: Auto Fix (Verified)
 
 Only if user chose "Auto fix". See `examples/auto-fix-loop.md` for complete flow.
+
+**Why verification matters:** Subagents can generate false positives, suggest fixes that break functionality, or miss codebase context. The `receiving-code-review` skill acts as a **second line of defense** to filter issues before implementing.
 
 ### 2b.1 Prepare Fix List
 
@@ -236,12 +243,15 @@ Extract issues from BOTH reviews:
 ```
 fix_list = []
 
-# Code review: Critical + Important
+# Code review: Critical + Important (NOT Minor)
 for issue in cr_issues.critical:
   fix_list.append({
     severity: "Critical",
-    source: "Code Review",  # Traceability: which review found this
-    ...issue  # Includes: file, line, problem, suggestion
+    source: "Code Review",
+    file: issue.file,
+    line: issue.line,
+    problem: issue.what,
+    suggestion: issue.fix
   })
 for issue in cr_issues.important:
   fix_list.append({ severity: "Important", source: "Code Review", ...issue })
@@ -253,34 +263,87 @@ for issue in sr_issues.medium:
   fix_list.append({ severity: "Medium (Security)", source: "Security Review", ...issue })
 ```
 
-### 2b.2 Apply Fixes Using receiving-code-review
+### 2b.2 Verify and Apply Fixes (Using receiving-code-review)
 
-Invoke the `receiving-code-review` skill with the consolidated fix_list as feedback.
+**Invoke the `receiving-code-review` skill** with the fix_list as feedback to process.
 
-The skill automatically enforces:
-1. READ files to understand context
-2. VERIFY suggestions technically correct
-3. IMPLEMENT one fix at a time
-4. TEST each fix
-5. PUSH BACK if suggestion breaks functionality
+The skill defines the verification protocol. Implementer follows and documents this output for EACH issue:
 
-Example invocation:
+1. **READ** - Read the file to understand context around the issue
+2. **UNDERSTAND** - Restate the problem in own words
+3. **VERIFY** - Check: Is this issue REAL in this codebase?
+4. **EVALUATE** - Check: Is the suggested fix technically correct?
+5. **DECIDE**:
+   - ✅ **Valid** → Implement the fix
+   - ⚠️ **False positive** → Skip with justification
+   - ❌ **Fix breaks something** → Pushback, document why
+6. **TEST** - Run related tests after each fix
+
+**Example invocation:**
 ```
 Skill: receiving-code-review
 
-Feedback to process: {fix_list with 4 issues}
-- [Critical] file.js:23 - SQL injection
-- [Important] file.js:45 - Missing error handling
-- [High (Security)] config.js:17 - Hardcoded API_KEY
-...
+Feedback to process (from code-reviewer + security-reviewer):
+1. [Critical] src/payments/validator.ts:23 - SQL injection via string concatenation
+   Suggestion: Use parameterized query with prepared statement
+2. [High (Security)] config.js:17 - Hardcoded API_KEY exposed
+   Suggestion: Move to environment variable
+3. [Important] src/payments/validator.ts:45 - Card number logged in plaintext
+   Suggestion: Mask card number, show only last 4 digits
+4. [Medium (Security)] src/auth/session.ts:89 - Potential session fixation
+   Suggestion: Regenerate session ID after authentication
 ```
 
-After all fixes, commit:
+**Example verification output:**
+```
+Processing 4 issues with verification...
+
+1/4 [Critical] SQL injection - src/payments/validator.ts:23
+    READ: Line 23 shows `query = "SELECT * FROM cards WHERE id=" + cardId`
+    VERIFY: ✅ Confirmed - string concatenation with user input
+    EVALUATE: ✅ Parameterized query is correct fix
+    → Implementing fix
+    TEST: ✅ All 12 tests passing
+    → ✅ Fixed
+
+2/4 [High (Security)] Hardcoded API_KEY - config.js:17
+    READ: Line 17 shows `API_KEY = "sk_live_abc123..."`
+    VERIFY: ✅ Confirmed - production key in source
+    EVALUATE: ✅ Environment variable is correct approach
+    → Implementing fix
+    → ✅ Fixed
+
+3/4 [Important] Card number logging - src/payments/validator.ts:45
+    READ: Line 45 shows `console.log("Processing card: " + cardNumber)`
+    VERIFY: ✅ Confirmed - full card number in logs
+    EVALUATE: ✅ Masking is correct approach
+    → Implementing fix
+    → ✅ Fixed
+
+4/4 [Medium (Security)] Session fixation - src/auth/session.ts:89
+    READ: Lines 85-95 show session handling logic
+    VERIFY: ⚠️ Session IS regenerated in authenticateUser() (line 92)
+    EVALUATE: This is a FALSE POSITIVE - session already regenerated
+    → ⚠️ Skipped: False positive - session regeneration exists at line 92
+```
+
+### 2b.3 Commit Verified Fixes
+
+After verification and implementation:
+
 ```bash
-git add -A && git commit -m "fix: address pre-PR review findings"
+git add -A && git commit -m "fix: address verified pre-PR review findings
+
+Applied (verified):
+- [Critical] SQL injection in validator.ts:23 - parameterized query
+- [High] Hardcoded API key in config.js:17 - moved to env var
+- [Important] Card number logging in validator.ts:45 - masked output
+
+Skipped (false positive):
+- [Medium] Session fixation - already handled at auth/session.ts:92"
 ```
 
-### 2b.3 Return to Quality Gate
+### 2b.4 Return to Quality Gate
 
 After fix completes:
 1. Return to Phase 2.1 (re-dispatch BOTH code-reviewer AND security-reviewer in parallel)
@@ -292,8 +355,8 @@ After fix completes:
 **Loop exit strategy:**
 - **Natural termination**: Both reviews return clean (0 Critical/Important/High/Medium issues) → user selects "Create PR"
 - **User control**: User can select "Cancel" at any decision point to exit
-- **Expected iterations**: 1-2 (comprehensive first review should catch all issues)
-- **If >2 iterations**: Indicates incomplete review or fixes introducing new issues - user should investigate
+- **Expected iterations**: 1-2 (verification catches false positives early)
+- **If >2 iterations**: Indicates fixes introducing new issues - user should investigate
 
 User always controls loop via decision options.
 
@@ -330,18 +393,22 @@ Options:
 ```bash
 current_branch=$(git branch --show-current)
 
-# Comprehensive list of protected branches (common in real teams)
-protected="^(main|master|develop|development|staging|stage|production|prod|release|releases|qa|uat|hotfix)$"
+# Protected branches: exact matches OR prefixes (e.g., release/*, hotfix/*)
+protected_exact="^(main|master|develop|development|staging|stage|production|prod|qa|uat)$"
+protected_prefix="^(release|releases|hotfix)/"
 ```
 
 **If on protected branch:**
 
 ```bash
-if echo "$current_branch" | grep -Eq "$protected"; then
+if echo "$current_branch" | grep -Eq "$protected_exact" || echo "$current_branch" | grep -Eq "$protected_prefix"; then
   # NEVER push to protected - create temp branch
   timestamp=$(date +%Y%m%d%H%M%S)
-  slug=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]/-/g' | tr -s '-' | cut -c1-30)
-  slug="${slug:-feature}"  # Fallback if empty
+
+  # Generate slug from first_commit, with robust fallback
+  slug=$(echo "$first_commit" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//' | cut -c1-30)
+  slug="${slug:-pr-changes}"  # Fallback if empty or only special chars
+
   pr_branch="pr/${slug}-${timestamp}"
 
   echo "⚠️ On protected branch: $current_branch"
@@ -402,11 +469,25 @@ Create temp file with this structure:
 
 ## Test Plan
 
-{Based on primary_type:}
-- feat: [ ] New functionality tested, [ ] Tests added, [ ] Docs updated
-- fix: [ ] Bug reproduced, [ ] Regression test added, [ ] Verified in staging
-- refactor: [ ] Existing tests pass, [ ] Functionality unchanged
-- default: [ ] Changes verified, [ ] Build successful
+{Generate checklist based on primary_type - always unchecked for reviewer to complete:}
+
+**For feat:**
+- [ ] New functionality tested
+- [ ] Tests added
+- [ ] Docs updated
+
+**For fix:**
+- [ ] Bug reproduced before fix
+- [ ] Regression test added
+- [ ] Verified in staging
+
+**For refactor:**
+- [ ] Existing tests pass
+- [ ] Functionality unchanged
+
+**For other types (docs, chore, etc.):**
+- [ ] Changes verified
+- [ ] Build successful
 ```
 
 ### 3.4 Create PR
@@ -434,8 +515,10 @@ Quality Gate: {attention_count} addressed, {ok_count} OK
 | Scenario | Response |
 |----------|----------|
 | No target branch | `❌ Usage: /git-pullrequest main` |
+| No remote configured | `❌ No remote 'origin' configured. Run: git remote add origin <url>` |
 | Target not found | `❌ origin/{target} not found. Run: git fetch origin` |
 | No commits | `❌ No commits between {current} and {target}` |
+| Invalid branch format | `❌ Invalid branch name. Use alphanumeric, /, -, _ only` |
 | Invalid corporate format | `❌ Invalid format. Use: type\|TASK-ID\|YYYYMMDD\|desc` |
 | Push fails | Show error + manual command |
 | gh CLI missing | `❌ gh CLI required. Install: https://cli.github.com` |
@@ -447,6 +530,31 @@ Quality Gate: {attention_count} addressed, {ok_count} OK
 
 1. **Human decides**: Never auto-proceed past quality gate
 2. **Three-layer validation**: Code review + Security review + Observations (parallel execution)
-3. **Loop with exit**: Auto fix returns to user decision, exits naturally when reviews clean
-4. **Corporate support**: Detect and validate corporate commit format
-5. **Skills integration**: Uses requesting-code-review and receiving-code-review for consistency
+3. **Verified fixes**: Auto-fix uses `receiving-code-review` to filter false positives before implementing
+4. **Loop with exit**: Auto fix returns to user decision, exits naturally when reviews clean
+5. **Corporate support**: Detect and validate corporate commit format
+6. **Protected branches**: Never push directly to main/master/develop - auto-creates temp branch
+
+## The Virtuous Cycle
+
+```
+Detection (code-reviewer + security-reviewer)
+         │
+         ▼
+   fix_list (may contain false positives)
+         │
+         ▼
+Verification (receiving-code-review filters each issue)
+         │
+         ├── Valid → Implement
+         ├── False positive → Skip with justification
+         └── Breaks something → Pushback
+         │
+         ▼
+Re-validation (both reviewers again)
+         │
+         ▼
+Clean? → Create PR : Loop
+```
+
+This ensures **multiple perspectives** validate every change before merge.
