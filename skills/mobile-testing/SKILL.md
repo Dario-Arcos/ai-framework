@@ -26,7 +26,7 @@ adb --version           # Android
 
 Enable MCP servers:
 
-1. Add to project's `.mcp.json` (or copy from `.claude/.mcp.json.template`):
+1. Copy `.claude/.mcp.json` to project root, then add servers:
 ```json
 {
   "mcpServers": {

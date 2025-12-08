@@ -37,7 +37,10 @@ java --version          # 17+
 maestro --version       # Latest
 ```
 
-Verify MCP servers enabled in project's `.mcp.json`:
+Verify MCP servers:
+
+1. Copy `.claude/.mcp.json` to project root (if not done)
+2. Add mobile servers to root `.mcp.json`:
 ```json
 {
   "mcpServers": {
@@ -45,6 +48,11 @@ Verify MCP servers enabled in project's `.mcp.json`:
     "maestro": { "command": "maestro", "args": ["mcp"] }
   }
 }
+```
+
+3. Enable in `.claude/settings.local.json`:
+```json
+{ "enabledMcpjsonServers": ["mobile-mcp", "maestro"] }
 ```
 
 ### Fallback Strategy
