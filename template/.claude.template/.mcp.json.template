@@ -14,12 +14,12 @@
     "mobile-mcp": {
       "command": "npx",
       "args": ["-y", "@mobilenext/mobile-mcp@latest"],
-      "$description": "Mobile automation: iOS/Android simulators, emulators, real devices. Interactive debugging and UI exploration. Requires: Node.js 22+, Xcode CLI (iOS), Android Platform Tools (Android)"
+      "$description": "Mobile automation, UI debugging, accessibility trees"
     },
     "maestro": {
       "command": "maestro",
       "args": ["mcp"],
-      "$description": "Mobile E2E testing: YAML flows, auto-healing, AI assertions. Supports React Native, Expo, Flutter. Requires: Java 17+, maestro CLI (curl -fsSL https://get.maestro.mobile.dev | bash)"
+      "$description": "Mobile E2E testing, YAML flows, AI assertions"
     }
   }
 }

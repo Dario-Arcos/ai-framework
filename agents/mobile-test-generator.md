@@ -1,7 +1,7 @@
 ---
 name: mobile-test-generator
 description: AI agent for autonomous mobile E2E test generation using mobile-mcp visual exploration and Maestro YAML flows. Supports React Native, Expo, Flutter, and native apps.
-version: 2.0.0
+version: 1.0.0
 ---
 
 # Mobile E2E Test Generator
@@ -37,10 +37,27 @@ java --version          # 17+
 maestro --version       # Latest
 ```
 
-Verify MCP servers enabled:
+Verify MCP servers enabled in project's `.mcp.json`:
 ```json
-{ "enabledMcpjsonServers": ["mobile-mcp", "maestro"] }
+{
+  "mcpServers": {
+    "mobile-mcp": { "command": "npx", "args": ["-y", "@mobilenext/mobile-mcp@latest"] },
+    "maestro": { "command": "maestro", "args": ["mcp"] }
+  }
+}
 ```
+
+### Fallback Strategy
+
+**If mobile-mcp tools unavailable:**
+1. Use `adb shell uiautomator dump` (Android) or Accessibility Inspector (iOS)
+2. Generate flows based on manual element discovery
+3. Validate with `maestro test` directly
+
+**If Maestro unavailable:**
+1. Install: `curl -fsSL https://get.maestro.mobile.dev | bash`
+2. Verify: `maestro --version`
+3. For CI: See `references/expo-react-native.md` CI/CD section
 
 ---
 

@@ -24,7 +24,19 @@ xcode-select -p         # iOS
 adb --version           # Android
 ```
 
-Enable MCP servers in `.claude/settings.local.json`:
+Enable MCP servers:
+
+1. Add to project's `.mcp.json` (or copy from `.claude/.mcp.json.template`):
+```json
+{
+  "mcpServers": {
+    "mobile-mcp": { "command": "npx", "args": ["-y", "@mobilenext/mobile-mcp@latest"] },
+    "maestro": { "command": "maestro", "args": ["mcp"] }
+  }
+}
+```
+
+2. Enable in `.claude/settings.local.json`:
 ```json
 { "enabledMcpjsonServers": ["mobile-mcp", "maestro"] }
 ```
@@ -117,6 +129,16 @@ See `references/expo-react-native.md` for complete guide.
 | Wrong element tapped | Use `id:` instead of `text:` |
 | Expo shows dev screen | Use `openLink` deep link |
 | Flaky tests | Add explicit waits, use testIDs |
+
+## Examples
+
+Ready-to-use Maestro flow templates:
+
+- `examples/login-flow.yaml` - Basic authentication flow
+- `examples/form-validation.yaml` - Form validation testing
+- `examples/expo-dev-build.yaml` - Expo Development Build launch pattern
+
+Run with: `maestro test examples/login-flow.yaml`
 
 ## Reference Files
 

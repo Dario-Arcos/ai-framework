@@ -1,0 +1,24 @@
+# Example: Expo Development Build launch pattern
+# CRITICAL: Never use Expo Go for E2E testing
+# Run: maestro test examples/expo-dev-build.yaml
+
+# Note: Replace com.example.myapp with your actual bundle ID
+# The exp+scheme must match your app.json scheme
+
+appId: com.example.myapp
+---
+# Launch via deep link (required for Expo dev builds)
+- openLink: "exp+myapp://expo-development-client/?url=http://10.0.2.2:8081"
+
+# Wait for app to fully load (longer timeout for dev builds)
+- extendedWaitUntil:
+    visible:
+      id: "app-root"
+    timeout: 30000
+
+# Take screenshot to verify launch
+- takeScreenshot: "expo-launch-verified"
+
+# Now proceed with your test flow
+- assertVisible:
+    id: "home-screen"

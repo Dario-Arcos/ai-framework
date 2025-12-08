@@ -107,7 +107,7 @@ Expert mobile developer specializing in React Native, Flutter, and native iOS/An
 
 ### AI-Powered Mobile Testing (MCP Integration)
 
-This agent integrates with dedicated MCP servers for IA-first mobile testing:
+This agent integrates with dedicated MCP servers for AI-first mobile testing:
 
 **Interactive Debugging (mobile-mcp)**:
 - Real-time UI exploration via accessibility trees
