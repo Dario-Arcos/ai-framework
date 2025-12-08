@@ -10,6 +10,7 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 
 | Server              | Propósito                                    | Package/URL                      | Estado Default | Context Cost |
 | ------------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
+| **context7**        | Real-time library docs for accurate code gen | `@upstash/context7-mcp`          | ❌ No instalado | Bajo (~2 tools) |
 | **playwright**      | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ❌ No instalado | Alto (~15 tools) |
 | **shadcn**          | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ❌ No instalado | Medio (~7 tools) |
 | **mobile-mcp**      | Mobile automation: iOS/Android debugging     | `@mobilenext/mobile-mcp`         | ❌ No instalado | Alto (~20 tools) |
@@ -90,7 +91,8 @@ Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `enable
 :::
 
 ::: details Ver .mcp.json.template
-El template incluye 4 servidores preconfigurados:
+El template incluye 5 servidores preconfigurados:
+- `context7`: Real-time library documentation
 - `playwright`: Browser automation (web)
 - `shadcn`: Shadcn/ui components
 - `mobile-mcp`: Mobile automation (iOS/Android)
@@ -154,6 +156,8 @@ cp .claude/.mcp.json.template .mcp.json
 ---
 
 ## Uso con Framework
+
+**Context7:** Documentación actualizada para external APIs. Previene código con APIs deprecadas. Uso: incluir "use context7" en prompts o habilitar auto-invocación.
 
 **Playwright:** Browser automation via `design-review` agent (screenshots automáticos)
 
@@ -279,5 +283,5 @@ Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agre
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-07 | **Cambios**: Mobile testing (mobile-mcp + maestro) integration
+**Fecha**: 2025-12-08 | **Cambios**: Context7 MCP integration
 :::

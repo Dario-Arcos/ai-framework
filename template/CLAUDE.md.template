@@ -103,16 +103,20 @@ Context auto-compacts. Never stop early for token concerns. After refresh: disco
 - Never speculate about unopened code—read files first
 - Verify information across multiple sources
 
-### 6. Deprecated API Mitigation
+### 6. External API Verification
 
-**Problem**: Training data staleness + bias toward deprecated code.
+**Problem**: Training data staleness causes outdated code generation.
 
 **Before using external dependencies**:
-- [ ] Use WebFetch to verify official current documentation
-- [ ] Check for deprecation warnings
-- [ ] Verify installation commands
+- If `context7` MCP enabled → use `get-library-docs` tool
+- Otherwise → WebFetch official documentation manually
 
-**High-risk**: Any external API, library, framework, CLI tool you didn't write.
+**Always verify** (regardless of method):
+- [ ] Current API signatures match
+- [ ] Installation commands are valid
+- [ ] No breaking changes since training cutoff
+
+**High-risk**: Any external API, library, framework, CLI tool.
 
 **Failure to verify = professional malpractice.**
 
@@ -129,21 +133,18 @@ Before delivering, verify via **Compliance Certification** (see below).
 
 ### Auto-Continuation
 
-Before ending any response, evaluate internally:
+Before ending any response, evaluate in order (first match wins):
 
-| Condition | Action |
-|-----------|--------|
-| Todos marked `in_progress` or `pending` exist | **CONTINUE** |
-| Explicitly stated "Next I will..." without asking | **CONTINUE** |
-| Asked user a question requiring response | **STOP** |
-| All todos completed or none exist | **STOP** |
-| Already continued 3+ times this task | **STOP** |
+| # | Condition | Action |
+|---|-----------|--------|
+| 1 | Already continued 3+ times this task | **STOP** |
+| 2 | Asked user a question requiring response | **STOP** |
+| 3 | All todos completed or none exist | **STOP** |
+| 4 | Todos marked `in_progress` or `pending` exist | **CONTINUE** |
+| 5 | Explicitly stated "Next I will..." without asking | **CONTINUE** |
+| 6 | Default (uncertain) | **STOP** |
 
-**Safety limits**:
-- Maximum 3 automatic continuations per user request
-- If uncertain whether to continue → STOP (conservative default)
-
-**Rule**: If (todos pending) AND (no question asked) AND (continuations < 3) → Continue automatically.
+**Safety limit**: Maximum 3 automatic continuations per user request.
 
 **If incomplete**: Continue or escalate. Never deliver partial work as complete.
 

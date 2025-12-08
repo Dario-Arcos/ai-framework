@@ -1,6 +1,11 @@
 {
   "$comment": "Copy to project root as .mcp.json — Full docs: human-handbook/docs/mcp-servers.md",
   "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "$description": "Real-time library documentation for accurate code generation"
+    },
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"],
