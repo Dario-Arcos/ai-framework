@@ -12,6 +12,8 @@ Model Context Protocol conecta Claude Code con herramientas externas (databases,
 | ------------------- | -------------------------------------------- | -------------------------------- | -------------- | ------------ |
 | **playwright**      | Browser automation, E2E testing, screenshots | `@playwright/mcp`                | ❌ No instalado | Alto (~15 tools) |
 | **shadcn**          | Shadcn/ui v4 component library integration   | `@jpisnice/shadcn-ui-mcp-server` | ❌ No instalado | Medio (~7 tools) |
+| **mobile-mcp**      | Mobile automation: iOS/Android debugging     | `@mobilenext/mobile-mcp`         | ❌ No instalado | Alto (~20 tools) |
+| **maestro**         | Mobile E2E testing: YAML flows, AI assertions| `maestro mcp` (CLI built-in)     | ❌ No instalado | Medio (~10 tools) |
 | **episodic-memory** | Local episodic memory (via plugin)           | `superpowers-marketplace`        | ❌ No instalado | Medio (~4 tools) |
 
 **Por defecto:** Zero MCPs instalados (opt-in explícito)
@@ -88,9 +90,11 @@ Solo habilita MCPs que necesitas para tu proyecto actual. Puedes cambiar `enable
 :::
 
 ::: details Ver .mcp.json.template
-El template incluye 2 servidores preconfigurados:
-- `playwright`: Browser automation
+El template incluye 4 servidores preconfigurados:
+- `playwright`: Browser automation (web)
 - `shadcn`: Shadcn/ui components
+- `mobile-mcp`: Mobile automation (iOS/Android)
+- `maestro`: Mobile E2E testing (YAML flows)
 
 Incluye descripción por servidor (`$description`).
 :::
@@ -155,6 +159,69 @@ cp .claude/.mcp.json.template .mcp.json
 
 **Shadcn:** Component library integration para desarrollo UI con shadcn/ui v4
 
+**Mobile-MCP + Maestro:** Mobile testing via `mobile-test-generator` agent
+
+### Mobile Testing (React Native, Expo, Flutter)
+
+::: tip Cuándo usar cada uno
+- **mobile-mcp**: Debugging interactivo, exploración UI, screenshots
+- **maestro**: Test suites E2E, CI/CD, auto-healing tests
+:::
+
+**Requisitos:**
+
+| Herramienta | Requisito | Instalación |
+|-------------|-----------|-------------|
+| mobile-mcp | Node.js 22+ | Automático via npx |
+| mobile-mcp (iOS) | Xcode CLI Tools | `xcode-select --install` |
+| mobile-mcp (Android) | Android Platform Tools | Android Studio |
+| maestro | Java 17+ | `java --version` |
+| maestro CLI | Latest | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
+
+**Activación para proyecto mobile:**
+
+```json
+{
+  "enabledMcpjsonServers": ["mobile-mcp", "maestro"]
+}
+```
+
+**Expo/React Native:**
+- Usar Development Builds (no Expo Go) para E2E testing
+- Maestro usa `openLink` para deep links Expo
+- Preferir `testID` sobre text matching para estabilidad
+
+::: details Ejemplo: Debugging con mobile-mcp
+```
+User: "El botón de login no responde"
+
+Claude usa:
+1. mobile_list_available_devices → iPhone 15 Simulator
+2. mobile_launch_app → inicia app
+3. mobile_take_screenshot → captura visual
+4. mobile_list_elements_on_screen → árbol de accesibilidad
+5. Identifica: botón tiene enabled=false
+6. Reporta: "Botón deshabilitado, revisar validación"
+```
+:::
+
+::: details Ejemplo: Generar tests Maestro
+```yaml
+# flows/auth/login.yaml
+appId: com.myapp
+---
+- launchApp
+- tapOn: "Email"
+- inputText: "user@example.com"
+- tapOn: "Password"
+- inputText: "SecurePass123"
+- tapOn: "Sign In"
+- assertVisible: "Welcome"
+```
+
+Ejecutar: `maestro test flows/auth/`
+:::
+
 ---
 
 ## Troubleshooting
@@ -212,5 +279,5 @@ Comienza con 2-3 servers. Cada uno consume recursos y aumenta startup time. Agre
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-11 | **Cambios**: Template approach + enabledMcpjsonServers (opt-in explícito)
+**Fecha**: 2025-12-07 | **Cambios**: Mobile testing (mobile-mcp + maestro) integration
 :::

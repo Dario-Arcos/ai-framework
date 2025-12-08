@@ -10,6 +10,16 @@
       "command": "npx",
       "args": ["shadcn@latest", "mcp"],
       "$description": "Shadcn/ui component library integration"
+    },
+    "mobile-mcp": {
+      "command": "npx",
+      "args": ["-y", "@mobilenext/mobile-mcp@latest"],
+      "$description": "Mobile automation, UI debugging, accessibility trees"
+    },
+    "maestro": {
+      "command": "maestro",
+      "args": ["mcp"],
+      "$description": "Mobile E2E testing, YAML flows, AI assertions"
     }
   }
 }
