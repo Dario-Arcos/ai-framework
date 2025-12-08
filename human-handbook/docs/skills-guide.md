@@ -79,10 +79,11 @@ Selecciona tu situación para ver las skills recomendadas
 <div>
 
 ### Testing Avanzado
-::: details Tests tienen timing issues, mocks incorrectos, o necesitas probar webapps
+::: details Tests tienen timing issues, mocks incorrectos, o necesitas probar webapps/mobile
 - <Badge type="tip" text="Testing" /> `condition-based-waiting` - Reemplaza timeouts con polling de condiciones
 - <Badge type="warning" text="Testing" /> `testing-anti-patterns` - Evita testear mocks, test-only methods
 - <Badge type="tip" text="Testing" /> `webapp-testing` - Playwright toolkit con server lifecycle management
+- <Badge type="tip" text="Mobile" /> `mobile-testing` - Dual-stack mobile-mcp + Maestro para iOS/Android E2E testing
 :::
 
 </div>
@@ -145,7 +146,7 @@ Selecciona tu situación para ver las skills recomendadas
 
 | Categoría | Skills | Uso Recomendado |
 |-----------|--------|-----------------|
-| [Testing](#testing) | 4 | TDD, flaky tests, anti-patterns, webapp E2E |
+| [Testing](#testing) | 5 | TDD, flaky tests, anti-patterns, webapp/mobile E2E |
 | [Debugging](#debugging) | 4 | Debugging sistemático, root cause, verificación, defense-in-depth |
 | [Collaboration](#collaboration) | 9 | Brainstorming, plans, reviews, git workflows, parallel agents |
 | [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
@@ -265,6 +266,68 @@ python scripts/with_server.py \
 - Siempre `page.wait_for_load_state('networkidle')` antes de inspeccionar DOM
 - Usar scripts como black boxes (--help primero)
 - Cerrar browser al terminar
+
+---
+
+#### mobile-testing
+
+::: tip Testing | Mobile E2E
+**Cuándo**: Testing de apps móviles (React Native, Expo, Flutter, native), debugging UI en simuladores/emuladores, o generación de test suites E2E mobile
+**Qué hace**: Provee integración dual-stack con mobile-mcp (debugging interactivo) y Maestro (test suites E2E con YAML flows y AI assertions)
+:::
+
+**Dual-Stack Approach**:
+- **mobile-mcp**: Screenshots, accessibility tree, interacción directa con simuladores/emuladores
+- **Maestro**: YAML flows declarativos, auto-healing, assertions AI (`assertWithAI`, `assertNoDefectsWithAI`)
+
+**Prerequisites**:
+```bash
+node --version    # v22+
+java --version    # 17+
+maestro --version # Latest
+```
+
+**Decision Tree**:
+```
+¿Tipo de testing?
+├─ Debugging → mobile-mcp tools directamente
+│   1. mobile_list_available_devices
+│   2. mobile_launch_app(appId)
+│   3. mobile_take_screenshot
+│   4. mobile_list_elements_on_screen
+│
+├─ E2E Test Generation → Explorar con mobile-mcp, generar Maestro YAML
+│   1. Explorar visualmente
+│   2. Generar flows/[feature]/[scenario].yaml
+│   3. Validar: maestro test flows/
+│
+└─ Expo/React Native → Ver references/expo-react-native.md
+```
+
+**Ejemplo Maestro Flow**:
+```yaml
+appId: com.myapp
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-button"
+- inputText: "user@example.com"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+```
+
+**Expo Critical**: Usar Development Builds, NO Expo Go. Usar `openLink` para deep links:
+```yaml
+- openLink: "exp+com.myapp://expo-development-client/?url=http://10.0.2.2:8081"
+```
+
+**References** (progressive disclosure):
+- `references/maestro-patterns.md` - Sintaxis YAML completa
+- `references/mobile-mcp-tools.md` - Tools de debugging
+- `references/expo-react-native.md` - Guía específica Expo/RN
 
 ---
 
@@ -1028,7 +1091,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-11-28
+**Última actualización**: 2025-12-07
 **Categorías**: Testing, Debugging, Collaboration, Development Tools, Design, Writing, Meta
 **Status**: Production-Ready
 :::

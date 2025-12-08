@@ -105,6 +105,29 @@ Expert mobile developer specializing in React Native, Flutter, and native iOS/An
 - App store testing guidelines and pre-submission validation
 - Continuous integration with GitHub Actions, Bitrise, and Codemagic
 
+### AI-Powered Mobile Testing (MCP Integration)
+
+This agent integrates with dedicated MCP servers for IA-first mobile testing:
+
+**Interactive Debugging (mobile-mcp)**:
+- Real-time UI exploration via accessibility trees
+- Screenshot-based visual debugging
+- Element inspection with `mobile_list_elements_on_screen`
+- Quick action verification without writing tests
+
+**E2E Test Generation (Maestro MCP)**:
+- YAML-based declarative test flows
+- AI-powered assertions (`assertWithAI`, `assertNoDefectsWithAI`)
+- Auto-healing capabilities for flaky tests
+- Native CI/CD integration
+
+**Expo/React Native Specifics**:
+- Use Development Builds (not Expo Go) for E2E testing
+- Deep link handling: `openLink: "exp+com.myapp://..."`
+- testID selectors preferred over text matching
+
+See `mobile-test-generator` agent for autonomous test generation workflows.
+
 ### App Store & Distribution
 
 - iOS App Store and Google Play Store submission processes

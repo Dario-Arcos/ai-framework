@@ -279,6 +279,40 @@ AI-powered Playwright test generation via visual exploration
 
 ---
 
+### `mobile-test-generator`
+
+::: tip Autonomous Mobile E2E Tests
+AI-powered mobile test generation via mobile-mcp visual exploration + Maestro YAML flows
+:::
+
+**Mission:** Generate production-ready mobile E2E tests through autonomous visual exploration of iOS/Android apps
+
+**Stack:** React Native · Expo · Flutter · Native iOS/Android
+
+**Input:** `APP_ID` (bundle identifier) o descripción de app
+**Output:** `flows/` (Maestro YAML) + execution report
+
+**Phases:**
+1. **Environment Detection**: List devices, identify platform, detect app type
+2. **Visual Discovery**: mobile_launch_app → mobile_take_screenshot → mobile_list_elements_on_screen → navigate → repeat
+3. **Generate Maestro Flows**: YAML files estructurados en `flows/[feature]/[scenario].yaml`
+4. **Validation Loop**: `maestro test flows/` hasta ≥90% pass rate (max 5 iterations)
+5. **Reporting**: `.claude/reviews/mobile-test-report.md`
+
+**First Step**: Load `mobile-testing` skill para referencias detalladas
+
+**Expo Critical**: Usar Development Builds, NO Expo Go:
+```yaml
+- openLink: "exp+com.myapp://expo-development-client/?url=http://10.0.2.2:8081"
+```
+
+**Key References** (via skill):
+- `references/maestro-patterns.md` - YAML syntax oficial
+- `references/mobile-mcp-tools.md` - Tools de debugging
+- `references/expo-react-native.md` - Guía específica Expo/RN
+
+---
+
 ### `systematic-debugger`
 
 ::: tip Systematic Debugging
@@ -354,7 +388,8 @@ UX, visual design, accessibility, front-end implementation
 | ---------------------------------------------- | --------------------------- |
 | `backend-architect` + `database-admin`         | Scalable architecture       |
 | `code-reviewer` + `security-reviewer`          | Quality + Security gates    |
-| `test-automator` + `playwright-test-generator` | Complete testing automation |
+| `test-automator` + `playwright-test-generator` | Complete web testing automation |
+| `mobile-developer` + `mobile-test-generator`   | Complete mobile testing automation |
 | `design-iterator` + `design-review`            | Elite UX implementation     |
 
 ### Flujo Óptimo
@@ -368,5 +403,5 @@ UX, visual design, accessibility, front-end implementation
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-06
+**Fecha**: 2025-12-07
 :::
