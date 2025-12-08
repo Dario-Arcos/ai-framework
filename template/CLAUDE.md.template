@@ -127,6 +127,24 @@ Before delivering, verify via **Compliance Certification** (see below).
 - Documentation updated (if user-facing)
 - No security vulnerabilities introduced
 
+### Auto-Continuation
+
+Before ending any response, evaluate internally:
+
+| Condition | Action |
+|-----------|--------|
+| Todos marked `in_progress` or `pending` exist | **CONTINUE** |
+| Explicitly stated "Next I will..." without asking | **CONTINUE** |
+| Asked user a question requiring response | **STOP** |
+| All todos completed or none exist | **STOP** |
+| Already continued 3+ times this task | **STOP** |
+
+**Safety limits**:
+- Maximum 3 automatic continuations per user request
+- If uncertain whether to continue → STOP (conservative default)
+
+**Rule**: If (todos pending) AND (no question asked) AND (continuations < 3) → Continue automatically.
+
 **If incomplete**: Continue or escalate. Never deliver partial work as complete.
 
 ---
