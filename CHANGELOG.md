@@ -16,6 +16,7 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ### Añadido
 
+- **MCP Context7**: Integración de servidor MCP para documentación de APIs en tiempo real, mitiga stale training data al consultar docs oficiales antes de usar dependencias externas (commit 62943ad)
 - **Hook SessionEnd**: Sincronización automática con episodic-memory al finalizar sesión (`hooks/episodic-memory-sync.py`), documentación Memory Systems actualizada (PR #36)
 - **Infraestructura Mobile E2E Testing**: Agentes `mobile-developer` y `mobile-test-generator`, skill `mobile-testing` con dual-stack (mobile-mcp para debug interactivo + Maestro para E2E), referencias técnicas para Expo/React Native, ejemplos de flujos YAML (PR #38)
 
