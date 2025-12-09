@@ -183,5 +183,5 @@ Security review automático ejecuta antes de crear PR.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-28 | **Versión**: 4.1.0
+**Fecha**: 2025-12-08 | **Versión**: 4.1.0
 :::

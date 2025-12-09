@@ -1,324 +1,384 @@
-# Workflow AI-First
+# AI-First Workflow
 
-::: tip Un principo que lo rige todo
-Cada iniciativa comienza como conversación sobre **porqué** y **qué** necesitan los usuarios. El framework guía esa conversación hasta código production-ready.
+Dos caminos complementarios. Elige según contexto.
+
+---
+
+## Arquitectura
+
+```mermaid
+%%{init: {'theme': 'neutral', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#4f46e5', 'lineColor': '#64748b', 'secondaryColor': '#f1f5f9', 'tertiaryColor': '#e2e8f0'}}}%%
+flowchart TB
+    subgraph SP["SUPERPOWERS"]
+        direction TB
+        S1[brainstorming] --> S2[writing-plans] --> S3[executing-plans] --> S4[TDD] --> S5[finishing-branch]
+    end
+
+    subgraph SK["SPECKIT"]
+        direction TB
+        K0[prp-new] -.-> K1[specify] --> K2[clarify] --> K3[plan] --> K4[tasks] --> K5[implement]
+    end
+
+    subgraph SHARED["COMPARTIDOS"]
+        direction LR
+        G1[worktree] ~~~ G2[commit] ~~~ G3[pullrequest]
+    end
+
+    S5 --> SHARED
+    K5 --> SHARED
+```
+
+**Superpowers**: Flujo conversacional. Skills se activan por contexto.
+**SpecKit**: Flujo estructurado. Comandos slash generan artefactos trazables.
+
+---
+
+## Decisión
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    Q1{Stakeholders o compliance}
+    Q1 -->|Sí| SK[SpecKit]
+    Q1 -->|No| Q2{Explorar antes de implementar}
+    Q2 -->|Sí| SP[Superpowers]
+    Q2 -->|No| Q3{Bug fix o refactor}
+    Q3 -->|Sí| SP2[Superpowers]
+    Q3 -->|No| ANY[Cualquiera]
+```
+
+| Contexto | Camino | Razón |
+|----------|--------|-------|
+| Requisitos difusos | Superpowers | Brainstorming refina iterativamente |
+| Equipo pequeño | Superpowers | Menor overhead documental |
+| Bug fix / refactor | Superpowers | No requiere spec formal |
+| Stakeholders externos | SpecKit | Artefactos documentan decisiones |
+| Compliance / regulación | SpecKit | Trazabilidad completa |
+| Handoff a otros devs | SpecKit | Tasks.md como guía |
+
+::: info Regla
+**Velocidad → Superpowers. Certeza → SpecKit.**
 :::
 
 ---
 
-## El Ecosistema en 3 Capas
+## Superpowers
 
-```text
-PRP (Business Layer)
-   ↓ Define WHAT to build
-SDD (Engineering Layer)
-   ↓ Define HOW to build
-GitHub (Delivery Layer)
-   ↓ Track & deliver
+Skills activados por contexto. Sin comandos explícitos.
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    A[Idea] --> B[Brainstorm] --> C[Plan] --> D[Execute] --> E[Finish]
 ```
 
-**Por qué estas capas:**
+### brainstorming
 
-- **PRP**: Stakeholders hablan business (no tech stack)
-- **SDD**: Engineers convierten a implementation plan testeable
-- **GitHub**: Team tracks progress, not just code
+Trigger: describir una idea sin plan definido.
 
----
+- Una pregunta por mensaje
+- 2-3 enfoques con trade-offs
+- Diseño en secciones de 200-300 palabras
+- Validación incremental
 
-## Primera Decisión: ¿Branch o Worktree?
+Output: `docs/plans/YYYY-MM-DD-<topic>-design.md`
 
-### Branch Simple
+### writing-plans
 
-**Cuándo:** Una feature a la vez, desarrollo lineal.
+Trigger: "listo para implementar" o diseño aprobado.
 
-```bash
-/speckit.specify "feature"
-# → Branch en mismo directorio
+- Tasks de 2-5 minutos
+- Paths exactos
+- Código completo
+- Comandos con output esperado
+
+Output: `docs/plans/YYYY-MM-DD-<feature>.md`
+
+### executing-plans
+
+::: code-group
+```text [Subagent-Driven]
+Misma sesión
+Review entre tasks
+Fresh subagent por task
 ```
-
-**Trade-off:** Cambiar de feature requiere commit/stash.
-
----
-
-### Worktree Aislado
-
-**Cuándo:** Múltiples features paralelas, bug fix urgente, experimentación.
-
-```bash
-/worktree-create "feature" main
-# → Directorio separado, nueva ventana IDE
+```text [Parallel Session]
+Nueva sesión en worktree
+Batches de 3 tasks
+Checkpoint entre batches
 ```
-
-**Post-setup:** En nueva ventana: `Cmd+\``, verifica `pwd`, ejecuta `claude`
-
-**Beneficio:** Workspace principal intacto.
-
----
-
-## El Workflow SDD (6 Pasos Core + 2 Opcionales)
-
-::: info Philosophy
-Cada paso previene problema específico que cuesta horas. No es burocracia - es speedup.
 :::
 
-**Comandos Opcionales:**
+### TDD
 
-| Comando     | Cuándo                    | Propósito                                                    | ROI                              |
-| ----------- | ------------------------- | ------------------------------------------------------------ | -------------------------------- |
-| `analyze`   | Entre tasks e implement   | Valida consistencia entre spec/plan/tasks                    | Alto para features complejas     |
-| `checklist` | Entre analyze e implement | Quality gate para requirements (unit tests for requirements) | Alto para requirements complejos |
-
-### 1. Specify → Spec Técnica
-
-```bash
-/speckit.specify "add OAuth auth"
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    R[RED] --> G[GREEN] --> RF[REFACTOR] --> R
 ```
 
-Convierte descripción en spec estructurada. Output: `specs/001-feature/spec.md`
+::: danger Obligatorio
+Código sin test fallando primero → borrar y reiniciar.
+:::
+
+### finishing-branch
+
+1. Verificar tests
+2. Elegir: merge local | PR | mantener | descartar
+3. Ejecutar
+4. Cleanup worktree
 
 ---
 
-### 2. Clarify → Detectar Ambigüedades
+## SpecKit
+
+Comandos slash con artefactos trazables.
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    A[prp-new] -.-> B[specify] --> C[clarify] --> D[plan] --> E[tasks] --> F[implement]
+```
+
+### /prp-new <Badge type="tip" text="opcional" />
+
+Discovery para problemas no definidos.
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    C[Contexto] --> P[Problema] --> I[Impacto] --> O[Oportunidad]
+```
+
+Output: `prps/<name>/discovery.md`
+
+### /speckit.specify
+
+```bash
+/speckit.specify "OAuth authentication"
+```
+
+- Crea branch + directorio
+- Spec sin implementación
+- Máx 3 clarificaciones
+- Validación automática
+
+Output: `specs/NNN-feature/spec.md`
+
+### /speckit.clarify
 
 ```bash
 /speckit.clarify
 ```
 
-**Por qué importa - Ejemplo:**
-
-```text
-Spec: "Add user authentication"
-
-Sin clarify:
-- Dev 1: Email/password
-- Dev 2: OAuth
-- Dev 3: SSO
-→ 3 implementations, hours de meetings, refactor
-
-Con clarify:
-Claude: "¿Qué auth methods?"
-You: "OAuth"
-→ 1 implementation correcta, zero refactor
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    subgraph BAD[Sin Clarify]
+        D1[Dev 1] & D2[Dev 2] & D3[Dev 3] --> R[3 implementaciones]
+    end
+    subgraph GOOD[Con Clarify]
+        Q[Pregunta] --> A[Respuesta] --> OK[1 implementación]
+    end
 ```
 
-**ROI:** 2 minutos save 4 horas. Nunca skip este paso.
+::: warning
+2 min clarify = 4+ horas refactor evitado.
+:::
 
----
-
-### 3. Plan → Design Artifacts
+### /speckit.plan
 
 ```bash
 /speckit.plan
 ```
 
-Genera: `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
+| Artefacto | Contenido |
+|-----------|-----------|
+| research.md | Decisiones técnicas |
+| data-model.md | Entidades |
+| contracts/ | API specs |
+| quickstart.md | Integración |
 
-**Beneficio:** Todos trabajan con el mismo data model. No "oh, asumí que User tenía este field".
-
----
-
-### 4. Tasks → Implementation Breakdown
+### /speckit.tasks
 
 ```bash
 /speckit.tasks
 ```
 
-Genera `tasks.md` con dependency ordering, parallel markers `[P]`, file paths.
+- Dependency ordering
+- Marcador `[P]` para paralelas
+- Paths exactos
+- TDD compliance
 
-**Beneficio:** No más "¿qué hago ahora?" Cada task es self-contained.
+Output: `specs/NNN-feature/tasks.md`
 
----
-
-### 5. Analyze → Consistency Check (Optional)
-
-```bash
-/speckit.analyze
-```
-
-Valida spec ↔ plan ↔ tasks consistency. Detecta gaps temprano.
-
-**Skip si:** Feature simple (1-4 tasks).
-**Use si:** Feature compleja (10+ tasks).
-
----
-
-### 5.5. Checklist → Quality Gate (Optional)
+### /speckit.analyze + /speckit.checklist <Badge type="tip" text="opcional" />
 
 ```bash
-/speckit.checklist "UX requirements quality"
+/speckit.analyze    # Consistencia cross-artifact
+/speckit.checklist  # Quality gate
 ```
 
-Genera "unit tests for requirements". Valida que tus requirements estén bien escritos.
-
-**¿Qué valida?**
-
-- ✅ Requirements completos (no falta información)
-- ✅ Requirements claros (no ambigüedades)
-- ✅ Requirements consistentes (no contradicciones)
-- ❌ NO valida que el código funcione
-
-**Workflow:**
-
-```text
-analyze → checklist (genera preguntas) → TÚ marcas checkboxes → implement (bloquea si incomplete)
-```
-
-**Por qué ANTES de implement:**
-
-Detectas requirements malos ANTES de codear. Corriges spec. Evitas re-work.
-
-**Skip si:** Requirements ultra-claros, feature simple.
-**Use si:** Requirements complejos, múltiples stakeholders, áreas de riesgo.
-
----
-
-### 6. Implement → TDD + Execution
+### /speckit.implement
 
 ```bash
 /speckit.implement
 ```
 
-Ejecuta tasks con TDD enforcement, assigned agents, parallel execution.
+1. Gate: checklists + TDD
+2. Setup: ignore files, deps
+3. Ejecución por fases
+4. Checkpoints
+5. Progress tracking
 
-**Por qué TDD es natural aquí:**
+---
 
+## Compartidos
+
+### Worktrees
+
+```bash
+/worktree-create "feature" main
 ```
-Sin framework: Write → Hope → Debug → Fix (unpredictable)
-Con framework: Test → Fail → Code → Pass (predecible)
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    Q{WIP que no interrumpir}
+    Q -->|Sí| WT[worktree-create]
+    Q -->|No| BR[Branch simple]
+```
+
+Post-setup: nueva ventana → terminal → `claude`
+
+### Git
+
+```bash
+/git-commit "feat: email validation"   # Auto-agrupa
+/git-pullrequest main                  # Review + security
+```
+
+### Cleanup
+
+```bash
+/changelog          # PRs merged
+/git-cleanup        # Branch + sync
+/worktree-cleanup   # Worktrees obsoletos
 ```
 
 ---
 
-## Con PRP o Sin PRP?
+## Patterns
 
-### Con PRP (Discovery-Driven)
+### Size S (≤80 LOC)
 
-**Cuándo:** Necesitas definir claramente el problema antes de la solución técnica.
+::: code-group
+```bash [Superpowers]
+"Implementa validación de email"
+```
+```bash [SpecKit]
+/speckit.specify "email validation"
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+/speckit.implement
+```
+:::
+
+Skip: analyze, checklist
+
+### Size M (≤250 LOC)
+
+::: code-group
+```bash [Superpowers]
+/worktree-create "feature" main
+# brainstorming → writing-plans → executing-plans
+```
+```bash [SpecKit]
+/worktree-create "feature" main
+/speckit.specify "OAuth"
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+/speckit.analyze
+/speckit.implement
+/git-pullrequest main
+```
+:::
+
+### Hotfix
 
 ```bash
-/prp-new
-# → 4 fases: Contexto → Problema → Impacto → Oportunidad
-# → Output: Opportunity Statement + discovery.md
-# → Continuar con planificación técnica
-```
-
-**Filosofía PRP:**
-
-```
-"No documentamos requisitos - descubrimos oportunidades"
-```
-
-**Proceso:**
-
-1. **CONTEXTO**: ¿Qué situación existe hoy?
-2. **PROBLEMA**: ¿Cuál es la causa raíz? (Five Whys)
-3. **IMPACTO**: ¿Qué consecuencias de negocio tiene?
-4. **OPORTUNIDAD**: ¿Cómo se ve el éxito? (sin solución técnica)
-
-**Beneficio:** Claridad absoluta del problema antes de pensar en código.
-
----
-
-### Sin PRP (Tech-Driven)
-
-**Cuándo:** Bug fixes, refactorings, internal tools donde el problema ya es obvio.
-
-```bash
+/worktree-create "hotfix" main
+/understand "bug checkout"
 /speckit.specify "fix race condition"
-# → Continuar pasos 2-6 normalmente
-```
-
-**Beneficio:** Inicio más rápido cuando el problema ya está claro.
-
----
-
-## Patterns Por Complexity
-
-### Size S (≤80 LOC): Minimal Workflow
-
-```bash
-specify → clarify → plan → tasks → implement → commit → pr
-```
-
-**Skip:** analyze (overhead > benefit para size S)
-**Time:** 5-10 min
-
----
-
-### Size M (≤250 LOC): Full Workflow
-
-```bash
-specify → clarify → plan → tasks → [analyze] → [checklist] → implement → commit → pr
-```
-
-**Opcionales recomendados:** analyze (consistency), checklist (quality gate)
-**Time:** 15-45 min
-
----
-
-### Hotfix: Rapid + Isolated
-
-```bash
-worktree:create → understand → specify → clarify → plan → tasks → implement → commit → pr → cleanup
-```
-
-**Skip opcionales:** analyze, checklist, sync (prioridad = speed)
-**Beneficio:** Trabajo principal intacto, fix rápido
-
----
-
-## 🧭 Decision Trees
-
-**¿PRP?**
-
-```
-¿Stakeholder approval needed? → YES: Use PRP | NO: Skip to SDD
-```
-
-**¿Worktree?**
-
-```
-¿Work in progress que no quieres interrumpir? → YES: worktree | NO: branch
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+/speckit.implement
+/git-commit "fix: race condition"
+/git-pullrequest main
+/worktree-cleanup
 ```
 
 ---
 
-## Post-Merge
+## Reference
 
-```bash
-/changelog      # Auto-detect merged PRs
-/git-cleanup   # Delete branch, sync base
-```
+::: details Skills (Superpowers)
+| Skill | Trigger |
+|-------|---------|
+| using-superpowers | Inicio sesión |
+| brainstorming | Idea sin plan |
+| writing-plans | Diseño listo |
+| executing-plans | Plan existe |
+| test-driven-development | Implementación |
+| verification-before-completion | Pre-entrega |
+| finishing-a-development-branch | Tasks completos |
+| using-git-worktrees | Aislamiento |
+:::
 
-Si usaste worktree, cleanup regresa automáticamente a main.
+::: details Comandos (SpecKit)
+| Comando | Función |
+|---------|---------|
+| /prp-new | Discovery problema |
+| /speckit.specify | Descripción → spec |
+| /speckit.clarify | Resolver ambigüedad |
+| /speckit.plan | Spec → artefactos |
+| /speckit.tasks | Plan → breakdown |
+| /speckit.analyze | Validar consistencia |
+| /speckit.checklist | Quality gate |
+| /speckit.implement | Ejecutar con TDD |
+:::
+
+::: details Comandos Compartidos
+| Comando | Función |
+|---------|---------|
+| /worktree-create | Workspace aislado |
+| /worktree-cleanup | Limpiar obsoletos |
+| /git-commit | Commit inteligente |
+| /git-pullrequest | PR + review |
+| /git-cleanup | Post-merge |
+| /changelog | Generar changelog |
+| /understand | Análisis codebase |
+:::
 
 ---
 
-## Mejores Prácticas
+## Prácticas
 
-**Selección de Workflow:**
-Comienza de forma simple (branch). Mejora a worktree cuando necesites aislamiento.
-
-**Estrategia de Clarify:**
-Responde preguntas incluso si parecen obvias. 2 min ahora > 2 horas después.
-
-**Quality Gate:**
-`/git-pullrequest` ejecuta pre-review con Observaciones Contextualizadas. Detecta issues y ofrece auto fix con re-validación.
-
-**Estrategia de Commit:**
-`commit "all changes"` auto-agrupa por categoría. Mejor que 1 commit gigante mezclado.
+| Práctica | Razón |
+|----------|-------|
+| Clarify siempre | 2 min → 4h saved |
+| Worktree para paralelo | WIP intacto |
+| TDD obligatorio | Prueba vs esperanza |
+| Review pre-PR | Security incluido |
+| Commits granulares | Auto-agrupación |
 
 ---
 
-## Para Profundizar
-
-- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos, uso, opciones
-- [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes, cuándo usar
-- [MCP Servers](./mcp-servers.md) — Playwright, Shadcn
-- [Pro Tips](./claude-code-pro-tips.md) — Patrones avanzados
-
----
+**Relacionados**: [Commands](./commands-guide.md) · [Skills](./skills-guide.md) · [Agents](./agents-guide.md) · [Pro Tips](./claude-code-pro-tips.md)
 
 ::: info Última Actualización
-**Fecha**: 2025-12-05 | **Ecosistema**: PRP-SDD-GitHub
+**Fecha**: 2025-12-08 | **Versión**: 4.1.0
 :::
