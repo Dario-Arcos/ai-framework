@@ -1,6 +1,7 @@
 import { defineConfig } from "vitepress";
+import { withMermaid } from "vitepress-plugin-mermaid";
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   lang: "es-ES",
   title: "AI Framework Handbook",
   description: "Guía completa para desarrollo AI-first con Claude Code",
@@ -81,4 +82,9 @@ export default defineConfig({
 
     darkModeSwitchLabel: "Apariencia",
   },
-});
+
+  // Mermaid configuration
+  mermaid: {
+    theme: "neutral",
+  },
+}));

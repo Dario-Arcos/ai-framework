@@ -10,6 +10,8 @@
     "version": "node scripts/sync-versions.cjs && git add -A"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "mermaid": "^11.12.2",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }
