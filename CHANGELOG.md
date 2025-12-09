@@ -12,6 +12,27 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [4.2.0] - 2025-12-08
+
+### Añadido
+
+- **Hook SessionEnd**: Sincronización automática con episodic-memory al finalizar sesión (`hooks/episodic-memory-sync.py`), documentación Memory Systems actualizada (PR #36)
+- **Infraestructura Mobile E2E Testing**: Agentes `mobile-developer` y `mobile-test-generator`, skill `mobile-testing` con dual-stack (mobile-mcp para debug interactivo + Maestro para E2E), referencias técnicas para Expo/React Native, ejemplos de flujos YAML (PR #38)
+
+### Cambiado
+
+- **CLAUDE.md v4.3.0**: Compliance Certification basada en 6 Killer Items (Objective, Verification, Calibration, Truth-Seeking, Skills-First, Transparency), anti_drift v4.0 alineado, code-reviewer sin model override hardcodeado (PR #34)
+- **Discovery Engine (prp-new)**: Rediseño completo del comando con metodología científica Contexto→Problema→Impacto→Oportunidad, eliminados comandos obsoletos `prp-sync` y `speckit.sync` (PR #35)
+- **Workflow git-pullrequest**: Auditoría y consolidación skill con 4 ejemplos de flujo completo (success-no-findings, success-with-findings, auto-fix-loop, manual-cancellation), integración receiving-code-review para verificación de fixes (PR #37)
+- **Guía AI-First Workflow**: Reescritura completa con diagramas Mermaid, presentación dual-path Superpowers/SpecKit, tema neutral para compatibilidad dark/light mode, integración `vitepress-plugin-mermaid` (PR #39)
+
+### Eliminado
+
+- **Agente memory-search**: Removido en favor de integración directa con MCP episodic-memory (PR #36)
+- **Hook core_session_search**: Eliminado, funcionalidad cubierta por MCP episodic-memory (PR #36)
+
+---
+
 ## [4.1.0] - 2025-11-27
 
 ### Añadido
@@ -172,5 +193,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-11-25 | **Versión**: 4.0.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-08 | **Versión**: 4.2.0 | **Formato**: Keep a Changelog
 :::
