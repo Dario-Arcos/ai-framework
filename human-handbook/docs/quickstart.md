@@ -97,15 +97,19 @@ Reinicia Claude Code después de cualquier cambio en plugins (enable/disable/upd
 /project-init
 ```
 
-Analiza tu codebase y genera reglas modulares en `.claude/rules/`.
+Analiza tu codebase y genera reglas team-shared en `docs/claude-rules/` (tracked).
 
 **Output esperado:**
 
 ```text
-✅ Project context initialized
+✅ Generated docs/claude-rules/ (tracked):
+   • stack.md, patterns.md, architecture.md
 
-Generated rules in .claude/rules/:
-   - stack.md, patterns.md, architecture.md, critical.md
+📋 Synced to .claude/rules/ (local working copy)
+
+💡 Rules flow:
+   • docs/claude-rules/ → commit to git (team-shared)
+   • .claude/rules/ → auto-synced on session start
 ```
 
 ### Instalar Dependencias (Opcional)
