@@ -30,12 +30,13 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 **Actualización limpia** (recomendada en cambios de versión):
 ```
 /plugin uninstall ai-framework@ai-framework
-/plugin marketplace update ai-framework
+/plugin marketplace remove ai-framework
+/plugin marketplace add Dario-Arcos/ai-framework
 /plugin enable ai-framework@ai-framework
 ```
 
-::: warning Por qué reinstalar
-El comando `marketplace update` solo sincroniza archivos nuevos pero no elimina componentes obsoletos. La reinstalación garantiza un estado limpio sin residuos de versiones anteriores.
+::: warning Por qué reinstalar completamente
+El comando `marketplace update` solo sincroniza archivos nuevos pero no elimina componentes obsoletos. Remover y re-agregar el marketplace garantiza un estado limpio sin residuos de versiones anteriores.
 :::
 
 ::: tip Importante
