@@ -69,7 +69,7 @@ claude  # Framework auto-installs on first session
 Exit and reopen Claude Code, then initialize:
 
 ```bash
-/ai-framework:utils:project-init        # Analyzes stack, generates project-context.md
+/ai-framework:utils:project-init        # Analyzes stack, generates .claude/rules/
 /ai-framework:utils:setup-dependencies   # Optional: installs formatters, notifier
 ```
 

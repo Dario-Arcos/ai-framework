@@ -21,9 +21,9 @@ Intelligent dependency detection and installation through documentation analysis
    - Read `dependencies` and `devDependencies`
    - Identify tools that need global installation (used in scripts)
 
-3. **.specify/memory/project-context.md** (if exists) — Check documented stack
-   - Extract critical dependencies listed
-   - Note platform-specific requirements
+3. **.claude/rules/*.md** (if exists) — Check documented stack
+   - Extract critical dependencies from stack.md
+   - Note platform-specific requirements from critical.md
 
 **Output:** Summarize findings in a structured list:
 

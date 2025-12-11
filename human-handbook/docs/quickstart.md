@@ -85,16 +85,15 @@ Reinicia Claude Code después de cualquier cambio en plugins (enable/disable/upd
 /project-init
 ```
 
-Analiza tu codebase y configura recomendaciones de agentes.
+Analiza tu codebase y genera reglas modulares en `.claude/rules/`.
 
 **Output esperado:**
 
 ```text
 ✅ Project context initialized
 
-Stack Detected: [Tu tech stack]
-Recommended Agents: [Agents para tu proyecto]
-Generated: .specify/memory/project-context.md
+Generated rules in .claude/rules/:
+   - stack.md, patterns.md, architecture.md, critical.md
 ```
 
 ### Instalar Dependencias (Opcional)

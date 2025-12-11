@@ -104,7 +104,7 @@ Selecciona tu situación para ver las skills recomendadas
 ### Herramientas
 ::: details Crear componentes o automatización
 - <Badge type="tip" text="Dev Tools" /> `claude-code-expert` - Genera agents/commands/hooks production-ready
-- <Badge type="info" text="Web" /> `web-browser` - Control Chrome/Chromium vía CDP para exploración web interactiva
+- <Badge type="info" text="Web" /> `dev-browser` - Browser automation con estado persistente y ARIA snapshots para exploración web
 - <Badge type="tip" text="Meta" /> `skill-creator` - Crea skill personalizada paso a paso
 :::
 
@@ -780,34 +780,42 @@ Plan con 5 tareas independientes:
 
 ---
 
-#### web-browser
+#### dev-browser
 
 ::: info Web | Automation
-**Cuándo**: Interacción colaborativa con sitios web (clicks, formularios, navegación)
-**Qué hace**: Control minimalista Chrome/Chromium vía CDP (Chrome DevTools Protocol), herramientas para exploración web interactiva
+**Cuándo**: Navegación web, formularios, screenshots, scraping, testing de web apps, automatización de workflows
+**Qué hace**: Browser automation con Playwright que mantiene estado persistente entre scripts. ARIA snapshots para descubrimiento semántico de elementos.
 :::
 
-**Platform**: Multiplataforma (Chrome/Chromium)
+**Platform**: Multiplataforma (Chromium via Playwright)
 
 **Setup** (una vez):
 ```bash
-cd skills/web-browser/tools
-npm install
-ls node_modules/puppeteer-core  # Verify
+cd skills/dev-browser
+bun install
+bun run start-server &  # Wait for "Ready" message
 ```
 
-**Tools**: `start.js`, `nav.js`, `eval.js`, `screenshot.js`, `pick.js`
+**API**: `connect()`, `page()`, `getAISnapshot()`, `selectSnapshotRef()`, `waitForPageLoad()`
 
 **Ejemplo**:
 ```bash
-"Explorar documentación de API"
-# → Start Chrome debugging (port 9222)
-# → Navigate → interact → screenshot
-# → Extract information con eval.js
-# → Cerrar Chrome manualmente cuando termines
+cd skills/dev-browser && bun x tsx <<'EOF'
+import { connect, waitForPageLoad } from "@/client.js";
+const client = await connect("http://localhost:9222");
+const page = await client.page("main");
+await page.goto("https://example.com");
+await waitForPageLoad(page);
+const snapshot = await client.getAISnapshot("main");
+console.log(snapshot);
+await client.disconnect();
+EOF
 ```
 
-**Critical Note**: Esta skill NO incluye `stop.js`. Cierra Chrome manualmente o usa `lsof -ti :9222 | xargs kill -9`
+**Key Features**:
+- **Estado persistente**: Páginas, cookies, localStorage sobreviven entre scripts
+- **ARIA Snapshots**: Descubrimiento semántico con refs estables `[ref=e1]`
+- **waitForPageLoad**: Espera inteligente filtrando ads/tracking
 
 ---
 
