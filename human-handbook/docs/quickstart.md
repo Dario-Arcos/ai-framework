@@ -22,9 +22,21 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 ### Paso 3: Actualizar Plugin (cuando sea necesario)
 
+**Actualización rápida** (cambios menores):
 ```
 /plugin marketplace update ai-framework
 ```
+
+**Actualización limpia** (recomendada en cambios de versión):
+```
+/plugin uninstall ai-framework@ai-framework
+/plugin marketplace update ai-framework
+/plugin enable ai-framework@ai-framework
+```
+
+::: warning Por qué reinstalar
+El comando `marketplace update` solo sincroniza archivos nuevos pero no elimina componentes obsoletos. La reinstalación garantiza un estado limpio sin residuos de versiones anteriores.
+:::
 
 ::: tip Importante
 Después de habilitar o actualizar, reinicia Claude Code para cargar el framework.
@@ -182,5 +194,5 @@ Security review automático ejecuta antes de crear PR.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-08 | **Versión**: 4.1.0
+**Fecha**: 2025-12-11 | **Versión**: 4.2.0
 :::
