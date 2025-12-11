@@ -235,6 +235,45 @@ Output: `specs/NNN-feature/tasks.md`
 
 ## Compartidos
 
+### Project Rules (Team-Shared Context)
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart LR
+    subgraph SETUP["PRIMER USO"]
+        PI["/project-init"] --> DR["docs/claude-rules/"]
+    end
+
+    subgraph TEAM["EQUIPO"]
+        DR --> |"git commit"| GIT["Repo compartido"]
+        GIT --> |"git pull"| DEV["Nuevo dev"]
+    end
+
+    subgraph SESSION["CADA SESIÓN"]
+        DEV --> |"session-start"| CR[".claude/rules/"]
+        DR --> |"auto-sync"| CR
+    end
+```
+
+**Arquitectura:**
+```
+docs/claude-rules/   ← TRACKED (source of truth, reviewable en PRs)
+       ↓ session-start hook
+.claude/rules/       ← IGNORED (working copy local)
+```
+
+| Escenario | Acción |
+|-----------|--------|
+| Proyecto nuevo | `/project-init` → commit `docs/claude-rules/` |
+| Nuevo miembro | `git pull` → session-start sincroniza automáticamente |
+| Actualizar rules | Editar `docs/claude-rules/` → PR → merge |
+
+::: tip Zero Config para Equipo
+Una vez que `docs/claude-rules/` está en el repo, nuevos miembros obtienen contexto automáticamente sin ejecutar nada.
+:::
+
+---
+
 ### Worktrees
 
 ```bash
@@ -354,6 +393,7 @@ Skip: analyze, checklist
 ::: details Comandos Compartidos
 | Comando | Función |
 |---------|---------|
+| /project-init | Generar rules team-shared |
 | /worktree-create | Workspace aislado |
 | /worktree-cleanup | Limpiar obsoletos |
 | /git-commit | Commit inteligente |
@@ -380,5 +420,5 @@ Skip: analyze, checklist
 **Relacionados**: [Commands](./commands-guide.md) · [Skills](./skills-guide.md) · [Agents](./agents-guide.md) · [Pro Tips](./claude-code-pro-tips.md)
 
 ::: info Última Actualización
-**Fecha**: 2025-12-08 | **Versión**: 4.1.0
+**Fecha**: 2025-12-11 | **Versión**: 4.2.1
 :::

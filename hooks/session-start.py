@@ -316,6 +316,55 @@ def sync_all_files(plugin_root, project_dir):
             )
 
 
+def sync_claude_rules(project_dir):
+    """Sync project rules from tracked location to .claude/rules/
+
+    Pattern: Similar to .env.example -> .env
+        - docs/claude-rules/ = tracked source of truth (versioned, PR-reviewable)
+        - .claude/rules/ = local working copy (ignored)
+
+    Flow:
+        1. If docs/claude-rules/ exists with .md files -> sync to .claude/rules/
+        2. Only copies if target missing or source is newer
+        3. Preserves local-only rules (does not delete extra files)
+    """
+    source_dir = project_dir / "docs" / "claude-rules"
+    target_dir = project_dir / ".claude" / "rules"
+
+    # Skip if no tracked rules exist
+    if not source_dir.exists():
+        return
+
+    # Find all .md files in source
+    source_files = list(source_dir.glob("*.md"))
+    if not source_files:
+        return
+
+    # Ensure target directory exists
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except (OSError, IOError):
+        return
+
+    # Sync each file
+    for src_file in source_files:
+        dst_file = target_dir / src_file.name
+
+        try:
+            # Skip if target exists and is same or newer
+            if dst_file.exists():
+                src_mtime = src_file.stat().st_mtime
+                dst_mtime = dst_file.stat().st_mtime
+                # Also check content to handle same-mtime edge cases
+                if dst_mtime >= src_mtime and filecmp.cmp(src_file, dst_file, shallow=False):
+                    continue
+
+            shutil.copy2(src_file, dst_file)
+
+        except (OSError, IOError) as e:
+            sys.stderr.write("WARNING: Failed to sync rule " + src_file.name + ": " + str(e) + "\n")
+
+
 def main():
     """Install framework files on session start"""
     try:
@@ -335,6 +384,9 @@ def main():
 
         # Sync template files (smart sync: skip unchanged)
         sync_all_files(plugin_root, project_dir)
+
+        # Sync project rules from tracked location (docs/claude-rules/ -> .claude/rules/)
+        sync_claude_rules(project_dir)
 
         sys.exit(0)
 

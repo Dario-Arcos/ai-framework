@@ -801,7 +801,7 @@ Workflow completo de release: bump versión → actualizar CHANGELOG → sync �
 ### `/project-init`
 
 ::: tip Propósito
-Genera reglas modulares de proyecto en `.claude/rules/` que Claude Code carga automáticamente.
+Genera reglas modulares de proyecto que se comparten con el equipo y se cargan automáticamente en cada sesión.
 :::
 
 **Usage:**
@@ -810,31 +810,56 @@ Genera reglas modulares de proyecto en `.claude/rules/` que Claude Code carga au
 /project-init
 ```
 
+**Arquitectura Dual (Team-Shared Rules):**
+
+```
+docs/claude-rules/        ← TRACKED (source of truth)
+├── stack.md              │  • Versionado en git
+├── patterns.md           │  • Reviewable en PRs
+├── architecture.md       │  • Compartido con equipo
+└── testing.md            │
+        ↓ session-start hook (auto-sync)
+.claude/rules/            ← IGNORED (working copy)
+└── (synced automatically)
+```
+
+::: info Patrón .env.example
+Similar a `.env.example` → `.env`: las rules canónicas viven tracked, cada dev tiene copia local auto-synced.
+:::
+
 **Beneficios:**
-- **Carga nativa**: Reglas auto-loaded con misma prioridad que CLAUDE.md
+- **Team-shared**: Rules versionadas, reviewables en PRs
+- **Zero config**: Session-start sincroniza automáticamente
+- **Carga nativa**: Auto-loaded con misma prioridad que CLAUDE.md
 - **Modular**: Actualiza un aspecto sin tocar otros
-- **Más contexto**: ~3x más información útil que formato legacy
 
 **Proceso:**
 
-**Phase 1:** Cleanup & Preparation - Detecta estado existente, limpia reglas anteriores o legacy `project-context.md`
-**Phase 2:** Project Analysis - 5 layers de extracción (Manifests → Configs → Structure → Patterns → Critical)
-**Phase 3:** Generate Rules - Escribe 4 archivos en `.claude/rules/`
+**Phase 1:** Cleanup & Preparation - Detecta estado existente, limpia reglas anteriores
+**Phase 2:** Project Analysis - 5 layers de extracción (Manifests → Configs → Structure → Patterns → Key Files)
+**Phase 3:** Generate Rules - Escribe en `docs/claude-rules/` (tracked)
+**Phase 4:** Sync to Local - Copia a `.claude/rules/` (ignored)
 
 ::: details Output
 
 ```
-✅ Project context initialized
+✅ Generated docs/claude-rules/ (tracked):
+   • stack.md        (runtime, framework, dependencies)
+   • patterns.md     (naming, imports, error handling)
+   • architecture.md (structure, layers, entry points)
+   • testing.md      (if tests detected)
 
-Generated rules in .claude/rules/:
-   - stack.md      (runtime, framework, dependencies)
-   - patterns.md   (naming, imports, error handling)
-   - architecture.md (structure, layers, entry points)
-   - critical.md   (constraints, gotchas, commands)
+📋 Synced to .claude/rules/ (local working copy)
 
-Total: ~140 lines of high-signal context
+💡 Rules flow:
+   • docs/claude-rules/ → commit to git (team-shared)
+   • .claude/rules/ → auto-synced on session start
 ```
 
+:::
+
+::: warning Para Nuevos Miembros del Equipo
+Si el proyecto ya tiene `docs/claude-rules/`, **no necesitas ejecutar `/project-init`**. El hook de session-start sincroniza automáticamente las rules a tu `.claude/rules/` local.
 :::
 
 ---
@@ -1011,5 +1036,5 @@ Si ejecutas `/episodic-memory:search-conversations` sin tener instalado el plugi
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-06
+**Fecha**: 2025-12-11
 :::
