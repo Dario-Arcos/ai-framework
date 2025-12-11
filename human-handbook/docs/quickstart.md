@@ -29,7 +29,6 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 **Actualización limpia** (recomendada en cambios de versión):
 ```
-/plugin uninstall ai-framework@ai-framework
 /plugin marketplace remove ai-framework
 /plugin marketplace add Dario-Arcos/ai-framework
 /plugin enable ai-framework@ai-framework
