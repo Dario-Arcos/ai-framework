@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Temporary files
+tmp/
+
+# Browser data
+profiles/
+.browser-data/
+
+# Lock files (optional, uncomment if you want to track them)
+# package-lock.json
+# bun.lockb

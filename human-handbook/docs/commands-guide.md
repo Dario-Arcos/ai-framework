@@ -801,47 +801,38 @@ Workflow completo de release: bump versión → actualizar CHANGELOG → sync �
 ### `/project-init`
 
 ::: tip Propósito
-Initialize o update project context con deep analysis y recomendaciones de agentes.
+Genera reglas modulares de proyecto en `.claude/rules/` que Claude Code carga automáticamente.
 :::
 
 **Usage:**
 
 ```bash
 /project-init
-/project-init deep   # Force deep analysis
 ```
 
-**Reuses:** `/understand` phases 1-5 para systematic discovery
+**Beneficios:**
+- **Carga nativa**: Reglas auto-loaded con misma prioridad que CLAUDE.md
+- **Modular**: Actualiza un aspecto sin tocar otros
+- **Más contexto**: ~3x más información útil que formato legacy
 
 **Proceso:**
 
-**Phase 1:** Detect Existing Context
-**Phase 2:** Deep Discovery (reuse understand.md logic)
-**Phase 3:** Tech Stack Detection (Extended) - Parse exact versions y all dependencies
-**Phase 4:** Agent Mapping + Gap Analysis - Load agent registry → Map Tech → Agents → Gap detection
-**Phase 5:** Generate project-context.md con Stack + Architecture + Patterns + Recommended Agents + Integration Points + ⚠️ Potential Issues
-**Phase 6:** Update CLAUDE.md Reference (add si missing)
+**Phase 1:** Cleanup & Preparation - Detecta estado existente, limpia reglas anteriores o legacy `project-context.md`
+**Phase 2:** Project Analysis - 5 layers de extracción (Manifests → Configs → Structure → Patterns → Critical)
+**Phase 3:** Generate Rules - Escribe 4 archivos en `.claude/rules/`
 
 ::: details Output
 
 ```
-✅ Project context initialized (deep analysis)
+✅ Project context initialized
 
-Stack Detected:
-   - [Language] [version]
-   - [Framework] [version]
+Generated rules in .claude/rules/:
+   - stack.md      (runtime, framework, dependencies)
+   - patterns.md   (naming, imports, error handling)
+   - architecture.md (structure, layers, entry points)
+   - critical.md   (constraints, gotchas, commands)
 
-Recommended Agents ([total]):
-   Core: [list]
-   Project-Specific: [list based on tech]
-
-Generated:
-   - .specify/memory/project-context.md
-   - CLAUDE.md (reference added if missing)
-
-⚠️ Potential Issues Flagged: [list]
-
-Next: Claude ahora conoce tu proyecto en profundidad.
+Total: ~140 lines of high-signal context
 ```
 
 :::

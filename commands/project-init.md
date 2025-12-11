@@ -1,169 +1,284 @@
 ---
 name: project-init
-description: Generate minimal project context memory to prevent implementation failures from missing context
-allowed-tools: Read, Glob, Grep, LS, Write
+description: Generate project memory rules in .claude/rules/ for native Claude Code integration
+allowed-tools: Read, Glob, Grep, LS, Write, Bash
 ---
 
 # Project Initialization
 
-Extracts critical project context (stack, patterns, constraints) to serve as persistent memory preventing context-related failures.
+Analyzes the project and generates modular rule files in `.claude/rules/` that Claude Code loads automatically.
 
-**Purpose**: High-signal memory for AI execution, NOT comprehensive analysis
-**Output**: ~50 lines of critical context preventing 5 common failure modes
+**Purpose**: High-signal project memory preventing context-related failures
+**Output**: 4 rule files (~140 lines total) in `.claude/rules/`
+
+## Benefits
+
+- **Native loading**: Rules auto-loaded at same priority as CLAUDE.md
+- **Modular**: Update one aspect without touching others
+- **Richer context**: ~3x more useful information than legacy format
 
 ## Execution Flow
 
-### Phase 1: Detect Existing Context
+### Phase 1: Cleanup & Preparation
 
-Check if `.specify/memory/project-context.md` exists:
+**1.1 Detect existing state:**
 
-- If **YES**: Confirm with user if they want to overwrite or keep existing
-- If **NO**: Proceed directly to extraction
+Check for existing rules or legacy context:
+- `.claude/rules/*.md` - Old rules to replace
+- `.specify/memory/project-context.md` - Legacy format to migrate
 
-### Phase 2: Extract Critical Memory (Selective)
+**1.2 Clean up old state (if exists):**
 
-**2.1 Tech Stack Snapshot**
+- If `.claude/rules/` exists with `.md` files → Remove all `.md` files in that directory
+- If `.specify/memory/project-context.md` exists → Remove it
+- Report: "🗑️ Cleaning up previous context..."
 
-Extract ONLY versions that prevent compatibility failures:
-
-- **Read** package manager files: `package.json`, `requirements.txt`, `Gemfile`, `composer.json`, `go.mod`
-- **Extract**: Language version, framework version, database version
-- **Identify**: Top 5 critical dependencies (most imported/used)
-
-**Example output**:
-
-```
-Stack: Python 3.11.2, FastAPI 0.110.0, PostgreSQL 15
-Critical deps: pydantic 2.5, sqlalchemy 2.0, redis 5.0
-```
-
-**2.2 Established Patterns**
-
-Extract ONLY patterns that prevent style/convention violations:
-
-- **Grep** for naming patterns: scan 5-10 files for convention (snake_case/camelCase/kebab-case)
-- **Read** 2-3 error handling examples: identify throw/raise pattern
-- **Grep** for auth implementation: find auth middleware/decorator location
-- **Identify** state management: search for Redux/Zustand/Context usage
-
-**Example output**:
-
-```
-Naming: snake_case (user_service.py)
-Errors: raise HTTPException(status_code=...)
-Auth: JWT in utils/auth.py (decorator @require_auth)
-State: Redux Toolkit (store/ directory)
-```
-
-**2.3 Architecture Constraints**
-
-Extract ONLY constraints that prevent wrong implementation choices:
-
-- **Read** entry point: identify main file (server.js, main.py, index.php)
-- **LS** top-level: list ONLY first-level directories (5-7 max)
-- **Grep** for API type: search for "GraphQL" OR "REST" OR "gRPC" keywords
-
-**Example output**:
-
-```
-Entry: src/main.py
-Arch: REST API (no GraphQL)
-Structure: api/, models/, services/, utils/, tests/
-```
-
-### Phase 3: Generate Minimal project-context.md
-
-Create lightweight context document (~50 lines) using data from Phase 2:
-
-**Template Structure:**
-
-```markdown
-# Project Context
-
-**Stack**: [Language] [version] + [Framework] [version]
-**DB**: [Database] [version]
-**Arch**: [REST/GraphQL/Monolith/Microservices]
-
-## Critical Dependencies
-
-- [dep1] [version]
-- [dep2] [version]
-- [dep3] [version]
-- [dep4] [version]
-- [dep5] [version]
-
-## Established Patterns
-
-**Naming**: [example: snake_case / camelCase / kebab-case]
-**Errors**: [example: raise HTTPException(...) / throw new Error(...)]
-**Auth**: [example: JWT in utils/auth.py with @require_auth]
-**State**: [example: Redux Toolkit / Context API / Zustand]
-
-## Entry Point
-
-`[file path: src/main.py / server.js / index.php]`
-
-## Top-Level Structure
-```
-
-[dir1]/ # [purpose]
-[dir2]/ # [purpose]
-[dir3]/ # [purpose]
-[dir4]/ # [purpose]
-[dir5]/ # [purpose]
-
-```
-
----
-**Updated**: [YYYY-MM-DD] | Re-run when stack changes
-```
-
-### Phase 4: Update CLAUDE.md Reference
-
-Check if `CLAUDE.md` already references `project-context.md`:
+**1.3 Create rules directory:**
 
 ```bash
-if ! grep -q "@.specify/memory/project-context.md" CLAUDE.md; then
-    # Add reference in Documentation References section
-    # Insert:
-    # **Project Context**: @.specify/memory/project-context.md
-fi
+mkdir -p .claude/rules/
 ```
 
-### Phase 5: Output
+### Phase 2: Project Analysis
+
+Execute all 5 layers to extract project context.
+
+**Layer 1: Manifests (Read 100%)**
+
+Glob and read package manager files:
+- `package.json`, `package-lock.json` (deps section only)
+- `pyproject.toml`, `requirements.txt`, `setup.py`
+- `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`
+
+Extract:
+- Runtime version (engines, python_requires)
+- Framework + version (main dependency)
+- Top 5-7 dependencies by import frequency
+- Available scripts (build, test, dev)
+
+**Layer 2: Configs (Read 100%)**
+
+Glob and read configuration files:
+- `tsconfig.json`, `jsconfig.json`
+- `.eslintrc*`, `.prettierrc*`, `biome.json`
+- `.editorconfig`
+- `pytest.ini`, `jest.config.*`, `vitest.config.*`
+- `.env.example` (NOT `.env`)
+- `docker-compose.yml`
+
+Extract:
+- Compiler/strict mode settings
+- Formatting rules (tabs/spaces, quotes)
+- Test framework configuration
+- Expected environment variables
+
+**Layer 3: Structure (LS + Glob)**
+
+Analyze project structure:
+- Top-level directories (depth 1)
+- Entry points: `**/index.{ts,js,py}`, `**/main.{ts,js,py,go}`, `**/app.{ts,js,py}`
+- File distribution per directory
+
+Extract:
+- Entry point file(s)
+- Layer distribution (src/, lib/, api/)
+- Major directories and their purpose
+
+**Layer 4: Patterns (Grep targeted)**
+
+Sample 5-10 matches for each pattern:
 
 ```
-✅ Project context memory created (~50 lines)
+# Naming conventions
+grep: "^(export )?(function|const|def|func) \w+"
 
-📦 Stack:
-   [Language] [version] + [Framework] [version]
-   [Database] [version]
+# Error handling
+grep: "(throw|raise|return err|new Error)"
 
-📐 Patterns Extracted:
-   Naming: [convention]
-   Errors: [pattern]
-   Auth: [approach]
+# Import style
+grep: "^(import|from|require)"
 
-📄 Generated:
-   .specify/memory/project-context.md (minimal, high-signal)
-   CLAUDE.md (reference added if missing)
+# Auth patterns
+grep: "(@auth|@require|middleware.*auth|guard)"
 
-💡 Context prevents 5 common failure modes:
-   1. Wrong library usage
-   2. Naming convention violations
-   3. Inconsistent error handling
-   4. Version incompatibilities
-   5. Architecture misalignment
+# Test patterns
+grep: "(describe|test|it|def test_)\("
+```
 
-Next: Claude tiene memoria persistente del proyecto.
+Extract:
+- Dominant naming convention (camelCase/snake_case/etc.)
+- Error handling pattern
+- Import style (ESM/CJS)
+- Auth mechanism (if exists)
+
+**Layer 5: Key File Sampling**
+
+Read 5-8 representative files:
+
+1. **Entry point** (always): `main.*`, `index.*`, `app.*`
+2. **One file per major directory**: Select largest file in each of top 3-4 dirs
+3. **One test file** (if tests exist): Any `*.test.*` or `*.spec.*`
+4. **README.md** (if exists): First 50 lines only
+
+Extract:
+- Code style in practice (confirms grep findings)
+- Framework idioms and patterns
+- API type indicators (REST/GraphQL/gRPC)
+
+### Phase 3: Synthesis → Rule Files
+
+Generate rule files from analysis data. Write each file to `.claude/rules/`.
+
+**3.1 Generate stack.md**
+
+```markdown
+# Stack
+
+**Runtime**: [detected runtime + version]
+**Framework**: [main framework + version]
+**Database**: [if detected]
+
+## Critical Dependencies
+- [dep1] [version] ([purpose])
+- [dep2] [version] ([purpose])
+- [dep3] [version] ([purpose])
+- [dep4] [version] ([purpose])
+- [dep5] [version] ([purpose])
+
+## Scripts
+- `[script1]` - [description]
+- `[script2]` - [description]
+- `[script3]` - [description]
+
+---
+*Auto-generated by /project-init on [DATE]*
+```
+
+**3.2 Generate patterns.md**
+
+```markdown
+# Patterns
+
+## Naming Conventions
+- Files: [convention] (`example`)
+- Functions: [convention] (`example`)
+- Types/Classes: [convention] (`example`)
+- Constants: [convention] (`example`)
+
+## Error Handling
+- Pattern: [detected pattern]
+- Location: [centralized handler if exists]
+
+## Import Style
+- [ESM/CJS/mixed]
+- Relative: [pattern]
+- Absolute: [pattern]
+
+## Security Patterns
+- Auth: [mechanism if detected]
+- Validation: [approach if detected]
+
+---
+*Auto-generated by /project-init on [DATE]*
+```
+
+**3.3 Generate architecture.md**
+
+```markdown
+# Architecture
+
+## Entry Point
+`[path]` → [description]
+
+## Layer Structure
+```
+[dir1]/  # [purpose]
+[dir2]/  # [purpose]
+[dir3]/  # [purpose]
+[dir4]/  # [purpose]
+```
+
+## API Type
+[REST/GraphQL/gRPC/None detected]
+
+## Data Flow
+[Brief description of request flow if detectable]
+
+---
+*Auto-generated by /project-init on [DATE]*
+```
+
+**3.4 Generate testing.md (CONDITIONAL)**
+
+Only generate if tests detected:
+- `jest.config.*` exists, OR
+- `pytest.ini` exists, OR
+- `vitest.*` exists, OR
+- `test*/` directory exists, OR
+- `**/*.test.*` count > 3
+
+```markdown
+# Testing
+
+## Framework
+[detected framework]
+
+## Conventions
+- Location: [test directory structure]
+- Naming: [pattern]
+- Style: [detected patterns]
+
+## Commands
+- `[test command]` - Run tests
+- `[coverage command]` - With coverage (if exists)
+
+---
+*Auto-generated by /project-init on [DATE]*
+```
+
+### Phase 4: Report to User
+
+Display summary after generation:
+
+```
+🔍 Analyzing project...
+
+📦 Stack detected:
+   Runtime: [runtime + version]
+   Framework: [framework + version]
+   Database: [database or "None detected"]
+
+📐 Patterns identified:
+   Naming: [convention summary]
+   Errors: [error pattern]
+   Auth: [auth mechanism or "None detected"]
+
+🏗️ Architecture:
+   Entry: [entry point]
+   Layers: [dir1], [dir2], [dir3]
+   API: [type]
+
+✅ Generated .claude/rules/:
+   • stack.md ([N] lines)
+   • patterns.md ([N] lines)
+   • architecture.md ([N] lines)
+   • testing.md ([N] lines)  ← only if generated
+
+   Total: [N] lines of high-signal context
+
+🗑️ Cleaned up:  ← only if cleanup occurred
+   • Removed .specify/memory/project-context.md
+   • Removed old .claude/rules/
+
+💡 Rules are auto-loaded by Claude Code at session start.
+   Run /memory to verify loaded rules.
 ```
 
 ## Notes
 
-- **Purpose**: Persistent memory to prevent context-related failures
-- **Not an audit**: Extracts ONLY critical context (stack, patterns, constraints)
-- **Minimal output**: ~50 lines vs 400+ in comprehensive analysis
-- **Signal-focused**: 90% high-signal content preventing real failures
-- **Template-driven**: No AI synthesis, deterministic generation
-- **Silent fail**: Non-blocking on analysis errors
-- **User confirmation**: Always ask before overwriting existing context
+- **Native integration**: Uses `.claude/rules/` feature (Dec 2025)
+- **Auto-cleanup**: Removes legacy `project-context.md` if present
+- **Full rebuild**: Always regenerates all rules (no incremental)
+- **Conditional testing.md**: Only generated if tests detected
+- **Token budget**: ~1,800 tokens for analysis, ~140 lines output
+- **No manual config**: Rules load automatically at session start
