@@ -5,17 +5,14 @@
   },
   "metadata": {
     "description": "AI-first development framework with constitutional governance",
-    "version": "4.2.0"
+    "version": "4.2.1"
   },
   "plugins": [
     {
       "name": "ai-framework",
       "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
-      "version": "4.2.0",
-      "source": {
-        "source": "github",
-        "repo": "Dario-Arcos/ai-framework"
-      },
+      "version": "4.2.1",
+      "source": "./",
       "author": {
         "name": "Dario Arcos"
       }
