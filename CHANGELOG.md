@@ -8,7 +8,19 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Añadido
+
+- **Skill dev-browser**: Reemplaza web-browser con arquitectura moderna TypeScript/Bun, servidor Express integrado para snapshots de accesibilidad y navegación persistente (PR #40)
+- **Arquitectura team-shared rules**: Sistema dual `docs/claude-rules/` (tracked) + `.claude/rules/` (local), sincronización automática en session-start, reglas compartibles vía git (PR #41)
+
+### Cambiado
+
+- **Comando project-init**: Genera reglas en `docs/claude-rules/` como source of truth, patrón similar a `.env.example` → `.env` (PR #40, #41)
+- **Guía AI-First Workflow**: Integración diagramas Mermaid con tema neutral dark/light mode (PR #39)
+
+### Eliminado
+
+- **Skill web-browser**: Reemplazado por dev-browser con arquitectura mejorada (PR #40)
 
 ---
 
