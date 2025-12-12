@@ -8,6 +8,12 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
+- [Cambios futuros se documentan aquí]
+
+---
+
+## [4.3.0] - 2025-12-11
+
 ### Añadido
 
 - **Skill dev-browser**: Reemplaza web-browser con arquitectura moderna TypeScript/Bun, servidor Express integrado para snapshots de accesibilidad y navegación persistente (PR #40)
@@ -206,5 +212,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-08 | **Versión**: 4.2.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-11 | **Versión**: 4.3.0 | **Formato**: Keep a Changelog
 :::
