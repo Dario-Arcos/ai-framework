@@ -757,18 +757,55 @@ Professional audit con metodología sistemática y validación de múltiples fue
 ### `/changelog`
 
 ::: tip Propósito
-Actualiza CHANGELOG.md con PRs mergeados desde último release (Keep a Changelog format).
+Actualiza CHANGELOG.md con análisis **Truth-Based** del diff real entre versiones.
 :::
+
+**Principio fundamental:** Los commits cuentan una historia. El diff cuenta la verdad.
 
 **Usage:**
 
 ```bash
-/changelog
+/changelog "desde última versión"
+/changelog "desde v2.0.0"
+/changelog "todos los cambios"
 ```
 
-**Proceso:** Validación herramientas/archivos → Auto-detección PRs pendientes → Actualización CHANGELOG → Commit automático
+**Por qué Truth-Based:**
 
-**Output:** CHANGELOG.md actualizado + commit automático
+```
+Commits:                          Realidad (diff):
+─────────────────────────────     ─────────────────────────────
+1. feat: add caching              Solo existe: logging.py
+2. fix: caching bug
+3. revert: remove caching         El caching NO EXISTE.
+4. feat: add logging              Documentarlo sería MENTIR.
+```
+
+**Workflow (8 fases):**
+
+1. **Determinar rango** - Parsear argumentos (`$last_tag..HEAD`)
+2. **Extraer la verdad** - `git diff --name-status` (no commits)
+3. **Análisis semántico** - Diff por archivo, categorizar cambios reales
+4. **Contexto del "por qué"** - Commits/PRs como enriquecimiento
+5. **Agrupación inteligente** - Una entrada por feature, no por archivo
+6. **Síntesis y redacción** - Español, técnico, conciso
+7. **Actualizar CHANGELOG** - Edit sección `[No Publicado]`
+8. **Reporte final** - Estadísticas de confiabilidad
+
+**Ventajas:**
+
+| Aspecto | Commit-Based | Truth-Based |
+|---------|--------------|-------------|
+| Completitud | ~80% (solo PRs) | 100% (todo el diff) |
+| Reverts | Contaminan | Auto-cancelados |
+| Commits directos | Ignorados | Incluidos |
+| Confiabilidad | Variable | Garantizada |
+
+::: warning NO commitea automáticamente
+El comando actualiza el archivo pero NO hace commit. Tú decides cuándo.
+:::
+
+**Output:** CHANGELOG.md actualizado + reporte de análisis
 
 **Siguientes Pasos:** `➜ /release`
 
@@ -1036,5 +1073,5 @@ Si ejecutas `/episodic-memory:search-conversations` sin tener instalado el plugi
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-11
+**Fecha**: 2025-12-12
 :::
