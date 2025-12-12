@@ -12,7 +12,10 @@
       "name": "ai-framework",
       "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
       "version": "4.2.0",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "Dario-Arcos/ai-framework"
+      },
       "author": {
         "name": "Dario Arcos"
       }
