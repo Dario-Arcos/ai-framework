@@ -12,6 +12,17 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [4.3.1] - 2025-12-12
+
+### Cambiado
+
+- **Comando /changelog**: Reescritura completa con enfoque Truth-Based — git diff como fuente de verdad en lugar de commits/PRs, elimina inconsistencias por reverts y overwrites (commit f6d079a)
+- **Hook anti_drift**: Upgrade a v5.0 con scientific restatement para verificación de compliance (commit 89d4b88)
+- **Guía AI-First Workflow**: Reemplazo de diagramas Mermaid redundantes por tablas y listas escaneables, nueva intro "Excelencia por diseño. Dos caminos." (commit f6d079a)
+- **Guía commands**: Actualización con workflow Truth-Based del changelog (commit f6d079a)
+
+---
+
 ## [4.3.0] - 2025-12-11
 
 ### Añadido
@@ -212,5 +223,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-11 | **Versión**: 4.3.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-12 | **Versión**: 4.3.1 | **Formato**: Keep a Changelog
 :::
