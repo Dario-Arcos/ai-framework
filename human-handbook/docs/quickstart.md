@@ -8,38 +8,34 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 ## Instalación (30 segundos)
 
-### Paso 1: Agregar al Marketplace
+### Paso 1: Agregar el Marketplace
 
 ```
-/plugin marketplace add Dario-Arcos/ai-framework
+/plugin marketplace add Dario-Arcos/ai-framework-marketplace
 ```
 
-### Paso 2: Habilitar Plugin
+### Paso 2: Instalar el Plugin
 
 ```
-/plugin enable ai-framework@ai-framework
+/plugin install ai-framework@ai-framework-marketplace
 ```
 
 ### Paso 3: Actualizar Plugin (cuando sea necesario)
 
-**Actualización rápida** (cambios menores):
+**Actualizar el plugin:**
 ```
-/plugin marketplace update ai-framework
-```
-
-**Actualización limpia** (recomendada en cambios de versión):
-```
-/plugin marketplace remove ai-framework
-/plugin marketplace add Dario-Arcos/ai-framework
-/plugin enable ai-framework@ai-framework
+/plugin update ai-framework@ai-framework-marketplace
 ```
 
-::: warning Por qué reinstalar completamente
-El comando `marketplace update` solo sincroniza archivos nuevos pero no elimina componentes obsoletos. Remover y re-agregar el marketplace garantiza un estado limpio sin residuos de versiones anteriores.
-:::
+**Actualización limpia** (recomendada si hay problemas de cache):
+```
+/plugin marketplace remove ai-framework-marketplace
+/plugin marketplace add Dario-Arcos/ai-framework-marketplace
+/plugin install ai-framework@ai-framework-marketplace
+```
 
-::: tip Importante
-Después de habilitar o actualizar, reinicia Claude Code para cargar el framework.
+::: tip Reinicio requerido
+Después de instalar o actualizar, reinicia Claude Code para aplicar los cambios.
 :::
 
 ### Paso 4: Comienza en Tu Proyecto
@@ -65,17 +61,17 @@ Operaciones útiles después de la instalación inicial.
 
 **Deshabilitar temporalmente:**
 ```bash
-/plugin disable ai-framework@ai-framework
+/plugin disable ai-framework@ai-framework-marketplace
 ```
 
 **Re-habilitar después de deshabilitar:**
 ```bash
-/plugin enable ai-framework@ai-framework
+/plugin enable ai-framework@ai-framework-marketplace
 ```
 
 **Desinstalar completamente:**
 ```bash
-/plugin uninstall ai-framework@ai-framework
+/plugin uninstall ai-framework@ai-framework-marketplace
 ```
 
 **Explorar plugins disponibles (modo interactivo):**
@@ -175,7 +171,7 @@ Security review automático ejecuta antes de crear PR.
 | ------------------------ | ------------------------------------------- |
 | **Comandos no visibles** | Reinicia Claude Code                        |
 | **Hooks no ejecutan**    | Verifica Python 3.8+: `python3 --version`   |
-| **Plugin no aparece**    | `/plugin list` — debe aparecer ai-framework |
+| **Plugin no aparece**    | `/plugin` — debe aparecer ai-framework en el marketplace |
 
 ---
 
@@ -198,5 +194,5 @@ Security review automático ejecuta antes de crear PR.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-11 | **Versión**: 4.2.0
+**Fecha**: 2025-12-13 | **Versión**: 4.3.1
 :::

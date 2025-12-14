@@ -53,8 +53,8 @@ Without structure, Claude Code's power gets wasted: code that "works" but fails 
 **2. Add marketplace and install plugin:**
 
 ```bash
-/plugin marketplace add Dario-Arcos/ai-framework
-/plugin install ai-framework@ai-framework
+/plugin marketplace add Dario-Arcos/ai-framework-marketplace
+/plugin install ai-framework@ai-framework-marketplace
 ```
 
 **3. Start in your project:**
