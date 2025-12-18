@@ -25,6 +25,11 @@
       "command": "maestro",
       "args": ["mcp"],
       "$description": "Mobile E2E testing, YAML flows, AI assertions"
+    },
+    "linear-server": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"],
+      "$description": "Linear issue tracking, project management, AI agents"
     }
   }
 }
