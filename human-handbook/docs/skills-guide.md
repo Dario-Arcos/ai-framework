@@ -101,6 +101,15 @@ Selecciona tu situación para ver las skills recomendadas
 
 <div>
 
+### Project Management
+::: details Linear, issues, sprints, ciclos, o integración GitHub-Linear
+- <Badge type="tip" text="Linear" /> `linear-expert` - Gestión experta de Linear: issues, proyectos, ciclos, integraciones GitHub/Slack, MCP automation
+:::
+
+</div>
+
+<div>
+
 ### Herramientas
 ::: details Crear componentes o automatización
 - <Badge type="tip" text="Dev Tools" /> `claude-code-expert` - Genera agents/commands/hooks production-ready
@@ -150,6 +159,7 @@ Selecciona tu situación para ver las skills recomendadas
 | [Debugging](#debugging) | 4 | Debugging sistemático, root cause, verificación, defense-in-depth |
 | [Collaboration](#collaboration) | 9 | Brainstorming, plans, reviews, git workflows, parallel agents |
 | [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
+| [Project Management](#project-management) | 1 | Linear issues, proyectos, ciclos, integración GitHub-Linear |
 | [Design](#design) | 1 | Interfaces frontend distintivas (anti-AI slop) |
 | [Writing](#writing) | 1 | Prosa clara y concisa (Strunk's Elements of Style) |
 | [Meta](#meta) | 3 | Superpowers enforcement, skill contribution, testing skills |
@@ -849,6 +859,100 @@ EOF
 
 ---
 
+### Project Management
+
+#### linear-expert
+
+::: tip Project Management | Integration
+**Cuándo**: Gestión de issues, proyectos, ciclos en Linear; integración GitHub-Linear-Claude Code; configuración de workflows y automations
+**Qué hace**: Experto completo en Linear: crea/edita issues, proyectos, iniciativas y ciclos; configura workflows, labels, prioridades; integra con GitHub, Slack, Figma; usa MCP para automatización desde Claude Code
+:::
+
+**Jerarquía Linear**:
+```
+Workspace
+├── Teams (engineering, design, product)
+│   ├── Issues (unidades atómicas de trabajo)
+│   │   ├── Sub-issues
+│   │   └── Properties (status, priority, labels, estimates)
+│   ├── Cycles (iteraciones time-boxed)
+│   └── Triage (inbox de issues entrantes)
+├── Projects (features cross-team con milestones)
+└── Initiatives (goals estratégicos agrupando projects)
+```
+
+**MCP Setup** (una vez):
+```bash
+claude mcp add --transport http linear-server https://mcp.linear.app/mcp
+# Luego ejecutar /mcp para autenticar
+```
+
+**GitHub Integration - Magic Words**:
+
+| Tipo | Palabras | Efecto |
+|------|----------|--------|
+| **Closing** | fix, fixes, fixed, fixing, close, closes, closed, closing, resolve, resolves, resolved, resolving, complete, completes, completed, completing | Link + mueve a Done en merge a default branch |
+| **Non-closing** | ref, refs, references, part of, related to, contributes to, toward, towards | Solo link (no auto-close) |
+| **Unlinking** | skip, ignore | Previene linking aunque branch tenga issue ID |
+
+**Dónde funcionan magic words**:
+- PR title: `Fixes LIN-123: Add login`
+- PR description: `Part of LIN-123`
+- Commit message: `Fixes LIN-123: implement auth`
+- Branch name: `feature/LIN-123-login`
+
+**Branch Rules (Critical)**:
+
+> "Branch rules apply only to target branches—the branch a PR is being merged into."
+> — Linear Official Documentation
+
+| Evento PR | Automatización Default |
+|-----------|------------------------|
+| PR abierto/draft | → In Progress |
+| PR merged a default branch | → Done (con closing word) |
+| PR merged a custom branch | → (según branch-specific rule) |
+
+**Workflow Claude Code-Centric**:
+```
+1. Crear issue ──────────────► Linear (via MCP)
+2. Desarrollar en feature branch
+3. Commits con "Part of LIN-XXX" (link sin cerrar)
+4. Push + crear PR ──────────► GitHub ←sync nativo→ Linear (In Progress)
+5. Merge PR ─────────────────► Linear (Done automático con closing word)
+```
+
+**Ejemplo**:
+```bash
+"Crea epic con 3 stories para autenticación"
+# → MCP crea: Epic "Auth System"
+#   ├── LIN-101 "Login flow"
+#   ├── LIN-102 "Registration"
+#   └── LIN-103 "Password recovery"
+
+"Implementa LIN-101"
+# → Desarrolla código
+# → git commit -m "Fixes LIN-101: implement login"
+# → gh pr create --title "Fixes LIN-101: Login flow"
+# → Merge → Linear auto-actualiza a Done
+```
+
+**Troubleshooting**:
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| Push no actualiza Linear | Branch rules solo con PRs | Crear PR al target branch |
+| PR no detectado | Webhook no configurado | Enable "Link commits with magic words" + add webhook |
+| Issue no auto-cierra | Falta closing magic word | Usar `Fixes`, `Closes`, o `Resolves` |
+
+**References** (progressive disclosure):
+- `references/issues-workflows.md` - Issues, templates, relations
+- `references/projects-initiatives.md` - Projects, milestones, cycles
+- `references/ai-mcp.md` - MCP setup, AI agents
+- `references/integrations.md` - GitHub, Slack, Figma, Jira
+- `references/automation-workflows.md` - Linear↔GitHub↔Claude pipelines
+
+---
+
 ### Design
 
 #### frontend-design
@@ -1099,7 +1203,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-12-07
-**Categorías**: Testing, Debugging, Collaboration, Development Tools, Design, Writing, Meta
+**Última actualización**: 2025-12-19
+**Categorías**: Testing, Debugging, Collaboration, Development Tools, Project Management, Design, Writing, Meta
 **Status**: Production-Ready
 :::
