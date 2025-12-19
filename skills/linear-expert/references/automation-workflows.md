@@ -23,19 +23,48 @@ Claude Code acts as the command center for all development activities.
 ┌──────────────────────────────────────────────────────────────┐
 │                     CLAUDE CODE (Centro)                      │
 │                                                              │
-│  1. Crear épica/stories ──────────────────────► Linear       │
-│     (MCP Linear)                                (issues)     │
+│  1. Crear issue ───────────────────────────────► Linear      │
+│     (MCP Linear)                                (Backlog)    │
 │                                                              │
-│  2. Desarrollar código                                       │
+│  2. Planificar → mover a Todo ─────────────────► Linear      │
+│     (MCP Linear)                                (Todo)       │
 │                                                              │
-│  3. git commit "Fixes LIN-123"                               │
-│     git push ─────────────────────────────────► GitHub       │
+│  3. Desarrollar en feature branch                            │
+│     git checkout -b feature/LIN-123-login                    │
+│                                                              │
+│  4. Commits con magic word                                   │
+│     git commit -m "Part of LIN-123: add form"                │
+│                                                              │
+│  5. Crear PR hacia branch target ──────────────► GitHub      │
+│     gh pr create --base develop                    │         │
+│                                                    ▼         │
+│                                              Linear detecta  │
+│                                              PR automático   │
+│                                              (→ In Progress) │
+│                                                              │
+│  6. Merge PR ──────────────────────────────────► GitHub      │
 │                                                    │         │
 │                                                    ▼         │
-│                                              Linear sync     │
-│                                              (automático)    │
+│                                              Linear actualiza│
+│                                              (→ estado según │
+│                                               branch rules)  │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+### Quick Reference: Recommended Workflow
+
+| Step | Action | Tool | Linear Status |
+|------|--------|------|---------------|
+| 1 | Create issue | MCP Linear | Backlog |
+| 2 | Plan & prioritize | MCP Linear | Todo |
+| 3 | Start work | MCP Linear | In Progress |
+| 4 | Create feature branch | Git | — |
+| 5 | Develop with `Part of` commits | Git | — |
+| 6 | Push & create PR to target branch | Git/GitHub | (auto) In Progress |
+| 7 | Review & merge PR | GitHub | (auto) per branch rule |
+| 8 | Certify completion | MCP Linear | Done |
+
+**Key insight:** Use `Part of LIN-XXX` during development (non-closing), then let branch-specific rules handle status transitions on PR events.
 
 ### Step-by-Step Example
 
@@ -96,14 +125,31 @@ git push origin feature/LIN-101-login
 
 Include these in commit messages, PR titles, or PR descriptions:
 
-| Word | Effect on Merge |
-|------|-----------------|
-| `Fixes LIN-123` | Marks Done |
-| `Closes LIN-123` | Marks Done |
-| `Resolves LIN-123` | Marks Done |
-| `Part of LIN-123` | Links only |
+#### Closing Words (auto-close on merge to default branch)
 
-**All variants work:** fix, fixes, fixed, fixing, close, closes, closed, closing, resolve, resolves, resolved, resolving
+| Word | Variants |
+|------|----------|
+| `fix` | fix, fixes, fixed, fixing |
+| `close` | close, closes, closed, closing |
+| `resolve` | resolve, resolves, resolved, resolving |
+| `complete` | complete, completes, completed, completing |
+
+#### Non-Closing Words (link only, no auto-close)
+
+| Word | Variants |
+|------|----------|
+| `ref` | ref, refs, references |
+| `part of` | part of |
+| `related to` | related to |
+| `contributes to` | contributes to |
+| `toward` | toward, towards |
+
+#### Unlinking Words (prevent auto-link)
+
+| Word | Use Case |
+|------|----------|
+| `skip LIN-123` | Prevent linking when branch contains issue ID |
+| `ignore LIN-123` | Same as skip |
 
 ### Branch Name Detection
 
@@ -118,11 +164,32 @@ lin-123/authentication
 
 ### Automatic Status Updates
 
-| Event | Linear Status |
-|-------|---------------|
-| Push with issue ID | → In Progress |
-| PR opened | → In Progress |
-| PR merged (with magic word) | → Done |
+**CRITICAL: Branch-specific rules only work with PRs, not direct pushes.**
+
+> "Branch rules apply only to target branches—the branch a PR is being merged into. Automations are not supported for source branches."
+> — Linear Official Documentation
+
+#### Default Automation (configurable per team)
+
+| PR Event | Default Status Change |
+|----------|----------------------|
+| PR opened/drafted | → In Progress |
+| Review requested | → (configurable) |
+| Ready for merge | → (configurable) |
+| PR merged (closing word) | → Done |
+
+#### Branch-Specific Rules
+
+Configure custom automations for different target branches:
+
+| PR Merged To | Example Automation |
+|--------------|-------------------|
+| `staging` | → In QA |
+| `develop` | → In Review |
+| `main` | → Deployed |
+| `^release/.*` | → Ready for Release (regex supported) |
+
+**Configure in:** Settings → Team → Issue statuses & automations → Pull request and commit automation
 
 ### Enable Commit Linking (One-time Setup)
 
@@ -337,14 +404,35 @@ jobs:
 
 ---
 
+## Troubleshooting
+
+### Common Issues
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| Push doesn't update Linear status | Branch rules only work with PRs | Create PR to target branch instead |
+| PR not detected by Linear | Webhook not configured | Enable "Link commits to issues with magic words" + add webhook |
+| Issue not auto-closing on merge | Missing closing magic word | Use `Fixes`, `Closes`, or `Resolves` in PR |
+| Wrong status on PR merge | Branch rule misconfigured | Check Settings → Team → Issue statuses & automations |
+| Can't unlink PR from issue | Branch name contains issue ID | Add `skip LIN-XXX` or `ignore LIN-XXX` to PR description |
+
+### Debugging Checklist
+
+1. **Webhook configured?** Linear Settings → Integrations → GitHub → Webhook URL copied to GitHub
+2. **Branch rules set?** Settings → Team → Issue statuses & automations → Pull request automation
+3. **Correct magic word?** `Part of` = link only, `Fixes` = close on merge
+4. **PR to correct branch?** Branch rules apply to TARGET branch (e.g., `develop`, `main`)
+5. **Issue ID format?** Must match team prefix (e.g., `LIN-123`, `ENG-456`)
+
 ## Best Practices
 
 ### For Claude Code-Centric Development
 
 1. **Create issues before coding** - Establishes tracking from the start
-2. **Use descriptive commit messages** - Include context, not just the magic word
-3. **One issue per branch** - Cleaner history and automatic linking
-4. **Review before push** - Claude Code can review its own work
+2. **Use `Part of` during development** - Links without closing, allows multiple PRs
+3. **Use `Fixes` in final PR** - Auto-closes when merged to default branch
+4. **One issue per branch** - Cleaner history and automatic linking
+5. **Configure branch-specific rules** - Automate status transitions per environment
 
 ### Security
 

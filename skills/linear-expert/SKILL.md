@@ -138,19 +138,45 @@ Claude Code (Centro)
 
 ### Git Integration
 
-Use magic words in commits to auto-update Linear:
+Use magic words in commits/PRs to link and auto-update Linear issues.
 
-| Syntax | Effect on Merge |
-|--------|-----------------|
-| `Fixes LIN-123` | → Done |
-| `Closes LIN-123` | → Done |
-| `Part of LIN-123` | Links only |
+#### Magic Words
 
-```bash
-git commit -m "Fixes LIN-101: implement login flow"
-git push origin feature/LIN-101
-# Linear auto-updates: In Progress → Done (on merge)
-```
+| Type | Words | Effect |
+|------|-------|--------|
+| **Closing** | fix, fixes, fixed, fixing, close, closes, closed, closing, resolve, resolves, resolved, resolving, complete, completes, completed, completing | Links + moves to Done on merge to default branch |
+| **Non-closing** | ref, refs, references, part of, related to, contributes to, toward, towards | Links only (no auto-close) |
+| **Unlinking** | skip, ignore | Prevents linking even if branch contains issue ID |
+
+#### Where Magic Words Work
+
+| Location | Example | Effect |
+|----------|---------|--------|
+| PR title | `Fixes LIN-123: Add login` | Links PR to issue |
+| PR description | `Part of LIN-123` | Links PR to issue |
+| Commit message | `Fixes LIN-123: implement auth` | Links commit to issue |
+| Branch name | `feature/LIN-123-login` | Auto-links any PR from this branch |
+
+#### Branch-Specific Rules (Critical)
+
+**Branch rules only work with PRs, not direct pushes.**
+
+> "Branch rules apply only to target branches—the branch a PR is being merged into."
+> — Linear Official Documentation
+
+Configure in: Settings → Team → Issue statuses & automations → Pull request and commit automation
+
+| PR Event | Default Automation |
+|----------|-------------------|
+| PR opened/drafted | → In Progress |
+| Review requested | → (configurable) |
+| Ready for merge | → (configurable) |
+| **PR merged to default branch** | → Done (with closing word) |
+| **PR merged to custom branch** | → (branch-specific rule) |
+
+Example branch-specific rules:
+- PR merged to `staging` → In QA
+- PR merged to `main` → Deployed
 
 **For detailed patterns**: [automation-workflows.md](references/automation-workflows.md)
 
