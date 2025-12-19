@@ -224,7 +224,7 @@ export interface DevBrowserClient {
   selectSnapshotRef: (name: string, ref: string) => Promise<ElementHandle | null>;
 }
 
-export async function connect(serverUrl: string): Promise<DevBrowserClient> {
+export async function connect(serverUrl = "http://localhost:9222"): Promise<DevBrowserClient> {
   let browser: Browser | null = null;
   let wsEndpoint: string | null = null;
   let connectingPromise: Promise<Browser> | null = null;
@@ -350,24 +350,20 @@ export async function connect(serverUrl: string): Promise<DevBrowserClient> {
       // Get the page
       const page = await getPage(name);
 
-      // Inject the snapshot script using addScriptTag (safer than eval)
-      // First check if already injected
-      const alreadyInjected = await page.evaluate(() => {
+      // Inject the snapshot script and call getAISnapshot
+      // Uses eval to avoid CSP restrictions that block addScriptTag on some sites (e.g., GitHub)
+      const snapshotScript = getSnapshotScript();
+      const snapshot = await page.evaluate((script: string) => {
+        // Inject script if not already present
+        // Note: page.evaluate runs in browser context where window exists
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return typeof (globalThis as any).__devBrowser_getAISnapshot === "function";
-      });
-
-      if (!alreadyInjected) {
-        // Inject via script tag - this is the safe way to inject code
-        const snapshotScript = getSnapshotScript();
-        await page.addScriptTag({ content: snapshotScript });
-      }
-
-      // Call the injected function
-      const snapshot = await page.evaluate(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (globalThis as any).__devBrowser_getAISnapshot();
-      });
+        const w = globalThis as any;
+        if (!w.__devBrowser_getAISnapshot) {
+          // eslint-disable-next-line no-eval
+          eval(script);
+        }
+        return w.__devBrowser_getAISnapshot();
+      }, snapshotScript);
 
       return snapshot;
     },
