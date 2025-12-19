@@ -1,6 +1,6 @@
 ---
 name: git-pullrequest
-description: Use when creating a PR - validates changes, dispatches code-reviewer + security-reviewer agents in parallel, generates contextual observations, presents consolidated findings, and creates PR with quality documentation. Supports corporate commit format (type|TASK-ID|YYYYMMDD|desc). Human authorizes every decision point.
+description: Use when creating a PR, preparing code for review, or ready to merge feature work into a target branch
 ---
 
 # Git Pull Request Workflow

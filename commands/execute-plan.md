@@ -1,5 +1,5 @@
 ---
-name: execute-plan
+description: Execute plan in batches with review checkpoints
 ---
 
-Use your Executing-Plans skill.
+Use the executing-plans skill exactly as written
