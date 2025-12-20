@@ -2,6 +2,12 @@
 # Native statusline for Claude Code - Minimal Pro Edition
 # Clean unicode symbols, no emoji clutter
 
+# Check jq dependency
+if ! command -v jq >/dev/null 2>&1; then
+    echo "◆ Claude │ ⚠ jq required"
+    exit 0
+fi
+
 input=$(cat)
 
 # Parse JSON
@@ -34,14 +40,13 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
     [ -n "$BRANCH" ] && GIT_BRANCH="$BRANCH"
 fi
 
-# Worktree detection
+# Worktree detection (compare absolute paths, not basenames)
 WORKTREE=""
-if [ -n "$PROJECT_DIR" ]; then
-    PROJECT_NAME=$(basename "$PROJECT_DIR")
-    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-        WT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-        WT_NAME=$(basename "$WT_ROOT")
-        [ "$WT_NAME" != "$PROJECT_NAME" ] && WORKTREE="$WT_NAME"
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    CURRENT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    MAIN_ROOT=$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')
+    if [ -n "$MAIN_ROOT" ] && [ "$CURRENT_ROOT" != "$MAIN_ROOT" ]; then
+        WORKTREE=$(basename "$CURRENT_ROOT")
     fi
 fi
 
