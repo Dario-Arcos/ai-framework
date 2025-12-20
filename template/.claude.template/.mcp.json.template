@@ -1,35 +1,15 @@
 {
-  "$comment": "Copy to project root as .mcp.json — Full docs: human-handbook/docs/mcp-servers.md",
+  "$comment": "MCPs sin plugin oficial. Para context7/playwright/linear usa: /plugin install {name}@claude-plugin-directory",
   "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "$description": "Real-time library documentation for accurate code generation"
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"],
-      "$description": "Browser automation, E2E testing, screenshots"
-    },
-    "shadcn": {
-      "command": "npx",
-      "args": ["shadcn@latest", "mcp"],
-      "$description": "Shadcn/ui component library integration"
-    },
     "mobile-mcp": {
       "command": "npx",
       "args": ["-y", "@mobilenext/mobile-mcp@latest"],
-      "$description": "Mobile automation, UI debugging, accessibility trees"
+      "$description": "Mobile automation, UI debugging, accessibility trees (iOS/Android)"
     },
     "maestro": {
       "command": "maestro",
       "args": ["mcp"],
       "$description": "Mobile E2E testing, YAML flows, AI assertions"
-    },
-    "linear-server": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"],
-      "$description": "Linear issue tracking, project management, AI agents"
     }
   }
 }
