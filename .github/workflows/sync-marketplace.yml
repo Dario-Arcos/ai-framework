@@ -1,0 +1,36 @@
+name: Sync Marketplace Version
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to sync (without v prefix)'
+        required: true
+
+jobs:
+  notify-marketplace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Syncing version: $VERSION"
+
+      - name: Trigger marketplace update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.MARKETPLACE_PAT }}
+          repository: Dario-Arcos/ai-framework-marketplace
+          event-type: plugin-version-update
+          client-payload: '{"version": "${{ steps.version.outputs.version }}", "plugin": "ai-framework"}'
