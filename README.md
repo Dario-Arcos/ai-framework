@@ -107,7 +107,7 @@ your-project/
 
 **Settings:** `.claude/settings.local.json` > `settings.json` (personal always wins)
 
-**MCP Servers:** Optional (zero by default). Copy `.claude/.mcp.json.template` → `.mcp.json` to enable — [Docs](https://dario-arcos.github.io/ai-framework/docs/mcp-servers)
+**Integrations:** Optional (zero by default). Use `/plugin install` for official plugins or copy `.mcp.json.template` for mobile MCPs — [Docs](https://dario-arcos.github.io/ai-framework/docs/integrations)
 
 **Personal instructions:** `CLAUDE.local.md` (optional, auto-gitignored) — [Best practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 
@@ -136,7 +136,7 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 - [Quickstart](https://dario-arcos.github.io/ai-framework/docs/quickstart) — 15 minutes to productive
 - [Commands Guide](https://dario-arcos.github.io/ai-framework/docs/commands-guide) — Slash commands reference
 - [Agents Guide](https://dario-arcos.github.io/ai-framework/docs/agents-guide) — Specialized agents catalog
-- [MCP Servers](https://dario-arcos.github.io/ai-framework/docs/mcp-servers) — Extend Claude Code capabilities
+- [Integrations](https://dario-arcos.github.io/ai-framework/docs/integrations) — Plugins & MCPs to extend capabilities
 
 ---
 

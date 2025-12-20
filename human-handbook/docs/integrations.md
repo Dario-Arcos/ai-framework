@@ -1,0 +1,181 @@
+# Integrations
+
+::: tip ¿Qué son las Integraciones?
+Plugins oficiales y MCPs que extienden Claude Code con herramientas externas (databases, APIs, browsers, docs). Un **plugin** es un paquete completo (puede incluir MCP + comandos + agentes), mientras que un **MCP** es solo un servidor de herramientas.
+:::
+
+---
+
+## Plugins Oficiales (Recomendado)
+
+Anthropic mantiene un directorio de plugins oficiales. **Instalación con un comando:**
+
+```bash
+/plugin install {name}@claude-plugin-directory
+```
+
+O navegar: `/plugin` → `Discover`
+
+### Plugins First-Party Disponibles
+
+| Plugin | Propósito | Comando |
+|--------|-----------|---------|
+| **context7** | Real-time library docs | `/plugin install context7@claude-plugin-directory` |
+| **playwright** | Browser automation, E2E | `/plugin install playwright@claude-plugin-directory` |
+| **linear** | Issue tracking | `/plugin install linear@claude-plugin-directory` |
+| **github** | GitHub integration | `/plugin install github@claude-plugin-directory` |
+| **gitlab** | GitLab integration | `/plugin install gitlab@claude-plugin-directory` |
+| **firebase** | Firebase backend | `/plugin install firebase@claude-plugin-directory` |
+| **supabase** | Supabase backend | `/plugin install supabase@claude-plugin-directory` |
+| **stripe** | Payments | `/plugin install stripe@claude-plugin-directory` |
+| **slack** | Messaging | `/plugin install slack@claude-plugin-directory` |
+| **asana** | Project management | `/plugin install asana@claude-plugin-directory` |
+
+::: tip Ventajas de Plugins Oficiales
+- Mantenidos por Anthropic/partners
+- Actualizaciones automáticas
+- Instalación limpia sin configuración manual
+:::
+
+**Catálogo completo:** [github.com/anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official)
+
+---
+
+## MCPs Adicionales (Mobile)
+
+Para desarrollo mobile, usamos MCPs que **no tienen plugin oficial**. Estos requieren configuración manual.
+
+| Server | Propósito | Estado |
+|--------|-----------|--------|
+| **mobile-mcp** | Automation iOS/Android, debugging UI | Template |
+| **maestro** | E2E testing mobile, YAML flows | Template |
+
+### Activar MCPs Mobile
+
+**1. Copiar template:**
+
+```bash
+cp .claude/.mcp.json.template .mcp.json
+```
+
+**2. Habilitar en `.claude/settings.local.json`:**
+
+```json
+{
+  "enabledMcpjsonServers": ["mobile-mcp", "maestro"]
+}
+```
+
+**3. Restart:** `Ctrl+D` → `claude`
+
+**4. Verificar:** `/mcp` debe mostrar servidores conectados.
+
+---
+
+## ⚠️ Context Budget
+
+::: warning Impacto en Contexto
+Cada MCP/plugin activo consume contexto. Habilita solo lo necesario para tu proyecto actual.
+:::
+
+**Consumo estimado:**
+- 1-2 MCPs: 5-10% context
+- 4+ MCPs: 20-30% context
+
+**Síntomas de overflow:** Respuestas lentas, pérdida de contexto, degradación de razonamiento.
+
+---
+
+## Mobile Testing (React Native, Expo, Flutter)
+
+::: tip Cuándo usar cada uno
+- **mobile-mcp**: Debugging interactivo, exploración UI, screenshots
+- **maestro**: Test suites E2E, CI/CD, auto-healing tests
+:::
+
+**Requisitos:**
+
+| Herramienta | Requisito | Instalación |
+|-------------|-----------|-------------|
+| mobile-mcp | Node.js 22+ | Automático via npx |
+| mobile-mcp (iOS) | Xcode CLI Tools | `xcode-select --install` |
+| mobile-mcp (Android) | Android Platform Tools | Android Studio |
+| maestro | Java 17+ | `java --version` |
+| maestro CLI | Latest | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
+
+::: details Ejemplo: Debugging con mobile-mcp
+```
+User: "El botón de login no responde"
+
+Claude usa:
+1. mobile_list_available_devices → iPhone 15 Simulator
+2. mobile_launch_app → inicia app
+3. mobile_take_screenshot → captura visual
+4. mobile_list_elements_on_screen → árbol de accesibilidad
+5. Identifica: botón tiene enabled=false
+6. Reporta: "Botón deshabilitado, revisar validación"
+```
+:::
+
+::: details Ejemplo: Generar tests Maestro
+```yaml
+# flows/auth/login.yaml
+appId: com.myapp
+---
+- launchApp
+- tapOn: "Email"
+- inputText: "user@example.com"
+- tapOn: "Password"
+- inputText: "SecurePass123"
+- tapOn: "Sign In"
+- assertVisible: "Welcome"
+```
+
+Ejecutar: `maestro test flows/auth/`
+:::
+
+---
+
+## Troubleshooting
+
+::: details Server No Aparece
+**Para plugins oficiales:**
+- Verificar instalación: `/plugin`
+- Reinstalar: `/plugin install {name}@claude-plugin-directory`
+
+**Para MCPs del template:**
+1. `.mcp.json` existe (copiado desde template)
+2. Server en `enabledMcpjsonServers`
+3. Restart después de cambios
+:::
+
+::: details Environment Variables
+**Sistema (recomendado):**
+```bash
+export GITHUB_TOKEN="your_token"
+claude
+```
+
+**En `.mcp.json`:**
+```json
+{ "env": { "TOKEN": "${TOKEN}" } }
+```
+:::
+
+---
+
+## Mejores Prácticas
+
+::: tip Minimalismo
+Comienza con 1-2 plugins/MCPs. Agrega más solo cuando tengas necesidad clara.
+:::
+
+::: warning Security
+**Nunca** commits tokens en archivos. Usa env vars del sistema.
+:::
+
+---
+
+::: info Última Actualización
+**Fecha**: 2025-12-19 | **Cambios**: Migración a plugins oficiales first-party
+:::

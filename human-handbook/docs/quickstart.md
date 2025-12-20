@@ -182,7 +182,7 @@ Security review automático ejecuta antes de crear PR.
 - [Commands Guide](./commands-guide.md) — Completo conjunto de comandos documentados ([ver todos](./commands-guide))
 - [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes especializados ([ver todos](./agents-guide))
 - [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
-- [MCP Servers](./mcp-servers.md) — Extend capabilities
+- [Integrations](./integrations.md) — Plugins & MCPs
 
 **Requisitos:**
 
