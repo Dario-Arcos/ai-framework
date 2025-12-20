@@ -22,13 +22,21 @@ Instalar el framework y ejecutar tu primera feature en 5 minutos.
 
 ### Paso 3: Actualizar Plugin (cuando sea necesario)
 
-**Actualizar el plugin:**
-```
+**Actualizar el plugin (2 pasos):**
+```bash
+# 1. Sincronizar el marketplace con la versión remota
+/plugin marketplace update ai-framework-marketplace
+
+# 2. Actualizar el plugin
 /plugin update ai-framework@ai-framework-marketplace
 ```
 
-**Actualización limpia** (recomendada si hay problemas de cache):
-```
+::: warning Importante
+El paso 1 es necesario porque Claude Code no sincroniza automáticamente los marketplaces de terceros. Sin este paso, `/plugin update` usará la versión cacheada localmente.
+:::
+
+**Actualización limpia** (si los pasos anteriores no funcionan):
+```bash
 /plugin marketplace remove ai-framework-marketplace
 /plugin marketplace add Dario-Arcos/ai-framework-marketplace
 /plugin install ai-framework@ai-framework-marketplace
@@ -186,6 +194,7 @@ Security review automático ejecuta antes de crear PR.
 | **Comandos no visibles** | Reinicia Claude Code                        |
 | **Hooks no ejecutan**    | Verifica Python 3.8+: `python3 --version`   |
 | **Plugin no aparece**    | `/plugin` — debe aparecer ai-framework en el marketplace |
+| **Update no actualiza**  | Ejecuta primero `/plugin marketplace update ai-framework-marketplace` |
 
 ---
 
@@ -208,5 +217,5 @@ Security review automático ejecuta antes de crear PR.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-13 | **Versión**: 4.3.1
+**Fecha**: 2025-12-20 | **Versión**: 5.0.0
 :::
