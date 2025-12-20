@@ -8,6 +8,12 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
+- [Cambios futuros se documentan aquí]
+
+---
+
+## [5.0.0] - 2025-12-20
+
 ### Añadido
 
 - **Native statusline**: Script bash reemplaza dependencia npm ccstatusline con cálculo preciso de contexto (incluye output_tokens), detección de worktree vía `git worktree list`, check de dependencia jq con fallback graceful (PR #45)
@@ -252,5 +258,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-20 | **Versión**: 4.3.1 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-20 | **Versión**: 5.0.0 | **Formato**: Keep a Changelog
 :::
