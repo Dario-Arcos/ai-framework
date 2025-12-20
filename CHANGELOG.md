@@ -8,7 +8,36 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Añadido
+
+- **Native statusline**: Script bash reemplaza dependencia npm ccstatusline con cálculo preciso de contexto (incluye output_tokens), detección de worktree vía `git worktree list`, check de dependencia jq con fallback graceful (PR #45)
+- **Skill linear-expert**: Skill completo para Linear MCP con 7 referencias técnicas (issues, projects, automation, integrations, AI/MCP, administration, views/navigation) (PR #44)
+- **Skill writing-skills**: Arquitectura completa para creación de skills efectivos con graphviz conventions, Anthropic best practices, persuasion principles, TDD para documentación (PR #45)
+- **Diagramas graphviz**: Visualizaciones DOT inline en CLAUDE.md template para flujos de decisión (PR #45)
+- **Documentación integrations.md**: Nueva página unificada de integraciones MCP/plugins reemplazando mcp-servers.md (PR #45)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: **Template MCP migrado a plugins oficiales Anthropic** — context7, playwright, episodic-memory removidos de `.mcp.json.template`, requieren instalación vía `/plugin install {name}@claude-plugin-directory`. Ver [integrations.md](human-handbook/docs/integrations.md) para comandos de migración (PR #45)
+- **Hook anti_drift v6.0**: Upgrade a prescriptivo con restatement de 6 killer items (Objective, Verification, Calibration, Truth-Seeking, Skills-First, Transparency) en cada prompt submit (PR #45)
+- **CLAUDE.md template v4.3.0**: Diagramas graphviz inline para problem framing, TDD loop, API verification y auto-continuation decision tree (PR #45)
+- **Template settings.json**: Env vars optimizadas — `CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000`, `MAX_THINKING_TOKENS=31999`, `SLASH_COMMAND_TOOL_CHAR_BUDGET=30000`, statusline path actualizado a `.claude/statusline.sh` (PR #45)
+- **Skills consolidados bajo systematic-debugging**: condition-based-waiting, defense-in-depth, root-cause-tracing movidos como sub-skills manteniendo funcionalidad (PR #45)
+- **Skills consolidados bajo test-driven-development**: testing-anti-patterns movido como sub-skill (PR #45)
+- **Skill frontend-design**: AI slop detection table, Design Research Protocol (5 áreas), Human Designer Test checklist (PR #45)
+- **Skill subagent-driven-development**: Two-stage review (spec compliance → code quality) con prompts externalizados en 3 archivos (PR #45)
+- **Skill using-superpowers**: Tabla de red flags y rationalizations, flujo imperativo (PR #45)
+
+### Eliminado
+
+- **marketplace.json**: Removido en favor de patrón Obra (plugin sin manifest marketplace) (PR #45)
+- **skill-creator/**: Migrado completamente a writing-skills con arquitectura mejorada (PR #45)
+- **mcp-servers.md**: Renombrado a integrations.md para reflejar scope expandido plugins+MCPs (PR #45)
+- **Skills separados**: testing-skills-with-subagents movido a writing-skills, condition-based-waiting/defense-in-depth/root-cause-tracing/testing-anti-patterns consolidados (PR #45)
+
+### Arreglado
+
+- **dev-browser CSP**: Sincronizado con upstream, corregido Content Security Policy issue en páginas de GitHub (PR #44)
 
 ---
 
@@ -223,5 +252,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-12 | **Versión**: 4.3.1 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-20 | **Versión**: 4.3.1 | **Formato**: Keep a Changelog
 :::
