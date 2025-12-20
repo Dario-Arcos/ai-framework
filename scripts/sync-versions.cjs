@@ -50,9 +50,8 @@ function main() {
     updatePluginJSON(version);
     console.log(`[sync-versions] ✓ Updated plugin.json`);
 
-    // Step 6: Update .claude-plugin/marketplace.json
+    // Step 6: Update .claude-plugin/marketplace.json (optional - Obra pattern)
     updateMarketplaceJSON(version);
-    console.log(`[sync-versions] ✓ Updated marketplace.json`);
 
     // Step 7: Sync CHANGELOG to docs
     syncDocsChangelog();
@@ -143,8 +142,10 @@ function updatePluginJSON(version) {
 }
 
 function updateMarketplaceJSON(version) {
+  // Skip if marketplace.json doesn't exist (Obra pattern - no marketplace manifest)
   if (!fs.existsSync(MARKETPLACE_JSON_PATH)) {
-    throw new Error(`marketplace.json not found at ${MARKETPLACE_JSON_PATH}`);
+    console.log(`[sync-versions] ⏭️  Skipped marketplace.json (not found - Obra pattern)`);
+    return;
   }
 
   const marketplace = JSON.parse(fs.readFileSync(MARKETPLACE_JSON_PATH, "utf8"));
