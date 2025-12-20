@@ -1,5 +1,5 @@
 ---
-name: write-plan
+description: Create detailed implementation plan with bite-sized tasks
 ---
 
-Use your Writing-Plans skill.
+Use the writing-plans skill exactly as written

@@ -1,7 +1,6 @@
 ---
 name: webapp-testing
 description: Use when testing local web applications, verifying frontend functionality, debugging UI behavior, or capturing browser screenshots - provides Playwright toolkit with server lifecycle management
-license: Complete terms in LICENSE.txt
 ---
 
 # Web Application Testing

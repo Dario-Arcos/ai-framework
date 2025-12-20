@@ -1,7 +1,6 @@
 ---
 name: linear-expert
-description: |
-  Provides expert guidance for Linear issue tracking and project management. Creates, edits, and manages issues, projects, initiatives, and cycles. Configures workflows, labels, priorities, SLAs, and team settings. Integrates Linear with GitHub, Slack, Figma, Jira, and other tools. Sets up and uses Linear MCP server for Claude automation. Triggers when user mentions Linear, issue tracker, project management, sprints, cycles, or asks about Linear features, best practices, workflows, or integrations.
+description: Use when working with Linear issues, projects, cycles, or integrations, or when user mentions Linear, issue tracking, sprints, or project management
 ---
 
 # Linear Expert

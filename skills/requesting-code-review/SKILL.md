@@ -1,11 +1,11 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements - dispatches ai-framework:code-reviewer agent to review implementation against plan or requirements before proceeding
+description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
 ---
 
 # Requesting Code Review
 
-Dispatch `ai-framework:code-reviewer` agent to catch issues before they cascade.
+Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
 
 **Core principle:** Review early, review often.
 
@@ -29,15 +29,16 @@ BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 
-**2. Dispatch code-reviewer agent:**
+**2. Dispatch code-reviewer subagent:**
 
-Use Task tool with `ai-framework:code-reviewer` type, fill template at `code-reviewer.md`
+Use Task tool with superpowers:code-reviewer type, fill template at `code-reviewer.md`
 
-**Placeholders (match template):**
-- `{DESCRIPTION}` - Brief summary of what was implemented
-- `{PLAN_REFERENCE}` - Reference to plan/requirements being validated
-- `{BASE_SHA}` - Starting commit (e.g., origin/main)
-- `{HEAD_SHA}` - Ending commit (e.g., HEAD)
+**Placeholders:**
+- `{WHAT_WAS_IMPLEMENTED}` - What you just built
+- `{PLAN_OR_REQUIREMENTS}` - What it should do
+- `{BASE_SHA}` - Starting commit
+- `{HEAD_SHA}` - Ending commit
+- `{DESCRIPTION}` - Brief summary
 
 **3. Act on feedback:**
 - Fix Critical issues immediately
@@ -55,13 +56,14 @@ You: Let me request code review before proceeding.
 BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
 HEAD_SHA=$(git rev-parse HEAD)
 
-[Dispatch ai-framework:code-reviewer agent]
-  DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
-  PLAN_REFERENCE: Task 2 from docs/plans/deployment-plan.md
+[Dispatch superpowers:code-reviewer subagent]
+  WHAT_WAS_IMPLEMENTED: Verification and repair functions for conversation index
+  PLAN_OR_REQUIREMENTS: Task 2 from docs/plans/deployment-plan.md
   BASE_SHA: a7981ec
   HEAD_SHA: 3df7661
+  DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
 
-[Agent returns]:
+[Subagent returns]:
   Strengths: Clean architecture, real tests
   Issues:
     Important: Missing progress indicators

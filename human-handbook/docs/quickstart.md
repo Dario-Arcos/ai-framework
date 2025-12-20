@@ -136,6 +136,20 @@ brew install terminal-notifier  # macOS only
 Notifications requieren macOS. En Linux/Windows, Claude Code UI muestra estado.
 :::
 
+### Variables de Entorno (Opcional)
+
+El template incluye configuración optimizada de tokens en `settings.json`:
+
+| Variable | Valor | Propósito |
+|----------|-------|-----------|
+| `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | 64000 | Máximo de tokens de salida |
+| `MAX_THINKING_TOKENS` | 31999 | Budget de razonamiento (ultrathink) |
+| `SLASH_COMMAND_TOOL_CHAR_BUDGET` | 30000 | Budget para skills visibles |
+
+::: tip Sobrescribir configuración
+Para usar valores por defecto de Claude Code, deja el campo `"env": {}` vacío en `.claude/settings.local.json`.
+:::
+
 ---
 
 ## Primera Funcionalidad (5 minutos)
@@ -182,7 +196,7 @@ Security review automático ejecuta antes de crear PR.
 - [Commands Guide](./commands-guide.md) — Completo conjunto de comandos documentados ([ver todos](./commands-guide))
 - [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes especializados ([ver todos](./agents-guide))
 - [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
-- [MCP Servers](./mcp-servers.md) — Extend capabilities
+- [Integrations](./integrations.md) — Plugins & MCPs
 
 **Requisitos:**
 

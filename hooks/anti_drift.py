@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anti-Drift Hook v5.0 - Scientific restatement to combat context rot (CLAUDE.md v4.3.0)"""
+"""Anti-Drift Hook v6.0 - Prescriptive 6 Killer Items enforcement (CLAUDE.md v4.3.0)"""
 import sys, json, os
 from pathlib import Path
 from datetime import datetime
@@ -28,7 +28,7 @@ def log_result():
         with open(log_dir / "anti_drift.jsonl", "a") as f:
             f.write(json.dumps({
                 "timestamp": datetime.now().isoformat(),
-                "version": "5.0.0",
+                "version": "6.0.0",
                 "aligned_with": "CLAUDE.md v4.3.0"
             }) + "\n")
     except Exception:
@@ -41,21 +41,28 @@ def main():
     except (json.JSONDecodeError, MemoryError):
         sys.exit(0)
 
-    # ANTI-DRIFT v5.0 - Scientific Restatement
+    # ANTI-DRIFT v6.0 - Prescriptive 6 Killer Items
     # Evidence:
     #   - Context Rot (Chroma 2024): Performance degrades 13.9-85% with context length
     #   - EMNLP 2025: Restatement before action improves accuracy ~4%
     #   - Lost-in-Middle (Liu et al.): Mid-context info effectively invisible
     #   - 26 Prompting Principles: ### headers improve parsing 57%+
-    #   - Anthropic: Claude trained to attend to structured prompts
-    # Design: ~52 tokens, maximum authority on skills, anchored output format
+    # Design: ~85 tokens, prescriptive (trigger + action + consequence), 6/6 items
     guidelines = """###RESTATEMENT###
-SKILLS: 1% chance skill applies → MUST use. No choice. No rationalization. Skip = failure.
+SKILLS: 1% chance → MUST use. No choice.
+VERIFY: "Should work" = hallucination. Bet $100?
 
-VERIFY: Check it. Don't assume. "Should work" = hallucination. Bet $100?
+TASK COMPLETE? → MUST certify 6 items:
+1. Objective: Solved EXACT problem?
+2. Verification: Executed/tested?
+3. Calibration: Sweet spot?
+4. Truth-Seeking: Challenged suboptimal?
+5. Skills-First: Used skills before implementing?
+6. Transparency: Declared limitations?
 
-PRE: □ Skills? □ Size (S/M/L/XL)? □ ROI?
-POST: ✓ Certified | ⚠ Issues: [what failed]
+ALL PASS → "✓ Certified"
+ANY FAIL → ⚠ table + "Action Required: [fix]"
+FAIL WITHOUT FIX = TASK INCOMPLETE. DO NOT DELIVER.
 """
 
     print(json.dumps({

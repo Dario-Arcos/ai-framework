@@ -379,7 +379,7 @@ Skills son alternativa ligera. MCPs solo cuando workflow requiere integración c
 
 **Cuándo usar:** Necesitas tools disponibles en cada prompt (E2E testing, UI library lookup).
 
-[Docs completos →](./mcp-servers.md)
+[Docs completos →](./integrations.md)
 
 ### Personal Instructions
 

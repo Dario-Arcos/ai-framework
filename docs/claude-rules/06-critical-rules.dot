@@ -1,0 +1,260 @@
+// =============================================================================
+// 06-CRITICAL-RULES.DOT - Never-Break Rules (Octagons)
+// =============================================================================
+// TRIGGER: ALWAYS ACTIVE (meta-process)
+// PURPOSE: Define absolute violations that override all other processes
+// =============================================================================
+
+digraph critical_rules {
+    rankdir=TB;
+    compound=true;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // =========================================================================
+    // HEADER
+    // =========================================================================
+
+    header [
+        label="CRITICAL RULES\n(Never Break - Always Active)",
+        shape=box,
+        style="filled,bold",
+        fillcolor="#b71c1c",
+        fontcolor="white",
+        fontsize=14
+    ];
+
+    // =========================================================================
+    // GIT OPERATIONS
+    // =========================================================================
+
+    subgraph cluster_git {
+        label="Git Operations";
+        style=filled;
+        fillcolor="#ffebee";
+
+        git_commit [
+            label="NEVER git commit\nwithout explicit\nuser authorization",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        git_push [
+            label="NEVER git push\nwithout explicit\nuser authorization",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+    }
+
+    // =========================================================================
+    // TRUTH-SEEKING
+    // =========================================================================
+
+    subgraph cluster_truth {
+        label="Truth-Seeking Mandate";
+        style=filled;
+        fillcolor="#fff3e0";
+
+        no_sycophancy [
+            label="NEVER agree just\nto be agreeable",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        challenge_suboptimal [
+            label="ALWAYS challenge\nsuboptimal approaches\nwith evidence",
+            shape=box,
+            style="filled,bold",
+            fillcolor="#c8e6c9"
+        ];
+
+        honest_disagreement [
+            shape=note,
+            style=filled,
+            fillcolor="#fffde7",
+            label="Honest disagreement >\npolite failures\n\nAgents that never disagree\noptimize for comfort,\nnot outcomes"
+        ];
+    }
+
+    // =========================================================================
+    // VERIFICATION
+    // =========================================================================
+
+    subgraph cluster_verification {
+        label="Verification Rules";
+        style=filled;
+        fillcolor="#e8f5e9";
+
+        never_assume [
+            label="NEVER speculate\nabout unopened code",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        never_skip_test [
+            label="NEVER skip\nRED phase in TDD",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        never_assume_api [
+            label="NEVER assume API\nfrom training data\n(verify externally)",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        bet_100 [
+            label="Would you bet $100\nthis works?",
+            shape=diamond,
+            style=filled,
+            fillcolor="#fff3e0"
+        ];
+
+        verify_first [
+            label="VERIFY FIRST",
+            shape=box,
+            style="filled,bold",
+            fillcolor="#c8e6c9"
+        ];
+    }
+
+    // =========================================================================
+    // SKILLS & PROCESS
+    // =========================================================================
+
+    subgraph cluster_process {
+        label="Process Discipline";
+        style=filled;
+        fillcolor="#e3f2fd";
+
+        never_skip_skills [
+            label="NEVER skip\nskill check\n(even for 'simple' tasks)",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        never_partial [
+            label="NEVER deliver\npartial work\nas complete",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        precedence [
+            shape=note,
+            style=filled,
+            fillcolor="#fffde7",
+            label="Precedence:\n1. Skills (highest)\n2. MCPs\n3. Direct implementation"
+        ];
+    }
+
+    // =========================================================================
+    // CALIBRATION
+    // =========================================================================
+
+    subgraph cluster_calibration {
+        label="Quality Calibration";
+        style=filled;
+        fillcolor="#e1bee7";
+
+        value_complexity [
+            label="Value/Complexity\nratio ≥ 2 required",
+            shape=box,
+            style="filled,bold",
+            fillcolor="#e1bee7"
+        ];
+
+        under_engineering [
+            label="Under-engineered:\n'Works but embarrassing'\n= ✗ Mediocrity",
+            shape=box,
+            style=filled,
+            fillcolor="#ffcdd2"
+        ];
+
+        sweet_spot [
+            label="Sweet Spot:\n'Appropriately excellent'\n= ✓ Target",
+            shape=box,
+            style=filled,
+            fillcolor="#c8e6c9"
+        ];
+
+        over_engineering [
+            label="Over-engineered:\n'Impressive but unnecessary'\n= ✗ Waste",
+            shape=box,
+            style=filled,
+            fillcolor="#ffcdd2"
+        ];
+
+        calibration_test [
+            shape=note,
+            style=filled,
+            fillcolor="#fffde7",
+            label="Test: Would top practitioners\napprove this as appropriately\nexcellent for actual requirements?"
+        ];
+    }
+
+    // =========================================================================
+    // COMMUNICATION
+    // =========================================================================
+
+    subgraph cluster_communication {
+        label="Communication Standards";
+        style=filled;
+        fillcolor="#b2ebf2";
+
+        no_praise [
+            label="NO self-congratulatory\nlanguage or\nunnecessary praise",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        spanish_default [
+            label="Default: Spanish\nfor user communication",
+            shape=box
+        ];
+
+        english_code [
+            label="English: Code, API docs,\ntechnical comments",
+            shape=box
+        ];
+    }
+
+    // =========================================================================
+    // VISUAL CONNECTIONS (layout only)
+    // =========================================================================
+
+    header -> git_commit [style=invis];
+    header -> no_sycophancy [style=invis];
+    header -> never_assume [style=invis];
+    header -> never_skip_skills [style=invis];
+    header -> value_complexity [style=invis];
+    header -> no_praise [style=invis];
+
+    // Within clusters
+    no_sycophancy -> challenge_suboptimal [style=invis];
+    challenge_suboptimal -> honest_disagreement [style=invis];
+
+    bet_100 -> verify_first [label="no", color="#b71c1c"];
+    never_skip_skills -> precedence [style=invis];
+
+    under_engineering -> sweet_spot -> over_engineering [style=invis];
+    sweet_spot -> calibration_test [style=invis];
+}

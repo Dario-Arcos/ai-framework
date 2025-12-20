@@ -1,0 +1,229 @@
+// =============================================================================
+// 02-TDD-LOOP.DOT - Test-Driven Development Cycle
+// =============================================================================
+// TRIGGER: Any code implementation task
+// PURPOSE: Enforce RED-GREEN-REFACTOR discipline
+// =============================================================================
+
+digraph tdd_loop {
+    rankdir=TB;
+    compound=true;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // =========================================================================
+    // ENTRY
+    // =========================================================================
+
+    start_implementation [
+        label="Start\nimplementation",
+        shape=ellipse,
+        style=filled,
+        fillcolor="#e3f2fd"
+    ];
+
+    // =========================================================================
+    // RED PHASE - Write Failing Test
+    // =========================================================================
+
+    subgraph cluster_red {
+        label="RED PHASE";
+        style=filled;
+        fillcolor="#ffebee";
+
+        write_test [
+            label="Write test\nfor expected behavior",
+            shape=box,
+            style=filled,
+            fillcolor="#ffcdd2"
+        ];
+
+        run_test_expect_fail [
+            label="Run test",
+            shape=box
+        ];
+
+        test_fails [
+            label="Test fails?",
+            shape=diamond,
+            style=filled,
+            fillcolor="#fff3e0"
+        ];
+
+        // Critical: test MUST fail first
+        test_must_fail [
+            label="STOP: Test must fail first!\nIf passes, test is wrong",
+            shape=octagon,
+            style=filled,
+            fillcolor="#ffcdd2",
+            fontcolor="#b71c1c"
+        ];
+
+        fix_test [
+            label="Fix test\n(verify it tests right thing)",
+            shape=box
+        ];
+    }
+
+    // =========================================================================
+    // GREEN PHASE - Minimal Implementation
+    // =========================================================================
+
+    subgraph cluster_green {
+        label="GREEN PHASE";
+        style=filled,
+        fillcolor="#e8f5e9";
+
+        write_minimal [
+            label="Write MINIMAL code\nto pass test",
+            shape=box,
+            style=filled,
+            fillcolor="#c8e6c9"
+        ];
+
+        minimal_note [
+            shape=plaintext,
+            fontsize=9,
+            label="MINIMAL means:\n- No extra features\n- No premature optimization\n- Just enough to pass"
+        ];
+
+        run_test_expect_pass [
+            label="Run test",
+            shape=box
+        ];
+
+        test_passes [
+            label="Test passes?",
+            shape=diamond,
+            style=filled,
+            fillcolor="#fff3e0"
+        ];
+
+        debug_impl [
+            label="Debug implementation\n(not test)",
+            shape=box,
+            style=filled,
+            fillcolor="#ffe0b2"
+        ];
+    }
+
+    // =========================================================================
+    // REFACTOR PHASE - Clean Up
+    // =========================================================================
+
+    subgraph cluster_refactor {
+        label="REFACTOR PHASE";
+        style=filled;
+        fillcolor="#e1bee7";
+
+        refactor_decision [
+            label="Refactoring\nneeded?",
+            shape=diamond,
+            style=filled,
+            fillcolor="#fff3e0"
+        ];
+
+        refactor_code [
+            label="Refactor for clarity\n(keep tests passing)",
+            shape=box,
+            style=filled,
+            fillcolor="#e1bee7"
+        ];
+
+        run_tests_after_refactor [
+            label="Run tests",
+            shape=box
+        ];
+
+        still_passes [
+            label="Still passes?",
+            shape=diamond,
+            style=filled,
+            fillcolor="#fff3e0"
+        ];
+
+        revert_refactor [
+            label="Revert refactor\n(broke something)",
+            shape=box,
+            style=filled,
+            fillcolor="#ffcdd2"
+        ];
+    }
+
+    // =========================================================================
+    // COMPLETION
+    // =========================================================================
+
+    more_features [
+        label="More features\nto implement?",
+        shape=diamond,
+        style=filled,
+        fillcolor="#fff3e0"
+    ];
+
+    tdd_complete [
+        label="TDD cycle\ncomplete",
+        shape=doublecircle,
+        style=filled,
+        fillcolor="#c8e6c9"
+    ];
+
+    goto_standards [
+        label="→ 03-execution-standards.dot",
+        shape=box,
+        style="filled,bold",
+        fillcolor="#c8e6c9",
+        fontcolor="#1b5e20"
+    ];
+
+    // =========================================================================
+    // FLOW CONNECTIONS
+    // =========================================================================
+
+    // Entry to RED
+    start_implementation -> write_test;
+
+    // RED phase
+    write_test -> run_test_expect_fail;
+    run_test_expect_fail -> test_fails;
+    test_fails -> test_must_fail [label="no\n(passes!)", color="#b71c1c", style=bold];
+    test_must_fail -> fix_test;
+    fix_test -> run_test_expect_fail [style=dotted];
+    test_fails -> write_minimal [label="yes\n(fails)", color="#1b5e20"];
+
+    // GREEN phase
+    write_minimal -> minimal_note [style=invis];
+    write_minimal -> run_test_expect_pass;
+    run_test_expect_pass -> test_passes;
+    test_passes -> debug_impl [label="no", color="#b71c1c"];
+    debug_impl -> run_test_expect_pass [style=dotted];
+    test_passes -> refactor_decision [label="yes", color="#1b5e20"];
+
+    // REFACTOR phase
+    refactor_decision -> more_features [label="no"];
+    refactor_decision -> refactor_code [label="yes"];
+    refactor_code -> run_tests_after_refactor;
+    run_tests_after_refactor -> still_passes;
+    still_passes -> more_features [label="yes", color="#1b5e20"];
+    still_passes -> revert_refactor [label="no", color="#b71c1c"];
+    revert_refactor -> refactor_decision [style=dotted];
+
+    // Loop or complete
+    more_features -> write_test [label="yes", color="#4a148c", style=dotted];
+    more_features -> tdd_complete [label="no", color="#1b5e20"];
+    tdd_complete -> goto_standards;
+
+    // =========================================================================
+    // DISCIPLINE RULES
+    // =========================================================================
+
+    discipline_note [
+        shape=note,
+        style=filled,
+        fillcolor="#fffde7",
+        label="TDD Discipline:\n\n1. NEVER write impl before test\n2. NEVER skip RED phase\n3. NEVER add untested features\n4. Refactor only when GREEN"
+    ];
+
+    refactor_code -> discipline_note [style=invis];
+}

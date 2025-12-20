@@ -58,7 +58,7 @@ export default withMermaid(defineConfig({
           { text: "Comandos", link: "/docs/commands-guide" },
           { text: "Agentes", link: "/docs/agents-guide" },
           { text: "Skills", link: "/docs/skills-guide" },
-          { text: "MCP Servers", link: "/docs/mcp-servers" },
+          { text: "Integrations", link: "/docs/integrations" },
         ],
       },
       {

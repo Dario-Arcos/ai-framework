@@ -159,7 +159,7 @@ Las conversaciones marcadas se **archivan** pero **NO se indexan** en la base de
 ### Ver También
 
 → [Documentación oficial completa](https://github.com/obra/episodic-memory)
-→ [MCP Servers - Configuración avanzada](/docs/mcp-servers)
+→ [Integrations - Configuración avanzada](/docs/integrations)
 
 ---
 
@@ -214,7 +214,7 @@ Si notas lentitud con múltiples MCPs activos, estás excediendo el context budg
 
 - ✅ Mantén solo memory systems + 1-2 tools esenciales
 - ✅ Deshabilita MCPs no críticos para tu tarea actual
-- ✅ Consulta [Context Budget en MCP Servers](/docs/mcp-servers)
+- ✅ Consulta [Context Budget en Integrations](/docs/integrations)
 
 ---
 
