@@ -45,10 +45,35 @@ O navegar: `/plugin` → `Discover`
 
 Para desarrollo mobile, usamos MCPs que **no tienen plugin oficial**. Estos requieren configuración manual.
 
-| Server | Propósito | Estado |
-|--------|-----------|--------|
-| **mobile-mcp** | Automation iOS/Android, debugging UI | Template |
-| **maestro** | E2E testing mobile, YAML flows | Template |
+| Server | Propósito | Instalación |
+|--------|-----------|-------------|
+| **mobile-mcp** | Automation iOS/Android, debugging UI | Automática (npx) ✅ |
+| **maestro** | E2E testing mobile, YAML flows | **Manual requerida** ⚠️ |
+
+::: warning Maestro requiere instalación previa
+A diferencia de `mobile-mcp` que se auto-instala via `npx`, **Maestro MCP requiere tener el CLI instalado globalmente**. Sin esto, el MCP fallará silenciosamente al iniciar Claude Code.
+:::
+
+### Instalar Maestro CLI (requisito previo)
+
+```bash
+# Opción 1: curl (recomendado)
+curl -Ls "https://get.maestro.mobile.dev" | bash
+
+# Opción 2: Homebrew
+brew tap mobile-dev-inc/tap && brew install maestro
+```
+
+**Verificar instalación:**
+```bash
+maestro --version
+# Debe mostrar: Maestro CLI x.x.x
+```
+
+::: tip ¿Por qué esta diferencia?
+- `mobile-mcp`: Paquete npm, se descarga automáticamente con `npx`
+- `maestro`: CLI binario con dependencias de Java, requiere instalación del sistema
+:::
 
 ### Activar MCPs Mobile
 
@@ -69,6 +94,17 @@ cp .claude/.mcp.json.template .mcp.json
 **3. Restart:** `Ctrl+D` → `claude`
 
 **4. Verificar:** `/mcp` debe mostrar servidores conectados.
+
+::: details Troubleshooting: Maestro MCP no conecta
+Si `/mcp` no muestra maestro como conectado:
+
+1. **Verificar CLI instalado:** `which maestro` debe retornar una ruta
+2. **Verificar versión:** `maestro --version`
+3. **Verificar Java:** `java --version` (requiere Java 17+)
+4. **Probar MCP manual:** `maestro mcp` (debe iniciar sin errores)
+
+Si `maestro mcp` falla, reinstalar el CLI.
+:::
 
 ---
 
@@ -177,5 +213,5 @@ Comienza con 1-2 plugins/MCPs. Agrega más solo cuando tengas necesidad clara.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-19 | **Cambios**: Migración a plugins oficiales first-party
+**Fecha**: 2025-12-22 | **Cambios**: Documentación clara sobre requisito de instalación de Maestro CLI
 :::
