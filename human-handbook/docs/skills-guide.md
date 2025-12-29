@@ -162,7 +162,7 @@ Selecciona tu situación para ver las skills recomendadas
 | [Project Management](#project-management) | 1 | Linear issues, proyectos, ciclos, integración GitHub-Linear |
 | [Design](#design) | 1 | Interfaces frontend distintivas (anti-AI slop) |
 | [Writing](#writing) | 1 | Prosa clara y concisa (Strunk's Elements of Style) |
-| [Meta](#meta) | 3 | Superpowers enforcement, skill contribution, testing skills |
+| [Meta](#meta) | 2 | Superpowers enforcement, testing skills |
 
 ---
 
@@ -1065,28 +1065,6 @@ claude mcp add --transport http linear-server https://mcp.linear.app/mcp
 
 ---
 
-#### sharing-skills
-
-::: info Meta | Contribution
-**Cuándo**: Desarrollaste skill broadly useful (no project-specific) y quieres contribuirla upstream vía pull request
-**Qué hace**: Guía proceso completo: branching, edit/create skill, commit, push fork, create PR para contribuir al repositorio upstream
-:::
-
-**Prerequisite**: Skill debe estar tested usando `testing-skills-with-subagents` TDD process
-
-**Workflow**:
-1. **Sync**: `git checkout main && git pull upstream main`
-2. **Branch**: `git checkout -b add-skillname-skill`
-3. **Edit/Create**: Skill en `skills/skill-name/SKILL.md`
-4. **Commit**: Mensaje descriptivo
-5. **Push**: `git push origin add-skillname-skill`
-6. **PR**: `gh pr create` con template
-
-**Share when**: Broad applicability, well-tested, documented, follows guidelines
-
-**Keep personal**: Project-specific, experimental, sensitive info, too niche
-
----
 
 #### testing-skills-with-subagents
 
@@ -1203,7 +1181,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-12-19
+**Última actualización**: 2025-12-28
 **Categorías**: Testing, Debugging, Collaboration, Development Tools, Project Management, Design, Writing, Meta
 **Status**: Production-Ready
 :::

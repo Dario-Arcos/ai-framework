@@ -23,11 +23,12 @@ PROJECT_DIR=$(echo "$input" | jq -r '.workspace.project_dir // ""')
 
 # Calculate context percentage (includes output tokens for accurate compaction prediction)
 if [ "$USAGE" != "null" ]; then
-    INPUT=$(echo "$USAGE" | jq '.input_tokens // 0')
-    OUTPUT_TOKENS=$(echo "$USAGE" | jq '.output_tokens // 0')
-    CACHE_CREATE=$(echo "$USAGE" | jq '.cache_creation_input_tokens // 0')
-    CACHE_READ=$(echo "$USAGE" | jq '.cache_read_input_tokens // 0')
-    CURRENT_TOKENS=$((INPUT + OUTPUT_TOKENS + CACHE_CREATE + CACHE_READ))
+    CURRENT_TOKENS=$(echo "$USAGE" | jq '
+        (.input_tokens // 0) +
+        (.output_tokens // 0) +
+        (.cache_creation_input_tokens // 0) +
+        (.cache_read_input_tokens // 0)
+    ')
     PERCENT=$((CURRENT_TOKENS * 100 / CONTEXT_SIZE))
 else
     PERCENT=0
