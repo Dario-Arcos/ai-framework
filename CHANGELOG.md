@@ -12,6 +12,27 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [5.1.0] - 2025-12-28
+
+### Añadido
+
+- **CI marketplace sync**: Workflow GitHub Actions para sincronización automática de versiones con marketplace (commit 6e31082)
+
+### Cambiado
+
+- **CLAUDE.md v4.4.0**: Compliance Certification rediseñado con enfoque evidence-based — `✓ Certified` sin evidencia ahora INVÁLIDO, requiere bloque Evidence con 6 pruebas explícitas (Objective, Verification, Calibration, Truth-Seeking, Skills-First, Transparency), tabla "How to Prove" reemplaza "Prevents" para guía accionable (PR #46)
+- **statusline.sh**: Consolidación de 5 operaciones shell en single jq expression para cálculo de tokens — mejora performance eliminando múltiples invocaciones jq (PR #46)
+- **Commands synced v4.0.3**: `brainstorm`, `execute-plan`, `write-plan` actualizados con `disable-model-invocation: true` e invocación fully-qualified (`ai-framework:skillname`) (PR #46)
+- **Skill using-superpowers**: Sincronizado con superpowers v4.0.3 — añadida sección "How to Access Skills", clarificado "invoke" vs "read", nueva red flag "I know what that means" (PR #46)
+- **Documentación quickstart**: Proceso 2-step para actualización de plugins documentado (commit c5d8d54)
+- **Documentación integrations**: Clarificado requisito instalación Maestro CLI (commit 5018840)
+
+### Eliminado
+
+- **Skill sharing-skills**: Removido (deprecated en superpowers v4.0.0), documentación sincronizada (PR #46)
+
+---
+
 ## [5.0.0] - 2025-12-20
 
 ### Añadido
@@ -258,5 +279,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-20 | **Versión**: 5.0.0 | **Formato**: Keep a Changelog
+**Fecha**: 2025-12-28 | **Versión**: 5.1.0 | **Formato**: Keep a Changelog
 :::
