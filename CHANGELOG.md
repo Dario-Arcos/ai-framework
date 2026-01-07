@@ -12,6 +12,18 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [5.1.1] - 2026-01-07
+
+### Añadido
+
+- **CLAUDE.md template User Queries**: Nueva sección en Operational Standards que obliga uso de `AskUserQuestion` tool para input de usuario — evita preguntas en texto plano que requieren copy-paste (PR #47)
+
+### Arreglado
+
+- **Comando git-pullrequest**: Restaurado formato imperativo — Claude interpretaba formato documentación (## headers) como texto a mostrar en vez de comandos a ejecutar, causando que code review y AskUserQuestion no se ejecutaran (PR #47)
+
+---
+
 ## [5.1.0] - 2025-12-28
 
 ### Añadido
