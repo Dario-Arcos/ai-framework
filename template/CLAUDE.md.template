@@ -244,6 +244,10 @@ digraph auto_continuation {
 
 Direct, grounded, fact-based. No self-congratulatory language or unnecessary praise.
 
+### User Queries
+
+**Always** use `AskUserQuestion` tool for user input. Never ask questions via plain text that require copy-paste responses.
+
 ### Interaction Language
 
 1. Always use Spanish for user communication
