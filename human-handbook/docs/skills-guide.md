@@ -92,7 +92,7 @@ Selecciona tu situación para ver las skills recomendadas
 
 ### Workflow Git
 ::: details Necesito aislamiento, PR con quality gate, o branch management
-- <Badge type="tip" text="Git" /> `git-pullrequest` - PR con quality gate: code review + observaciones + auto fix loop
+- <Badge type="tip" text="Git" /> `pr-workflow` - PR con quality gate: code review + observaciones + auto fix loop
 - <Badge type="info" text="Git" /> `using-git-worktrees` - Workspace aislado sin switch de branch
 - <Badge type="info" text="Git" /> `finishing-a-development-branch` - Integración limpia: merge/PR/cleanup
 :::
@@ -655,7 +655,7 @@ Reviewer: "Change singleton pattern"
 
 ---
 
-#### git-pullrequest
+#### pr-workflow
 
 ::: tip Git | Quality Gate
 **Cuándo**: Al crear PR, necesitas quality gate con code + security review y observaciones contextualizadas
@@ -683,7 +683,7 @@ Example: feat|TRV-350|20251023|add user authentication
 - **Auto fix**: Subagent arregla Critical+Important (code) + High+Medium (security) issues → re-review obligatorio de ambos
 - **Cancel**: Salir con summary actionable de issues pendientes
 
-**Examples disponibles** (en `skills/git-pullrequest/examples/`):
+**Examples disponibles** (en `skills/pr-workflow/examples/`):
 - `success-no-findings.md` - Review limpio, directo a PR
 - `success-with-findings.md` - Issues encontrados, usuario procede anyway
 - `auto-fix-loop.md` - Loop de auto fix con re-review hasta éxito
