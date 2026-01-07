@@ -1,4 +1,5 @@
 ---
+name: git-pullrequest
 argument-hint: target-branch (e.g., "main")
 description: Create a PR with integrated quality gate (code review + security review)
 ---
