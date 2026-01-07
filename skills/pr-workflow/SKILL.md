@@ -1,5 +1,5 @@
 ---
-name: git-pullrequest
+name: pr-workflow
 description: Use when creating a PR, preparing code for review, or ready to merge feature work into a target branch
 ---
 

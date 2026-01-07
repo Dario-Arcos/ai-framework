@@ -448,7 +448,7 @@ Crea PR con quality gate basado en Observaciones Contextualizadas: pre-review in
 Las observaciones son **hechos con contexto**, no acusaciones. Tú decides si crear PR con issues documentados o arreglar primero.
 :::
 
-**Examples disponibles** (en `skills/git-pullrequest/examples/`):
+**Examples disponibles** (en `skills/pr-workflow/examples/`):
 - `success-no-findings.md` - Review limpio, directo a PR
 - `success-with-findings.md` - Issues encontrados, usuario procede
 - `auto-fix-loop.md` - Loop de auto fix con re-review
