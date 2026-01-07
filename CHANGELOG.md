@@ -12,6 +12,20 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ---
 
+## [5.1.2] - 2026-01-07
+
+### Cambiado
+
+- **Skill git-pullrequest → pr-workflow**: Renombrado para resolver conflicto de nombres — el Skill tool devolvía contenido del comando en lugar del skill cuando ambos compartían nombre (PR #48, #49)
+- **Comando git-pullrequest**: Actualizado para invocar `ai-framework:pr-workflow`, añadido campo `description` en frontmatter (PR #49)
+- **Documentación skills/commands**: Referencias actualizadas al nuevo nombre `pr-workflow` en commands-guide.md y skills-guide.md (PR #48)
+
+### Arreglado
+
+- **Statusline context %**: Añadido prefijo `~` para indicar aproximación — `current_usage` no incluye MCP tools (~30-50k tokens), corregido cálculo removiendo `output_tokens`, añadido cap 100%, documentada limitación con referencia a issue #12510 (PR #49)
+
+---
+
 ## [5.1.1] - 2026-01-07
 
 ### Añadido
@@ -291,5 +305,5 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-28 | **Versión**: 5.1.0 | **Formato**: Keep a Changelog
+**Fecha**: 2026-01-07 | **Versión**: 5.1.2 | **Formato**: Keep a Changelog
 :::
