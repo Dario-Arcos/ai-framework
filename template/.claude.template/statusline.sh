@@ -19,13 +19,14 @@ DURATION_MS=$(echo "$input" | jq -r '.cost.total_duration_ms // 0')
 LINES_ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
 LINES_REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
 USAGE=$(echo "$input" | jq '.context_window.current_usage // null')
-PROJECT_DIR=$(echo "$input" | jq -r '.workspace.project_dir // ""')
 
-# Calculate context percentage (includes output tokens for accurate compaction prediction)
+# Calculate context percentage from current_usage
+# LIMITATION: current_usage doesn't include MCP tools (~30-50k tokens)
+# so percentage is approximate when MCPs are active.
+# See: https://github.com/anthropics/claude-code/issues/12510
 if [ "$USAGE" != "null" ]; then
     CURRENT_TOKENS=$(echo "$USAGE" | jq '
         (.input_tokens // 0) +
-        (.output_tokens // 0) +
         (.cache_creation_input_tokens // 0) +
         (.cache_read_input_tokens // 0)
     ')
@@ -33,6 +34,9 @@ if [ "$USAGE" != "null" ]; then
 else
     PERCENT=0
 fi
+
+# Cap at 100% for display
+[ "$PERCENT" -gt 100 ] && PERCENT=100
 
 # Git branch
 GIT_BRANCH=""
@@ -99,8 +103,8 @@ OUTPUT+="${DIM} v${VERSION}${RESET}"
 
 OUTPUT+=" ${DIM}${SEP}${RESET} "
 
-# Context: 32% ━━━╌╌╌╌╌╌╌
-OUTPUT+="${CTX_COLOR}${PERCENT}%${RESET}"
+# Context: ~32% ━━━╌╌╌╌╌╌╌ (~ indicates approximate due to MCP limitation)
+OUTPUT+="${CTX_COLOR}~${PERCENT}%${RESET}"
 OUTPUT+=" ${DIM}${BAR}${RESET}"
 
 # Git branch: ⎇ main
