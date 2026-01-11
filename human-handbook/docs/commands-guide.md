@@ -12,7 +12,7 @@ Slash commands que ejecutan workflows completos del ciclo AI-first development. 
 | [Ciclo SDD (Engineering Layer)](#ciclo-sdd-engineering-layer) | Spec → Plan → Tasks → Implement        |
 | [Git & GitHub](#git-github)                                   | Commit → PR → Cleanup                  |
 | [Superpowers](#superpowers)                                   | Brainstorm → Plan → Execute            |
-| [Utilidades](#utilidades)                                     | Understand → Research → Polish         |
+| [Utilidades](#utilidades)                                     | Understand → Research                  |
 | [Plugins Externos](#plugins-externos-opcional)                | Memory Search (requiere instalación)   |
 
 ::: tip Orden Recomendado
@@ -212,7 +212,7 @@ Genera tasks.md ejecutable, organizado por user stories, con paralelización mar
       └─ Checkbox markdown
 ```
 
-**Organización:** Setup → Foundational → User Stories (P1, P2, P3...) → Polish
+**Organización:** Setup → Foundational → User Stories (P1, P2, P3...) → Final
 
 ::: tip Tests Opcionales
 Solo se generan tasks de tests si están explícitamente solicitadas en spec o se pide enfoque TDD.
@@ -267,7 +267,7 @@ Ejecuta tasks.md fase por fase con paralelización automática y TDD enforcement
 /speckit.implement
 ```
 
-**Proceso:** Validación checklists → Carga contexto → Setup automático → Ejecución fase por fase (Setup → Foundational → User Stories → Polish) → Validación final
+**Proceso:** Validación checklists → Carga contexto → Setup automático → Ejecución fase por fase (Setup → Foundational → User Stories → Final) → Validación final
 
 **Ejecución:**
 
@@ -669,48 +669,6 @@ Activa Executing-Plans skill para ejecutar planes en batches controlados con rev
 
 ---
 
-### `/polish`
-
-::: tip Propósito
-Polishing meticuloso de archivos AI-generated. Preserva 100% funcionalidad mientras mejora calidad.
-:::
-
-**Usage:**
-
-```bash
-/polish {file_paths}
-```
-
-::: danger CRITICAL DISCLAIMER
-**POLISHING ≠ SCOPE REDUCTION**
-
-Este comando es para **REFINEMENT**, not **FUNCTIONAL REDUCTION**.
-:::
-
-**Mandate:** Si file serves critical user workflow, prioritize COMPLETE PRESERVATION over optimization.
-
-::: details Universal Polishing Protocol (5 Phases)
-
-**Phase 1:** Syntax & Structure Validation (docs, configs, data, code, scripts/templates)
-
-**Phase 2:** Logical Coherence Audit (information flow, configuration logic, data integrity, functional logic, template logic)
-
-**Phase 3:** Consistency & Standards Enforcement (naming, format, language, cross-file, professional standards)
-
-**Phase 4:** Redundancy & Optimization Elimination (content duplication, unused elements, complexity reduction, performance, resource cleanup)
-
-**Phase 5:** Communication & Content Quality (professional language, documentation clarity, content accuracy)
-
-:::
-
-**Zero-Tolerance Polish Standards:**
-
-**Critical Issues (Must Fix):** Syntax Errors, Security Vulnerabilities, Broken References, Data Corruption, Functional Failures
-
-**High Priority:** Inconsistent Formatting, Performance Problems, Clarity Issues, Standard Violations, Redundant Content
-
----
-
 ### `/deep-research`
 
 ::: tip Propósito
@@ -925,43 +883,6 @@ Instala dependencias esenciales faltantes con platform detection.
 
 ---
 
-### `/cleancode-format`
-
-::: tip Propósito
-Formateo on-demand de archivos usando formatters apropiados (prettier, black, shfmt).
-:::
-
-**Usage:**
-
-```bash
-/cleancode-format                           # Git modified
-/cleancode-format src/auth.py src/utils.ts  # Específicos
-/cleancode-format src/                      # Directorio
-```
-
-**Formatters Soportados:**
-
-| Extensión                    | Formatter | Comando                |
-| ---------------------------- | --------- | ---------------------- |
-| `.js`, `.jsx`, `.ts`, `.tsx` | prettier  | `npx prettier --write` |
-| `.json`, `.md`, `.yml`       | prettier  | `npx prettier --write` |
-| `.py`                        | black     | `black --quiet`        |
-| `.sh`, `.bash`               | shfmt     | `shfmt -w`             |
-
-**Comportamiento:**
-
-- Sin argumentos: Detecta archivos modificados con `git diff --name-only`
-- Con archivos: Formatea archivos específicos
-- Con directorio: Escanea recursivamente archivos soportados
-- Extensiones no soportadas: Ignoradas
-- Formatters no instalados: Muestra instrucciones
-
-::: tip Design Rationale
-Control manual sobre cuándo formatear. Evita contaminar diffs en proyectos legacy con deuda técnica.
-:::
-
----
-
 ## Plugins Externos (Opcional)
 
 ::: warning Requisito de Instalación
@@ -1073,5 +994,5 @@ Si ejecutas `/episodic-memory:search-conversations` sin tener instalado el plugi
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-12
+**Fecha**: 2026-01-11
 :::
