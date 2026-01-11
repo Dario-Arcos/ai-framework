@@ -183,6 +183,10 @@ digraph api_verification {
 
 ## GUARDRAILS: Output Layer (AFTER)
 
+### Code Refinement
+
+After writing or modifying code, invoke `code-simplifier` agent. No exceptions.
+
 Before delivering, verify via **Compliance Certification** (see below).
 
 **Additional checks** (if applicable):
