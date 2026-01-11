@@ -86,7 +86,6 @@ def validate_agent_exists(agent_name, available_agents):
         # Check if it's a built-in agent (common ones)
         builtin_agents = [
             "backend-architect",
-            "frontend-developer",
             "security-reviewer",
             "code-reviewer",
             "python-pro",

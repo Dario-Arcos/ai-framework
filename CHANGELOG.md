@@ -8,7 +8,10 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 
 ## [No Publicado]
 
-- [Cambios futuros se documentan aquí]
+### Eliminado
+
+- **Agentes deprecados**: `frontend-developer`, `mobile-developer`, `docs-architect`, `design-review` — bajo/nulo uso, reducción de complejidad del plugin
+- **Comandos deprecados**: `/polish`, `/cleancode-format` — bajo/nulo uso, reducción de complejidad del plugin
 
 ---
 
