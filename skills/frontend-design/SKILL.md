@@ -1,170 +1,144 @@
 ---
 name: frontend-design
-description: Use when creating any web component, page, or application - the standard process for all frontend implementation ensuring production-grade code with intentional aesthetic direction
+description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+license: Complete terms in LICENSE.txt
 ---
 
-# Frontend Design
+This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 
-## Overview
-
-**Every frontend component deserves intentional design.** This is not optional enhancement—it's the standard process for creating web interfaces that avoid generic "AI slop" aesthetics.
-
-**Core principle:** Choose a clear aesthetic direction and execute it with precision. Bold maximalism and refined minimalism both work—the key is intentionality, not intensity.
-
-## When to Use
-
-**Always use for:**
-- Any web component, page, or application
-- HTML/CSS/JS, React, Vue, or any frontend framework
-- Landing pages, dashboards, forms, navigation, cards—everything
-
-**This skill is NOT optional.** Generic defaults produce forgettable interfaces.
-
-## Design Thinking Process
-
-Before coding, answer these questions:
-
-| Question | Purpose |
-|----------|---------|
-| **What problem does this solve?** | Grounds design in function |
-| **Who uses it?** | Informs tone and complexity |
-| **What's the ONE memorable thing?** | Forces differentiation |
-| **What aesthetic direction?** | Commits to intentionality |
-
-**Aesthetic directions** (pick one, commit fully):
-- Brutally minimal / Maximalist chaos / Retro-futuristic
-- Organic-natural / Luxury-refined / Playful-toy-like
-- Editorial-magazine / Brutalist-raw / Art deco-geometric
-- Soft-pastel / Industrial-utilitarian / Dark-moody
-
-## Design Research Protocol
-
-**Standard:** For each component, investigate what a world-class UX/UI dream team would select for THIS specific context. No defaults. No assumptions. Research → Select → Justify.
-
-### 1. Typography
-
-**Research questions:**
-- What typefaces does the industry leader in this domain use?
-- Which font pairings create the emotional response this context demands?
-- What typographic hierarchy maximizes scannability for this audience?
-
-**Investigation:** Search current design systems (Stripe, Linear, Vercel, Apple, luxury brands, editorial sites) relevant to the project's domain. Analyze what makes their typography choices work for their context.
-
-**Output:** Specific font pairing with rationale tied to project goals.
-
-### 2. Color
-
-**Research questions:**
-- What palette creates the psychological response this interface needs?
-- How do top competitors and aspirational brands in this space use color?
-- What color system provides flexibility while maintaining cohesion?
-
-**Investigation:** Study color psychology for the target emotion. Analyze 3-5 reference sites in the same domain. Consider accessibility (WCAG contrast) and dark/light mode implications.
-
-**Output:** Primary, secondary, accent palette with CSS variables and documented rationale.
-
-### 3. Motion
-
-**Research questions:**
-- What motion patterns reinforce the brand personality?
-- Which micro-interactions create delight without distraction?
-- What easing curves and durations feel natural for this context?
-
-**Investigation:** Reference award-winning motion design (Awwwards, CSS Design Awards). Study Motion/Framer Motion patterns for React, or CSS-only solutions for HTML. Identify the 2-3 high-impact moments worth animating.
-
-**Output:** Animation strategy with specific timing, easing, and implementation approach.
-
-### 4. Spatial Composition
-
-**Research questions:**
-- What layout creates visual tension and guides the eye?
-- How can whitespace amplify the most important elements?
-- What unexpected spatial decisions would make this memorable?
-
-**Investigation:** Study editorial layouts, magazine design, architectural spacing. Analyze how top designers break grids intentionally. Consider the F-pattern, Z-pattern, or unconventional flows for this content.
-
-**Output:** Layout approach with intentional asymmetry, overlap, or grid-breaking decisions.
-
-### 5. Atmosphere & Texture
-
-**Research questions:**
-- What background treatment creates depth and context?
-- Which textures reinforce the aesthetic direction?
-- How can subtle details elevate the overall experience?
-
-**Investigation:** Research current trends in backgrounds (gradient meshes, noise, grain, glassmorphism, 3D elements). Study how premium brands create atmosphere. Consider performance implications.
-
-**Output:** Background strategy with specific techniques and implementation details.
+The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
 
 ---
 
-**Validation standard:** Would the best human designers in this domain approve this as exceptional work? If uncertain, research more.
+## Phase 0: Reference Research (MANDATORY)
 
-## AI Slop Detection (CRITICAL)
+**Before ANY design work, you MUST study real world-class references.**
 
-**The #1 failure mode:** Output that screams "made by AI" - generic, predictable, soulless. This is unacceptable. Every design must pass the human-indistinguishable test.
+AI generates generic designs because it optimizes for "statistical likelihood" — averaging thousands of designs into mediocrity. World-class design requires specific visual targets, not abstract concepts.
 
-### Red Flags - STOP and Redesign
+### Step 1: Research References
 
-If ANY of these apply, your design has failed:
+Use **dev-browser skill** to navigate and capture screenshots from:
 
-| Symptom | Why It's AI Slop |
-|---------|------------------|
-| Same visual language across unrelated projects | No contextual research was done |
-| "Safe" choices that offend no one | Fear of commitment, lack of vision |
-| Perfectly symmetrical, predictable layouts | Default grid thinking, no intentionality |
-| Generic gradients as decoration | Lazy atmosphere, no conceptual basis |
-| Typography that "just works" | No font research for THIS context |
-| Animations for animation's sake | Motion without meaning |
-| Dark mode = invert colors | No understanding of dark UI design |
-| "Modern" = rounded corners + shadows | Trend-following, not designing |
+1. **Awwwards.com** — Filter by category matching user's request
+   - Prioritize "Site of the Day" winners
+   - Capture 3-5 sites in the same industry/style
 
-### The Human Designer Test
+2. **Alternative sources** (if needed):
+   - siteinspire.com — Clean, balanced designs
+   - mobbin.com — Mobile UI patterns
+   - dribbble.com — Specific component inspiration
 
-Before finalizing, ask:
+**Invocation:**
+```
+Invoke skill: dev-browser
 
-1. **Could a human designer tell this was AI-generated?** If yes → redesign
-2. **Does this look like 1000 other sites?** If yes → find the differentiator
-3. **Can I explain WHY every design choice was made?** If no → research more
-4. **Would this win a design award?** If unsure → push further
+Task: Navigate to awwwards.com, filter by [category], capture full-page screenshots of 3-5 "Site of the Day" winners. For each site, also capture:
+- Hero section close-up
+- Typography samples
+- Key interactive elements
+```
 
-### What Human Designers Do That AI Defaults Don't
+**Fallback** (only if dev-browser unavailable): Use Chrome extension tools (mcp__claude-in-chrome__*) to navigate and take screenshots.
 
-- **Break rules intentionally** - not follow templates
-- **Create tension** - not balance everything equally
-- **Make bold bets** - not hedge with safe choices
-- **Reference specific inspirations** - not generate from averages
-- **Obsess over details** - not stop at "good enough"
+**Last resort** (only if browser tools fail): Use WebFetch to extract content, but acknowledge this provides inferior analysis.
 
-**The goal:** Output that makes people ask "who designed this?" not "what AI made this?"
+### Step 2: Extract Design DNA
 
-## Implementation Standards
+From each reference, document:
 
-Code must be:
+| Token | What to Extract |
+|-------|-----------------|
+| **Colors** | Primary, secondary, accent (exact hex values) |
+| **Typography** | Font families, size ratios (h1/body), weights |
+| **Spacing** | Base unit, section padding, element gaps |
+| **Grid** | Columns, gutters, breakpoints |
+| **Signature element** | What makes THIS site unforgettable? |
+
+### Step 3: Synthesize Direction
+
+Before proceeding to Design Thinking:
+- Cherry-pick the best patterns from your references
+- Define what YOUR design will do differently
+- Commit to specific values, not vague concepts
+
+**Example output:**
+> "Inspired by [Reference A]'s bold typography scale (3.5x ratio) and [Reference B]'s restrained color palette (near-black + single accent), I'll create a design that combines editorial weight with surgical precision. The unforgettable element will be [specific technique]."
+
+---
+
+## Design Thinking
+
+Before coding, understand the context and commit to a BOLD aesthetic direction:
+- **Purpose**: What problem does this interface solve? Who uses it?
+- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
+- **Constraints**: Technical requirements (framework, performance, accessibility).
+- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+
+**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+
+Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
 - Production-grade and functional
 - Visually striking and memorable
-- Cohesive with clear aesthetic point-of-view
+- Cohesive with a clear aesthetic point-of-view
 - Meticulously refined in every detail
 
-**Match complexity to vision:**
-- Maximalist → elaborate animations, layered effects
-- Minimalist → restraint, precision spacing, subtle details
+## Frontend Aesthetics Guidelines
 
-## Checklist
+Focus on:
+- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
+- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
+- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
+- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
 
-- [ ] Design Thinking: context, audience, and ONE memorable thing defined
-- [ ] Aesthetic direction: chosen and committed
-- [ ] Typography: researched, selected with rationale
-- [ ] Color: palette researched, CSS variables defined
-- [ ] Motion: strategy defined, high-impact moments identified
-- [ ] Layout: intentional spatial decisions documented
-- [ ] Atmosphere: background treatment researched and applied
-- [ ] AI Slop Check: passed all red flag tests
-- [ ] Human Designer Test: would fool a professional designer
-- [ ] Validation: would world-class designers approve this?
+NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
 
-## The Bottom Line
+Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
 
-**No component without intentional design.** Generic defaults are a choice—and the wrong one. Every interface is an opportunity to create something memorable.
+**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
-Claude is capable of extraordinary creative work. Commit fully to a distinctive vision.
+Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
+---
+
+## Validation: Reference Comparison (MANDATORY)
+
+**Before delivering, validate against your references.**
+
+### Visual Tests
+
+1. **Squint Test**: Blur to 5-10px — do priorities still read correctly?
+2. **50ms Test**: First glance — is the hierarchy instant and obvious?
+3. **Side-by-Side**: Compare with your 3 best references:
+   - Is spacing as refined?
+   - Is contrast as intentional?
+   - Is symmetry/asymmetry purposeful?
+
+### Design Token Audit
+
+Compare your implementation against reference tokens:
+
+| Aspect | Your Design | Reference Standard | Pass? |
+|--------|-------------|-------------------|-------|
+| Typography ratio | ? | ? | ✓/✗ |
+| Color contrast | ? | ? | ✓/✗ |
+| Spacing consistency | ? | ? | ✓/✗ |
+| Visual weight balance | ? | ? | ✓/✗ |
+
+### Symmetry Check
+
+Asymmetry is a choice, not an accident. For each asymmetric element, answer:
+- **Why** is this asymmetric?
+- **What purpose** does it serve?
+- Would symmetry work better here?
+
+If you can't justify the asymmetry, fix it.
+
+### Final Gate
+
+Before delivery, capture a screenshot of your work and compare side-by-side with one reference. Ask:
+
+> "Would a professional designer see this as peer-level to the reference, or clearly amateur?"
+
+If amateur → iterate. If peer-level → deliver.

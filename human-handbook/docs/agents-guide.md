@@ -78,30 +78,6 @@ Diseño RESTful, microservicios, esquemas BD, arquitectura escalable
 
 ---
 
-### `frontend-developer`
-
-::: tip React 19 & Next.js 15
-Componentes React, layouts responsivos, state management client-side
-:::
-
-**Stack:** React 19 (Actions, RSC) · Next.js 15 (App Router) · Zustand/Jotai · React Query · Playwright
-
-**Proceso:** Contexto UX → Arquitectura componentes → Patrones modernos → Performance → Accessibility → Testing
-
----
-
-### `mobile-developer`
-
-::: tip Cross-Platform Mobile
-React Native, Flutter, desarrollo nativo, sincronización offline
-:::
-
-**Stack:** React Native (New Architecture) · Flutter 3.x · Expo SDK 50+ · SQLite/Realm
-
-**Proceso:** Platform-agnostic → Performance (memory, battery) → Device integration → Offline-first → App Store compliance
-
----
-
 ### `cloud-architect`
 
 ::: tip Multi-Cloud & IaC
@@ -195,22 +171,6 @@ AWS/Azure/GCP databases, automation, reliability engineering
 **Technologies:** Relational (PostgreSQL/MySQL) · NoSQL (MongoDB/Cassandra/Redis) · NewSQL (CockroachDB/Spanner) · Time-series (InfluxDB/TimescaleDB) · Graph (Neo4j/Neptune)
 
 **IaC:** Terraform/CloudFormation · Schema management (Flyway/Liquibase) · Backup automation · GitOps for databases
-
----
-
-## Documentation & Technical Writing
-
-### `docs-architect`
-
-::: tip Technical Deep-Dives
-Manuales técnicos comprehensivos desde codebases existentes
-:::
-
-**Proceso:** Codebase analysis → Structure (chapters/sections) → Write (overview → details) → Diagrams (architecture/sequence/flow)
-
-**Secciones:** Executive summary · Architecture overview · Design decisions · Core components · Data models · Integration points · Security · Deployment · Development guide
-
-**Output:** 10-100+ páginas, bird's-eye → implementation specifics, diagrams exhaustivos
 
 ---
 
@@ -327,9 +287,8 @@ Methodical bug identification, root cause analysis, coordinated delegation
 | --------------- | --------------------- | ------------------------- |
 | Backend Logic   | backend-developer     | database-expert           |
 | API Issues      | api-architect         | rails-api-developer       |
-| Frontend Bugs   | frontend-developer    | react-component-architect |
 | Database Issues | database-expert       | rails-activerecord-expert |
-| Performance     | performance-optimizer | code-reviewer     |
+| Performance     | performance-optimizer | code-reviewer             |
 | Security        | security-reviewer     | config-security-expert    |
 
 ---
@@ -360,37 +319,21 @@ Refinamiento sistemático y progresivo de componentes web mediante análisis vis
 
 ---
 
-### `design-review`
-
-::: tip Elite Design Review
-UX, visual design, accessibility, front-end implementation
-:::
-
-**Methodology:** "Live Environment First" - interactive experience antes de code analysis
-
-**7 Phases:** Preparation (PR analysis, setup preview) → Interaction (user flow, states) → Responsiveness (1440px/768px/375px) → Visual polish (alignment, typography, hierarchy) → Accessibility (WCAG 2.1 AA, keyboard navigation, contrast) → Robustness (validation, overflow, edge cases) → Code health (reuse, design tokens) → Content/Console
-
-**Communication:** Problems over prescriptions · Triage ([Blocker]/[High]/[Medium]/[Nitpick]) · Evidence-based (screenshots)
-
----
-
 ## Consejos de Uso
 
 ::: tip Selección Rápida
-**Simple:** Agentes generales (backend-architect, frontend-developer)
+**Simple:** Agentes generales (backend-architect, cloud-architect)
 **Complex:** Múltiples especialistas + quality reviewers
 **Production-Critical:** SIEMPRE security + performance + observability
 :::
 
 ### Combinaciones Poderosas
 
-| Combinación                                    | Resultado                   |
-| ---------------------------------------------- | --------------------------- |
-| `backend-architect` + `database-admin`         | Scalable architecture       |
-| `code-reviewer` + `security-reviewer`          | Quality + Security gates    |
-| `test-automator` + `playwright-test-generator` | Complete web testing automation |
-| `mobile-developer` + `mobile-test-generator`   | Complete mobile testing automation |
-| `design-iterator` + `design-review`            | Elite UX implementation     |
+| Combinación                                    | Resultado                        |
+| ---------------------------------------------- | -------------------------------- |
+| `backend-architect` + `database-admin`         | Scalable architecture            |
+| `code-reviewer` + `security-reviewer`          | Quality + Security gates         |
+| `test-automator` + `playwright-test-generator` | Complete web testing automation  |
 
 ### Flujo Óptimo
 
@@ -403,5 +346,5 @@ UX, visual design, accessibility, front-end implementation
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-07
+**Fecha**: 2026-01-11
 :::

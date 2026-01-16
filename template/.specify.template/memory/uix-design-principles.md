@@ -1,6 +1,6 @@
 # UIX Design Standards
 
-**UI/UX Standards**: For UI development agents (premium-ux-designer, design-review, shadcn)
+**UI/UX Standards**: For UI development agents (premium-ux-designer, design-iterator, shadcn)
 **Design Inspiration**: Stripe, Airbnb, Linear
 **Version**: 2.1.0 | **Last Updated**: 2025-11-23
 
