@@ -41,6 +41,66 @@ O navegar: `/plugin` → `Discover`
 
 ---
 
+## Browser Automation (agent-browser)
+
+::: tip Auto-instalación
+`agent-browser` se instala **automáticamente** al iniciar Claude Code si no está presente. No requiere acción manual.
+:::
+
+### ¿Qué es agent-browser?
+
+CLI de browser automation basado en Playwright, optimizado para tareas web rápidas:
+- Navegación y búsquedas
+- Llenado de formularios
+- Screenshots
+- Extracción de datos
+
+**Ventaja sobre WebFetch/WebSearch:** No se bloquea, no trunca contenido, puede interactuar con páginas dinámicas.
+
+### Comportamiento del Hook
+
+Al iniciar cada sesión, el hook `agent-browser-check` verifica e instala automáticamente:
+
+| Estado | Mensaje | Acción |
+|--------|---------|--------|
+| ✓ Instalado | `agent-browser: ✓ Installed` | Usa agent-browser para tareas web |
+| ⏳ Instalando | `agent-browser: ⏳ Installing in background` | Usa WebFetch mientras instala (~30s) |
+| ⚠ Skipped | `agent-browser: ⚠ Skipped` | Variable de entorno activa |
+| ✗ Falló | `agent-browser: ✗ Install failed` | Usa WebFetch como fallback |
+
+### Desactivar Auto-instalación
+
+Si no deseas la instalación automática (CI sin browser, entorno restringido):
+
+```bash
+export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
+```
+
+### Logs
+
+El hook registra cada ejecución para trazabilidad:
+
+```
+.claude/logs/YYYY-MM-DD/agent-browser-check.jsonl
+```
+
+```json
+{"timestamp": "2026-01-19T12:59:45", "hook": "agent-browser-check", "status": "installed", "details": "agent-browser already available"}
+```
+
+### Instalación Manual (si necesario)
+
+```bash
+npm install -g agent-browser
+agent-browser install  # Descarga Chromium (~150MB)
+```
+
+::: warning Primera instalación
+La primera instalación descarga Chromium (~150MB). En conexiones lentas puede tomar 1-2 minutos.
+:::
+
+---
+
 ## MCPs Adicionales (Mobile)
 
 Para desarrollo mobile, usamos MCPs que **no tienen plugin oficial**. Estos requieren configuración manual.
@@ -213,5 +273,5 @@ Comienza con 1-2 plugins/MCPs. Agrega más solo cuando tengas necesidad clara.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-22 | **Cambios**: Documentación clara sobre requisito de instalación de Maestro CLI
+**Fecha**: 2026-01-19 | **Cambios**: Añadida sección Browser Automation (agent-browser) con auto-instalación
 :::

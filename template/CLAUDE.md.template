@@ -142,44 +142,25 @@ Context auto-compacts. Never stop early for token concerns. After refresh: disco
 - Never speculate about unopened code—read files first
 - Verify information across multiple sources
 
-### 6. External API Verification
+### 6. Stale Training Prevention
 
-**Problem**: Training data staleness causes outdated code generation.
+Training data outdated. **Always verify current date first.**
 
-**Critical distinction**:
-- **Training cutoff**: The date when model knowledge stops (stale)
-- **Current date**: TODAY's date from user request (source of truth)
+**Before any external dependency/research:**
+1. Get TODAY's date (system, not memory)
+2. Search with current year (e.g., "React docs 2026")
+3. Dependencies → `context7` MCP or official docs
+4. Verify: install commands, API signatures, breaking changes
 
-```dot
-digraph api_verification {
-  start [label="Using external dependency?" shape=diamond];
-  get_date [label="Identify TODAY's date (from system, not training)" shape=box];
-  research [label="Use dev-browser skill to fetch official docs" shape=box];
-  verify [label="Verify against current date" shape=box];
-  signatures_ok [label="API signatures match?" shape=diamond];
-  install_ok [label="Install commands valid?" shape=diamond];
-  breaking [label="Breaking changes since cutoff?" shape=diamond];
-  stop_sig [label="STOP: Update signatures" shape=octagon];
-  stop_install [label="STOP: Fix install" shape=octagon];
-  stop_break [label="STOP: Handle breaking changes" shape=octagon];
-  proceed [label="Proceed with implementation" shape=doublecircle];
-  skip [label="No verification needed" shape=ellipse];
+**Never trust training memory for versions, APIs, or recent info.**
 
-  start -> skip [label="no"];
-  start -> get_date [label="yes"];
-  get_date -> research -> verify -> signatures_ok;
-  signatures_ok -> install_ok [label="yes"];
-  signatures_ok -> stop_sig [label="no"];
-  install_ok -> breaking [label="yes"];
-  install_ok -> stop_install [label="no"];
-  breaking -> proceed [label="no"];
-  breaking -> stop_break [label="yes"];
-}
-```
+### 7. Web Navigation
 
-**High-risk**: Any external API, library, framework, CLI tool.
+**Tool selection:**
+- Simple (fetch, form, screenshot) → `agent-browser`
+- Complex (E2E, scraping, state) → `dev-browser`
 
-**Failure to verify = professional malpractice.**
+Default: `agent-browser`. Never WebFetch/WebSearch.
 
 ## GUARDRAILS: Output Layer (AFTER)
 
