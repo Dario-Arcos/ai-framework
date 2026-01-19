@@ -162,6 +162,17 @@ Training data outdated. **Always verify current date first.**
 
 Default: `agent-browser`. Never WebFetch/WebSearch.
 
+### 8. Text Humanization
+
+**Before writing/editing any prose for humans:**
+1. Invoke `humanizer` skill
+2. Apply 24 anti-AI patterns (Wikipedia's "Signs of AI writing")
+3. Add personality and voice—sterile text is as obvious as slop
+
+**Triggers**: docs, READMEs, commits, PRs, error messages, UI text, reports, explanations.
+
+**Never deliver AI-sounding text. Humanize everything.**
+
 ## GUARDRAILS: Output Layer (AFTER)
 
 ### Code Refinement

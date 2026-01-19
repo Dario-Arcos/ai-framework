@@ -142,7 +142,7 @@ Selecciona tu situación para ver las skills recomendadas
 
 ### Writing
 ::: details Documentación, commits, mensajes de error, o prosa técnica
-- <Badge type="tip" text="Writing" /> `writing-clearly-and-concisely` - Reglas de Strunk para escritura clara y profesional
+- <Badge type="tip" text="Writing" /> `humanizer` - Elimina 24 patrones de texto IA + añade personalidad y voz
 :::
 
 </div>
@@ -161,7 +161,7 @@ Selecciona tu situación para ver las skills recomendadas
 | [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
 | [Project Management](#project-management) | 1 | Linear issues, proyectos, ciclos, integración GitHub-Linear |
 | [Design](#design) | 1 | Interfaces frontend distintivas (anti-AI slop) |
-| [Writing](#writing) | 1 | Prosa clara y concisa (Strunk's Elements of Style) |
+| [Writing](#writing) | 1 | Humanización de texto (elimina patrones IA, añade voz) |
 | [Meta](#meta) | 2 | Superpowers enforcement, testing skills |
 
 ---
@@ -997,42 +997,40 @@ claude mcp add --transport http linear-server https://mcp.linear.app/mcp
 
 ### Writing
 
-#### writing-clearly-and-concisely
+#### humanizer
 
-::: tip Writing | Communication
-**Cuándo**: Escribir prosa para humanos: documentación, commits, mensajes de error, explicaciones, reportes, UI text
-**Qué hace**: Aplica las reglas atemporales de Strunk (*The Elements of Style*) para escritura más clara, fuerte y profesional
+::: tip Writing | Text Humanization
+**Cuándo**: Escribir o editar prosa para humanos: docs, READMEs, commits, PRs, error messages, UI text, reportes
+**Qué hace**: Detecta y elimina 24 patrones de texto IA (Wikipedia's "Signs of AI writing") + añade personalidad y voz
 :::
 
-**Cuándo usar**:
-- Documentation, README, technical explanations
-- Commit messages, PR descriptions
-- Error messages, UI copy, help text
-- Reports, summaries, cualquier explicación
+**Categorías de patrones detectados**:
+- **Content**: Inflación de significancia, name-dropping, análisis superficiales con -ing, lenguaje promocional
+- **Language**: Vocabulario IA ("Additionally", "delve", "landscape"), evitar "is/are", regla de tres
+- **Style**: Abuso de em dash, negritas, emojis, Title Case en headings
+- **Communication**: Artefactos de chatbot ("I hope this helps!"), tono sicofante
+- **Filler**: Frases de relleno, hedging excesivo, conclusiones genéricas
 
-**Reglas Core (Principles of Composition)**:
-- **Use active voice** (Rule 10)
-- **Put statements in positive form** (Rule 11)
-- **Use definite, specific, concrete language** (Rule 12)
-- **Omit needless words** (Rule 13)
-- **Keep related words together** (Rule 16)
-- **Place emphatic words at end of sentence** (Rule 18)
-
-**Limited Context Strategy**:
-1. Escribe tu draft usando judgment
-2. Dispatch subagent con draft + `elements-of-style.md`
-3. Subagent copyedita y retorna revisión
+**Personality and Soul** (no solo limpiar, añadir voz):
+- Tener opiniones, no solo reportar neutro
+- Variar ritmo: oraciones cortas. Luego largas que toman su tiempo.
+- Reconocer complejidad ("impressive but also unsettling")
+- Usar "I" cuando aplica
+- Dejar algo de desorden (tangentes, pensamientos a medio formar)
 
 **Ejemplo**:
 ```bash
-# Antes (pasivo, vago)
-"The file was processed by the system"
+# Antes (AI-sounding)
+"The software update serves as a testament to the company's commitment
+to innovation. Moreover, it provides a seamless, intuitive, and powerful
+user experience—ensuring that users can accomplish their goals efficiently."
 
-# Después (activo, concreto)
-"The parser extracted 42 records from config.yaml"
+# Después (Humanized)
+"The update adds batch processing, keyboard shortcuts, and offline mode.
+Early feedback from beta testers has been positive."
 ```
 
-**Principio**: Si escribes oraciones para humanos, usa esta skill
+**Principio**: Evitar patrones malos es solo la mitad. Texto estéril es tan obvio como slop.
 
 ---
 
