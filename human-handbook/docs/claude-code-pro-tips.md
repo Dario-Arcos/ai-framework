@@ -8,40 +8,43 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 
 ## Referencia Rápida
 
-| Acción                    | Comando/Atajo         |
-| ------------------------- | --------------------- |
-| Razonamiento básico       | `thinking`            |
-| Razonamiento profundo     | `think hard`          |
-| Razonamiento más profundo | `think harder`        |
-| Toggle razonamiento       | `Tab`                 |
-| Referencia archivo/dir    | `@path`               |
-| Revertir cambios          | `ESC ESC` o `/rewind` |
-| Cambiar modo permisos     | `Shift+Tab`           |
-| Cambiar modelo            | `/model`              |
-| Bash directo (sin tokens) | `! comando`           |
-| Background (terminal)     | `Ctrl+B`              |
-| Background (web)          | `& mensaje`           |
-| Ver procesos background   | `/tasks`              |
+| Acción                    | Comando/Atajo              |
+| ------------------------- | -------------------------- |
+| Toggle razonamiento       | `Option+T` / `Alt+T`       |
+| Configurar razonamiento   | `/config`                  |
+| Referencia archivo/dir    | `@path`                    |
+| Revertir cambios          | `ESC ESC` o `/rewind`      |
+| Cambiar modo permisos     | `Shift+Tab` o `Alt+M`      |
+| Cambiar modelo            | `/model`                   |
+| Bash directo (sin tokens) | `! comando`                |
+| Background (terminal)     | `Ctrl+B`                   |
+| Background (web)          | `& mensaje`                |
+| Ver procesos background   | `/tasks`                   |
 
 ---
 
 ## Control de Razonamiento Extendido
 
-**Cuándo usar cada nivel:**
+**Cómo activar:**
+- **Toggle**: `Option+T` (macOS) / `Alt+T` (Windows/Linux)
+- **Configuración persistente**: `/config`
+- **Límite de tokens**: Variable de entorno `MAX_THINKING_TOKENS`
 
-| Nivel          | Uso Recomendado                                            |
-| -------------- | ---------------------------------------------------------- |
-| `thinking`     | Debugging, refactoring simple, code review                 |
-| `think hard`   | Diseño de features, optimización de queries                |
-| `think harder` | Refactoring complejo, análisis de dependencias             |
+::: warning Importante
+Frases como `thinking`, `think hard`, `ultrathink` **NO asignan tokens de razonamiento**. Son interpretadas como texto normal del prompt. Usa el toggle `Option+T`/`Alt+T` para activar extended thinking.
+:::
 
-**Activación:** Incluye trigger en prompt o presiona `Tab` durante sesión.
+**Cuándo usar extended thinking:**
 
-```bash
-```
+| Escenario                        | Recomendación          |
+| -------------------------------- | ---------------------- |
+| Debugging simple, quick fixes    | Sin extended thinking  |
+| Diseño arquitectónico            | Con extended thinking  |
+| Refactoring complejo             | Con extended thinking  |
+| Análisis de dependencias         | Con extended thinking  |
 
 ::: tip Pattern Efectivo
-Comienza con nivel bajo, escala si el problema es más complejo. Claude se ajusta naturalmente.
+Activa extended thinking antes de tareas complejas. Claude usará tokens adicionales para razonamiento profundo.
 :::
 
 ---
@@ -512,8 +515,10 @@ git commit -m "checkpoint: antes de refactor X"
 
 ## Combinaciones Poderosas
 
+**@ referencias + extended thinking:**
 
-```bash
+```
+@src/core/ Option+T "analiza la arquitectura de este módulo"
 ```
 
 Claude gets deep context upfront + razonamiento profundo = architectural insights precisos
@@ -526,12 +531,13 @@ Claude gets deep context upfront + razonamiento profundo = architectural insight
 
 Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto
 
-**Tab + thinking explícito:**
+**Plan mode + extended thinking:**
 
 ```
+Shift+Tab (plan mode) + Option+T → planificación profunda antes de ejecutar
 ```
 
-Problems realmente complejos. Double thinking = Claude goes extra deep
+Tareas complejas: planifica con extended thinking, revisa, luego ejecuta
 
 ---
 
@@ -540,7 +546,7 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 **Secuencia que funciona:**
 
 1. **Inicia con contexto** - Usa `@` para archivos relevantes
-2. **Ajusta razonamiento** - `Tab` o triggers explícitos según complejidad
+2. **Ajusta razonamiento** - `Option+T`/`Alt+T` para extended thinking según complejidad
 3. **Checkpoint antes de cambios** - Protección contra errores
 4. **3 intentos máximo** - Después → nueva conversación
 5. **Revierte sin miedo** - `ESC ESC` es tu amigo
@@ -559,11 +565,12 @@ Problems realmente complejos. Double thinking = Claude goes extra deep
 
 **Docs oficiales:**
 
-- [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)
-- [Extended Thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)
+- [Claude Code](https://code.claude.com/docs/en/)
+- [Extended Thinking](https://code.claude.com/docs/en/common-workflows#use-extended-thinking)
+- [Interactive Mode](https://code.claude.com/docs/en/interactive-mode)
 
 ---
 
 ::: info Última Actualización
-**Fecha**: 2025-12-06 | **Tips**: Ejecución eficiente (`!`, `Ctrl+B`, `&`)
+**Fecha**: 2026-01-19 | **Cambios**: Corregido extended thinking (toggle `Option+T`/`Alt+T`, no text triggers)
 :::
