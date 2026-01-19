@@ -11,7 +11,6 @@ const profileDir = join(__dirname, "..", "profiles");
 // Create tmp and profile directories if they don't exist
 console.log("Creating tmp directory...");
 mkdirSync(tmpDir, { recursive: true });
-
 console.log("Creating profiles directory...");
 mkdirSync(profileDir, { recursive: true });
 
@@ -33,7 +32,6 @@ function findPackageManager(): { name: string; command: string } | null {
       // Package manager not found, try next
     }
   }
-
   return null;
 }
 

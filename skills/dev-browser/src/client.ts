@@ -4,6 +4,7 @@ import type {
   GetPageResponse,
   ListPagesResponse,
   ServerInfoResponse,
+  ViewportSize,
 } from "./types";
 import { getSnapshotScript } from "./snapshot/browser-script";
 
@@ -206,8 +207,23 @@ async function getPageLoadState(page: Page): Promise<PageLoadState> {
   return result;
 }
 
+/** Server mode information */
+export interface ServerInfo {
+  wsEndpoint: string;
+  mode: "launch" | "extension";
+  extensionConnected?: boolean;
+}
+
+/**
+ * Options for creating or getting a page
+ */
+export interface PageOptions {
+  /** Viewport size for new pages */
+  viewport?: ViewportSize;
+}
+
 export interface DevBrowserClient {
-  page: (name: string) => Promise<Page>;
+  page: (name: string, options?: PageOptions) => Promise<Page>;
   list: () => Promise<string[]>;
   close: (name: string) => Promise<void>;
   disconnect: () => Promise<void>;
@@ -222,6 +238,10 @@ export interface DevBrowserClient {
    * Refs persist across Playwright connections.
    */
   selectSnapshotRef: (name: string, ref: string) => Promise<ElementHandle | null>;
+  /**
+   * Get server information including mode and extension connection status.
+   */
+  getServerInfo: () => Promise<ServerInfo>;
 }
 
 export async function connect(serverUrl = "http://localhost:9222"): Promise<DevBrowserClient> {
@@ -294,24 +314,58 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
   }
 
   // Helper to get a page by name (used by multiple methods)
-  async function getPage(name: string): Promise<Page> {
+  async function getPage(name: string, options?: PageOptions): Promise<Page> {
     // Request the page from server (creates if doesn't exist)
     const res = await fetch(`${serverUrl}/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name } satisfies GetPageRequest),
+      body: JSON.stringify({ name, viewport: options?.viewport } satisfies GetPageRequest),
     });
 
     if (!res.ok) {
       throw new Error(`Failed to get page: ${await res.text()}`);
     }
 
-    const { targetId } = (await res.json()) as GetPageResponse;
+    const pageInfo = (await res.json()) as GetPageResponse & { url?: string };
+    const { targetId } = pageInfo;
 
     // Connect to browser
     const b = await ensureConnected();
 
-    // Find the page by targetId
+    // Check if we're in extension mode
+    const infoRes = await fetch(serverUrl);
+    const info = (await infoRes.json()) as { mode?: string };
+    const isExtensionMode = info.mode === "extension";
+
+    if (isExtensionMode) {
+      // In extension mode, DON'T use findPageByTargetId as it corrupts page state
+      // Instead, find page by URL or use the only available page
+      const allPages = b.contexts().flatMap((ctx) => ctx.pages());
+
+      if (allPages.length === 0) {
+        throw new Error(`No pages available in browser`);
+      }
+
+      if (allPages.length === 1) {
+        return allPages[0]!;
+      }
+
+      // Multiple pages - try to match by URL if available
+      if (pageInfo.url) {
+        const matchingPage = allPages.find((p) => p.url() === pageInfo.url);
+        if (matchingPage) {
+          return matchingPage;
+        }
+      }
+
+      // Fall back to first page
+      if (!allPages[0]) {
+        throw new Error(`No pages available in browser`);
+      }
+      return allPages[0];
+    }
+
+    // In launch mode, use the original targetId-based lookup
     const page = await findPageByTargetId(b, targetId);
     if (!page) {
       throw new Error(`Page "${name}" not found in browser contexts`);
@@ -333,6 +387,7 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
       const res = await fetch(`${serverUrl}/pages/${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
+
       if (!res.ok) {
         throw new Error(`Failed to close page: ${await res.text()}`);
       }
@@ -351,7 +406,6 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
       const page = await getPage(name);
 
       // Inject the snapshot script and call getAISnapshot
-      // Uses eval to avoid CSP restrictions that block addScriptTag on some sites (e.g., GitHub)
       const snapshotScript = getSnapshotScript();
       const snapshot = await page.evaluate((script: string) => {
         // Inject script if not already present
@@ -398,6 +452,23 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
       }
 
       return element;
+    },
+
+    async getServerInfo(): Promise<ServerInfo> {
+      const res = await fetch(serverUrl);
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}: ${await res.text()}`);
+      }
+      const info = (await res.json()) as {
+        wsEndpoint: string;
+        mode?: string;
+        extensionConnected?: boolean;
+      };
+      return {
+        wsEndpoint: info.wsEndpoint,
+        mode: (info.mode as "launch" | "extension") ?? "launch",
+        extensionConnected: info.extensionConnected,
+      };
     },
   };
 }

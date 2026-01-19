@@ -7,7 +7,8 @@
  * Usage:
  *   import { getSnapshotScript } from './snapshot';
  *   const script = getSnapshotScript();
- *   await page.addScriptTag({ content: script });
+ *   await page.evaluate(script);
  *   // Now window.__devBrowser_getAISnapshot() and window.__devBrowser_selectSnapshotRef(ref) are available
  */
+
 export { getSnapshotScript, clearSnapshotScriptCache } from "./browser-script";

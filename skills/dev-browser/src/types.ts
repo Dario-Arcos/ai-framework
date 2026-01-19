@@ -8,8 +8,15 @@ export interface ServeOptions {
   profileDir?: string;
 }
 
+export interface ViewportSize {
+  width: number;
+  height: number;
+}
+
 export interface GetPageRequest {
   name: string;
+  /** Optional viewport size for new pages */
+  viewport?: ViewportSize;
 }
 
 export interface GetPageResponse {

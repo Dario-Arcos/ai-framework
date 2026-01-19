@@ -133,7 +133,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   // POST /pages - get or create page
   app.post("/pages", async (req: Request, res: Response) => {
     const body = req.body as GetPageRequest;
-    const { name } = body;
+    const { name, viewport } = body;
 
     if (!name || typeof name !== "string") {
       res.status(400).json({ error: "name is required and must be a string" });
@@ -155,6 +155,12 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     if (!entry) {
       // Create new page in the persistent context (with timeout to prevent hangs)
       const page = await withTimeout(context.newPage(), 30000, "Page creation timed out after 30s");
+
+      // Apply viewport if provided
+      if (viewport) {
+        await page.setViewportSize(viewport);
+      }
+
       const targetId = await getTargetId(page);
       entry = { page, targetId };
       registry.set(name, entry);
