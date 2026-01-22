@@ -134,3 +134,4 @@ human-handbook/.vitepress/cache/
 
 # Planning & design documents (working files, not for version control)
 /docs/plans/
+.worktrees/
