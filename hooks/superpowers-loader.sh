@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # SessionStart hook: Load superpowers inline (guaranteed availability)
+# Skills are discovered from multiple sources by Claude Code - this hook
+# ensures the using-superpowers skill is always loaded to guide skill usage.
 
 set -euo pipefail
 
@@ -12,10 +14,6 @@ json_escape() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Count skills
-skill_count=$(find "${PLUGIN_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-skill_count=${skill_count:-0}
-
 # Load using-superpowers skill inline
 using_superpowers_path="${PLUGIN_ROOT}/skills/using-superpowers/SKILL.md"
 if [ -f "$using_superpowers_path" ]; then
@@ -26,14 +24,16 @@ else
 fi
 
 # User feedback
-echo "✓ Superpowers loaded (${skill_count} skills)" >&2
+echo "✓ Superpowers loaded" >&2
 
 # Output context injection
+# Note: Skill count not included - Claude Code discovers skills from multiple
+# sources (plugin, user, project, commands) via the Skill tool automatically.
 cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "<EXTREMELY_IMPORTANT>\\nYou have ${skill_count} skills available.\\n\\n${using_superpowers_escaped}\\n</EXTREMELY_IMPORTANT>"
+    "additionalContext": "<EXTREMELY_IMPORTANT>\\n${using_superpowers_escaped}\\n</EXTREMELY_IMPORTANT>"
   }
 }
 EOF
