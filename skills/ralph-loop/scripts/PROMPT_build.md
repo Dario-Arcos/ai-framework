@@ -22,7 +22,7 @@ Study these using subagents:
 
 ### 0c. Study Specs
 
-Study `specs/*` with up to 500 parallel Sonnet subagents.
+Study `specs/*` with up to 500 parallel Opus subagents.
 
 ---
 
@@ -36,7 +36,7 @@ Priority: Blocking deps → Risky integrations → Core features → Edge cases 
 
 ### 1b. Search Before Implementing
 
-**Don't assume not implemented.** Search using Sonnet subagents:
+**Don't assume not implemented.** Search using Opus subagents:
 
 ```bash
 grep -r "relatedFunction" src/
@@ -65,7 +65,7 @@ If found: use existing. If not found: implement.
 
 ### 2c. Subagent Limits
 
-- Study specs/code: up to 500 parallel Sonnet subagents
+- Study specs/code: up to 500 parallel Opus subagents
 - Build/tests: only 1 subagent
 - Complex reasoning: Opus subagent
 

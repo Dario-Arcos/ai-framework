@@ -30,7 +30,7 @@ Study these using subagents:
 
 ### 0c. Study Specifications
 
-**Using up to 500 parallel Sonnet subagents:**
+**Using up to 500 parallel Opus subagents:**
 - Study all files in `specs/` directory
 - Each spec represents one "topic of concern"
 - Extract: requirements, acceptance criteria, constraints
@@ -39,7 +39,7 @@ Study these using subagents:
 
 ### 0d. Study Existing Code
 
-**Using up to 500 parallel Sonnet subagents:**
+**Using up to 500 parallel Opus subagents:**
 - Search `src/*` for existing implementations
 - Identify patterns, conventions, architecture
 - Look for: completed work, TODOs, placeholders, partial implementations
