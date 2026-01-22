@@ -1,512 +1,217 @@
 # Ralph: Building Mode
 
-**Your role:** Implement ONE task from the plan, validate, commit, and exit.
-
-**Context refresh:** You are a fresh AI instance. Previous work lives in files and git, not your memory.
-
-**Integration:** Use superpowers:test-driven-development for implementation.
+You are a fresh AI instance. Previous work lives in files, not your memory.
 
 ---
 
 ## Phase 0: Orient
 
-### 0a. Read Guardrails FIRST
+### 0a. Study Guardrails FIRST
 
-```bash
-# ALWAYS read this file first, before anything else
+```
 @guardrails.md
 ```
 
-**Follow ALL Signs**. They contain lessons from previous iterations' errors.
+Follow ALL Signs. They contain lessons from previous iterations.
 
-### 0b. Read State Files
+### 0b. Study State Files
 
-Read in this order:
-1. `@AGENTS.md` - Project operational guide
-2. `@progress.txt` - Session learnings (what's been tried, what works)
-3. `@IMPLEMENTATION_PLAN.md` - Task list with priorities
+Study these using subagents:
+1. `@AGENTS.md` - Operational guide
+2. `@IMPLEMENTATION_PLAN.md` - Task list
 
-### 0c. Understand Context
+### 0c. Study Specs
 
-**From files, determine:**
-- What's the current sprint/feature?
-- What was completed last iteration?
-- What errors occurred previously?
-- What patterns have been discovered?
+Study `specs/*` with up to 500 parallel Sonnet subagents.
 
 ---
 
 ## Phase 1: Task Selection
 
-### 1a. Identify Next Task
+### 1a. Select Most Important Task
 
-From `@IMPLEMENTATION_PLAN.md`:
-1. Find highest-priority incomplete item (marked `[ ]`)
-2. Read full context from the plan
-3. Note any dependencies or prerequisites
+From `@IMPLEMENTATION_PLAN.md`, choose the most important incomplete item.
 
-**Priority order (unless plan specifies otherwise):**
-1. Blocking dependencies
-2. Risky integrations
-3. Core features
-4. Edge cases
-5. Polish
+Priority: Blocking deps → Risky integrations → Core features → Edge cases → Polish
 
 ### 1b. Search Before Implementing
 
-**CRITICAL**: Don't assume functionality is missing.
+**Don't assume not implemented.** Search using Sonnet subagents:
 
 ```bash
-# Search for existing implementations
 grep -r "relatedFunction" src/
-grep -r "similarPattern" src/
-
-# Check src/lib/* for shared utilities
 ls src/lib/
-
-# Review tests for expected behavior
-grep -r "describe.*TaskName" src/
 ```
 
-**If found:** Use existing. Don't duplicate.
-**If not found:** Proceed with implementation.
+If found: use existing. If not found: implement.
 
 ---
 
 ## Phase 2: Implementation
 
-### 2a. Apply Test-Driven Development
+### 2a. Test-Driven Development
 
-**REQUIRED SUB-SKILL:** Use superpowers:test-driven-development
-
-For this task:
 1. Write test first
 2. Watch it fail (RED)
 3. Write minimal implementation (GREEN)
-4. Refactor for clarity (REFACTOR)
+4. Refactor for clarity
 
-**Why TDD in Ralph:**
-- Tests define "done" objectively
-- Backpressure prevents bad commits
-- Future iterations trust passing tests
+### 2b. Implementation Rules
 
-### 2b. Implementation Guidelines
-
-**Code quality:**
-- Follow patterns in `@AGENTS.md` → Codebase Patterns
+- Follow patterns in `@AGENTS.md`
 - Prefer `src/lib/*` for shared code
-- No placeholders or TODOs
-- No "I'll implement this later"
-- Complete means complete
+- **If functionality is missing then it's your job to add it as per specs**
+- Complete means complete. No placeholders, no TODOs
 
-**Documentation:**
-- Capture the "why" in comments
-- Tests explain expected behavior
-- Complex logic needs explanation
+### 2c. Subagent Limits
 
-### 2c. Use Parallel Subagents
-
-**For expensive operations:**
-- Reading multiple spec files → up to 250 subagents
-- Searching across codebase → up to 500 subagents
-- Code reviews → 1 subagent
-
-**Why:**
-Each subagent has ~156kb context that garbage-collects when done.
-Saves your main context for task execution.
+- Study specs/code: up to 500 parallel Sonnet subagents
+- Build/tests: only 1 subagent
+- Complex reasoning: Opus subagent
 
 ---
 
 ## Phase 3: Validation (Backpressure)
 
-### 3a. Run All Gates
-
-**Execute in order:**
+Run ALL gates in order:
 
 ```bash
-# 1. Tests
-npm test
-
-# 2. Typecheck
-npm run typecheck
-
-# 3. Lint
-npm run lint
-
-# 4. Build (integration check)
-npm run build
+npm test          # Tests must pass
+npm run typecheck # Types must check
+npm run lint      # Lint must pass
+npm run build     # Build must succeed
 ```
 
-**Commands from `@AGENTS.md` → Validation section.**
+**All gates must pass before commit. No exceptions.**
 
-### 3b. Gate Requirements
-
-```dot
-digraph validation {
-    "Implementation done" [shape=ellipse];
-    "Run tests" [shape=box];
-    "Tests pass?" [shape=diamond];
-    "Run typecheck" [shape=box];
-    "Typecheck pass?" [shape=diamond];
-    "Run lint" [shape=box];
-    "Lint pass?" [shape=diamond];
-    "STOP: Fix issues" [shape=octagon, style=filled, fillcolor=red, fontcolor=white];
-    "All gates passed" [shape=doublecircle];
-
-    "Implementation done" -> "Run tests";
-    "Run tests" -> "Tests pass?";
-    "Tests pass?" -> "STOP: Fix issues" [label="no"];
-    "Tests pass?" -> "Run typecheck" [label="yes"];
-    "Run typecheck" -> "Typecheck pass?";
-    "Typecheck pass?" -> "STOP: Fix issues" [label="no"];
-    "Typecheck pass?" -> "Run lint" [label="yes"];
-    "Run lint" -> "Lint pass?";
-    "Lint pass?" -> "STOP: Fix issues" [label="no"];
-    "Lint pass?" -> "All gates passed" [label="yes"];
-    "STOP: Fix issues" -> "Implementation done";
-}
-```
-
-**ALL gates must pass. No exceptions.**
-
-### 3c. Fix Until Green
-
-If any gate fails:
-1. Read error message carefully
-2. Fix the specific issue
-3. Re-run gates
-4. Repeat until ALL pass
-
-**Don't:**
-- Skip gates ("tests are flaky")
-- Commit with red gates ("I'll fix later")
-- Disable gates ("this rule doesn't apply")
+Fix until green. Don't skip. Don't commit red.
 
 ---
 
-## Phase 4: Verification Before Completion
+## Phase 4: Update State BEFORE Commit
 
-**REQUIRED SUB-SKILL:** Use superpowers:verification-before-completion
+### 4a. Update Implementation Plan
 
-Before committing:
-1. Run verification commands (defined in AGENTS.md)
-2. Confirm output shows success
-3. No "should work" or "looks good" - verify with evidence
+Using a subagent, edit `@IMPLEMENTATION_PLAN.md`:
+- Mark completed task: `[ ]` → `[x]`
+- Add new tasks if discovered
+- Remove completed items when plan becomes large
 
-**Would you bet $100 this works?** If not, verify more.
+### 4b. Update AGENTS.md (If Learned Something)
+
+Using a subagent, add to `@AGENTS.md` if you learned:
+- Correct commands to run
+- Project quirks
+- Build gotchas
+
+Keep it brief. Operational only - no status updates.
+
+### 4c. Add Sign (If Errors Occurred)
+
+Using a subagent, add to `@guardrails.md`:
+
+```markdown
+### Sign: [Problem description]
+- **Trigger**: [Condition that causes this]
+- **Instruction**: [Action to prevent it]
+```
 
 ---
 
 ## Phase 5: Commit
 
-### 5a. Git Commit
-
 ```bash
-git add [changed files]
-git commit -m "$(cat <<'EOF'
-feat: [brief description]
-
-[Details if needed]
-- What changed
-- Why it changed
-- Related spec: specs/filename.md
-EOF
-)"
+git add -A
+git commit -m "feat: [description]"
+git push
 ```
-
-**Commit message guidelines:**
-- Start with type: feat/fix/refactor/test/docs
-- Be specific about what changed
-- Reference spec file if applicable
-- Capture the "why" if not obvious
-
-### 5b. Git Push
-
-```bash
-git push origin $(git branch --show-current)
-```
-
-**Loop script handles this automatically.**
 
 ---
 
-## Phase 6: Update State Files
+## Phase 6: Check Completion
 
-### 6a. Update Plan
-
-Edit `@IMPLEMENTATION_PLAN.md`:
-1. Mark completed task: `[ ]` → `[x]`
-2. Remove from list if appropriate
-3. Add new tasks if discovered during work
-4. Update notes if dependencies changed
-
-**Keep it current.** Stale plan causes Ralph to circle.
-
-### 6b. Append to Progress
-
-Edit `@progress.txt`:
-
-```markdown
-## [Timestamp] - Iteration N
-
-**Task**: [Task description]
-
-**Changes**:
-- File1: [what changed and why]
-- File2: [what changed and why]
-
-**Learnings**:
-- [Pattern discovered]
-- [Gotcha encountered]
-- [Useful context for future iterations]
-
-**Codebase Patterns** (if new pattern found):
-- [Reusable pattern that should be followed]
-```
-
-**Guidelines:**
-- Append, never replace
-- Be concise - sacrifice grammar for brevity
-- Focus on learnings, not play-by-play
-- Session-specific (delete after sprint)
-
-### 6c. Update Guardrails (If Errors Occurred)
-
-If you encountered errors (tests failed, implementation issue, gotcha):
-
-**Add to `@guardrails.md`:**
-
-```markdown
-### Sign: [Brief description of problem]
-- **Trigger**: [Exact condition that causes this]
-- **Instruction**: [Specific action to prevent it]
-- **Added after**: [Iteration N]
-```
-
-**Examples of Sign-worthy errors:**
-- Dependency ordering issues
-- Common test failures
-- Framework gotchas
-- Integration patterns
-- Performance anti-patterns
-
-**Not Sign-worthy:**
-- One-off typos
-- Environment-specific issues
-- Unclear requirements (spec problem, not code problem)
-
----
-
-## Phase 7: Check Completion
-
-### 7a. Verify All Tasks
-
-Read `@IMPLEMENTATION_PLAN.md`:
-- Are ALL tasks marked `[x]`?
-- Any pending items?
-- Any new tasks discovered?
-
-### 7b. Output Signal
-
-**If ALL tasks complete:**
+If ALL tasks in `@IMPLEMENTATION_PLAN.md` are complete:
 
 ```
 <promise>COMPLETE</promise>
 ```
 
-**If tasks remain:**
-
-Exit normally. Loop will restart for next task.
+If tasks remain: exit normally. Loop continues with fresh context.
 
 ---
 
-## Phase 8: Context Health Check
+## GUARDRAILS
 
-### 8a. Token Monitoring
+### 99999. Capture the why
 
-Check your context usage:
-- 🟢 <60%: Continue freely
-- 🟡 60-80%: Finish current task, then exit
-- 🔴 >80%: Save progress and exit NOW
+In documentation, capture the why - tests and implementation importance.
 
-**At 80%:**
-1. Commit current work (even if task incomplete)
-2. Update progress.txt with current state
-3. Exit cleanly
-4. Next iteration continues from saved state
+### 999999. Single sources of truth
 
-### 8b. Exit Cleanly
+No migrations or adapters. If tests unrelated to your work fail, resolve them.
 
-**Always exit after ONE task.** Fresh context for next task prevents pollution.
+### 9999999. Git tagging
 
----
+When no build or test errors, create git tag. Start at 0.0.0, increment patch.
 
-## CRITICAL GUARDRAILS
+### 99999999. Debug logging
 
-### 999: Read Guardrails First
+Add extra logging if required to debug issues.
 
-**EVERY iteration MUST read `guardrails.md` before doing anything else.**
+### 999999999. Keep plan current
 
-Signs contain hard-won lessons. Ignoring them = repeating errors.
+Using a subagent, keep `@IMPLEMENTATION_PLAN.md` current with learnings. Update after finishing.
 
-### 999: Search Before Implementing
+### 9999999999. Update AGENTS.md
 
-**Don't assume not implemented.**
+Using a subagent, update `@AGENTS.md` when you learn correct commands. Keep brief.
 
-This is the "Achilles' heel" of autonomous coding. Always search first:
+### 99999999999. Resolve or document bugs
 
-```bash
-# Search for similar functionality
-grep -r "relatedConcept" src/
+For any bugs noticed, resolve them or document in `@IMPLEMENTATION_PLAN.md` using a subagent.
 
-# Check shared utilities
-ls src/lib/
+### 999999999999. Implement completely
 
-# Review tests for existing behavior
-grep -r "describe.*Feature" src/
-```
+No placeholders. No stubs. Complete implementation only.
 
-Duplicate code is worse than missing code.
+### 9999999999999. Clean completed items
 
-### 999: All Gates Must Pass
+Periodically clean completed items from `@IMPLEMENTATION_PLAN.md` using a subagent.
 
-**NO commit until:**
-- ✅ Tests pass
-- ✅ Typecheck passes
-- ✅ Lint passes
-- ✅ Build succeeds
+### 99999999999999. Fix spec inconsistencies
 
-**No exceptions:**
-- Not for "flaky tests"
-- Not for "will fix later"
-- Not for "it's obvious"
-- Not for "running out of context"
+If you find inconsistencies in specs/*, use an Opus subagent to update them.
 
-If running low on context:
-1. Commit current passing state
-2. Update progress with incomplete work
-3. Exit
-4. Next iteration continues
+### 999999999999999. AGENTS.md operational only
 
-### 999: One Task Per Iteration
-
-**Implement ONE task. Exit. Loop continues.**
-
-Don't:
-- Chain multiple tasks ("while I'm at it...")
-- Optimize unrelated code
-- Refactor outside task scope
-- Fix unrelated bugs
-
-Stay focused. One task. Exit.
-
-### 999: Update State Before Exit
-
-**Before each exit:**
-1. Mark task in `@IMPLEMENTATION_PLAN.md`
-2. Append to `@progress.txt`
-3. Add Sign to `@guardrails.md` if errors occurred
-
-Missing state update = next iteration confused.
-
-### 999: Capture The Why
-
-**In commits, tests, and comments:**
-- Don't just describe WHAT
-- Explain WHY
-- Link to spec if applicable
-- Future Ralph needs to understand intent
+Keep `@AGENTS.md` operational only. Status updates and progress notes belong in `@IMPLEMENTATION_PLAN.md`. Bloated AGENTS.md pollutes every future loop's context.
 
 ---
 
 ## Gutter Detection
 
-**You're in the gutter if:**
+**You're stuck if:**
 - Same command fails 3 times
-- Same file modified 5+ times in 10 minutes
-- No progress on current task after 30 minutes
+- Same file modified 5+ times
+- No progress after 30 minutes
 
-**Recovery:**
-1. Add Sign to guardrails.md
-2. Update progress.txt with stuck state
-3. Exit iteration
-4. Next iteration reads Sign and tries different approach
-
-**Or:** Human intervenes, fixes underlying issue.
+**Recovery:** Add Sign to guardrails.md → Exit → Next iteration tries different approach.
 
 ---
 
-## Common Mistakes
+## Context Health
 
-| Mistake | Why Bad | Fix |
-|---------|---------|-----|
-| Skip reading guardrails.md | Repeat known errors | Read FIRST, always |
-| Commit with failing tests | Pollutes git history | Fix until green |
-| Implement multiple tasks | Context pollution | One task, exit |
-| Assume gaps without search | Duplicate code | Search first |
-| Modify files outside task scope | Scope creep | Stay focused |
-| "One more try" after 3 failures | Gutter state | Add Sign, exit |
-| Optimize unrelated code | Scope creep | Only task scope |
+- 🟢 <60%: Continue freely
+- 🟡 60-80%: Finish task, then exit
+- 🔴 >80%: Commit current state, exit NOW
 
 ---
 
-## Red Flags - STOP Immediately
+## Exit
 
-| Thought | Reality |
-|---------|---------|
-| "I'll skip guardrails this time" | Violating the process. Read them. |
-| "Tests are flaky, I'll commit" | Backpressure violation. Fix tests. |
-| "While I'm here, I'll fix X too" | Scope creep. One task only. |
-| "This is obviously missing" | Assumption. Search first. |
-| "Third time's the charm" | Gutter. Add Sign and exit. |
-| "I have enough context" | Pollution building. Check usage. |
-| "Easy wins build momentum" | Technical debt. Hard first. |
-
-**All of these mean: Follow the guardrails. No shortcuts.**
-
----
-
-## Integration Notes
-
-**Required sub-skills:**
-- `superpowers:test-driven-development` - For implementation
-- `superpowers:verification-before-completion` - Before commits
-
-**Optional sub-skills:**
-- `superpowers:systematic-debugging` - If error persists 3+ iterations
-- `superpowers:finishing-a-development-branch` - After COMPLETE signal
-
----
-
-## Model Selection
-
-**Recommended:**
-- **Opus** for task selection and complex reasoning
-- **Sonnet** for subagents (search, read)
-- **Sonnet** for main agent if plan is clear and tasks are simple
-
-**Switch to Sonnet when:**
-- Task is well-defined
-- No architectural decisions needed
-- Straightforward implementation
-
-**Stay with Opus when:**
-- Selecting next task (prioritization matters)
-- Unclear requirements
-- Architectural impact
-
----
-
-## Exit Successfully
-
-**After completing task:**
+After ONE task:
 1. All gates passed ✅
-2. Committed to git ✅
-3. State files updated ✅
-4. Context still healthy (<80%) ✅
+2. State files updated ✅
+3. Committed ✅
 
-→ Exit normally. Loop continues.
-
-**If tasks remain:** Loop restarts with fresh context, reads state, selects next task.
-
-**If ALL tasks complete:** Output `<promise>COMPLETE</promise>` and exit.
+→ Exit. Loop continues with fresh context.

@@ -1,105 +1,49 @@
-# Project: [Your Project Name]
-
-> **Purpose**: Operational guide for Ralph. Loaded every iteration.
-> **Max length**: ~60 lines (keep concise - this loads into context every iteration)
-
----
+# Project: [Name]
 
 ## Build & Run
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Build for production
 npm run build
 ```
 
----
-
 ## Validation
 
-**Run before every commit:**
+**All must pass before commit:**
+- Tests: `npm test`
+- Typecheck: `npm run typecheck`
+- Lint: `npm run lint`
+- Build: `npm run build`
 
-- **Tests**: `npm test`
-- **Typecheck**: `npm run typecheck`
-- **Lint**: `npm run lint`
-- **Build**: `npm run build`
+## Environment
 
-**All must pass before commit. No exceptions.**
-
----
-
-## Operational Notes
-
-### Environment Setup
 - Node.js 18+
 - [Other dependencies]
-- [Environment variables needed]
 
-### Common Gotchas
-- [Framework-specific quirks discovered during development]
-- [Dependency issues encountered]
-- [Build configuration nuances]
+## Gotchas
 
-### Development Workflow
-- [Branch naming conventions]
-- [Commit message format]
-- [PR requirements]
+- [Framework-specific quirks]
+- [Dependency issues]
+- [Build nuances]
 
----
-
-## Codebase Patterns
+## Patterns
 
 ### Architecture
-- [Pattern: How modules are organized]
-- [Pattern: How state is managed]
-- [Pattern: How errors are handled]
+- [Module organization]
+- [State management]
+- [Error handling]
 
-### Naming Conventions
-- [Files: kebab-case, PascalCase, etc.]
-- [Functions: camelCase, snake_case, etc.]
-- [Constants: UPPER_SNAKE_CASE, etc.]
+### Naming
+- Files: kebab-case
+- Functions: camelCase
+- Constants: UPPER_SNAKE_CASE
 
 ### Code Organization
-- `src/lib/*` - Shared utilities (prefer consolidation here)
-- `src/components/*` - Reusable UI components
-- `src/pages/*` - Page-level components
-- [Other directories and their purposes]
+- `src/lib/*` - Shared utilities
+- `src/components/*` - UI components
+- `src/pages/*` - Page components
 
-### Testing Patterns
-- [How to structure test files]
-- [Mocking patterns used]
-- [Test data location]
-
-### Import Patterns
-- [Absolute vs relative imports]
-- [Barrel exports usage]
-- [Third-party import grouping]
-
----
-
-## Notes for Ralph
-
-- **Don't assume not implemented** - Always search `src/lib/*` and test files first
-- **Consolidate in lib/** - If utility is used 2+ times, move to src/lib/
-- **Tests explain behavior** - Read tests to understand expected functionality
-- **Follow existing patterns** - Match style and structure of surrounding code
-
----
-
-## Progress Tracking
-
-**NOT in this file.** Progress tracking belongs in:
-- `IMPLEMENTATION_PLAN.md` - Task status
-- `progress.txt` - Session learnings
-
-This file is for **how to operate the project**, not **what's been done**.
-
----
-
-_Last updated: [Date]_
-_Update this file when discovering new patterns or operational knowledge._
+### Imports
+- [Absolute vs relative]
+- [Barrel exports]
