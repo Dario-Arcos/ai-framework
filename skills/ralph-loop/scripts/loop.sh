@@ -174,6 +174,13 @@ EOF
     echo "$CLAUDE_OUTPUT" > "$OUTPUT_DIR/iteration_${PADDED_ITER}.txt"
     echo "$CLAUDE_OUTPUT"
 
+    # Compress previous iteration (keep current readable)
+    if [ "$ITERATION" -gt 1 ]; then
+        PREV_PADDED=$(printf "%03d" $((ITERATION - 1)))
+        PREV_FILE="$OUTPUT_DIR/iteration_${PREV_PADDED}.txt"
+        [ -f "$PREV_FILE" ] && gzip -f "$PREV_FILE"
+    fi
+
     ITER_END=$(date +%s)
     ITER_DURATION=$((ITER_END - ITER_START))
 

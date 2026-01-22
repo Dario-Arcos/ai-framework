@@ -23,30 +23,41 @@ if [ "$MODE" = "follow" ]; then
 fi
 
 if [ "$MODE" = "last" ]; then
-    # Find last iteration output
-    LAST=$(ls -t claude_output/iteration_*.txt 2>/dev/null | head -n 1)
+    # Find last iteration (prefer .txt, fallback .gz)
+    LAST=$(ls -t claude_output/iteration_*.txt 2>/dev/null | head -n 1) || true
+    [ -z "$LAST" ] && LAST=$(ls -t claude_output/iteration_*.txt.gz 2>/dev/null | head -n 1) || true
+
     if [ -z "$LAST" ]; then
         echo -e "${RED}No iteration outputs found${NC}"
         exit 1
     fi
 
-    ITER_NUM=$(basename "$LAST" | sed 's/iteration_\([0-9]*\)\.txt/\1/' | sed 's/^0*//')
+    ITER_NUM=$(basename "$LAST" | sed 's/iteration_\([0-9]*\)\.txt.*/\1/' | sed 's/^0*//')
     echo -e "${GREEN}Iteration $ITER_NUM Output:${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    cat "$LAST"
+
+    if [[ "$LAST" == *.gz ]]; then
+        gzip -dc "$LAST"
+    else
+        cat "$LAST"
+    fi
 elif [[ "$MODE" =~ ^[0-9]+$ ]]; then
-    # Show specific iteration
     PADDED=$(printf "%03d" "$MODE")
     FILE="claude_output/iteration_${PADDED}.txt"
+    FILE_GZ="${FILE}.gz"
 
-    if [ ! -f "$FILE" ]; then
-        echo -e "${RED}Iteration $MODE output not found${NC}"
+    if [ -f "$FILE" ]; then
+        echo -e "${GREEN}Iteration $MODE Output:${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        cat "$FILE"
+    elif [ -f "$FILE_GZ" ]; then
+        echo -e "${GREEN}Iteration $MODE Output (compressed):${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        gzip -dc "$FILE_GZ"
+    else
+        echo -e "${RED}Iteration $MODE not found${NC}"
         exit 1
     fi
-
-    echo -e "${GREEN}Iteration $MODE Output:${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    cat "$FILE"
 else
     echo "Usage:"
     echo "  ./tail-logs.sh           → Show last iteration output"

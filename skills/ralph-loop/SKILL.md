@@ -115,6 +115,38 @@ Ralph generates structured logs for monitoring:
 
 ---
 
+## Session Role: ORCHESTRATOR
+
+**This session = MONITOR. Never EXECUTOR.**
+
+### Allowed
+- `Bash("./loop.sh", run_in_background=true)`
+- `TaskOutput(task_id, block=false)`
+- `Read`: status.json, logs/*, claude_output/*
+- `KillShell(shell_id)`
+- Display progress, alerts
+
+### Forbidden
+- Write/Edit: src/*, AGENTS.md, guardrails.md, IMPLEMENTATION_PLAN.md
+- Bash: npm test, npm run build, git commit
+- Any implementation work
+
+### Monitoring Loop
+```
+1. result = Bash("./loop.sh plan 5", run_in_background=true)
+2. while status not in [complete, failed, stopped]:
+     TaskOutput(task_id, block=false, timeout=interval*1000)
+     Read("status.json")
+     display_dashboard()
+     interval = clamp(last_duration/3, 30, 90)
+3. TaskOutput(task_id, block=true)
+```
+
+### Rationale
+Worker sessions have fresh 200K tokens. This session monitors. Mixing roles wastes context.
+
+---
+
 ## Building Mode Lifecycle
 
 1. **Orient** - Read guardrails.md FIRST

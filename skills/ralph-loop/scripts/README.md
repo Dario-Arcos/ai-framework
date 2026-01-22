@@ -1,5 +1,15 @@
 # Ralph Loop Scripts
 
+## Installation
+
+```bash
+# From skill directory
+./install.sh /path/to/your/project
+
+# Or copy files manually
+cp loop.sh status.sh tail-logs.sh extract-history.sh PROMPT_*.md /path/to/project/
+```
+
 ## Main Loop
 
 ```bash
@@ -31,6 +41,17 @@ Shows:
 ./tail-logs.sh follow       # Follow iteration log in real-time
 ```
 
+### Extract Full History
+
+```bash
+./extract-history.sh              # Extract to /tmp/ralph-history-YYYYMMDD-HHMMSS
+./extract-history.sh ./history    # Extract to ./history
+```
+
+Decompresses all `.gz` files and copies uncompressed files to destination.
+
+**Note:** Previous iterations are auto-compressed to save space (~90% reduction).
+
 ## Generated Artifacts
 
 Ralph generates the following for observability:
@@ -41,9 +62,9 @@ logs/
   metrics.json       # Aggregated statistics
 
 claude_output/
-  iteration_001.txt  # Complete Claude output per iteration
-  iteration_002.txt
-  ...
+  iteration_001.txt.gz  # Compressed (previous iterations)
+  iteration_002.txt.gz
+  iteration_003.txt     # Current iteration (uncompressed)
 
 status.json          # Current loop state
 errors.log           # Failed iteration details
@@ -86,7 +107,10 @@ errors.log           # Failed iteration details
 
 ## Dependencies
 
-Required commands (available on macOS by default):
+Required commands:
+- `claude` - Claude Code CLI
+- `git` - Version control
 - `jq` - JSON processing
 - `bc` - Arithmetic calculations
-- `date` - Timestamp generation
+- `gzip` - Compression (for history management)
+- `bash` 4+ - Shell (macOS default is 3.x, upgrade recommended)
