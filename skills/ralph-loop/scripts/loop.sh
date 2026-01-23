@@ -205,8 +205,10 @@ EOF
 }
 EOF
 
-        # Check completion signal
-        if echo "$CLAUDE_OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
+        # Check completion signal - only check final result, not thinking blocks
+        # Bug fix: The worker's thinking may mention the marker in negative context
+        FINAL_RESULT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.result // empty' 2>/dev/null)
+        if echo "$FINAL_RESULT" | grep -q "<promise>COMPLETE</promise>"; then
             echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
             echo -e "${GREEN}  ALL TASKS COMPLETE${NC}"
             echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
