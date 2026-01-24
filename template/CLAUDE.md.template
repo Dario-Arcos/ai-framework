@@ -156,11 +156,9 @@ Training data outdated. **Always verify current date first.**
 
 ### 7. Web Navigation
 
-**Tool selection:**
-- Simple (fetch, form, screenshot) → `agent-browser`
-- Complex (E2E, scraping, state) → `dev-browser`
+**Rule**: `agent-browser` skill for ALL browser tasks. Never WebFetch/WebSearch.
 
-Default: `agent-browser`. Never WebFetch/WebSearch.
+**Use cases**: Web research, E2E testing, form automation, scraping, screenshots, session management.
 
 ### 8. Text Humanization
 
