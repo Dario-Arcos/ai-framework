@@ -105,7 +105,7 @@ Selecciona tu situación para ver las skills recomendadas
 ### Herramientas
 ::: details Crear componentes o automatización
 - <Badge type="tip" text="Dev Tools" /> `claude-code-expert` - Genera agents/commands/hooks production-ready
-- <Badge type="info" text="Web" /> `dev-browser` - Browser automation con estado persistente y ARIA snapshots para exploración web
+- <Badge type="info" text="Web" /> `agent-browser` - CLI de browser automation para navegación, E2E testing, scraping y formularios
 - <Badge type="tip" text="Meta" /> `skill-creator` - Crea skill personalizada paso a paso
 :::
 
@@ -781,42 +781,59 @@ Plan con 5 tareas independientes:
 
 ---
 
-#### dev-browser
+#### agent-browser
 
 ::: info Web | Automation
-**Cuándo**: Navegación web, formularios, screenshots, scraping, testing de web apps, automatización de workflows
-**Qué hace**: Browser automation con Playwright que mantiene estado persistente entre scripts. ARIA snapshots para descubrimiento semántico de elementos.
+**Cuándo**: Navegación web, formularios, screenshots, E2E testing, scraping, investigación web
+**Qué hace**: CLI de browser automation basado en Playwright. Reemplaza WebFetch/WebSearch con capacidades completas de interacción web.
 :::
 
-**Platform**: Multiplataforma (Chromium via Playwright)
+**Instalación**: Automática al iniciar Claude Code (hook `agent-browser-check`)
 
-**Setup** (una vez):
 ```bash
-cd skills/dev-browser
-bun install
-bun run start-server &  # Wait for "Ready" message
+# Instalación manual si necesario
+npm install -g agent-browser
+agent-browser install  # Descarga Chromium (~150MB)
 ```
 
-**API**: `connect()`, `page()`, `getAISnapshot()`, `selectSnapshotRef()`, `waitForPageLoad()`
-
-**Ejemplo**:
+**Workflow básico**:
 ```bash
-cd skills/dev-browser && bun x tsx <<'EOF'
-import { connect, waitForPageLoad } from "@/client.js";
-const client = await connect("http://localhost:9222");
-const page = await client.page("main");
-await page.goto("https://example.com");
-await waitForPageLoad(page);
-const snapshot = await client.getAISnapshot("main");
-console.log(snapshot);
-await client.disconnect();
-EOF
+agent-browser open <url>        # Navegar
+agent-browser snapshot -i       # Obtener elementos interactivos con refs
+agent-browser click @e1         # Click usando ref
+agent-browser fill @e2 "texto"  # Llenar input
+agent-browser screenshot        # Capturar estado
+agent-browser close             # Cerrar browser
 ```
 
-**Key Features**:
-- **Estado persistente**: Páginas, cookies, localStorage sobreviven entre scripts
-- **ARIA Snapshots**: Descubrimiento semántico con refs estables `[ref=e1]`
-- **waitForPageLoad**: Espera inteligente filtrando ads/tracking
+**Comandos principales**:
+
+| Categoría | Comandos |
+|-----------|----------|
+| Navegación | `open`, `back`, `forward`, `reload`, `close` |
+| Interacción | `click`, `fill`, `type`, `press`, `hover`, `select` |
+| Estado | `snapshot -i`, `get text`, `get value`, `is visible` |
+| Esperas | `wait @ref`, `wait --text "X"`, `wait --load networkidle` |
+| Captura | `screenshot`, `pdf`, `record start/stop` |
+
+**Ejemplo E2E completo**:
+```bash
+agent-browser open https://example.com/login
+agent-browser snapshot -i
+# Output: textbox "Email" [ref=e1], textbox "Password" [ref=e2], button "Login" [ref=e3]
+agent-browser fill @e1 "user@example.com"
+agent-browser fill @e2 "password123"
+agent-browser click @e3
+agent-browser wait --text "Welcome"
+agent-browser screenshot result.png
+```
+
+**Ventajas sobre WebFetch/WebSearch**:
+- Interacción con páginas dinámicas (SPA, JavaScript)
+- Formularios y autenticación
+- Screenshots y grabación de video
+- Estado persistente entre comandos
+- No se bloquea, no trunca contenido
 
 ---
 
@@ -1076,7 +1093,7 @@ cat package.json | grep version
 ---
 
 ::: info Metadata
-**Última actualización**: 2025-12-28
+**Última actualización**: 2026-01-24
 **Categorías**: Testing, Debugging, Collaboration, Development Tools, Project Management, Design, Writing, Meta
 **Status**: Production-Ready
 :::

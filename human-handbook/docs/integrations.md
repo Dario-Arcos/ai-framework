@@ -273,5 +273,5 @@ Comienza con 1-2 plugins/MCPs. Agrega más solo cuando tengas necesidad clara.
 ---
 
 ::: info Última Actualización
-**Fecha**: 2026-01-19 | **Cambios**: Añadida sección Browser Automation (agent-browser) con auto-instalación
+**Fecha**: 2026-01-24 | **Cambios**: agent-browser es la única herramienta de browser automation (dev-browser deprecado)
 :::
