@@ -26,21 +26,7 @@
       "NotebookRead(**)",
       "NotebookEdit(**)",
 
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-
-      "Bash(npm ci)",
-      "Bash(npm install:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm run test:*)",
-      "Bash(yarn :*)",
-      "Bash(pnpm :*)",
-
-      "Bash(python -m venv :*)",
-      "Bash(pip install :*)",
-      "Bash(node :*)",
+      "Bash",
 
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:github.com)"
@@ -59,12 +45,11 @@
       "Bash(systemctl :*)"
     ],
     "deny": [
+      "Bash(rm -rf /)",
       "Bash(rm -rf /*)",
-      "Bash(rm -rf :*)",
+      "Bash(rm -rf ~)",
       "Bash(rm -rf ~/*)",
       "Bash(sudo:*)",
-      "Bash(chown:*)",
-      "Bash(chmod -R 777:*)",
       "Bash(dd if=:*)",
       "Bash(mkfs:*)",
       "Bash(diskutil :*)",
