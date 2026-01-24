@@ -149,7 +149,7 @@ Training data outdated. **Always verify current date first.**
 **Before any external dependency/research:**
 1. Get TODAY's date (system, not memory)
 2. Search with current year (e.g., "React docs 2026")
-3. Dependencies → `context7` MCP or official docs
+3. Dependencies → Always use Context7 MCP proactively (docs, APIs, setup) without user asking
 4. Verify: install commands, API signatures, breaking changes
 
 **Never trust training memory for versions, APIs, or recent info.**

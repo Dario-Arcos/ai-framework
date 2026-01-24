@@ -1,6 +1,11 @@
 {
-  "$comment": "MCPs sin plugin oficial. Para context7/playwright/linear usa: /plugin install {name}@claude-plugin-directory",
+  "$comment": "MCPs base del framework. Agregar MCPs adicionales según necesidad del proyecto.",
   "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "$description": "Documentation lookup for libraries and frameworks (no auth required)"
+    },
     "mobile-mcp": {
       "command": "npx",
       "args": ["-y", "@mobilenext/mobile-mcp@latest"],
