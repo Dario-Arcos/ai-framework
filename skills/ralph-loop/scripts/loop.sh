@@ -202,8 +202,13 @@ EOF
 
     if [ $CLAUDE_EXIT -eq 0 ]; then
         CONSECUTIVE_FAILURES=0
-        echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s)${NC}"
-        echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
+
+        # Extract task marker from Claude output
+        TASK_NAME=$(echo "$CLAUDE_OUTPUT" | grep -o '> task_completed: .*' | sed 's/> task_completed: //' | tail -1)
+        [ -z "$TASK_NAME" ] && TASK_NAME="[no marker]"
+
+        echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s) - $TASK_NAME${NC}"
+        echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Task: \"$TASK_NAME\" - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
 
         # Update metrics (read ALL values before overwriting)
         TOTAL=$(jq '.total_iterations + 1' "$METRICS_FILE")

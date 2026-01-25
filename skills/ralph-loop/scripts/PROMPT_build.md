@@ -193,6 +193,21 @@ This helps the next iteration start faster.
 
 **This is logged automatically.** Loop.sh captures all output to `claude_output/iteration_NNN.txt`.
 
+### 4f. Output Task Marker (MANDATORY)
+
+**Before committing, output the task name for iteration log:**
+
+```
+> task_completed: [Task name from IMPLEMENTATION_PLAN.md]
+```
+
+**Example:**
+```
+> task_completed: Task 11: Improve Iteration Observability
+```
+
+**This marker is parsed by loop.sh** to create observable iteration logs showing which task was completed per iteration.
+
 ---
 
 ## Phase 5: Commit
