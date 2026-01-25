@@ -5,17 +5,45 @@
 
 ## Example Signs (Remove and replace with your own)
 
+### Frontend Examples
+
 ### Sign: Test Framework Requires jsdom
 - **Trigger**: Writing React component tests
 - **Instruction**: Use `testEnvironment: 'jsdom'` in jest.config.js, not 'node'
+
+### Sign: Recharts Needs Client Component
+- **Trigger**: Using Recharts in Next.js App Router
+- **Instruction**: Add 'use client' directive - Recharts requires browser APIs
+
+### Backend Examples
+
+### Sign: Connection Pool Exhaustion
+- **Trigger**: Database queries timing out after many iterations
+- **Instruction**: Always close connections in finally block. Use `pool.end()` in cleanup.
+
+### Sign: ESM vs CommonJS Import
+- **Trigger**: "Cannot use import statement outside a module" error
+- **Instruction**: Check package.json `"type": "module"`. Use `.mjs` extension or configure tsconfig.
+
+### Tooling Examples
 
 ### Sign: Path Encoding in Claude Data
 - **Trigger**: Working with `~/.claude/projects/` directory names
 - **Instruction**: Directory names use dash-encoding: `-Users-foo-bar` = `/Users/foo/bar`
 
-### Sign: Recharts Needs Client Component
-- **Trigger**: Using Recharts in Next.js App Router
-- **Instruction**: Add 'use client' directive - Recharts requires browser APIs
+### Sign: Git Hook Bypassing Build
+- **Trigger**: Pre-commit hook fails but changes were already committed
+- **Instruction**: The commit did NOT happen when hook fails. Stage again and commit fresh.
+
+### Pattern Examples
+
+### Sign: Race Condition in Parallel Tests
+- **Trigger**: Tests pass individually but fail when run together
+- **Instruction**: Tests sharing database/state need isolation. Use unique IDs or run serially.
+
+### Sign: Environment Variable Not Found
+- **Trigger**: Works locally but fails in CI
+- **Instruction**: Check CI secrets config. Local `.env` not committed. Add to CI secrets.
 
 ---
 

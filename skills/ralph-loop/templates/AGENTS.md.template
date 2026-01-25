@@ -38,9 +38,25 @@ npm run build
 
 ## Gotchas
 
-- [Framework-specific quirks]
-- [Dependency issues]
-- [Build nuances]
+<!-- Document problems you've solved. Future iterations will thank you. -->
+
+### Environment
+- **Node version matters**: Use exact version from `.nvmrc`. v18 breaks crypto module.
+- **M1/ARM issues**: Some native modules need `npm rebuild`. Try `arch -x86_64 npm install` if stuck.
+
+### Build
+- **Import order**: CSS imports must come after component imports or styles break.
+- **Path aliases**: TypeScript paths in `tsconfig.json` need matching in `vite.config.ts`.
+
+### Testing
+- **Mock hoisting**: Jest hoists `jest.mock()` calls. Put them at file top, not inside describe blocks.
+- **Async cleanup**: Always `await` cleanup in `afterEach` or you get "act()" warnings.
+
+### Runtime
+- **Hydration mismatches**: Server/client date formatting differs. Use `suppressHydrationWarning` or format on client only.
+- **Memory leaks**: Event listeners in `useEffect` need cleanup. Subscriptions need unsubscribe.
+
+<!-- Add your project-specific gotchas below -->
 
 ## Patterns
 
