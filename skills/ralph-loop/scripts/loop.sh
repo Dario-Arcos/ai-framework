@@ -36,13 +36,38 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────
+# EXIT CODES
+# ─────────────────────────────────────────────────────────────────
+
+EXIT_SUCCESS=0             # Completed successfully with <promise>COMPLETE</promise>
+EXIT_ERROR=1               # Generic error (validation, setup failure)
+EXIT_CIRCUIT_BREAKER=2     # Max consecutive failures reached
+EXIT_MAX_ITERATIONS=3      # Iteration limit reached
+EXIT_MAX_RUNTIME=4         # Runtime limit exceeded
+EXIT_CONTEXT_EXHAUSTED=5   # Context health critical
+EXIT_LOOP_THRASHING=6      # Detected state oscillation
+EXIT_TASKS_ABANDONED=7     # Tasks repeatedly failing
+EXIT_INTERRUPTED=130       # SIGINT received (Ctrl+C)
+
+# ─────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
 
 ITERATION=0
 CONSECUTIVE_FAILURES=0
 MAX_CONSECUTIVE_FAILURES=3
-CURRENT_BRANCH=$(git branch --show-current)
+MAX_RUNTIME="${MAX_RUNTIME:-0}"  # 0 = unlimited, or seconds from env
+CONTEXT_LIMIT="${CONTEXT_LIMIT:-200000}"  # Default 200K tokens (Claude Opus)
+CONTEXT_CRITICAL_THRESHOLD=80  # Exit if context usage > 80%
+COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
+LAST_TASK=""  # Track last completed task for abandonment detection
+TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
+MAX_TASK_ATTEMPTS=3  # Exit if same task attempted this many times
+
+# Loop thrashing detection - track recent tasks to detect oscillating patterns
+TASK_HISTORY=()  # Array of recent task names
+TASK_HISTORY_SIZE=6  # How many tasks to remember for pattern detection
+CURRENT_BRANCH=""  # Set after git validation
 START_TIME=$(date +%s)
 
 GREEN='\033[0;32m'
@@ -61,17 +86,107 @@ METRICS_FILE="$LOGS_DIR/metrics.json"
 STATUS_FILE="status.json"
 
 # ─────────────────────────────────────────────────────────────────
+# SIGNAL HANDLERS
+# ─────────────────────────────────────────────────────────────────
+
+cleanup_and_exit() {
+    local exit_code="$1"
+    local exit_reason="$2"
+    local timestamp
+    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    # Update status with exit reason
+    cat > "$STATUS_FILE" << EOF
+{
+  "current_iteration": $ITERATION,
+  "consecutive_failures": $CONSECUTIVE_FAILURES,
+  "status": "$exit_reason",
+  "exit_reason": "$exit_reason",
+  "exit_code": $exit_code,
+  "mode": "$MODE",
+  "branch": "$CURRENT_BRANCH",
+  "timestamp": "$timestamp"
+}
+EOF
+
+    echo "[$timestamp] EXIT - Reason: $exit_reason (code $exit_code)" >> "$ITERATION_LOG" 2>/dev/null || true
+    exit "$exit_code"
+}
+
+handle_sigint() {
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}  INTERRUPTED (Ctrl+C)${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    cleanup_and_exit $EXIT_INTERRUPTED "interrupted"
+}
+
+trap handle_sigint SIGINT
+
+# ─────────────────────────────────────────────────────────────────
+# LOOP THRASHING DETECTION
+# ─────────────────────────────────────────────────────────────────
+
+# Detect oscillating patterns like A→B→A→B or A→B→C→A→B→C
+# Returns 0 if thrashing detected, 1 otherwise
+detect_loop_thrashing() {
+    local history_len=${#TASK_HISTORY[@]}
+
+    # Need at least 4 tasks to detect A→B→A→B pattern
+    if [ "$history_len" -lt 4 ]; then
+        return 1
+    fi
+
+    # Check for 2-element oscillation: A→B→A→B
+    # Compare positions: [0]===[2] && [1]===[3]
+    if [ "$history_len" -ge 4 ]; then
+        local a="${TASK_HISTORY[$((history_len - 4))]}"
+        local b="${TASK_HISTORY[$((history_len - 3))]}"
+        local c="${TASK_HISTORY[$((history_len - 2))]}"
+        local d="${TASK_HISTORY[$((history_len - 1))]}"
+
+        # Pattern: A→B→A→B (different tasks oscillating)
+        if [ "$a" = "$c" ] && [ "$b" = "$d" ] && [ "$a" != "$b" ]; then
+            return 0  # Thrashing detected
+        fi
+    fi
+
+    # Check for 3-element oscillation: A→B→C→A→B→C
+    if [ "$history_len" -ge 6 ]; then
+        local p1="${TASK_HISTORY[$((history_len - 6))]}"
+        local p2="${TASK_HISTORY[$((history_len - 5))]}"
+        local p3="${TASK_HISTORY[$((history_len - 4))]}"
+        local p4="${TASK_HISTORY[$((history_len - 3))]}"
+        local p5="${TASK_HISTORY[$((history_len - 2))]}"
+        local p6="${TASK_HISTORY[$((history_len - 1))]}"
+
+        # Pattern: A→B→C→A→B→C (3 different tasks oscillating)
+        if [ "$p1" = "$p4" ] && [ "$p2" = "$p5" ] && [ "$p3" = "$p6" ]; then
+            # Ensure they're actually different tasks (not all the same)
+            if [ "$p1" != "$p2" ] || [ "$p2" != "$p3" ]; then
+                return 0  # Thrashing detected
+            fi
+        fi
+    fi
+
+    return 1  # No thrashing
+}
+
+# ─────────────────────────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────────────────────────
 
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo -e "${RED}Error: Not in a git repository${NC}"
-    exit 1
+    exit $EXIT_ERROR
 fi
+
+# Now safe to get branch name
+CURRENT_BRANCH=$(git branch --show-current)
 
 if [ ! -f "$PROMPT_FILE" ]; then
     echo -e "${RED}Error: $PROMPT_FILE not found${NC}"
-    exit 1
+    exit $EXIT_ERROR
 fi
 
 if [ ! -f "AGENTS.md" ]; then
@@ -139,7 +254,8 @@ echo -e "${BLUE}         RALPH LOOP${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  Mode:   ${GREEN}$MODE${NC}"
 echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
-[ "$MAX_ITERATIONS" -gt 0 ] && echo -e "  Max:    ${RED}$MAX_ITERATIONS${NC}"
+[ "$MAX_ITERATIONS" -gt 0 ] && echo -e "  Max:    ${RED}$MAX_ITERATIONS iterations${NC}"
+[ "$MAX_RUNTIME" -gt 0 ] && echo -e "  Limit:  ${RED}${MAX_RUNTIME}s runtime${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
@@ -152,6 +268,19 @@ while true; do
     if [ "$MAX_ITERATIONS" -gt 0 ] && [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
         echo -e "${YELLOW}Max iterations reached: $MAX_ITERATIONS${NC}"
         break
+    fi
+
+    # Check runtime limit
+    if [ "$MAX_RUNTIME" -gt 0 ]; then
+        CURRENT_TIME=$(date +%s)
+        ELAPSED=$((CURRENT_TIME - START_TIME))
+        if [ "$ELAPSED" -ge "$MAX_RUNTIME" ]; then
+            echo ""
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${YELLOW}  RUNTIME LIMIT: ${ELAPSED}s >= ${MAX_RUNTIME}s${NC}"
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            cleanup_and_exit $EXIT_MAX_RUNTIME "max_runtime"
+        fi
     fi
 
     ((ITERATION++))
@@ -177,13 +306,12 @@ EOF
     # RUN CLAUDE
     # ─────────────────────────────────────────────────────────────
 
+    # Capture output and exit code (|| true prevents set -e from terminating)
     CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | claude -p \
         --dangerously-skip-permissions \
         --output-format=stream-json \
         --model opus \
-        --verbose 2>&1)
-
-    CLAUDE_EXIT=$?
+        --verbose 2>&1) && CLAUDE_EXIT=0 || CLAUDE_EXIT=$?
 
     # Save complete output
     PADDED_ITER=$(printf "%03d" $ITERATION)
@@ -203,9 +331,96 @@ EOF
     if [ $CLAUDE_EXIT -eq 0 ]; then
         CONSECUTIVE_FAILURES=0
 
-        # Extract task marker from Claude output
-        TASK_NAME=$(echo "$CLAUDE_OUTPUT" | grep -o '> task_completed: .*' | sed 's/> task_completed: //' | tail -1)
+        # Extract task marker from Claude output (|| true prevents exit on no match)
+        TASK_NAME=$(echo "$CLAUDE_OUTPUT" | grep -o '> task_completed: .*' | sed 's/> task_completed: //' | tail -1 || true)
         [ -z "$TASK_NAME" ] && TASK_NAME="[no marker]"
+
+        # ─────────────────────────────────────────────────────────
+        # LOOP THRASHING DETECTION
+        # ─────────────────────────────────────────────────────────
+
+        # Add task to history (only if it's a real task marker)
+        if [ "$TASK_NAME" != "[no marker]" ]; then
+            TASK_HISTORY+=("$TASK_NAME")
+
+            # Keep history bounded
+            while [ ${#TASK_HISTORY[@]} -gt "$TASK_HISTORY_SIZE" ]; do
+                TASK_HISTORY=("${TASK_HISTORY[@]:1}")  # Remove oldest
+            done
+
+            # Check for oscillating patterns
+            if detect_loop_thrashing; then
+                echo ""
+                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo -e "${RED}  LOOP THRASHING DETECTED${NC}"
+                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo ""
+                echo -e "${YELLOW}Task history shows oscillating pattern:${NC}"
+                echo "  ${TASK_HISTORY[*]}"
+                echo ""
+                echo -e "${YELLOW}Claude is stuck cycling between tasks without progress.${NC}"
+                echo "  - Review the implementation plan"
+                echo "  - Add a Sign to guardrails.md"
+                echo "  - Consider manual intervention"
+                cleanup_and_exit $EXIT_LOOP_THRASHING "loop_thrashing"
+            fi
+        fi
+
+        # ─────────────────────────────────────────────────────────
+        # TASK ABANDONMENT DETECTION
+        # ─────────────────────────────────────────────────────────
+
+        # Check if same task is being attempted repeatedly
+        if [ "$TASK_NAME" != "[no marker]" ]; then
+            if [ "$TASK_NAME" = "$LAST_TASK" ]; then
+                ((TASK_ATTEMPT_COUNT++))
+                if [ "$TASK_ATTEMPT_COUNT" -ge "$MAX_TASK_ATTEMPTS" ]; then
+                    echo ""
+                    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                    echo -e "${RED}  TASK ABANDONED: \"$TASK_NAME\" attempted $TASK_ATTEMPT_COUNT times${NC}"
+                    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                    echo ""
+                    echo -e "${YELLOW}The same task keeps failing. Consider:${NC}"
+                    echo "  - Adding a Sign to guardrails.md"
+                    echo "  - Simplifying the task in the plan"
+                    echo "  - Manual intervention required"
+                    cleanup_and_exit $EXIT_TASKS_ABANDONED "tasks_abandoned"
+                fi
+            else
+                # Different task, reset counter
+                TASK_ATTEMPT_COUNT=1
+            fi
+            LAST_TASK="$TASK_NAME"
+        fi
+
+        # ─────────────────────────────────────────────────────────
+        # CONTEXT HEALTH CHECK
+        # ─────────────────────────────────────────────────────────
+
+        # Extract input_tokens from Claude's usage stats
+        INPUT_TOKENS=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.usage.input_tokens // 0' 2>/dev/null || echo "0")
+
+        if [ "$INPUT_TOKENS" -gt 0 ] && [ "$CONTEXT_LIMIT" -gt 0 ]; then
+            CONTEXT_PERCENT=$((INPUT_TOKENS * 100 / CONTEXT_LIMIT))
+
+            # Determine context zone
+            if [ "$CONTEXT_PERCENT" -ge "$CONTEXT_CRITICAL_THRESHOLD" ]; then
+                # Red zone - critical, exit
+                echo ""
+                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo -e "${RED}  CONTEXT EXHAUSTED: ${CONTEXT_PERCENT}% (${INPUT_TOKENS}/${CONTEXT_LIMIT} tokens)${NC}"
+                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo ""
+                echo -e "${YELLOW}The context window is nearly full. A fresh session is needed.${NC}"
+                cleanup_and_exit $EXIT_CONTEXT_EXHAUSTED "context_exhausted"
+            elif [ "$CONTEXT_PERCENT" -ge 60 ]; then
+                # Yellow zone - warning
+                echo -e "${YELLOW}  Context: ${CONTEXT_PERCENT}% (yellow zone)${NC}"
+            else
+                # Green zone - healthy
+                echo -e "${BLUE}  Context: ${CONTEXT_PERCENT}%${NC}"
+            fi
+        fi
 
         echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s) - $TASK_NAME${NC}"
         echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Task: \"$TASK_NAME\" - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
@@ -226,28 +441,33 @@ EOF
 }
 EOF
 
+        # ─────────────────────────────────────────────────────────
+        # DOUBLE COMPLETION VERIFICATION
+        # ─────────────────────────────────────────────────────────
+
         # Check completion signal - only check final result, not thinking blocks
         # Bug fix: The worker's thinking may mention the marker in negative context
         FINAL_RESULT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.result // empty' 2>/dev/null)
         if echo "$FINAL_RESULT" | grep -q "<promise>COMPLETE</promise>"; then
-            echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${GREEN}  ALL TASKS COMPLETE${NC}"
-            echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo "[$TIMESTAMP] COMPLETE - Total iterations: $ITERATION" >> "$ITERATION_LOG"
+            ((COMPLETE_COUNT++))
+            echo -e "${GREEN}  COMPLETE signal received (${COMPLETE_COUNT}/2)${NC}"
 
-            # Final status
-            cat > "$STATUS_FILE" << EOF
-{
-  "current_iteration": $ITERATION,
-  "consecutive_failures": 0,
-  "status": "complete",
-  "mode": "$MODE",
-  "branch": "$CURRENT_BRANCH",
-  "timestamp": "$TIMESTAMP"
-}
-EOF
-            git push origin "$CURRENT_BRANCH" 2>/dev/null || true
-            exit 0
+            # Require 2 consecutive COMPLETE signals to confirm
+            if [ "$COMPLETE_COUNT" -ge 2 ]; then
+                echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo -e "${GREEN}  ALL TASKS COMPLETE (double-verified)${NC}"
+                echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo "[$TIMESTAMP] COMPLETE - Total iterations: $ITERATION (verified with $COMPLETE_COUNT confirmations)" >> "$ITERATION_LOG"
+
+                git push origin "$CURRENT_BRANCH" 2>/dev/null || true
+                cleanup_and_exit $EXIT_SUCCESS "complete"
+            fi
+        else
+            # Non-COMPLETE result resets the counter
+            if [ "$COMPLETE_COUNT" -gt 0 ]; then
+                echo -e "${YELLOW}  COMPLETE counter reset (was ${COMPLETE_COUNT})${NC}"
+            fi
+            COMPLETE_COUNT=0
         fi
     else
         ((CONSECUTIVE_FAILURES++))
@@ -294,18 +514,7 @@ EOF
             echo "  - Wrong direction → git reset --hard && regenerate plan"
             echo ""
 
-            # Update status
-            cat > "$STATUS_FILE" << EOF
-{
-  "current_iteration": $ITERATION,
-  "consecutive_failures": $CONSECUTIVE_FAILURES,
-  "status": "circuit_breaker",
-  "mode": "$MODE",
-  "branch": "$CURRENT_BRANCH",
-  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-}
-EOF
-            exit 1
+            cleanup_and_exit $EXIT_CIRCUIT_BREAKER "circuit_breaker"
         fi
     fi
 
@@ -322,17 +531,7 @@ done
 END_TIME=$(date +%s)
 TOTAL_DURATION=$((END_TIME - START_TIME))
 
-echo -e "${GREEN}Loop completed: $ITERATION iterations (${TOTAL_DURATION}s total)${NC}"
+echo -e "${YELLOW}Loop completed: $ITERATION iterations (${TOTAL_DURATION}s total)${NC}"
 echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] LOOP END - Iterations: $ITERATION - Duration: ${TOTAL_DURATION}s" >> "$ITERATION_LOG"
 
-# Final status
-cat > "$STATUS_FILE" << EOF
-{
-  "current_iteration": $ITERATION,
-  "consecutive_failures": $CONSECUTIVE_FAILURES,
-  "status": "max_iterations",
-  "mode": "$MODE",
-  "branch": "$CURRENT_BRANCH",
-  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-}
-EOF
+cleanup_and_exit $EXIT_MAX_ITERATIONS "max_iterations"

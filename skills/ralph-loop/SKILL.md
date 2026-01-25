@@ -113,14 +113,49 @@ npm run build     # Build must succeed
 
 ---
 
-## Termination
+## Termination & Exit Codes
 
-| Method | When |
-|--------|------|
-| `<promise>COMPLETE</promise>` | All tasks done |
-| Max iterations (if specified) | User-defined limit |
-| Ctrl+C | Manual stop |
-| Circuit breaker | 3 consecutive failures |
+| Exit Code | Name | Trigger |
+|-----------|------|---------|
+| 0 | SUCCESS | `<promise>COMPLETE</promise>` confirmed twice |
+| 1 | ERROR | Validation failure, missing files |
+| 2 | CIRCUIT_BREAKER | 3 consecutive Claude failures |
+| 3 | MAX_ITERATIONS | User-defined iteration limit reached |
+| 4 | MAX_RUNTIME | Runtime limit exceeded (`MAX_RUNTIME=N`) |
+| 5 | CONTEXT_EXHAUSTED | Context usage > 80% of limit |
+| 6 | LOOP_THRASHING | Oscillating task pattern (A→B→A→B) |
+| 7 | TASKS_ABANDONED | Same task failed 3+ times |
+| 130 | INTERRUPTED | Ctrl+C (SIGINT) |
+
+---
+
+## Safety Features
+
+### Double Completion Verification
+Single `<promise>COMPLETE</promise>` enters pending state. Requires **two consecutive** COMPLETE signals to confirm. Non-COMPLETE response resets counter. Prevents false positives.
+
+### Runtime Limit
+```bash
+MAX_RUNTIME=3600 ./loop.sh  # Exit after 1 hour
+```
+
+### Context Health Monitoring
+Tracks `input_tokens` from Claude responses. Zones:
+- **Green** (<60%): Healthy
+- **Yellow** (60-80%): Warning displayed
+- **Red** (>80%): EXIT_CONTEXT_EXHAUSTED
+
+Configure with `CONTEXT_LIMIT` (default: 200000).
+
+### Task Abandonment Detection
+Tracks task markers (`> task_completed: name`). If same task appears 3+ consecutive times, exits with TASKS_ABANDONED. Reset counter by completing different task.
+
+### Loop Thrashing Detection
+Tracks last 6 tasks in history. Detects oscillating patterns:
+- A→B→A→B (2-element oscillation)
+- A→B→C→A→B→C (3-element oscillation)
+
+Exits with LOOP_THRASHING when detected
 
 ---
 
