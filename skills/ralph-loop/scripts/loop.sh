@@ -102,6 +102,22 @@ fi
 [ ! -f "IMPLEMENTATION_PLAN.md" ] && touch IMPLEMENTATION_PLAN.md
 [ ! -d "specs" ] && mkdir specs
 
+# Clear scratchpad at loop start (fresh session memory)
+cat > scratchpad.md << 'EOF'
+# Scratchpad
+
+## Current State
+
+- **Last task completed**: [none yet]
+- **Next task to do**: [see IMPLEMENTATION_PLAN.md]
+- **Files modified this session**: [none yet]
+
+## Key Decisions This Session
+
+## Blockers & Notes
+
+EOF
+
 # Initialize metrics if not exists
 if [ ! -f "$METRICS_FILE" ]; then
     cat > "$METRICS_FILE" << 'EOF'

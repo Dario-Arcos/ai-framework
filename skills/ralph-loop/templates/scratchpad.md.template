@@ -1,0 +1,31 @@
+# Scratchpad
+
+<!--
+Iteration-to-iteration memory within a single loop session.
+Reduces exploration overhead by recording what each iteration learned.
+
+Read at start of EVERY iteration. Update before exit.
+Cleared when loop.sh starts a new session.
+-->
+
+## Current State
+
+- **Last task completed**: [none yet]
+- **Next task to do**: [see IMPLEMENTATION_PLAN.md]
+- **Files modified this session**: [none yet]
+
+## Key Decisions This Session
+
+<!-- Record decisions so next iteration doesn't re-explore -->
+
+## Blockers & Notes
+
+<!-- Issues discovered, technical debt, things to watch out for -->
+
+---
+
+<!--
+Update this file BEFORE exiting each iteration.
+DO NOT commit scratchpad.md - it's ephemeral session state.
+If loop.sh restarts, this file gets cleared automatically.
+-->

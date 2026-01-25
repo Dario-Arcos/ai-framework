@@ -83,6 +83,7 @@ JTBD (Job to Be Done)
 | `AGENTS.md` | Operational guide (~50 lines) |
 | `guardrails.md` | Signs (session error lessons) |
 | `memories.md` | Persistent learnings across sessions |
+| `scratchpad.md` | Iteration-to-iteration memory (session only) |
 | `IMPLEMENTATION_PLAN.md` | Prioritized tasks |
 | `specs/*.md` | Requirements per topic |
 
@@ -217,6 +218,33 @@ Persistent learnings that survive loop restarts. Unlike Signs (session-specific)
 
 ---
 
+## Scratchpad System
+
+Iteration-to-iteration memory within a single loop session. Reduces context recovery time by recording what each iteration learned.
+
+```markdown
+## Current State
+- **Last task completed**: [task name]
+- **Next task to do**: [task name]
+- **Files modified this session**: [list]
+
+## Key Decisions This Session
+- [Decision with rationale]
+
+## Blockers & Notes
+- [Issues discovered]
+```
+
+**Scratchpad vs Signs vs Memories:**
+| Aspect | Scratchpad | Signs | Memories |
+|--------|------------|-------|----------|
+| Scope | Current iteration | Current loop | All loops |
+| Lifecycle | Cleared on loop start | Cleared manually | Persists |
+| Content | Progress, decisions | Errors, gotchas | Patterns |
+| Updates | Every iteration | On errors | Planning only |
+
+---
+
 ## Task Sizing
 
 One task = one context window.
@@ -316,3 +344,4 @@ If Ralph goes off-track:
 - `AGENTS.md.template` - Operational guide template
 - `guardrails.md.template` - Signs template
 - `memories.md.template` - Persistent memories template
+- `scratchpad.md.template` - Session scratchpad template

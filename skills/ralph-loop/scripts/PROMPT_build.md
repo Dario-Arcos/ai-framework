@@ -28,7 +28,21 @@ Study these using subagents:
 1. `@AGENTS.md` - Operational guide
 2. `@IMPLEMENTATION_PLAN.md` - Task list
 
-### 0d. Study Specs
+### 0d. Study Scratchpad (Session Memory)
+
+```
+@scratchpad.md
+```
+
+Fast context recovery from previous iteration:
+- What task was just completed
+- Key decisions already made
+- Files already modified
+- Blockers identified
+
+**If scratchpad doesn't exist**: First iteration, proceed normally.
+
+### 0e. Study Specs
 
 Study `specs/*` with up to 500 parallel Opus subagents.
 
@@ -147,6 +161,17 @@ Using a subagent, add to `@guardrails.md`:
 ```
 
 **An empty guardrails.md after multiple iterations is a FAILURE.**
+
+### 4d. Update Scratchpad
+
+Using a subagent, update `@scratchpad.md`:
+- **Last task completed**: What you just finished
+- **Next task to do**: What's next in IMPLEMENTATION_PLAN.md
+- **Files modified this session**: Add files you touched
+- **Key decisions**: Any decisions made that next iteration should know
+- **Blockers**: Any issues discovered
+
+This helps the next iteration start faster.
 
 ---
 
