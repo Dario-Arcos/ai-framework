@@ -262,6 +262,33 @@ One task = one context window.
 
 ---
 
+## Plan Format
+
+**The plan is disposable.** Regeneration costs one planning loop. Verbosity wastes every iteration's context.
+
+**Constraints:**
+| Element | Limit |
+|---------|-------|
+| Entire plan | <100 lines |
+| Each task | 3-5 lines |
+| Implementation details | None (building mode) |
+
+**Task format:**
+```markdown
+- [ ] Task title | Size: S/M | Files: N
+  Acceptance: [single sentence]
+```
+
+**Anti-patterns:**
+- ❌ 400-line plans (first loop's mistake)
+- ❌ Research summaries in plan (move to specs/)
+- ❌ Step-by-step implementation notes
+- ❌ Keeping completed tasks forever
+
+**Recovery:** If plan exceeds 100 lines → run `./loop.sh plan 1` to regenerate.
+
+---
+
 ## Context Thresholds
 
 | Zone | Usage | Action |

@@ -89,22 +89,30 @@ For each spec in `specs/*`:
 
 ### 2a. Create Task List
 
+**CONCISENESS IS MANDATORY.** The plan is disposable—regeneration costs one loop. Verbosity wastes context.
+
+**Constraints:**
+- Entire plan: **<100 lines**
+- Each task: **3-5 lines** (title, size, files, acceptance)
+- No implementation details (that's building mode's job)
+- No research summaries (extract to specs/ or delete)
+
 Write to `@IMPLEMENTATION_PLAN.md`:
 
 ```markdown
 # Implementation Plan
 
-## High Priority (Do First)
-- [ ] Task that establishes foundation
-- [ ] Risky integration that validates architecture
+## High Priority
+- [ ] Task title | Size: S | Files: 2
+  Acceptance: [single sentence]
 
-## Medium Priority (Core Features)
-- [ ] Feature A per specs/feature-a.md
-- [ ] Feature B per specs/feature-b.md
+## Medium Priority
+- [ ] Task title | Size: M | Files: 3
+  Acceptance: [single sentence]
 
-## Low Priority (Polish)
-- [ ] Edge case handling
-- [ ] Documentation
+## Low Priority
+- [ ] Task title | Size: S | Files: 1
+  Acceptance: [single sentence]
 ```
 
 ### 2b. Task Sizing
@@ -226,3 +234,15 @@ Don't prioritize easy wins. Do prioritize:
 - Architectural decisions
 - Risky integrations
 - Foundation dependencies
+
+### 999999999. Verbosity Violation
+
+**Plans that exceed 100 lines are WRONG.**
+
+If plan is too long:
+- Move research summaries to specs/*.md
+- Delete implementation details (building mode handles that)
+- Compress task descriptions to 3-5 lines each
+- Delete completed tasks from previous iterations
+
+**Remember:** Regeneration is cheap. Verbosity wastes every iteration's context.
