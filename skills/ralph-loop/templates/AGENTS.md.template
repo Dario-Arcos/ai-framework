@@ -1,5 +1,20 @@
 # Project: [Name]
 
+## Quality Level
+
+**Level: [Prototype | Production | Library]**
+
+| Level | Shortcuts OK | Tests Required | Polish Required |
+|-------|--------------|----------------|-----------------|
+| Prototype | Yes | No | No |
+| Production | No | Yes | Some |
+| Library | No | Yes | Yes |
+
+**Behavior by level:**
+- **Prototype**: Skip tests, skip lint, commit early and often
+- **Production**: All backpressure gates must pass, TDD mandatory
+- **Library**: All gates + documentation + edge cases + examples
+
 ## Build & Run
 
 ```bash

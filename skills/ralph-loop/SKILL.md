@@ -262,6 +262,25 @@ One task = one context window.
 
 ---
 
+## Quality Levels
+
+Define quality expectations in AGENTS.md to control validation behavior.
+
+| Level | Shortcuts OK | Tests Required | Polish Required |
+|-------|--------------|----------------|-----------------|
+| **Prototype** | Yes | No | No |
+| **Production** | No | Yes | Some |
+| **Library** | No | Yes | Yes |
+
+**Why this matters:**
+- Prototype → Fast iteration, skip backpressure gates
+- Production → TDD mandatory, all gates must pass
+- Library → Full coverage, documentation, edge cases
+
+**Set in:** `AGENTS.md` → Quality Level section
+
+---
+
 ## Plan Format
 
 **The plan is disposable.** Regeneration costs one planning loop. Verbosity wastes every iteration's context.
@@ -293,9 +312,9 @@ One task = one context window.
 
 | Zone | Usage | Action |
 |------|-------|--------|
-| 🟢 | <60% | Operate freely |
-| 🟡 | 60-80% | Wrap up current task |
-| 🔴 | >80% | Force rotation |
+| 🟢 | <40% | Operate freely |
+| 🟡 | 40-60% | Wrap up current task |
+| 🔴 | >60% | Force rotation |
 
 ---
 
