@@ -1,0 +1,59 @@
+# Memories
+
+<!--
+Persistent learnings across ralph loop sessions. Unlike Signs (guardrails.md),
+memories persist indefinitely and capture patterns, decisions, and fixes.
+
+Read at start of EVERY iteration. Update in planning mode only.
+-->
+
+## Patterns
+
+<!-- Recurring approaches, conventions, architecture patterns -->
+
+### mem-example-a1b2
+> This project uses the Repository pattern for data access. All database queries go through `src/repositories/`.
+<!-- tags: architecture, data-access | created: 2026-01-01 -->
+
+## Decisions
+
+<!-- Architecture choices, tech selections, design decisions -->
+
+### mem-example-c3d4
+> Chose PostgreSQL over MongoDB because: (1) relational data model fits better, (2) team has more SQL experience, (3) ACID compliance required for financial data.
+<!-- tags: database, architecture | created: 2026-01-01 -->
+
+## Fixes
+
+<!-- Solutions to problems encountered that should be remembered -->
+
+### mem-example-e5f6
+> The CI pipeline fails silently if `NODE_ENV` is not set. Always export NODE_ENV=test before running tests in CI.
+<!-- tags: ci, testing, environment | created: 2026-01-01 -->
+
+## Context
+
+<!-- Confessions and accountability records -->
+
+### mem-example-g7h8
+> confession: objective=[add user authentication], met=[Yes], evidence=[tests pass, login flow works, PR merged]
+<!-- tags: confession | created: 2026-01-01 -->
+
+---
+
+<!--
+Memory ID Format: mem-[unix-timestamp]-[4-char-hash]
+Example: mem-1737820800-a1b2
+
+When to Add:
+- Discovered architectural decision not in docs
+- Found undocumented API or integration pattern
+- Learned team coding preferences
+- Identified performance considerations
+- Found deployment or CI/CD requirements
+
+When NOT to Add (use Signs instead):
+- Temporary workarounds
+- Session-specific bugs
+- One-time gotchas
+-->

@@ -81,7 +81,8 @@ JTBD (Job to Be Done)
 | File | Purpose |
 |------|---------|
 | `AGENTS.md` | Operational guide (~50 lines) |
-| `guardrails.md` | Signs (error lessons) |
+| `guardrails.md` | Signs (session error lessons) |
+| `memories.md` | Persistent learnings across sessions |
 | `IMPLEMENTATION_PLAN.md` | Prioritized tasks |
 | `specs/*.md` | Requirements per topic |
 
@@ -188,6 +189,34 @@ Every iteration reads Signs FIRST → Compounding intelligence.
 
 ---
 
+## Memories System
+
+Persistent learnings that survive loop restarts. Unlike Signs (session-specific), Memories persist indefinitely.
+
+```markdown
+### mem-[timestamp]-[hash]
+> [Learning or decision with context]
+<!-- tags: tag1, tag2 | created: YYYY-MM-DD -->
+```
+
+**Categories:**
+| Category | Content |
+|----------|---------|
+| **Patterns** | Architecture approaches, coding conventions |
+| **Decisions** | Tech choices, design trade-offs |
+| **Fixes** | Solutions to persistent problems |
+| **Context** | Confessions and accountability records |
+
+**Signs vs Memories:**
+| Aspect | Signs (guardrails.md) | Memories (memories.md) |
+|--------|----------------------|------------------------|
+| Scope | Current loop session | All future sessions |
+| Content | Error lessons, gotchas | Patterns, preferences |
+| Lifecycle | Cleared with new goal | Persists indefinitely |
+| Updates | Build mode (errors) | Planning mode only |
+
+---
+
 ## Task Sizing
 
 One task = one context window.
@@ -286,3 +315,4 @@ If Ralph goes off-track:
 **templates/**
 - `AGENTS.md.template` - Operational guide template
 - `guardrails.md.template` - Signs template
+- `memories.md.template` - Persistent memories template

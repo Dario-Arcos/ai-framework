@@ -22,13 +22,21 @@ Consider: What elements are missing to achieve this? What integrations are criti
 
 Follow ALL Signs. They contain lessons from previous iterations.
 
-### 0b. Study State Files
+### 0b. Study Memories
+
+```
+@memories.md
+```
+
+Review persistent learnings across sessions. **Planning mode can update memories** when new patterns or decisions are discovered.
+
+### 0c. Study State Files
 
 Study these using subagents:
 1. `@AGENTS.md` - Project operational guide
 2. `@IMPLEMENTATION_PLAN.md` - Current plan (if exists - may be stale)
 
-### 0c. Study Specifications
+### 0d. Study Specifications
 
 **Using up to 500 parallel Opus subagents:**
 - Study all files in `specs/` directory
@@ -37,7 +45,7 @@ Study these using subagents:
 
 **Critical**: Don't assume specs are complete or consistent. Note ambiguities for gap analysis.
 
-### 0d. Study Existing Code
+### 0e. Study Existing Code
 
 **Using up to 500 parallel Opus subagents:**
 - Search `src/*` for existing implementations
@@ -134,6 +142,29 @@ If specs contradict each other or existing code:
 1. Document the conflict
 2. Use Opus subagent to resolve if clear technical answer
 3. Flag for human if business decision required
+
+### 3c. Update Memories
+
+If you discovered **persistent learnings** (not session-specific), add to `@memories.md`:
+
+**Add to Patterns:**
+- Recurring architecture approaches
+- Coding conventions not documented elsewhere
+- Framework-specific patterns
+
+**Add to Decisions:**
+- Architectural choices with reasoning
+- Technology selections
+- Design trade-offs made
+
+**Format:**
+```markdown
+### mem-[timestamp]-[4char]
+> [Learning or decision with context]
+<!-- tags: tag1, tag2 | created: YYYY-MM-DD -->
+```
+
+**Do NOT add session-specific bugs or temporary workarounds** (those go in Signs).
 
 ---
 

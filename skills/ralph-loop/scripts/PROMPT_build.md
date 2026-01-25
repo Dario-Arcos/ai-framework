@@ -14,13 +14,21 @@ You are a fresh AI instance. Previous work lives in files, not your memory.
 
 Follow ALL Signs. They contain lessons from previous iterations.
 
-### 0b. Study State Files
+### 0b. Study Memories (Read-Only)
+
+```
+@memories.md
+```
+
+Review persistent learnings. **DO NOT update memories in build mode** - only planning mode updates memories.
+
+### 0c. Study State Files
 
 Study these using subagents:
 1. `@AGENTS.md` - Operational guide
 2. `@IMPLEMENTATION_PLAN.md` - Task list
 
-### 0c. Study Specs
+### 0d. Study Specs
 
 Study `specs/*` with up to 500 parallel Opus subagents.
 
