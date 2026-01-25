@@ -76,6 +76,62 @@ JTBD (Job to Be Done)
 
 ---
 
+## Supervision Modes
+
+Two approaches based on human involvement level:
+
+### HITL (Human-in-the-Loop)
+
+**Use for:**
+- Learning how Ralph handles your codebase
+- Risky tasks (auth, payments, migrations)
+- Architectural decisions that need approval
+- First-time setup of a new project
+
+**Configuration:**
+```bash
+./loop.sh build 1     # Single iteration, review after
+./loop.sh build 5     # Few iterations, frequent review
+```
+
+**Behavior:**
+- Short runs (1-5 iterations)
+- Human reviews after each batch
+- Adjust Signs and specs between runs
+- High confidence before AFK mode
+
+### AFK (Away-From-Keyboard)
+
+**Use for:**
+- Bulk implementation work
+- Low-risk, well-defined tasks
+- Overnight batch processing
+- Tasks with strong test coverage
+
+**Configuration:**
+```bash
+./loop.sh build 20    # Medium batch
+./loop.sh build 50    # Long overnight run
+```
+
+**Behavior:**
+- Long runs (10-50+ iterations)
+- Circuit breaker handles failures
+- Review aggregated results
+- Trust backpressure gates
+
+### Progression
+
+```
+First project  → HITL (1-5)    → Learn patterns
+Stable codebase → AFK (10-20)  → Bulk work
+High test coverage → AFK (50+) → Overnight runs
+```
+
+**Recommendation:** Start HITL, graduate to AFK as confidence grows.
+
+---
+
 ## State Files
 
 | File | Purpose |
