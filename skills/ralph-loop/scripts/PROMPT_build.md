@@ -49,12 +49,26 @@ If found: use existing. If not found: implement.
 
 ## Phase 2: Implementation
 
-### 2a. Test-Driven Development
+### 2a. Test-Driven Development (MANDATORY)
 
-1. Write test first
-2. Watch it fail (RED)
-3. Write minimal implementation (GREEN)
-4. Refactor for clarity
+**TDD is NOT optional. Follow this EXACT sequence:**
+
+1. **RED**: Write test that describes expected behavior → Run test → MUST FAIL
+2. **GREEN**: Write MINIMAL code to pass test → Run test → MUST PASS
+3. **REFACTOR**: Clean up while keeping tests green
+
+**Verification Required:**
+```bash
+# Show test failing FIRST (RED)
+npm test -- --testNamePattern="your test"
+# Expected: FAIL
+
+# Then show test passing (GREEN)
+npm test -- --testNamePattern="your test"
+# Expected: PASS
+```
+
+**If test passes on first run → Your test is WRONG. Fix the test.**
 
 ### 2b. Implementation Rules
 
@@ -106,7 +120,15 @@ Using a subagent, add to `@AGENTS.md` if you learned:
 
 Keep it brief. Operational only - no status updates.
 
-### 4c. Add Sign (If Errors Occurred)
+### 4c. Add Sign (MANDATORY if ANY error occurred)
+
+**BEFORE COMMIT CHECKLIST:**
+- [ ] Did any test fail during this iteration? → Add Sign
+- [ ] Did any command fail? → Add Sign
+- [ ] Did you have to retry something? → Add Sign
+- [ ] Did you discover a gotcha? → Add Sign
+
+**If ANY box is checked, you MUST add a Sign:**
 
 Using a subagent, add to `@guardrails.md`:
 
@@ -115,6 +137,8 @@ Using a subagent, add to `@guardrails.md`:
 - **Trigger**: [Condition that causes this]
 - **Instruction**: [Action to prevent it]
 ```
+
+**An empty guardrails.md after multiple iterations is a FAILURE.**
 
 ---
 
@@ -199,11 +223,11 @@ Keep `@AGENTS.md` operational only. Status updates and progress notes belong in 
 
 ---
 
-## Context Health
+## Context Health (Smart Zone Optimized)
 
-- 🟢 <60%: Continue freely
-- 🟡 60-80%: Finish task, then exit
-- 🔴 >80%: Commit current state, exit NOW
+- 🟢 <40%: Operate freely - full capability
+- 🟡 40-60%: Wrap up current task - entering degradation zone
+- 🔴 >60%: EXIT NOW - context rot begins, fresh context required
 
 ---
 

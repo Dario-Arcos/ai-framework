@@ -1,7 +1,30 @@
 # Signs
 
-<!-- Add Signs when errors occur. Read FIRST every iteration. -->
+<!-- Signs capture learnings across iterations. Read FIRST every time. -->
+<!-- An empty guardrails.md after multiple iterations is a FAILURE. -->
 
-### Sign: [Problem description]
-- **Trigger**: [Condition that causes this]
-- **Instruction**: [Action to prevent it]
+## Example Signs (Remove and replace with your own)
+
+### Sign: Test Framework Requires jsdom
+- **Trigger**: Writing React component tests
+- **Instruction**: Use `testEnvironment: 'jsdom'` in jest.config.js, not 'node'
+
+### Sign: Path Encoding in Claude Data
+- **Trigger**: Working with `~/.claude/projects/` directory names
+- **Instruction**: Directory names use dash-encoding: `-Users-foo-bar` = `/Users/foo/bar`
+
+### Sign: Recharts Needs Client Component
+- **Trigger**: Using Recharts in Next.js App Router
+- **Instruction**: Add 'use client' directive - Recharts requires browser APIs
+
+---
+
+## Your Signs (Add here as you learn)
+
+<!--
+Format for new Signs:
+
+### Sign: [Problem/Learning]
+- **Trigger**: [When this applies]
+- **Instruction**: [What to do]
+-->
