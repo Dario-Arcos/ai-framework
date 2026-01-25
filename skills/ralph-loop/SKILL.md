@@ -245,6 +245,32 @@ Iteration-to-iteration memory within a single loop session. Reduces context reco
 
 ---
 
+## Confession Pattern
+
+Accountability mechanism that forces declaration of what was accomplished.
+
+**Format:**
+```
+> confession: objective=[task], met=[Yes/No], evidence=[proof]
+```
+
+**Components:**
+| Field | Content |
+|-------|---------|
+| `objective` | Task from IMPLEMENTATION_PLAN.md |
+| `met` | Yes or No (no hedging) |
+| `evidence` | Actual proof: test output, file paths, command results |
+
+**Why this matters:**
+- Forces explicit declaration of completion
+- Prevents "I think I did it" without evidence
+- Creates audit trail in `claude_output/iteration_NNN.txt`
+- Enables post-hoc verification of claims
+
+**When:** Phase 4e, after state updates, before commit.
+
+---
+
 ## Task Sizing
 
 One task = one context window.

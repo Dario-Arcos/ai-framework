@@ -173,6 +173,26 @@ Using a subagent, update `@scratchpad.md`:
 
 This helps the next iteration start faster.
 
+### 4e. Output Confession (MANDATORY)
+
+**Before committing, declare what you accomplished:**
+
+```
+> confession: objective=[task attempted], met=[Yes/No], evidence=[proof]
+```
+
+**Rules:**
+- `objective`: What task you worked on (from IMPLEMENTATION_PLAN.md)
+- `met`: Did you complete it? Yes or No, no hedging
+- `evidence`: Actual output proving completion (test results, file paths, etc.)
+
+**Example:**
+```
+> confession: objective=Add user authentication, met=Yes, evidence=npm test passed (15/15), src/auth.ts created
+```
+
+**This is logged automatically.** Loop.sh captures all output to `claude_output/iteration_NNN.txt`.
+
 ---
 
 ## Phase 5: Commit
