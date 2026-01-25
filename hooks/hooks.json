@@ -36,10 +36,6 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/anti_drift.py"
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py UserPromptSubmit"
           }
         ]
       }
@@ -49,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Stop"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh Stop"
           }
         ]
       }
@@ -59,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ccnotify.py Notification"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh Notification"
           }
         ]
       }
