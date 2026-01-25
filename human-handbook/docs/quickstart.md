@@ -124,24 +124,18 @@ Analiza tu codebase y genera reglas team-shared en `docs/claude-rules/` (tracked
 
 Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
 
-### Notificaciones de Escritorio (Recomendado)
+### Notificaciones de Escritorio (macOS)
 
-El framework envía notificaciones cuando Claude necesita tu atención:
+El framework envía notificaciones nativas cuando Claude necesita tu atención:
 
 **Cuándo notifica:**
-- 🔒 Claude espera tu aprobación (permissions, confirmations)
-- ✅ Tarea completada (con duración)
-- 🔴 Bloqueado esperando tu input
+- ✅ Tarea completada
+- 🔒 Requiere tu aprobación o input
 
-**Instalación** (incluida en `/setup-dependencies`):
-```bash
-brew install terminal-notifier  # macOS only
-```
-
-**Beneficio**: Trabaja en otra ventana, recibe alert cuando Claude te necesita.
+**Sin dependencias externas** - usa `osascript` nativo de macOS.
 
 ::: tip macOS Only
-Notifications requieren macOS. En Linux/Windows, Claude Code UI muestra estado.
+En Linux/Windows, Claude Code UI muestra estado directamente.
 :::
 
 ### Variables de Entorno (Opcional)
