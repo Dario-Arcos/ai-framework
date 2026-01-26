@@ -134,6 +134,7 @@ human-handbook/.vitepress/cache/
 
 # Planning & design documents (working files, not for version control)
 /docs/plans/
+/docs/research/
 .worktrees/
 
 # Ralph-loop runtime artifacts
