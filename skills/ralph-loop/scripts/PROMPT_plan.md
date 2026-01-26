@@ -22,7 +22,21 @@ Consider: What elements are missing to achieve this? What integrations are criti
 
 Follow ALL Signs. They contain lessons from previous iterations.
 
-### 0b. Study Memories
+### 0b. Study Discovery (If Exists)
+
+```
+@DISCOVERY.md
+```
+
+If DISCOVERY.md exists, extract:
+- **Problem statement** → Informs task acceptance criteria
+- **Constraints** → Informs task sizing and approach
+- **Risks** → Prioritize risky tasks earlier
+- **Prior art** → Patterns to follow, anti-patterns to avoid
+
+If DISCOVERY.md doesn't exist, that's okay - proceed with gap analysis.
+
+### 0c. Study Memories
 
 ```
 @memories.md
@@ -30,13 +44,13 @@ Follow ALL Signs. They contain lessons from previous iterations.
 
 Review persistent learnings across sessions. **Planning mode can update memories** when new patterns or decisions are discovered.
 
-### 0c. Study State Files
+### 0d. Study State Files
 
 Study these using subagents:
 1. `@AGENTS.md` - Project operational guide
 2. `@IMPLEMENTATION_PLAN.md` - Current plan (if exists - may be stale)
 
-### 0d. Study Specifications
+### 0e. Study Specifications
 
 **Using up to 500 parallel Opus subagents:**
 - Study all files in `specs/` directory
@@ -45,7 +59,7 @@ Study these using subagents:
 
 **Critical**: Don't assume specs are complete or consistent. Note ambiguities for gap analysis.
 
-### 0e. Study Existing Code
+### 0f. Study Existing Code
 
 **Using up to 500 parallel Opus subagents:**
 - Search `src/*` for existing implementations
@@ -151,28 +165,67 @@ If specs contradict each other or existing code:
 2. Use Opus subagent to resolve if clear technical answer
 3. Flag for human if business decision required
 
-### 3c. Update Memories
+### 3c. Update Memories (Structured)
 
 If you discovered **persistent learnings** (not session-specific), add to `@memories.md`:
 
-**Add to Patterns:**
-- Recurring architecture approaches
-- Coding conventions not documented elsewhere
-- Framework-specific patterns
+**Use memories.sh helper (recommended):**
 
-**Add to Decisions:**
-- Architectural choices with reasoning
-- Technology selections
-- Design trade-offs made
+```bash
+# Add pattern
+./memories.sh add pattern "All API handlers return Result<Json<T>, AppError>" --tags api,error-handling
 
-**Format:**
+# Add decision with reasoning
+./memories.sh add decision "Chose PostgreSQL over MongoDB" \
+  --reason "relational model, team SQL experience, ACID compliance" \
+  --tags database,architecture
+
+# Add fix
+./memories.sh add fix "Always set NODE_ENV in CI before running tests" --tags ci,testing
+```
+
+**Memory types:**
+
+| Type | When to use | Example |
+|------|-------------|---------|
+| pattern | Architecture approach you'd recommend again | "Repository pattern for data access" |
+| decision | Tech choice with clear rationale (include WHY) | "Chose X because Y" |
+| fix | Solution to recurring problem | "Always set NODE_ENV in CI" |
+
+**Manual format (if helper unavailable):**
 ```markdown
 ### mem-[timestamp]-[4char]
-> [Learning or decision with context]
+> [Learning with context]
+> Reason: [Why this matters]
 <!-- tags: tag1, tag2 | created: YYYY-MM-DD -->
 ```
 
 **Do NOT add session-specific bugs or temporary workarounds** (those go in Signs).
+
+### 3d. Validate Plan (AUTO-CHECK)
+
+**Before exiting, verify the plan meets constraints:**
+
+```bash
+# Plan size check
+wc -l IMPLEMENTATION_PLAN.md  # Must be < 100 lines
+```
+
+**Self-check checklist:**
+- [ ] Total plan < 100 lines
+- [ ] Each task is 3-5 lines max
+- [ ] No implementation details in tasks
+- [ ] Tasks are dependency-ordered
+- [ ] Risky/foundation tasks come first
+- [ ] Each task fits in one context window
+
+**If violations found:**
+1. Compress verbose tasks
+2. Move implementation details to specs/
+3. Split oversized tasks
+4. Reorder by dependencies
+
+**Do NOT exit with violations.** Fix them first.
 
 ---
 

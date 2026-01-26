@@ -22,13 +22,22 @@ Follow ALL Signs. They contain lessons from previous iterations.
 
 Review persistent learnings. **DO NOT update memories in build mode** - only planning mode updates memories.
 
-### 0c. Study State Files
+### 0c. Load Configuration
+
+The loop loads `.ralph/config.sh` automatically. Key settings:
+- **QUALITY_LEVEL**: prototype | production | library
+- **CONFESSION_MIN_CONFIDENCE**: Minimum confidence to mark task complete (default: 80)
+- **GATE_***: Custom validation commands
+
+Check `.ralph/config.sh` if unsure about project quality requirements.
+
+### 0d. Study State Files
 
 Study these using subagents:
 1. `@AGENTS.md` - Operational guide
 2. `@IMPLEMENTATION_PLAN.md` - Task list
 
-### 0d. Study Scratchpad (Session Memory)
+### 0e. Study Scratchpad (Session Memory)
 
 ```
 @scratchpad.md
@@ -42,7 +51,7 @@ Fast context recovery from previous iteration:
 
 **If scratchpad doesn't exist**: First iteration, proceed normally.
 
-### 0e. Study Specs
+### 0f. Study Specs
 
 Study `specs/*` with up to 500 parallel Opus subagents.
 
@@ -109,18 +118,41 @@ npm test -- --testNamePattern="your test"
 
 ## Phase 3: Validation (Backpressure)
 
-Run ALL gates in order:
-
+**Load project configuration:**
 ```bash
-npm test          # Tests must pass
-npm run typecheck # Types must check
-npm run lint      # Lint must pass
-npm run build     # Build must succeed
+source .ralph/config.sh 2>/dev/null || true
 ```
 
-**All gates must pass before commit. No exceptions.**
+**Quality level behavior:**
 
-Fix until green. Don't skip. Don't commit red.
+| Level | Backpressure |
+|-------|--------------|
+| prototype | Skip all gates, commit freely |
+| production | All configured gates must pass |
+| library | All gates + coverage + documentation |
+
+**Run configured gates (production/library only):**
+```bash
+# Skip if QUALITY_LEVEL=prototype
+[ "${QUALITY_LEVEL:-production}" = "prototype" ] && echo "Prototype mode: skipping gates" && continue
+
+# Execute gates (variables from .ralph/config.sh)
+[ -n "${GATE_TEST:-}" ] && eval "$GATE_TEST"
+[ -n "${GATE_TYPECHECK:-}" ] && eval "$GATE_TYPECHECK"
+[ -n "${GATE_LINT:-}" ] && eval "$GATE_LINT"
+[ -n "${GATE_BUILD:-}" ] && eval "$GATE_BUILD"
+```
+
+**If any gate fails:**
+1. Fix the issue
+2. Re-run failed gate
+3. Do NOT commit until all gates pass
+
+**Gate defaults (if config missing):**
+- GATE_TEST="npm test"
+- GATE_TYPECHECK="npm run typecheck"
+- GATE_LINT="npm run lint"
+- GATE_BUILD="npm run build"
 
 ---
 
@@ -173,40 +205,77 @@ Using a subagent, update `@scratchpad.md`:
 
 This helps the next iteration start faster.
 
-### 4e. Output Confession (MANDATORY)
+### 4e. Output Confession (MANDATORY - Expanded)
 
-**Before committing, declare what you accomplished:**
-
-```
-> confession: objective=[task attempted], met=[Yes/No], evidence=[proof]
-```
-
-**Rules:**
-- `objective`: What task you worked on (from IMPLEMENTATION_PLAN.md)
-- `met`: Did you complete it? Yes or No, no hedging
-- `evidence`: Actual output proving completion (test results, file paths, etc.)
-
-**Example:**
-```
-> confession: objective=Add user authentication, met=Yes, evidence=npm test passed (15/15), src/auth.ts created
-```
-
-**This is logged automatically.** Loop.sh captures all output to `claude_output/iteration_NNN.txt`.
-
-### 4f. Output Task Marker (MANDATORY)
-
-**Before committing, output the task name for iteration log:**
+**Before committing, produce a ConfessionReport:**
 
 ```
+## Confession
+
+### Objectives Assessment
+- **Objective**: [task from IMPLEMENTATION_PLAN.md]
+  - **Met?**: Yes/No/Partial
+  - **Evidence**: [file:line or test output]
+
+### Uncertainties & Conflicts
+- [Any unclear requirements encountered]
+- [Spec conflicts discovered]
+- [Assumptions made]
+
+### Shortcuts Taken
+- [Any technical debt introduced]
+- [Features deferred]
+- [Edge cases skipped]
+
+### Single Easiest Issue to Verify
+- [One command that proves completion]
+
+### Confidence (0-100): [integer]
+```
+
+**Confidence thresholds:**
+
+| Range | Meaning | Action |
+|-------|---------|--------|
+| 0-49 | Task failed, major rework needed | Do NOT mark complete |
+| 50-79 | Task incomplete, minor work remains | Do NOT mark complete |
+| 80-100 | Task complete, ready to commit | Mark complete, commit |
+
+**CRITICAL: If Confidence < ${CONFESSION_MIN_CONFIDENCE:-80}:**
+1. Do NOT mark task as complete in IMPLEMENTATION_PLAN.md
+2. Add a Sign to guardrails.md explaining the blocker
+3. Update scratchpad.md with what's left to do
+4. Exit normally - next iteration will continue
+
+**Output markers (MANDATORY for loop.sh parsing):**
+```
+> confession: objective=[task name], met=[Yes/No/Partial], confidence=[N], evidence=[proof]
 > task_completed: [Task name from IMPLEMENTATION_PLAN.md]
 ```
 
 **Example:**
 ```
-> task_completed: Task 11: Improve Iteration Observability
-```
+## Confession
 
-**This marker is parsed by loop.sh** to create observable iteration logs showing which task was completed per iteration.
+### Objectives Assessment
+- **Objective**: Add user authentication
+  - **Met?**: Yes
+  - **Evidence**: src/auth.ts:1-150, npm test shows 15/15 pass
+
+### Uncertainties & Conflicts
+- None
+
+### Shortcuts Taken
+- Skipped password reset flow (added to plan as separate task)
+
+### Single Easiest Issue to Verify
+- Run: `curl -X POST localhost:3000/login -d '{"email":"test@test.com"}' | jq .token`
+
+### Confidence (0-100): 92
+
+> confession: objective=[Add user authentication], met=[Yes], confidence=[92], evidence=[tests 15/15]
+> task_completed: Task 5: Add user authentication
+```
 
 ---
 

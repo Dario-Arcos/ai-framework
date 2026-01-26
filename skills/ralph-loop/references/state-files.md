@@ -6,10 +6,12 @@ Ralph uses several files for state management across iterations.
 
 | File | Purpose | Lifecycle |
 |------|---------|-----------|
+| `.ralph/config.sh` | Project configuration | Project lifetime |
 | `AGENTS.md` | Operational guide (~50 lines) | Project lifetime |
 | `guardrails.md` | Signs (session error lessons) | Current loop |
 | `memories.md` | Persistent learnings | Indefinite |
 | `scratchpad.md` | Iteration-to-iteration state | Current loop |
+| `DISCOVERY.md` | Problem definition, constraints | Current goal |
 | `IMPLEMENTATION_PLAN.md` | Prioritized tasks | Current goal |
 | `specs/*.md` | Requirements per topic | Feature lifetime |
 
@@ -33,11 +35,25 @@ Every iteration reads Signs FIRST - Compounding intelligence.
 
 Persistent learnings that survive loop restarts.
 
+### CLI Management (memories.sh)
+
+```bash
+# Add memories
+./memories.sh add pattern "All APIs return Result<T>" --tags api,error-handling
+./memories.sh add decision "Chose PostgreSQL" --reason "ACID compliance" --tags database
+./memories.sh add fix "Set NODE_ENV in CI" --tags ci,testing
+
+# Query memories
+./memories.sh search "database"
+./memories.sh list --type pattern --limit 5
+```
+
 ### Format
 
 ```markdown
 ### mem-[timestamp]-[hash]
 > [Learning or decision with context]
+> Reason: [Why this matters]  (optional, from --reason flag)
 <!-- tags: tag1, tag2 | created: YYYY-MM-DD -->
 ```
 

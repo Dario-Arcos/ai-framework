@@ -7,6 +7,7 @@
 #   ./loop.sh 20           → Build mode, max 20 iterations
 #   ./loop.sh plan         → Plan mode, unlimited
 #   ./loop.sh plan 5       → Plan mode, max 5 iterations
+#   ./loop.sh discover     → Discover mode, 1 iteration
 
 set -euo pipefail
 
@@ -22,6 +23,10 @@ elif [ "$1" = "plan" ]; then
     MODE="plan"
     PROMPT_FILE="PROMPT_plan.md"
     MAX_ITERATIONS="${2:-0}"
+elif [ "$1" = "discover" ]; then
+    MODE="discover"
+    PROMPT_FILE="PROMPT_discover.md"
+    MAX_ITERATIONS="${2:-1}"  # Discovery usually 1 iteration
 elif [[ "$1" =~ ^[0-9]+$ ]]; then
     MODE="build"
     PROMPT_FILE="PROMPT_build.md"
@@ -32,6 +37,8 @@ else
     echo "  ./loop.sh 20           → Build mode, max 20 iterations"
     echo "  ./loop.sh plan         → Plan mode, unlimited"
     echo "  ./loop.sh plan 5       → Plan mode, max 5 iterations"
+    echo "  ./loop.sh discover     → Discover mode, 1 iteration"
+    echo "  ./loop.sh discover 3   → Discover mode, max 3 iterations"
     exit 1
 fi
 
@@ -50,8 +57,29 @@ EXIT_TASKS_ABANDONED=7     # Tasks repeatedly failing
 EXIT_INTERRUPTED=130       # SIGINT received (Ctrl+C)
 
 # ─────────────────────────────────────────────────────────────────
+# SKILL_DIR (for templates)
+# ─────────────────────────────────────────────────────────────────
+
+SKILL_DIR="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")")"
+
+# ─────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
+
+# Load project configuration
+CONFIG_FILE=".ralph/config.sh"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    echo -e "${BLUE:-\033[0;34m}Config loaded from $CONFIG_FILE${NC:-\033[0m}"
+fi
+
+# Defaults (only set if not already defined)
+QUALITY_LEVEL="${QUALITY_LEVEL:-production}"
+GATE_TEST="${GATE_TEST:-npm test}"
+GATE_TYPECHECK="${GATE_TYPECHECK:-npm run typecheck}"
+GATE_LINT="${GATE_LINT:-npm run lint}"
+GATE_BUILD="${GATE_BUILD:-npm run build}"
+CONFESSION_MIN_CONFIDENCE="${CONFESSION_MIN_CONFIDENCE:-80}"
 
 ITERATION=0
 CONSECUTIVE_FAILURES=0
@@ -173,6 +201,29 @@ detect_loop_thrashing() {
 }
 
 # ─────────────────────────────────────────────────────────────────
+# TEMPLATE FUNCTION
+# ─────────────────────────────────────────────────────────────────
+
+create_from_template() {
+    local file="$1"
+    local template_name="$2"
+    local skill_dir="${SKILL_DIR:-}"
+
+    if [ -f "$file" ]; then
+        return 0  # Already exists
+    fi
+
+    local template_path="$skill_dir/templates/${template_name}.template"
+    if [ -n "$skill_dir" ] && [ -f "$template_path" ]; then
+        cp "$template_path" "$file"
+        echo -e "${YELLOW}Created $file (from template)${NC}"
+        return 0
+    fi
+
+    return 1  # No template found
+}
+
+# ─────────────────────────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────────────────────────
 
@@ -217,6 +268,24 @@ fi
 [ ! -f "IMPLEMENTATION_PLAN.md" ] && touch IMPLEMENTATION_PLAN.md
 [ ! -d "specs" ] && mkdir specs
 
+# Create memories.md if not exists
+if [ ! -f "memories.md" ]; then
+    echo -e "${YELLOW}Creating memories.md...${NC}"
+    if [ -n "${SKILL_DIR:-}" ] && [ -f "$SKILL_DIR/templates/memories.md.template" ]; then
+        cp "$SKILL_DIR/templates/memories.md.template" memories.md
+    else
+        cat > memories.md << 'MEMEOF'
+# Memories
+
+## Patterns
+
+## Decisions
+
+## Fixes
+MEMEOF
+    fi
+fi
+
 # Clear scratchpad at loop start (fresh session memory)
 cat > scratchpad.md << 'EOF'
 # Scratchpad
@@ -254,8 +323,10 @@ echo -e "${BLUE}         RALPH LOOP${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  Mode:   ${GREEN}$MODE${NC}"
 echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
+[ "$MODE" = "discover" ] && echo -e "  Type:   ${BLUE}Discovery (codebase analysis)${NC}"
 [ "$MAX_ITERATIONS" -gt 0 ] && echo -e "  Max:    ${RED}$MAX_ITERATIONS iterations${NC}"
 [ "$MAX_RUNTIME" -gt 0 ] && echo -e "  Limit:  ${RED}${MAX_RUNTIME}s runtime${NC}"
+[ -f "$CONFIG_FILE" ] && echo -e "  Config: ${BLUE}$CONFIG_FILE${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
@@ -334,6 +405,20 @@ EOF
         # Extract task marker from Claude output (|| true prevents exit on no match)
         TASK_NAME=$(echo "$CLAUDE_OUTPUT" | grep -o '> task_completed: .*' | sed 's/> task_completed: //' | tail -1 || true)
         [ -z "$TASK_NAME" ] && TASK_NAME="[no marker]"
+
+        # ─────────────────────────────────────────────────────────
+        # CONFESSION CONFIDENCE PARSING
+        # ─────────────────────────────────────────────────────────
+
+        # Extract confession confidence
+        CONFIDENCE=$(echo "$CLAUDE_OUTPUT" | grep -o '> confession:.*confidence=\[[0-9]*\]' | grep -o 'confidence=\[[0-9]*\]' | grep -o '[0-9]*' | tail -1 || echo "100")
+        [ -z "$CONFIDENCE" ] && CONFIDENCE=100
+
+        # Check confidence threshold (only in build mode)
+        if [ "$MODE" = "build" ] && [ "$CONFIDENCE" -lt "${CONFESSION_MIN_CONFIDENCE:-80}" ]; then
+            echo -e "${YELLOW}  Confidence $CONFIDENCE% < ${CONFESSION_MIN_CONFIDENCE:-80}% threshold - task NOT complete${NC}"
+            echo "[$TIMESTAMP] ITERATION $ITERATION LOW_CONFIDENCE - $CONFIDENCE%" >> "$ITERATION_LOG"
+        fi
 
         # ─────────────────────────────────────────────────────────
         # LOOP THRASHING DETECTION
