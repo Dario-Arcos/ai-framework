@@ -162,7 +162,7 @@ Describe tu feature en lenguaje natural y Claude activara automaticamente los sk
 
 ```bash
 "Implementa validacion de email en el formulario de registro"
-# Claude activa brainstorming → writing-plans → TDD automaticamente
+# Claude aplica TDD automaticamente
 ```
 
 ### Crear PR

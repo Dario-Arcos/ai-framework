@@ -173,9 +173,9 @@ Idea → Claude genera → Developer corrige → Deploy (quizás)
 ```
 
 ```plaintext [AI Framework]
-Idea → brainstorming (minutos)  // [!code highlight]
-     → writing-plans (minutos)  // [!code highlight]
-     → executing-plans + TDD (horas)  // [!code highlight]
+Idea → Diseño estructurado (minutos)  // [!code highlight]
+     → Plan de implementación (minutos)  // [!code highlight]
+     → Ejecución con TDD (horas)  // [!code highlight]
      → Dual review → /pullrequest → Despliegue  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]

@@ -1,87 +1,148 @@
 # AI-First Workflow
 
-Excelencia por diseño. Workflows estructurados para desarrollo guiado por IA.
+Desarrollo autónomo con quality gates. Ralph Loop como motor, Superpowers como acelerador.
 
 ---
 
-## Vista General
+## Arquitectura
 
 ```mermaid
 %%{init: {'theme': 'neutral', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#4f46e5', 'lineColor': '#64748b', 'secondaryColor': '#f1f5f9', 'tertiaryColor': '#e2e8f0'}}}%%
 flowchart TB
-    subgraph DEV["DEVELOPMENT"]
+    subgraph CORE["AI FRAMEWORK (Core)"]
         direction TB
-        D1[brainstorming] --> D2[writing-plans] --> D3[executing-plans] --> D4[TDD] --> D5[finishing-branch]
+        BR[brainstorming<br/>Explorar ideas] --> RL[ralph-loop<br/>Desarrollo autónomo]
+        RL --> QG[Quality Gates<br/>code + security review]
+        QG --> GIT[Git Flow<br/>commit → PR → cleanup]
     end
 
-    subgraph GIT["GIT FLOW"]
-        direction LR
-        G1[commit] --> G2[pullrequest] --> G3[cleanup]
+    subgraph EXT["SUPERPOWERS (Plugin)"]
+        direction TB
+        WP[writing-plans] --> EP[executing-plans]
+        EP --> TDD[test-driven-development]
+        TDD --> FB[finishing-branch]
     end
 
-    D5 --> GIT
+    BR -.->|"continuar con"| EXT
+    EXT -.->|"skills avanzados"| CORE
 ```
 
 ---
 
-## Skills del Workflow
+## Ralph Loop: El Corazón
 
-Skills que se activan automaticamente segun lo que describes.
+Ralph Loop es desarrollo autónomo multi-iteración con fresh context en cada ciclo.
 
-### El Flujo
+### Principios (The Ralph Tenets)
 
-1. **Describe tu idea** → activa `brainstorming`
-2. **Aprueba diseno** → activa `writing-plans`
-3. **Plan listo** → activa `executing-plans`
-4. **Implementa** → activa `TDD` (red-green-refactor)
-5. **Completo** → activa `finishing-branch`
+| Principio | Significado |
+|-----------|-------------|
+| **Fresh Context Is Reliability** | Cada iteración limpia contexto. Sin context rot. |
+| **Backpressure Over Prescription** | Gates que rechazan mal trabajo, no scripts que prescriben cómo. |
+| **The Plan Is Disposable** | Regenerar plan cuesta un loop. Barato. |
+| **Disk Is State, Git Is Memory** | Archivos son handoff. Git es memoria persistente. |
+| **Steer With Signals** | Cuando falla, agrega Sign para próxima iteración. |
+| **Let Ralph Ralph** | Sit ON the loop, not IN it. |
 
-### brainstorming
+### Quick Start
 
-**Trigger**: Describes una idea sin plan definido.
+```bash
+# Prerequisitos: git repo existente + comandos de validación (tests, lint, build)
 
-Claude hace una pregunta a la vez. Presenta 2-3 enfoques con trade-offs. Valida incrementalmente. El resultado es un diseno en `docs/plans/YYYY-MM-DD-<topic>-design.md`.
+# 1. Instalar desde skill
+RALPH_SKILL="path/to/skills/ralph-loop"
+cp "$RALPH_SKILL/scripts/loop.sh" .
+cp "$RALPH_SKILL/scripts/PROMPT_build.md" .
+cp "$RALPH_SKILL/scripts/PROMPT_plan.md" .
+chmod +x loop.sh
 
-### writing-plans
+# 2. Planificar
+./loop.sh plan      # Genera IMPLEMENTATION_PLAN.md (corre hasta completar)
 
-**Trigger**: Dices "listo para implementar" o apruebas un diseno.
-
-Claude genera tasks de 2-5 minutos con paths exactos, codigo completo y comandos con output esperado. El resultado va a `docs/plans/YYYY-MM-DD-<feature>.md`.
-
-### executing-plans
-
-Dos modos de ejecucion:
-
-| Subagent-Driven | Parallel Session |
-|-----------------|------------------|
-| Misma sesion | Nueva sesion en worktree |
-| Review entre tasks | Batches de 3 tasks |
-| Fresh subagent por task | Checkpoint entre batches |
-
-### TDD
-
-```mermaid
-%%{init: {'theme': 'neutral'}}%%
-flowchart LR
-    R["RED: test falla"] --> G["GREEN: codigo minimo"] --> RF["REFACTOR: limpiar"] --> R
+# 3. Ejecutar
+./loop.sh           # Ejecuta plan (corre hasta ALL tasks done)
 ```
 
-::: danger Regla inquebrantable
-Codigo sin test fallando primero → borrar y reiniciar.
-:::
+### Modos
 
-### finishing-branch
+| Comando | Modo | Comportamiento |
+|---------|------|----------------|
+| `./loop.sh plan` | Planning | Gap analysis → genera plan |
+| `./loop.sh` | Building | Selecciona task → implementa → commit |
+| `./loop.sh 20` | Building limitado | Máximo 20 iteraciones |
+| `./loop.sh plan 5` | Planning limitado | Máximo 5 iteraciones |
 
-1. Verificar que tests pasen
-2. Elegir: merge local, PR, mantener, o descartar
-3. Ejecutar la opcion elegida
-4. Limpiar worktree si aplica
+### Safety Features
+
+- **Double Completion**: Requiere 2 señales `COMPLETE` consecutivas
+- **Context Health**: Exit automático si >80% contexto usado
+- **Task Abandonment**: Exit si mismo task falla 3+ veces
+- **Loop Thrashing**: Detecta patrones oscilantes (A→B→A→B)
+- **Circuit Breaker**: 3 fallos Claude consecutivos → exit
+
+### Exit Codes
+
+| Code | Significado |
+|------|-------------|
+| 0 | SUCCESS - Objetivo completo |
+| 1 | ERROR - Validación fallida |
+| 2 | CIRCUIT_BREAKER - 3 fallos consecutivos |
+| 3 | MAX_ITERATIONS - Límite alcanzado |
+| 5 | CONTEXT_EXHAUSTED - >80% contexto |
+| 6 | LOOP_THRASHING - Patrón oscilante |
+| 7 | TASKS_ABANDONED - 3+ fallos mismo task |
+| 130 | INTERRUPTED - Ctrl+C |
+
+---
+
+## Superpowers: Skills Avanzados
+
+Plugin externo con workflows de desarrollo estructurados.
+
+### Instalación
+
+```bash
+/plugin marketplace add obra/superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace
+```
+
+### Skills Incluidos
+
+| Skill | Cuándo usar |
+|-------|-------------|
+| `writing-plans` | Diseño aprobado, necesitas plan ejecutable |
+| `executing-plans` | Plan existe, ejecución en batches con review |
+| `test-driven-development` | Implementar cualquier código (RED→GREEN→REFACTOR) |
+| `systematic-debugging` | Bug o comportamiento inesperado |
+| `verification-before-completion` | Antes de declarar "done" |
+| `finishing-a-development-branch` | Tasks completos, decidir integración |
+| `using-git-worktrees` | Necesitas aislamiento sin perder WIP |
+
+### Workflow Típico con Superpowers
+
+```bash
+# 1. Brainstorming (skill del framework)
+"Necesito sistema de notificaciones"
+# → brainstorming: preguntas iterativas → design doc
+
+# 2. Planning (Superpowers)
+"Listo para implementar"
+# → writing-plans: tasks detallados con código exacto
+
+# 3. Execution (Superpowers)
+"Ejecuta el plan"
+# → executing-plans: batches con review entre cada uno
+
+# 4. Integration (Superpowers)
+"Feature completa"
+# → finishing-branch: tests → opciones → PR/merge/cleanup
+```
 
 ---
 
 ## Git Flow
 
-Ambos caminos convergen aquí. Tres pasos: commit, PR, cleanup.
+Comandos nativos del framework para gestión de código.
 
 ### Commit
 
@@ -97,7 +158,12 @@ Agrupa cambios automáticamente por tipo. Soporta formato corporativo `tipo|TASK
 /git-pullrequest main
 ```
 
-Ejecuta code review + security review en paralelo. Presenta findings. Tú decides: crear PR, auto-fix, o cancelar.
+Quality gate integrado:
+- Code review (lógica, arquitectura, bugs)
+- Security review (SQL injection, secrets, XSS)
+- Observaciones (tests, API, breaking changes)
+
+Opciones: **Create PR** | **Auto fix** | **Cancel**
 
 ### Cleanup
 
@@ -105,7 +171,7 @@ Ejecuta code review + security review en paralelo. Presenta findings. Tú decide
 /git-cleanup
 ```
 
-Elimina branch local, sincroniza con remote. Ejecutar después de merge.
+Post-merge: elimina branch local, sincroniza con remote.
 
 ---
 
@@ -116,24 +182,23 @@ Elimina branch local, sincroniza con remote. Ejecutar después de merge.
 **No tienes WIP** → Branch simple con `git checkout -b`
 :::
 
-### Crear worktree
+### Crear
 
 ```bash
 /worktree-create "feature-name" main
 ```
 
-Crea directorio sibling `../worktree-feature-name/` con branch nueva.
+Crea `../worktree-feature-name/` con branch nueva.
 
-::: warning Paso crítico post-creación
-El IDE abre automáticamente, pero debes:
-1. Abrir terminal en la nueva ventana
-2. Verificar directorio con `pwd`
-3. Iniciar Claude Code con `claude`
+::: warning Post-creación
+1. Abrir terminal en nueva ventana
+2. Verificar directorio: `pwd`
+3. Iniciar Claude: `claude`
 
-Sin esto, Claude sigue trabajando en el directorio anterior.
+Sin esto, Claude sigue en directorio anterior.
 :::
 
-### Limpiar worktrees
+### Limpiar
 
 ```bash
 /worktree-cleanup              # Lista disponibles
@@ -144,7 +209,7 @@ Sin esto, Claude sigue trabajando en el directorio anterior.
 
 ## Project Rules
 
-Reglas de proyecto que se comparten con el equipo via Git.
+Reglas compartidas via Git para consistencia de equipo.
 
 ### Arquitectura
 
@@ -158,49 +223,63 @@ docs/claude-rules/        ← TRACKED (source of truth)
 .claude/rules/            ← IGNORED (copia local)
 ```
 
-Similar a `.env.example` → `.env`: las reglas canónicas viven en Git, cada dev tiene copia local sincronizada automáticamente.
-
-### Setup inicial
+### Setup
 
 ```bash
 /project-init
 ```
 
-Analiza el proyecto y genera reglas en `docs/claude-rules/`. Commit y push para compartir con el equipo.
+Analiza proyecto → genera `docs/claude-rules/` → commit y push.
 
-### Para nuevos miembros
+### Actualizar
 
-Nada que hacer. El hook de session-start sincroniza automáticamente `docs/claude-rules/` a `.claude/rules/`.
-
-### Actualizar reglas
-
-Edita archivos en `docs/claude-rules/`, crea PR, merge. Todos obtienen cambios en su próxima sesión.
+Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima sesión.
 
 ---
 
-## Patrones por Tamano
+## Patrones por Tamaño
 
 ### Size S (≤80 LOC)
 
 ```bash
-"Implementa validacion de email en el formulario de registro"
-# Claude activa TDD automaticamente
+"Implementa validación de email en el formulario"
+# Claude implementa directamente con tests
+/git-commit "feat: add email validation"
+/git-pullrequest main
 ```
 
 ### Size M (≤250 LOC)
 
+**Con Superpowers:**
 ```bash
-/worktree-create "oauth" main
-# Describe la feature → brainstorming → plans → execute
+"Necesito autenticación OAuth"
+# → brainstorming → writing-plans → executing-plans
 /git-pullrequest main
 ```
 
-### Hotfix urgente
+**Con Ralph Loop:**
+```bash
+./loop.sh plan    # Genera plan
+./loop.sh         # Ejecuta hasta completar
+/git-pullrequest main
+```
+
+### Size L/XL (>250 LOC)
+
+```bash
+# Ralph Loop es ideal para features grandes
+./loop.sh plan              # Plan detallado
+./loop.sh                   # Ejecución autónoma con fresh context
+# Ralph hace commits incrementales
+/git-pullrequest main       # PR final con todo el trabajo
+```
+
+### Hotfix
 
 ```bash
 /worktree-create "hotfix-race" main
-/understand "area del bug"
-# Fix directo segun complejidad
+/understand "área del bug"
+# Fix directo
 /git-commit "fix: race condition in checkout"
 /git-pullrequest main
 /worktree-cleanup hotfix-race
@@ -208,48 +287,73 @@ Edita archivos en `docs/claude-rules/`, crea PR, merge. Todos obtienen cambios e
 
 ---
 
-## Referencia Rapida
+## Referencia Rápida
 
-::: details Skills
-| Skill | Se activa cuando... |
-|-------|---------------------|
-| brainstorming | Describes idea sin plan |
-| writing-plans | Diseno aprobado |
-| executing-plans | Plan existe |
-| test-driven-development | Implementas codigo |
-| verification-before-completion | Antes de entregar |
-| finishing-a-development-branch | Tasks completos |
-| using-git-worktrees | Necesitas aislamiento |
-:::
-
-::: details Comandos Git y Utilidades
+::: details Comandos del Framework
 | Comando | Qué hace |
 |---------|----------|
-| /git-commit | Commit semántico |
-| /git-pullrequest | PR con review |
-| /git-cleanup | Post-merge cleanup |
-| /worktree-create | Workspace aislado |
-| /worktree-cleanup | Elimina worktrees |
-| /project-init | Genera rules de equipo |
-| /understand | Analiza codebase |
-| /changelog | Actualiza CHANGELOG |
+| `/git-commit` | Commit semántico con agrupación |
+| `/git-pullrequest` | PR con quality gate (code + security) |
+| `/git-cleanup` | Post-merge cleanup |
+| `/worktree-create` | Workspace aislado |
+| `/worktree-cleanup` | Elimina worktrees |
+| `/project-init` | Genera rules de equipo |
+| `/understand` | Analiza codebase |
+:::
+
+::: details Skills del Framework
+| Skill | Uso |
+|-------|-----|
+| `brainstorming` | Explorar ideas antes de implementar |
+| `ralph-loop` | Desarrollo autónomo multi-iteración |
+| `pr-workflow` | PR con quality gate integrado |
+| `webapp-testing` | E2E testing con Playwright |
+| `mobile-testing` | E2E mobile con mobile-mcp + Maestro |
+| `claude-code-expert` | Crear componentes Claude Code |
+| `frontend-design` | Interfaces distintivas (anti-AI slop) |
+| `humanizer` | Eliminar patrones de texto IA |
+:::
+
+::: details Skills de Superpowers (Plugin)
+| Skill | Uso |
+|-------|-----|
+| `writing-plans` | Plan ejecutable detallado |
+| `executing-plans` | Ejecución en batches con review |
+| `test-driven-development` | RED → GREEN → REFACTOR |
+| `systematic-debugging` | 4 fases: root cause primero |
+| `verification-before-completion` | Evidencia antes de claims |
+| `finishing-a-development-branch` | Tests → opciones → integración |
+| `using-git-worktrees` | Aislamiento con smart directory |
 :::
 
 ---
 
-## Practicas Esenciales
+## Cuándo Usar Qué
 
-| Practica | Por que |
-|----------|---------|
-| Worktree para paralelo | Tu WIP queda intacto |
-| TDD sin excepciones | Prueba > esperanza |
-| Review antes de PR | Security incluido gratis |
-| Commits granulares | Auto-agrupacion inteligente |
+| Situación | Herramienta |
+|-----------|-------------|
+| Feature grande (L/XL) | Ralph Loop |
+| Feature mediana con diseño | Superpowers (brainstorming → plans) |
+| Fix rápido | Directo + `/git-commit` |
+| Desarrollo overnight/AFK | Ralph Loop |
+| Pair programming con Claude | Superpowers skills |
+| CI/CD automation | Ralph Loop |
 
 ---
 
-**Relacionados**: [Comandos](./commands-guide.md) · [Skills](./skills-guide.md) · [Agentes](./agents-guide.md) · [Pro Tips](./claude-code-pro-tips.md)
+## Prácticas Esenciales
+
+| Práctica | Por qué |
+|----------|---------|
+| Ralph para L/XL | Fresh context evita degradación |
+| Superpowers para M | Workflow estructurado con checkpoints |
+| Quality gate siempre | Security review gratis |
+| Commits granulares | Auto-agrupación inteligente |
+
+---
+
+**Relacionados**: [Comandos](./commands-guide.md) · [Skills](./skills-guide.md) · [Agentes](./agents-guide.md) · [Integrations](./integrations.md)
 
 ::: info Última Actualización
-**Fecha**: 2025-12-12 | **Versión**: 4.3.0
+**Fecha**: 2026-01-25 | **Versión**: 5.2.0
 :::

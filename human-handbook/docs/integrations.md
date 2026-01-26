@@ -40,7 +40,7 @@ Plugins, MCPs y CLIs que extienden Claude Code con herramientas externas.
 
 **Skills incluidos:**
 - test-driven-development, systematic-debugging, verification-before-completion
-- brainstorming, writing-plans, executing-plans
+- writing-plans, executing-plans
 - requesting-code-review, receiving-code-review
 - using-git-worktrees, finishing-a-development-branch
 - Y más...
