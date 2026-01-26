@@ -1,55 +1,186 @@
 # Integrations
 
 ::: tip ¿Qué son las Integraciones?
-Plugins oficiales y MCPs que extienden Claude Code con herramientas externas (databases, APIs, browsers, docs). Un **plugin** es un paquete completo (puede incluir MCP + comandos + agentes), mientras que un **MCP** es solo un servidor de herramientas.
+Plugins, MCPs y CLIs que extienden Claude Code con herramientas externas.
 :::
+
+## Índice
+
+| Tipo | Herramienta | Propósito |
+|------|-------------|-----------|
+| **Plugin** | [Superpowers](#superpowers-plugin) | Skills de desarrollo profesional (TDD, debugging, etc.) |
+| **Plugin** | [Episodic Memory](#episodic-memory) | Búsqueda semántica de conversaciones |
+| **Plugin** | [Anthropic Plugins](#plugins-anthropic) | Directorio oficial de plugins |
+| **MCP** | [context7](#context7) | Documentación de librerías en tiempo real |
+| **MCP** | [mobile-mcp](#mobile-mcp) | Automation iOS/Android |
+| **MCP** | [maestro](#maestro) | E2E testing mobile |
+| **CLI** | [agent-browser](#agent-browser) | Browser automation |
+| **CLI** | [Spec-Kit](#spec-kit-cli) | Especificación de requirements |
 
 ---
 
-## Plugins Oficiales (Recomendado)
+# Plugins
 
-Anthropic mantiene un directorio de plugins oficiales. **Instalación con un comando:**
+## Superpowers (Plugin)
 
+::: tip Recomendado
+**Superpowers** provee skills de desarrollo profesional: TDD, debugging sistemático, code review, worktrees, y más.
+:::
+
+**Repositorio:** [github.com/obra/superpowers](https://github.com/obra/superpowers)
+
+**Instalación:**
 ```bash
-/plugin install {name}@claude-plugin-directory
+# 1. Agregar marketplace
+/plugin marketplace add obra/superpowers-marketplace
+
+# 2. Instalar superpowers
+/plugin install superpowers@superpowers-marketplace
 ```
 
-O navegar: `/plugin` → `Discover`
-
-### Plugins First-Party Disponibles
-
-| Plugin | Propósito | Comando |
-|--------|-----------|---------|
-| **context7** | Real-time library docs | `/plugin install context7@claude-plugin-directory` |
-| **playwright** | Browser automation, E2E | `/plugin install playwright@claude-plugin-directory` |
-| **linear** | Issue tracking | `/plugin install linear@claude-plugin-directory` |
-| **github** | GitHub integration | `/plugin install github@claude-plugin-directory` |
-| **gitlab** | GitLab integration | `/plugin install gitlab@claude-plugin-directory` |
-| **firebase** | Firebase backend | `/plugin install firebase@claude-plugin-directory` |
-| **supabase** | Supabase backend | `/plugin install supabase@claude-plugin-directory` |
-| **stripe** | Payments | `/plugin install stripe@claude-plugin-directory` |
-| **slack** | Messaging | `/plugin install slack@claude-plugin-directory` |
-| **asana** | Project management | `/plugin install asana@claude-plugin-directory` |
-
-::: tip Ventajas de Plugins Oficiales
-- Mantenidos por Anthropic/partners
-- Actualizaciones automáticas
-- Instalación limpia sin configuración manual
-:::
-
-**Catálogo completo:** [github.com/anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official)
+**Skills incluidos:**
+- test-driven-development, systematic-debugging, verification-before-completion
+- brainstorming, writing-plans, executing-plans
+- requesting-code-review, receiving-code-review
+- using-git-worktrees, finishing-a-development-branch
+- Y más...
 
 ---
 
-## Browser Automation (agent-browser)
+## Episodic Memory
 
-::: tip Auto-instalación
-`agent-browser` se instala **automáticamente** al iniciar Claude Code si no está presente. No requiere acción manual.
+Plugin del marketplace Superpowers para búsqueda semántica de conversaciones.
+
+**Instalación:**
+```bash
+/plugin install episodic-memory@superpowers-marketplace
+```
+
+::: details Detalles
+**¿Qué es?**
+Búsqueda semántica local de tus conversaciones con Claude Code.
+
+**Casos de uso:**
+- Encontrar "¿Cómo resolvimos el bug de autenticación hace 2 semanas?"
+- Rastrear evolución de decisiones técnicas
+- Recuperar patrones de solución aplicados anteriormente
+
+**Features:**
+- Semantic Search: Búsqueda por significado, no solo keywords
+- Offline: Todo local, sin servicios cloud
+- Privacy: Control total sobre qué se indexa
+
+**Control de Indexación:**
+```xml
+<INSTRUCTIONS-TO-EPISODIC-MEMORY>DO NOT INDEX THIS CHAT</INSTRUCTIONS-TO-EPISODIC-MEMORY>
+```
 :::
 
-### ¿Qué es agent-browser?
+---
 
-CLI de browser automation basado en Playwright, optimizado para tareas web rápidas:
+## Plugins Anthropic
+
+Anthropic mantiene un directorio de plugins oficiales que se actualiza constantemente.
+
+**Ver plugins disponibles:**
+```bash
+/plugin
+# Seleccionar "Discover" para ver el catálogo completo
+```
+
+**Instalar un plugin:**
+```bash
+/plugin install <nombre>@claude-plugin-directory
+```
+
+---
+
+# MCPs
+
+Los siguientes MCPs están preconfigurados en `.claude/.mcp.json.template`:
+
+## context7
+
+Documentación de librerías y frameworks en tiempo real.
+
+| Campo | Valor |
+|-------|-------|
+| Tipo | HTTP |
+| URL | `https://mcp.context7.com/mcp` |
+| Auth | No requerida |
+
+**Uso:** Automático cuando consultas documentación de librerías.
+
+---
+
+## mobile-mcp
+
+Automation para iOS y Android: UI debugging, accessibility trees, screenshots.
+
+| Campo | Valor |
+|-------|-------|
+| Comando | `npx` |
+| Args | `-y @mobilenext/mobile-mcp@latest` |
+| Instalación | Automática (npx) |
+
+**Requisitos:**
+- Node.js 22+
+- iOS: Xcode CLI Tools (`xcode-select --install`)
+- Android: Android Platform Tools
+
+---
+
+## maestro
+
+E2E testing mobile con YAML flows y AI assertions.
+
+| Campo | Valor |
+|-------|-------|
+| Comando | `maestro` |
+| Args | `mcp` |
+| Instalación | **Manual requerida** |
+
+**Instalación previa:**
+```bash
+curl -Ls "https://get.maestro.mobile.dev" | bash
+```
+
+**Verificar:**
+```bash
+maestro --version
+```
+
+**Requisitos:** Java 17+
+
+---
+
+## Activar MCPs
+
+1. Copiar template:
+```bash
+cp .claude/.mcp.json.template .mcp.json
+```
+
+2. Habilitar en `.claude/settings.local.json`:
+```json
+{ "enabledMcpjsonServers": ["context7", "mobile-mcp", "maestro"] }
+```
+
+3. Restart: `Ctrl+D` → `claude`
+
+---
+
+# CLIs
+
+## agent-browser
+
+::: tip Auto-instalación
+Se instala **automáticamente** al iniciar Claude Code.
+:::
+
+CLI de browser automation basado en Playwright con skill integrado.
+
+**Funcionalidades:**
 - Navegación y búsquedas
 - Llenado de formularios
 - Screenshots
@@ -57,221 +188,64 @@ CLI de browser automation basado en Playwright, optimizado para tareas web rápi
 
 **Ventaja sobre WebFetch/WebSearch:** No se bloquea, no trunca contenido, puede interactuar con páginas dinámicas.
 
-### Comportamiento del Hook
-
-Al iniciar cada sesión, el hook `agent-browser-check` verifica e instala automáticamente:
-
-| Estado | Mensaje | Acción |
-|--------|---------|--------|
-| ✓ Instalado | `agent-browser: ✓ Installed` | Usa agent-browser para tareas web |
-| ⏳ Instalando | `agent-browser: ⏳ Installing in background` | Usa WebFetch mientras instala (~30s) |
-| ⚠ Skipped | `agent-browser: ⚠ Skipped` | Variable de entorno activa |
-| ✗ Falló | `agent-browser: ✗ Install failed` | Usa WebFetch como fallback |
-
-### Desactivar Auto-instalación
-
-Si no deseas la instalación automática (CI sin browser, entorno restringido):
-
+**Desactivar Auto-instalación:**
 ```bash
 export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
 ```
 
-### Logs
+---
 
-El hook registra cada ejecución para trazabilidad:
+## Spec-Kit CLI
 
-```
-.claude/logs/YYYY-MM-DD/agent-browser-check.jsonl
-```
-
-```json
-{"timestamp": "2026-01-19T12:59:45", "hook": "agent-browser-check", "status": "installed", "details": "agent-browser already available"}
-```
-
-### Instalación Manual (si necesario)
-
-```bash
-npm install -g agent-browser
-agent-browser install  # Descarga Chromium (~150MB)
-```
-
-::: warning Primera instalación
-La primera instalación descarga Chromium (~150MB). En conexiones lentas puede tomar 1-2 minutos.
+::: warning CLI Independiente
+**Spec-Kit** es un CLI de especificación de requirements basado en Python. **NO es un plugin**.
 :::
+
+**Repositorio:** [github.com/github/spec-kit](https://github.com/github/spec-kit)
+
+**Prerequisitos:**
+- Python 3.11+
+- Git
+- [uv](https://docs.astral.sh/uv/) (gestor de paquetes Python)
+
+**Instalación persistente (recomendada):**
+```bash
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+```
+
+**Uso sin instalación:**
+```bash
+uvx --from git+https://github.com/github/spec-kit.git specify init <proyecto>
+```
+
+**Comandos principales:**
+```bash
+# Inicializar proyecto
+specify init mi-proyecto --ai claude
+
+# Crear spec desde descripción
+specify spec "OAuth 2.0 with Google"
+
+# Ver ayuda
+specify --help
+```
+
+Para documentación completa, ver el [README oficial](https://github.com/github/spec-kit#readme).
 
 ---
 
-## MCPs Adicionales (Mobile)
-
-Para desarrollo mobile, usamos MCPs que **no tienen plugin oficial**. Estos requieren configuración manual.
-
-| Server | Propósito | Instalación |
-|--------|-----------|-------------|
-| **mobile-mcp** | Automation iOS/Android, debugging UI | Automática (npx) ✅ |
-| **maestro** | E2E testing mobile, YAML flows | **Manual requerida** ⚠️ |
-
-::: warning Maestro requiere instalación previa
-A diferencia de `mobile-mcp` que se auto-instala via `npx`, **Maestro MCP requiere tener el CLI instalado globalmente**. Sin esto, el MCP fallará silenciosamente al iniciar Claude Code.
-:::
-
-### Instalar Maestro CLI (requisito previo)
-
-```bash
-# Opción 1: curl (recomendado)
-curl -Ls "https://get.maestro.mobile.dev" | bash
-
-# Opción 2: Homebrew
-brew tap mobile-dev-inc/tap && brew install maestro
-```
-
-**Verificar instalación:**
-```bash
-maestro --version
-# Debe mostrar: Maestro CLI x.x.x
-```
-
-::: tip ¿Por qué esta diferencia?
-- `mobile-mcp`: Paquete npm, se descarga automáticamente con `npx`
-- `maestro`: CLI binario con dependencias de Java, requiere instalación del sistema
-:::
-
-### Activar MCPs Mobile
-
-**1. Copiar template:**
-
-```bash
-cp .claude/.mcp.json.template .mcp.json
-```
-
-**2. Habilitar en `.claude/settings.local.json`:**
-
-```json
-{
-  "enabledMcpjsonServers": ["mobile-mcp", "maestro"]
-}
-```
-
-**3. Restart:** `Ctrl+D` → `claude`
-
-**4. Verificar:** `/mcp` debe mostrar servidores conectados.
-
-::: details Troubleshooting: Maestro MCP no conecta
-Si `/mcp` no muestra maestro como conectado:
-
-1. **Verificar CLI instalado:** `which maestro` debe retornar una ruta
-2. **Verificar versión:** `maestro --version`
-3. **Verificar Java:** `java --version` (requiere Java 17+)
-4. **Probar MCP manual:** `maestro mcp` (debe iniciar sin errores)
-
-Si `maestro mcp` falla, reinstalar el CLI.
-:::
-
----
-
-## ⚠️ Context Budget
+# Context Budget
 
 ::: warning Impacto en Contexto
-Cada MCP/plugin activo consume contexto. Habilita solo lo necesario para tu proyecto actual.
+Cada MCP/plugin activo consume contexto. Habilita solo lo necesario.
 :::
 
 **Consumo estimado:**
 - 1-2 MCPs: 5-10% context
 - 4+ MCPs: 20-30% context
 
-**Síntomas de overflow:** Respuestas lentas, pérdida de contexto, degradación de razonamiento.
-
----
-
-## Mobile Testing (React Native, Expo, Flutter)
-
-::: tip Cuándo usar cada uno
-- **mobile-mcp**: Debugging interactivo, exploración UI, screenshots
-- **maestro**: Test suites E2E, CI/CD, auto-healing tests
-:::
-
-**Requisitos:**
-
-| Herramienta | Requisito | Instalación |
-|-------------|-----------|-------------|
-| mobile-mcp | Node.js 22+ | Automático via npx |
-| mobile-mcp (iOS) | Xcode CLI Tools | `xcode-select --install` |
-| mobile-mcp (Android) | Android Platform Tools | Android Studio |
-| maestro | Java 17+ | `java --version` |
-| maestro CLI | Latest | `curl -fsSL "https://get.maestro.mobile.dev" \| bash` |
-
-::: details Ejemplo: Debugging con mobile-mcp
-```
-User: "El botón de login no responde"
-
-Claude usa:
-1. mobile_list_available_devices → iPhone 15 Simulator
-2. mobile_launch_app → inicia app
-3. mobile_take_screenshot → captura visual
-4. mobile_list_elements_on_screen → árbol de accesibilidad
-5. Identifica: botón tiene enabled=false
-6. Reporta: "Botón deshabilitado, revisar validación"
-```
-:::
-
-::: details Ejemplo: Generar tests Maestro
-```yaml
-# flows/auth/login.yaml
-appId: com.myapp
----
-- launchApp
-- tapOn: "Email"
-- inputText: "user@example.com"
-- tapOn: "Password"
-- inputText: "SecurePass123"
-- tapOn: "Sign In"
-- assertVisible: "Welcome"
-```
-
-Ejecutar: `maestro test flows/auth/`
-:::
-
----
-
-## Troubleshooting
-
-::: details Server No Aparece
-**Para plugins oficiales:**
-- Verificar instalación: `/plugin`
-- Reinstalar: `/plugin install {name}@claude-plugin-directory`
-
-**Para MCPs del template:**
-1. `.mcp.json` existe (copiado desde template)
-2. Server en `enabledMcpjsonServers`
-3. Restart después de cambios
-:::
-
-::: details Environment Variables
-**Sistema (recomendado):**
-```bash
-export GITHUB_TOKEN="your_token"
-claude
-```
-
-**En `.mcp.json`:**
-```json
-{ "env": { "TOKEN": "${TOKEN}" } }
-```
-:::
-
----
-
-## Mejores Prácticas
-
-::: tip Minimalismo
-Comienza con 1-2 plugins/MCPs. Agrega más solo cuando tengas necesidad clara.
-:::
-
-::: warning Security
-**Nunca** commits tokens en archivos. Usa env vars del sistema.
-:::
-
 ---
 
 ::: info Última Actualización
-**Fecha**: 2026-01-24 | **Cambios**: agent-browser es la única herramienta de browser automation (dev-browser deprecado)
+**Fecha**: 2026-01-25 | **Cambios**: agent-browser movido a CLIs
 :::

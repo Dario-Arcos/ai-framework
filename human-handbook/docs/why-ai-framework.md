@@ -173,13 +173,13 @@ Idea → Claude genera → Developer corrige → Deploy (quizás)
 ```
 
 ```plaintext [AI Framework]
-Idea → /speckit.specify (minutos)  // [!code highlight]
-     → /speckit.plan (minutos)  // [!code highlight]
-     → /speckit.implement (horas)  // [!code highlight]
+Idea → brainstorming (minutos)  // [!code highlight]
+     → writing-plans (minutos)  // [!code highlight]
+     → executing-plans + TDD (horas)  // [!code highlight]
      → Dual review → /pullrequest → Despliegue  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]
-[Tests desde día 1 · Horas-días, production-ready]
+[Tests desde dia 1 · Horas-dias, production-ready]
 ```
 
 :::

@@ -32,18 +32,17 @@
 
 **Examples**:
 
-- ✅ `speckit.plan`
-- ✅ `speckit.implement`
+- ✅ `git-commit`
+- ✅ `git-pullrequest`
 - ✅ `three-experts`
 - ✅ `understand`
-- ❌ `speckit_plan` (underscores not allowed)
-- ❌ `SpecKit.Plan` (CamelCase not allowed)
+- ❌ `git_commit` (underscores not allowed)
+- ❌ `GitCommit` (CamelCase not allowed)
 
 **File**: `commands/[category]/[command-name].md`
 
 **Categories**:
 
-- `SDD-cycle/` → `speckit.*`
 - `git-github/` → git operations
 - `utils/` → general utilities
 - `PRP-cycle/` → product requirements
@@ -166,7 +165,7 @@ MAX_TIMEOUT = 60
 | Component    | Convention      | Example                 | Max Length |
 | ------------ | --------------- | ----------------------- | ---------- |
 | Sub-agents   | `snake-case`    | `code-reviewer` | 64 chars   |
-| Commands     | `kebab-case`    | `speckit.plan`          | -          |
+| Commands     | `kebab-case`    | `git-commit`            | -          |
 | Hooks        | `snake_case.py` | `session_start.py`      | -          |
 | MCP servers  | `kebab-case`    | `playwright`            | -          |
 | Skills       | `kebab-case`    | `claude-code-expert`    | 64 chars   |

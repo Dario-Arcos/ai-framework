@@ -58,8 +58,8 @@ Use this checklist to validate slash command implementations before delivery.
 ## Naming Conventions
 
 - [ ] Command name is descriptive and unique
-- [ ] Name follows pattern: `[category-prefix].[command]` (e.g., `speckit.plan`)
-- [ ] Category organization logical (SDD-cycle, git-github, utils, etc.)
+- [ ] Name follows pattern: `[category]-[command]` (e.g., `git-commit`, `worktree-create`)
+- [ ] Category organization logical (git-github, utils, etc.)
 
 ## Tool Access
 

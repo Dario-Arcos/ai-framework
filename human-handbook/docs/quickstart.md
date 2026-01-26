@@ -156,19 +156,14 @@ Para usar valores por defecto de Claude Code, deja el campo `"env": {}` vacío e
 
 ## Primera Funcionalidad (5 minutos)
 
-### Ruta Rápida
+### Ruta Rapida
+
+Describe tu feature en lenguaje natural y Claude activara automaticamente los skills necesarios:
 
 ```bash
-/speckit.specify "add user email validation"
-/speckit.clarify
-/speckit.plan
-/speckit.tasks
-/speckit.implement
+"Implementa validacion de email en el formulario de registro"
+# Claude activa brainstorming → writing-plans → TDD automaticamente
 ```
-
-::: tip Recomendación Importante
-El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que toma.
-:::
 
 ### Crear PR
 
@@ -177,7 +172,7 @@ El paso `clarify` previene horas de refactor. Vale la pena los 2 minutos que tom
 /git-pullrequest develop
 ```
 
-Security review automático ejecuta antes de crear PR.
+Security review automatico ejecuta antes de crear PR.
 
 ---
 

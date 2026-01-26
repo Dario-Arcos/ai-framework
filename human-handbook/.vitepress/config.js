@@ -48,7 +48,6 @@ export default withMermaid(defineConfig({
           { text: "Inicio Rápido", link: "/docs/quickstart" },
           { text: "AI-First Workflow", link: "/docs/ai-first-workflow" },
           { text: "Pro Tips", link: "/docs/claude-code-pro-tips" },
-          { text: "Memory Systems", link: "/docs/memory-systems" },
         ],
       },
       {

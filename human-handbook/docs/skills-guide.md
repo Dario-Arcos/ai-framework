@@ -152,8 +152,8 @@ Selecciona tu situación para ver las skills recomendadas
 | [Collaboration](#collaboration) | 9 | Brainstorming, plans, reviews, git workflows, parallel agents |
 | [Development Tools](#development-tools) | 3 | Claude Code components, browser automation, skill creation |
 | [Design](#design) | 1 | Interfaces frontend distintivas (anti-AI slop) |
-| [Writing](#writing) | 1 | Humanización de texto (elimina patrones IA, añade voz) |
-| [Meta](#meta) | 2 | Superpowers enforcement, testing skills |
+| [Writing](#writing) | 1 | Humanizacion de texto (elimina patrones IA, anade voz) |
+| [Meta](#meta) | 1 | Testing skills |
 
 ---
 
@@ -949,34 +949,6 @@ Early feedback from beta testers has been positive."
 ---
 
 ### Meta
-
-#### using-superpowers
-
-::: danger Meta | Mandatory
-**Cuándo**: Automáticamente al inicio de CADA conversación vía SessionStart hook (superpowers-loader.sh)
-**Qué hace**: Establece workflows mandatorios: buscar/usar skills antes de ANY task, usar Skill tool antes de anunciar skill, brainstorming antes de coding, TodoWrite para checklists
-:::
-
-**Mandatory First Response Protocol**:
-1. ☐ List available skills in mind
-2. ☐ Ask: "Does ANY skill match this request?"
-3. ☐ If yes → Use Skill tool to read skill file
-4. ☐ Announce which skill using
-5. ☐ Follow skill exactly
-
-**Common Rationalizations = FAILURE**:
-- "This is just a simple question" → WRONG
-- "I can check files quickly" → WRONG
-- "Let me gather info first" → WRONG
-- "Skill is overkill" → WRONG
-- "I remember this skill" → WRONG (skills evolve)
-
-**Enforcement**: Skills > MCPs > Direct implementation. Si skill existe para task, MUST use or fail
-
-**Cargado**: Automáticamente en SessionStart, no requiere invocación manual
-
----
-
 
 #### testing-skills-with-subagents
 

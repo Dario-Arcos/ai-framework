@@ -1,11 +1,6 @@
 # AI-First Workflow
 
-Excelencia por diseño. Dos caminos.
-
-**Superpowers** te guía con skills que se activan por contexto. Conversacional.
-**SpecKit** genera artefactos trazables con comandos slash. Estructurado.
-
-Ambos convergen en el mismo workflow de Git al final.
+Excelencia por diseño. Workflows estructurados para desarrollo guiado por IA.
 
 ---
 
@@ -14,14 +9,9 @@ Ambos convergen en el mismo workflow de Git al final.
 ```mermaid
 %%{init: {'theme': 'neutral', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#4f46e5', 'lineColor': '#64748b', 'secondaryColor': '#f1f5f9', 'tertiaryColor': '#e2e8f0'}}}%%
 flowchart TB
-    subgraph SP["SUPERPOWERS"]
+    subgraph DEV["DEVELOPMENT"]
         direction TB
-        S1[brainstorming] --> S2[writing-plans] --> S3[executing-plans] --> S4[TDD] --> S5[finishing-branch]
-    end
-
-    subgraph SK["SPECKIT"]
-        direction TB
-        K0[prp-new] -.-> K1[specify] --> K2[clarify] --> K3[plan] --> K4[tasks] --> K5[implement]
+        D1[brainstorming] --> D2[writing-plans] --> D3[executing-plans] --> D4[TDD] --> D5[finishing-branch]
     end
 
     subgraph GIT["GIT FLOW"]
@@ -29,37 +19,19 @@ flowchart TB
         G1[commit] --> G2[pullrequest] --> G3[cleanup]
     end
 
-    S5 --> GIT
-    K5 --> GIT
+    D5 --> GIT
 ```
 
 ---
 
-## ¿Cuál Elegir?
+## Skills del Workflow
 
-| Situación | Superpowers | SpecKit |
-|-----------|:-----------:|:-------:|
-| Idea sin forma clara | ✓ | |
-| Equipo pequeño / solo | ✓ | |
-| Bug fix o refactor | ✓ | |
-| Stakeholders externos | | ✓ |
-| Compliance / regulación | | ✓ |
-| Handoff a otros devs | | ✓ |
-
-::: tip Regla simple
-**Velocidad → Superpowers. Certeza → SpecKit.**
-:::
-
----
-
-## Superpowers
-
-Skills que se activan automáticamente según lo que describes.
+Skills que se activan automaticamente segun lo que describes.
 
 ### El Flujo
 
 1. **Describe tu idea** → activa `brainstorming`
-2. **Aprueba diseño** → activa `writing-plans`
+2. **Aprueba diseno** → activa `writing-plans`
 3. **Plan listo** → activa `executing-plans`
 4. **Implementa** → activa `TDD` (red-green-refactor)
 5. **Completo** → activa `finishing-branch`
@@ -68,21 +40,21 @@ Skills que se activan automáticamente según lo que describes.
 
 **Trigger**: Describes una idea sin plan definido.
 
-Claude hace una pregunta a la vez. Presenta 2-3 enfoques con trade-offs. Valida incrementalmente. El resultado es un diseño en `docs/plans/YYYY-MM-DD-<topic>-design.md`.
+Claude hace una pregunta a la vez. Presenta 2-3 enfoques con trade-offs. Valida incrementalmente. El resultado es un diseno en `docs/plans/YYYY-MM-DD-<topic>-design.md`.
 
 ### writing-plans
 
-**Trigger**: Dices "listo para implementar" o apruebas un diseño.
+**Trigger**: Dices "listo para implementar" o apruebas un diseno.
 
-Claude genera tasks de 2-5 minutos con paths exactos, código completo y comandos con output esperado. El resultado va a `docs/plans/YYYY-MM-DD-<feature>.md`.
+Claude genera tasks de 2-5 minutos con paths exactos, codigo completo y comandos con output esperado. El resultado va a `docs/plans/YYYY-MM-DD-<feature>.md`.
 
 ### executing-plans
 
-Dos modos de ejecución:
+Dos modos de ejecucion:
 
 | Subagent-Driven | Parallel Session |
 |-----------------|------------------|
-| Misma sesión | Nueva sesión en worktree |
+| Misma sesion | Nueva sesion en worktree |
 | Review entre tasks | Batches de 3 tasks |
 | Fresh subagent por task | Checkpoint entre batches |
 
@@ -91,108 +63,19 @@ Dos modos de ejecución:
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart LR
-    R["RED: test falla"] --> G["GREEN: código mínimo"] --> RF["REFACTOR: limpiar"] --> R
+    R["RED: test falla"] --> G["GREEN: codigo minimo"] --> RF["REFACTOR: limpiar"] --> R
 ```
 
 ::: danger Regla inquebrantable
-Código sin test fallando primero → borrar y reiniciar.
+Codigo sin test fallando primero → borrar y reiniciar.
 :::
 
 ### finishing-branch
 
 1. Verificar que tests pasen
 2. Elegir: merge local, PR, mantener, o descartar
-3. Ejecutar la opción elegida
+3. Ejecutar la opcion elegida
 4. Limpiar worktree si aplica
-
----
-
-## SpecKit
-
-Comandos slash que generan artefactos trazables.
-
-### El Flujo
-
-1. `/prp-new` <Badge type="tip" text="opcional" /> — Discovery del problema
-2. `/speckit.specify` — Descripción → spec técnica
-3. `/speckit.clarify` — Resolver ambigüedades
-4. `/speckit.plan` — Spec → artefactos de diseño
-5. `/speckit.tasks` — Plan → tasks ejecutables
-6. `/speckit.implement` — Ejecuta con TDD
-
-### /prp-new <Badge type="tip" text="opcional" />
-
-Discovery para problemas no definidos. Cuatro fases: Contexto → Problema → Impacto → Oportunidad.
-
-```bash
-/prp-new "descripción del problema"
-```
-
-Output: `prps/<name>/discovery.md`
-
-### /speckit.specify
-
-Convierte descripción natural en especificación técnica.
-
-```bash
-/speckit.specify "OAuth authentication with Google"
-```
-
-Crea branch `NNN-feature`, genera `spec.md` sin implementación, valida automáticamente.
-
-### /speckit.clarify
-
-Detecta ambigüedades y pregunta hasta resolverlas.
-
-```bash
-/speckit.clarify
-```
-
-::: warning ROI comprobado
-2 minutos de clarificación evitan 4+ horas de refactor.
-:::
-
-### /speckit.plan
-
-Genera artefactos de diseño técnico.
-
-```bash
-/speckit.plan
-```
-
-| Artefacto | Contenido |
-|-----------|-----------|
-| research.md | Decisiones técnicas con rationale |
-| data-model.md | Entidades y relaciones |
-| contracts/ | Specs de API |
-| quickstart.md | Guía de integración |
-
-### /speckit.tasks
-
-Genera breakdown ejecutable con dependencias.
-
-```bash
-/speckit.tasks
-```
-
-Tasks marcadas `[P]` pueden ejecutarse en paralelo. Output: `tasks.md`.
-
-### /speckit.analyze y /speckit.checklist <Badge type="tip" text="opcional" />
-
-```bash
-/speckit.analyze    # Valida consistencia entre artefactos
-/speckit.checklist  # Genera quality gate antes de implementar
-```
-
-### /speckit.implement
-
-Ejecuta tasks con TDD enforcement.
-
-```bash
-/speckit.implement
-```
-
-Valida checklists → Setup inicial → Ejecuta por fases → Marca progreso.
 
 ---
 
@@ -295,52 +178,29 @@ Edita archivos en `docs/claude-rules/`, crea PR, merge. Todos obtienen cambios e
 
 ---
 
-## Patrones por Tamaño
+## Patrones por Tamano
 
 ### Size S (≤80 LOC)
 
-::: code-group
-```bash [Superpowers]
-"Implementa validación de email en el formulario de registro"
-# Claude activa TDD automáticamente
+```bash
+"Implementa validacion de email en el formulario de registro"
+# Claude activa TDD automaticamente
 ```
-```bash [SpecKit]
-/speckit.specify "email validation"
-/speckit.clarify
-/speckit.plan
-/speckit.tasks
-/speckit.implement
-```
-:::
-
-Skip: analyze, checklist.
 
 ### Size M (≤250 LOC)
 
-::: code-group
-```bash [Superpowers]
+```bash
 /worktree-create "oauth" main
 # Describe la feature → brainstorming → plans → execute
 /git-pullrequest main
 ```
-```bash [SpecKit]
-/worktree-create "oauth" main
-/speckit.specify "OAuth with Google"
-/speckit.clarify
-/speckit.plan
-/speckit.tasks
-/speckit.analyze
-/speckit.implement
-/git-pullrequest main
-```
-:::
 
 ### Hotfix urgente
 
 ```bash
 /worktree-create "hotfix-race" main
-/understand "área del bug"
-# Fix directo o via SpecKit según complejidad
+/understand "area del bug"
+# Fix directo segun complejidad
 /git-commit "fix: race condition in checkout"
 /git-pullrequest main
 /worktree-cleanup hotfix-race
@@ -348,32 +208,18 @@ Skip: analyze, checklist.
 
 ---
 
-## Referencia Rápida
+## Referencia Rapida
 
-::: details Skills (Superpowers)
+::: details Skills
 | Skill | Se activa cuando... |
 |-------|---------------------|
-| using-superpowers | Inicio de sesión |
 | brainstorming | Describes idea sin plan |
-| writing-plans | Diseño aprobado |
+| writing-plans | Diseno aprobado |
 | executing-plans | Plan existe |
-| test-driven-development | Implementas código |
+| test-driven-development | Implementas codigo |
 | verification-before-completion | Antes de entregar |
 | finishing-a-development-branch | Tasks completos |
 | using-git-worktrees | Necesitas aislamiento |
-:::
-
-::: details Comandos SpecKit
-| Comando | Qué hace |
-|---------|----------|
-| /prp-new | Discovery de problema |
-| /speckit.specify | Descripción → spec |
-| /speckit.clarify | Resuelve ambigüedades |
-| /speckit.plan | Spec → artefactos técnicos |
-| /speckit.tasks | Plan → breakdown ejecutable |
-| /speckit.analyze | Valida consistencia |
-| /speckit.checklist | Quality gate |
-| /speckit.implement | Ejecuta con TDD |
 :::
 
 ::: details Comandos Git y Utilidades
@@ -391,15 +237,14 @@ Skip: analyze, checklist.
 
 ---
 
-## Prácticas Esenciales
+## Practicas Esenciales
 
-| Práctica | Por qué |
+| Practica | Por que |
 |----------|---------|
-| Siempre `/clarify` | 2 min clarificación = 4h refactor evitado |
 | Worktree para paralelo | Tu WIP queda intacto |
 | TDD sin excepciones | Prueba > esperanza |
 | Review antes de PR | Security incluido gratis |
-| Commits granulares | Auto-agrupación inteligente |
+| Commits granulares | Auto-agrupacion inteligente |
 
 ---
 
