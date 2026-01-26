@@ -106,8 +106,7 @@ NC='\033[0m'
 
 # Observability directories
 LOGS_DIR="logs"
-OUTPUT_DIR="claude_output"
-mkdir -p "$LOGS_DIR" "$OUTPUT_DIR"
+mkdir -p "$LOGS_DIR"
 
 ITERATION_LOG="$LOGS_DIR/iteration.log"
 METRICS_FILE="$LOGS_DIR/metrics.json"
@@ -384,17 +383,8 @@ EOF
         --model opus \
         --verbose 2>&1) && CLAUDE_EXIT=0 || CLAUDE_EXIT=$?
 
-    # Save complete output
-    PADDED_ITER=$(printf "%03d" $ITERATION)
-    echo "$CLAUDE_OUTPUT" > "$OUTPUT_DIR/iteration_${PADDED_ITER}.txt"
+    # Output to stdout (no file storage)
     echo "$CLAUDE_OUTPUT"
-
-    # Compress previous iteration (keep current readable)
-    if [ "$ITERATION" -gt 1 ]; then
-        PREV_PADDED=$(printf "%03d" $((ITERATION - 1)))
-        PREV_FILE="$OUTPUT_DIR/iteration_${PREV_PADDED}.txt"
-        [ -f "$PREV_FILE" ] && gzip -f "$PREV_FILE"
-    fi
 
     ITER_END=$(date +%s)
     ITER_DURATION=$((ITER_END - ITER_START))

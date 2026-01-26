@@ -129,7 +129,7 @@ Accountability mechanism for each iteration.
 
 - Forces explicit declaration of completion
 - Prevents "I think I did it" without evidence
-- Creates audit trail in `claude_output/iteration_NNN.txt`
+- Creates audit trail in `logs/iteration.log`
 - Enables post-hoc verification of claims
 
 **When:** Phase 4e, after state updates, before commit.

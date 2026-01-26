@@ -37,7 +37,6 @@ FILES=(
     "scripts/loop.sh"
     "scripts/status.sh"
     "scripts/tail-logs.sh"
-    "scripts/extract-history.sh"
     "scripts/memories.sh"
     "scripts/PROMPT_plan.md"
     "scripts/PROMPT_build.md"
@@ -93,13 +92,11 @@ done
 chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/status.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/tail-logs.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/extract-history.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/memories.sh" 2>/dev/null || true
 
 # Create directories
 mkdir -p "$TARGET_DIR/specs"
 mkdir -p "$TARGET_DIR/logs"
-mkdir -p "$TARGET_DIR/claude_output"
 mkdir -p "$TARGET_DIR/.ralph"
 
 echo ""

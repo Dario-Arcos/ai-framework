@@ -7,7 +7,7 @@
 ./install.sh /path/to/your/project
 
 # Or copy files manually
-cp loop.sh status.sh tail-logs.sh extract-history.sh PROMPT_*.md /path/to/project/
+cp loop.sh status.sh tail-logs.sh PROMPT_*.md /path/to/project/
 ```
 
 ## Main Loop
@@ -33,24 +33,11 @@ Shows:
 - Metrics (success rate, durations)
 - Recent activity log
 
-### View Claude Output
+### View Iteration Log
 
 ```bash
-./tail-logs.sh              # Show last iteration output
-./tail-logs.sh 3            # Show iteration 3 output
-./tail-logs.sh follow       # Follow iteration log in real-time
+./tail-logs.sh        # Follow iteration log in real-time
 ```
-
-### Extract Full History
-
-```bash
-./extract-history.sh              # Extract to /tmp/ralph-history-YYYYMMDD-HHMMSS
-./extract-history.sh ./history    # Extract to ./history
-```
-
-Decompresses all `.gz` files and copies uncompressed files to destination.
-
-**Note:** Previous iterations are auto-compressed to save space (~90% reduction).
 
 ## Generated Artifacts
 
@@ -60,11 +47,6 @@ Ralph generates the following for observability:
 logs/
   iteration.log      # Timestamped events
   metrics.json       # Aggregated statistics
-
-claude_output/
-  iteration_001.txt.gz  # Compressed (previous iterations)
-  iteration_002.txt.gz
-  iteration_003.txt     # Current iteration (uncompressed)
 
 status.json          # Current loop state
 errors.log           # Failed iteration details
@@ -112,5 +94,4 @@ Required commands:
 - `git` - Version control
 - `jq` - JSON processing
 - `bc` - Arithmetic calculations
-- `gzip` - Compression (for history management)
 - `bash` 4+ - Shell (macOS default is 3.x, upgrade recommended)

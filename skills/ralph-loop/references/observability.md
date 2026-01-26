@@ -8,7 +8,6 @@ Ralph generates structured logs for monitoring and debugging.
 |----------|---------|
 | `logs/iteration.log` | Timestamped iteration events |
 | `logs/metrics.json` | Success rate, durations, totals |
-| `claude_output/iteration_NNN.txt` | Complete Claude output per iteration |
 | `status.json` | Current loop state |
 | `errors.log` | Failed iteration details |
 
@@ -18,9 +17,7 @@ Ralph generates structured logs for monitoring and debugging.
 
 ```bash
 ./status.sh           # View current status & metrics
-./tail-logs.sh        # Show last iteration output
-./tail-logs.sh 3      # Show iteration 3 output
-./tail-logs.sh follow # Real-time log following
+./tail-logs.sh        # Real-time log following
 ```
 
 ---
@@ -78,21 +75,6 @@ Use an active Claude Code session as observer:
 
 ---
 
-## Token Usage (Experimental)
-
-To extract token usage from Claude's JSON output:
-
-```bash
-# Parse tokens from stream-json output
-cat claude_output/iteration_001.txt | \
-  grep '"type":"result"' | \
-  jq -r '.usage.input_tokens, .usage.output_tokens'
-```
-
-**Note:** Token metrics require `--output-format=stream-json` flag.
-
----
-
 ## Log Analysis
 
 ```bash
@@ -112,6 +94,5 @@ grep "Task:" logs/iteration.log
 ## Debugging Failed Iterations
 
 1. Check `errors.log` for failure details
-2. Read `claude_output/iteration_NNN.txt` for full context
-3. Look for patterns in Signs (guardrails.md)
-4. Review `status.json` for circuit breaker state
+2. Look for patterns in Signs (guardrails.md)
+3. Review `status.json` for circuit breaker state

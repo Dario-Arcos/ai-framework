@@ -50,7 +50,6 @@ TaskOutput(task_id, block=False)  # Check loop progress
 TaskOutput(task_id, block=True)   # Wait for completion
 Read("status.json")               # Read loop state
 Read("logs/*")                    # Read iteration logs
-Read("claude_output/*")           # Read worker outputs
 Read("IMPLEMENTATION_PLAN.md")    # Check plan status
 ```
 
@@ -325,7 +324,6 @@ git reset --hard HEAD~N   # Revert N commits
 | `IMPLEMENTATION_PLAN.md` | Task list |
 | `DISCOVERY.md` | Problem definition & constraints (discover mode) |
 | `logs/` | Iteration logs & metrics |
-| `claude_output/` | Full Claude output per iteration |
 | `status.json` | Current loop state |
 
 ---
@@ -334,9 +332,7 @@ git reset --hard HEAD~N   # Revert N commits
 
 ```bash
 ./status.sh              # View current status & metrics
-./tail-logs.sh           # Show last iteration output
-./tail-logs.sh 3         # Show iteration 3 output
-./tail-logs.sh follow    # Real-time log following
+./tail-logs.sh           # Real-time log following
 ./memories.sh            # Manage persistent memories
 ```
 
