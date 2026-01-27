@@ -6,12 +6,19 @@ Reduces exploration overhead by recording what each iteration learned.
 
 Read at start of EVERY iteration. Update before exit.
 Cleared when loop.sh starts a new session.
+
+The specs path ({{SPECS_PATH}}) contains:
+- spec.md: Feature specification (what and why)
+- plan.md: Implementation plan (how)
+- tasks.md: Actionable task list (steps)
 -->
 
 ## Current State
 
+- **Specs Path**: {{SPECS_PATH}}
+- **Started**: {{DATE}}
 - **Last task completed**: [none yet]
-- **Next task to do**: [see IMPLEMENTATION_PLAN.md]
+- **Next task to do**: [see specs/tasks.md]
 - **Files modified this session**: [none yet]
 
 ## Key Decisions This Session

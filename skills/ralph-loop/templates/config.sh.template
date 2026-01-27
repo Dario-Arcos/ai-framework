@@ -61,11 +61,20 @@ CONTEXT_CRITICAL=80           # Exit threshold (%)
 CONFESSION_MIN_CONFIDENCE=80  # 0-100, tasks below this are NOT complete
 
 # ─────────────────────────────────────────────────────────────────
-# DISCOVERY MODE
+# CHECKPOINT CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
-# Enable brainstorming phase before planning
+# Control when the loop pauses for user review
 
-ENABLE_DISCOVERY=false        # Set to true to require discovery first
+CHECKPOINT_MODE="none"        # none|iterations|milestones
+CHECKPOINT_INTERVAL=5         # Pause every N iterations (if mode=iterations)
+CHECKPOINT_ON_MODULE=true     # Pause when module completes (if mode=milestones)
+
+# ─────────────────────────────────────────────────────────────────
+# SPECS PATH
+# ─────────────────────────────────────────────────────────────────
+# Path to specs directory (set automatically by loop.sh)
+
+SPECS_PATH=""                 # Path to specs directory
 
 # ─────────────────────────────────────────────────────────────────
 # SAFETY SETTINGS

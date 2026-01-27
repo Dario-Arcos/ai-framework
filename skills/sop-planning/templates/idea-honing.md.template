@@ -1,0 +1,92 @@
+# Idea Honing: [Project Name]
+
+**Created**: [Date]
+**Last Updated**: [Date]
+**Status**: In Progress | Complete
+
+## Overview
+
+This document captures the iterative refinement of requirements through structured questioning. Each Q&A pair represents a clarification that shapes the final design.
+
+**Initial Concept**: [One-sentence description from rough-idea.md]
+
+---
+
+## Requirements Clarification
+
+### Core Functionality
+
+**Q: [First question about what the system should do]**
+
+A: [User's answer will be recorded here]
+
+---
+
+**Q: [Follow-up question based on previous answer]**
+
+A: [User's answer]
+
+---
+
+### Edge Cases & Constraints
+
+**Q: [Question about edge cases, constraints, or limitations]**
+
+A: [User's answer]
+
+---
+
+### User Experience
+
+**Q: [Question about who uses this and how]**
+
+A: [User's answer]
+
+---
+
+### Technical Context
+
+**Q: [Question about integration points, technology, or environment]**
+
+A: [User's answer]
+
+---
+
+### Success Criteria
+
+**Q: [Question about how to measure success or completion]**
+
+A: [User's answer]
+
+---
+
+## Summary of Key Decisions
+
+[This section will be populated at the end with a distilled list of major decisions]
+
+- **Decision 1**: [Brief statement]
+  - **Rationale**: [Why this was decided]
+
+- **Decision 2**: [Brief statement]
+  - **Rationale**: [Why this was decided]
+
+---
+
+## Open Questions
+
+[Any questions that remain unanswered or need further investigation]
+
+- [ ] [Open question 1]
+- [ ] [Open question 2]
+
+---
+
+## Next Steps
+
+- [ ] Complete requirements clarification
+- [ ] Proceed to research phase
+- [ ] Create detailed design
+
+---
+
+*This document follows the PDD (Prompt-Driven Development) methodology from Amazon's agent-sop framework.*

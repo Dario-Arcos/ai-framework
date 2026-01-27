@@ -1,0 +1,41 @@
+# Task: {{TASK_NAME}}
+
+## Description
+{{DESCRIPTION}}
+
+## Background
+{{BACKGROUND}}
+
+## Reference Documentation
+**Required:**
+- Design: {{DESIGN_PATH}}
+
+**Additional References:**
+{{ADDITIONAL_REFERENCES}}
+
+**Note:** You MUST read the detailed design before implementing.
+
+## Technical Requirements
+
+{{TECHNICAL_REQUIREMENTS}}
+
+## Dependencies
+
+{{DEPENDENCIES}}
+
+## Implementation Approach
+
+{{IMPLEMENTATION_APPROACH}}
+
+**Note:** This is suggested approach. Alternative solutions are acceptable if they meet requirements.
+
+## Acceptance Criteria
+
+{{ACCEPTANCE_CRITERIA}}
+
+## Metadata
+- **Complexity**: {{COMPLEXITY}}
+- **Estimated Effort**: {{ESTIMATED_EFFORT}}
+- **Labels**: {{LABELS}}
+- **Required Skills**: {{REQUIRED_SKILLS}}
+- **Related Tasks**: {{RELATED_TASKS}}

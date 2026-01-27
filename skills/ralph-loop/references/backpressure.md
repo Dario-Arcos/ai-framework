@@ -15,6 +15,167 @@ npm run build     # Build must succeed
 
 ---
 
+## Checkpoint-Based Backpressure
+
+Checkpoints provide execution-level backpressure by pausing for human review.
+
+### Configuration
+
+In `.ralph/config.sh`:
+
+```bash
+# Mode: none, iterations, milestones
+CHECKPOINT_MODE="iterations"
+
+# For iterations mode: pause every N iterations
+CHECKPOINT_INTERVAL=5
+
+# For milestones mode: pause when module completes
+CHECKPOINT_ON_MODULE=true
+```
+
+### Checkpoint Modes
+
+#### 1. None (Pure AFK)
+
+```bash
+CHECKPOINT_MODE="none"
+```
+
+**Behavior:**
+- No interruptions
+- Runs until complete or circuit breaker trips
+- Trust quality gates completely
+- Review results at end
+
+**Use when:**
+- High confidence in gates
+- Low-risk tasks
+- Well-tested patterns
+- Overnight execution
+
+#### 2. Iterations (Regular Intervals)
+
+```bash
+CHECKPOINT_MODE="iterations"
+CHECKPOINT_INTERVAL=5  # Every 5 iterations
+```
+
+**Behavior:**
+- Pauses after N iterations
+- Exit code: `8` (CHECKPOINT_PAUSE)
+- Resume with same command: `./loop.sh specs/{goal}/`
+- Review progress between checkpoints
+
+**Use when:**
+- Learning Ralph patterns
+- Medium-risk tasks
+- Want frequent review points
+- Testing new quality gates
+
+**Example:**
+```bash
+# Configure checkpoint
+echo 'CHECKPOINT_MODE="iterations"' >> .ralph/config.sh
+echo 'CHECKPOINT_INTERVAL=5' >> .ralph/config.sh
+
+# Run loop
+./loop.sh specs/my-feature/
+
+# After 5 iterations, exits with code 8
+# Review commits, logs, test results
+
+# Resume from where it left off
+./loop.sh specs/my-feature/
+
+# Repeat until complete
+```
+
+#### 3. Milestones (Module Boundaries)
+
+```bash
+CHECKPOINT_MODE="milestones"
+CHECKPOINT_ON_MODULE=true
+```
+
+**Behavior:**
+- Pauses when module/component completes
+- Detected via plan.md section markers
+- Natural breakpoints in implementation
+- Allows architectural review
+
+**Use when:**
+- Multi-module features
+- Architectural decisions at boundaries
+- Want to review module integration
+- Incremental delivery
+
+**Example plan.md structure:**
+```markdown
+## Module: Authentication
+
+- [x] Setup routes
+- [x] Implement JWT generation
+- [x] Add validation middleware
+
+## Module: User Profile
+
+- [ ] Create profile schema
+- [ ] Implement CRUD operations
+- [ ] Add profile validation
+```
+
+Loop pauses after "Authentication" module completes.
+
+---
+
+## Backpressure Stack
+
+Ralph implements backpressure at multiple levels:
+
+```mermaid
+graph TD
+    A[Task attempted] --> B{Quality gates pass?}
+    B -->|No| C[Reject: Fix and retry]
+    B -->|Yes| D[Commit]
+
+    D --> E{Checkpoint reached?}
+    E -->|Yes| F[Pause: Exit code 8]
+    E -->|No| G{Circuit breaker?}
+
+    G -->|3 failures| H[Stop: Exit code 2]
+    G -->|OK| I{Tasks abandoned?}
+
+    I -->|Same task 3x| J[Stop: Exit code 7]
+    I -->|OK| K{Context exhausted?}
+
+    K -->|>80%| L[Stop: Exit code 5]
+    K -->|OK| M[Continue]
+
+    F --> N[Human review]
+    N --> O[Resume loop]
+    O --> A
+
+    style C fill:#ffe1e1
+    style F fill:#fff4e1
+    style H fill:#ffe1e1
+    style J fill:#ffe1e1
+    style L fill:#ffe1e1
+    style M fill:#e1ffe1
+```
+
+### Backpressure Levels
+
+| Level | Mechanism | Trigger | Action |
+|-------|-----------|---------|--------|
+| **Task** | Quality gates | Gate fails | Reject iteration |
+| **Checkpoint** | Iteration/Milestone | N iterations OR module done | Pause for review |
+| **Circuit breaker** | Consecutive failures | 3 failures | Stop loop |
+| **Abandonment** | Task repetition | Same task 3x | Stop loop |
+| **Context** | Token usage | >80% context | Stop loop |
+
+---
+
 ## Quality Levels
 
 Define expectations in AGENTS.md:

@@ -3,11 +3,11 @@
 # Based on Ralph Wiggum technique by Geoffrey Huntley
 #
 # Usage:
-#   ./loop.sh              → Build mode, unlimited
-#   ./loop.sh 20           → Build mode, max 20 iterations
-#   ./loop.sh plan         → Plan mode, unlimited
-#   ./loop.sh plan 5       → Plan mode, max 5 iterations
-#   ./loop.sh discover     → Discover mode, 1 iteration
+#   ./loop.sh specs/{goal}/           → Execute plan, unlimited iterations
+#   ./loop.sh specs/{goal}/ 20        → Execute plan, max 20 iterations
+#
+# Note: Planning is now handled by interactive SOP skills (sop-discovery,
+# sop-planning, sop-task-generator) before launching the loop.
 
 set -euo pipefail
 
@@ -16,31 +16,44 @@ set -euo pipefail
 # ─────────────────────────────────────────────────────────────────
 
 if [ "$#" -eq 0 ]; then
-    MODE="build"
-    PROMPT_FILE="PROMPT_build.md"
-    MAX_ITERATIONS=0
-elif [ "$1" = "plan" ]; then
-    MODE="plan"
-    PROMPT_FILE="PROMPT_plan.md"
-    MAX_ITERATIONS="${2:-0}"
-elif [ "$1" = "discover" ]; then
-    MODE="discover"
-    PROMPT_FILE="PROMPT_discover.md"
-    MAX_ITERATIONS="${2:-1}"  # Discovery usually 1 iteration
-elif [[ "$1" =~ ^[0-9]+$ ]]; then
-    MODE="build"
-    PROMPT_FILE="PROMPT_build.md"
-    MAX_ITERATIONS="$1"
-else
     echo "Usage:"
-    echo "  ./loop.sh              → Build mode, unlimited"
-    echo "  ./loop.sh 20           → Build mode, max 20 iterations"
-    echo "  ./loop.sh plan         → Plan mode, unlimited"
-    echo "  ./loop.sh plan 5       → Plan mode, max 5 iterations"
-    echo "  ./loop.sh discover     → Discover mode, 1 iteration"
-    echo "  ./loop.sh discover 3   → Discover mode, max 3 iterations"
+    echo "  ./loop.sh specs/{goal}/           → Execute plan, unlimited iterations"
+    echo "  ./loop.sh specs/{goal}/ 20        → Execute plan, max 20 iterations"
+    echo ""
+    echo "Error: Missing specs_path argument"
+    echo ""
+    echo "The loop now only handles execution. Use these skills first:"
+    echo "  - sop-discovery: Define WHAT problem to solve"
+    echo "  - sop-planning: Create implementation plan"
+    echo "  - sop-task-generator: Generate actionable tasks"
     exit 1
 fi
+
+# First argument is the specs path
+SPECS_PATH="${1%/}"  # Remove trailing slash if present
+MAX_ITERATIONS="${2:-0}"  # Optional second argument for max iterations
+
+# Validate specs path exists
+if [ ! -d "$SPECS_PATH" ]; then
+    echo "Error: Specs directory not found: $SPECS_PATH"
+    exit 1
+fi
+
+# Validate plan file exists
+PLAN_FILE="$SPECS_PATH/implementation/plan.md"
+if [ ! -f "$PLAN_FILE" ]; then
+    echo "Error: Implementation plan not found: $PLAN_FILE"
+    echo ""
+    echo "Expected structure:"
+    echo "  $SPECS_PATH/"
+    echo "    └── implementation/"
+    echo "        └── plan.md"
+    exit 1
+fi
+
+# Set mode and prompt file
+MODE="build"
+PROMPT_FILE="PROMPT_build.md"
 
 # ─────────────────────────────────────────────────────────────────
 # EXIT CODES
@@ -318,11 +331,11 @@ fi
 # ─────────────────────────────────────────────────────────────────
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}         RALPH LOOP${NC}"
+echo -e "${BLUE}         RALPH LOOP - EXECUTION MODE${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "  Mode:   ${GREEN}$MODE${NC}"
+echo -e "  Specs:  ${GREEN}$SPECS_PATH${NC}"
+echo -e "  Plan:   ${YELLOW}$PLAN_FILE${NC}"
 echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
-[ "$MODE" = "discover" ] && echo -e "  Type:   ${BLUE}Discovery (codebase analysis)${NC}"
 [ "$MAX_ITERATIONS" -gt 0 ] && echo -e "  Max:    ${RED}$MAX_ITERATIONS iterations${NC}"
 [ "$MAX_RUNTIME" -gt 0 ] && echo -e "  Limit:  ${RED}${MAX_RUNTIME}s runtime${NC}"
 [ -f "$CONFIG_FILE" ] && echo -e "  Config: ${BLUE}$CONFIG_FILE${NC}"

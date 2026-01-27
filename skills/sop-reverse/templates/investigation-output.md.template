@@ -1,0 +1,205 @@
+# Investigation: {{artifact_name}}
+
+**Generated**: {{timestamp}}
+**Target**: {{target}}
+**Type**: {{target_type}}
+**Investigator**: Claude Code (sop-reverse)
+
+---
+
+## Executive Summary
+
+{{executive_summary}}
+
+**Key Findings**:
+- {{key_finding_1}}
+- {{key_finding_2}}
+- {{key_finding_3}}
+
+**Status**: {{status}}
+<!-- Status: Initial Analysis | Refinement | Spec Generation | Complete -->
+
+---
+
+## Target Details
+
+**Location**: {{target}}
+**Type**: {{target_type}}
+**Scope**: {{scope_description}}
+**Focus Areas**: {{focus_areas}}
+
+---
+
+## Initial Analysis
+
+### Overview
+
+{{overview_description}}
+
+### {{section_1_title}}
+
+{{section_1_content}}
+
+**Diagram**:
+```mermaid
+{{section_1_diagram}}
+```
+
+### {{section_2_title}}
+
+{{section_2_content}}
+
+**Diagram**:
+```mermaid
+{{section_2_diagram}}
+```
+
+### {{section_3_title}}
+
+{{section_3_content}}
+
+---
+
+## Detailed Findings
+
+### Structure & Organization
+
+{{structure_findings}}
+
+### Technical Stack
+
+{{tech_stack_findings}}
+
+**Dependencies**:
+{{dependencies_table}}
+
+### Patterns & Conventions
+
+{{patterns_findings}}
+
+### Quality & Completeness
+
+{{quality_findings}}
+
+**Metrics**:
+{{metrics_table}}
+
+---
+
+## Observations
+
+### Strengths
+- {{strength_1}}
+- {{strength_2}}
+- {{strength_3}}
+
+### Weaknesses
+- {{weakness_1}}
+- {{weakness_2}}
+- {{weakness_3}}
+
+### Unknowns
+- {{unknown_1}}
+- {{unknown_2}}
+- {{unknown_3}}
+
+---
+
+## Questions for Refinement
+
+### Priority Questions
+1. {{priority_question_1}}
+2. {{priority_question_2}}
+3. {{priority_question_3}}
+
+### Optional Questions
+1. {{optional_question_1}}
+2. {{optional_question_2}}
+
+---
+
+## User Feedback
+
+<!-- This section updated during interactive refinement -->
+
+### Question 1: {{question_1_text}}
+**Response**: {{question_1_response}}
+**Impact**: {{question_1_impact}}
+
+### Question 2: {{question_2_text}}
+**Response**: {{question_2_response}}
+**Impact**: {{question_2_impact}}
+
+### Question 3: {{question_3_text}}
+**Response**: {{question_3_response}}
+**Impact**: {{question_3_impact}}
+
+---
+
+## Scope Adjustments
+
+<!-- Updated based on user feedback -->
+
+**Original Scope**: {{original_scope}}
+**Adjusted Scope**: {{adjusted_scope}}
+**Rationale**: {{scope_rationale}}
+
+---
+
+## Artifacts Analyzed
+
+### Files / Endpoints / Documents
+{{artifacts_list}}
+
+### External References
+{{external_references}}
+
+---
+
+## Next Steps
+
+**Ready for Spec Generation**: {{ready_for_specs}}
+
+**Specs to Generate**:
+- [ ] {{spec_1}}
+- [ ] {{spec_2}}
+- [ ] {{spec_3}}
+- [ ] {{spec_4}}
+- [ ] {{spec_5}}
+
+**Forward Flow**: {{forward_flow_notes}}
+
+---
+
+## Appendix
+
+### Mermaid Diagrams
+
+#### Overall Architecture
+```mermaid
+{{overall_architecture_diagram}}
+```
+
+#### Component Relationships
+```mermaid
+{{component_relationships_diagram}}
+```
+
+#### Data Flow
+```mermaid
+{{data_flow_diagram}}
+```
+
+### Evidence
+
+{{evidence_section}}
+
+### Limitations
+
+{{limitations_section}}
+
+---
+
+**Investigation Status**: {{final_status}}
+**Last Updated**: {{last_updated}}
+**Output Directory**: {{output_dir}}
