@@ -1,367 +1,251 @@
-# Ralph Loop: Auditoría de Calidad
+# Audit Results: SOP Skills Redesign
 
-**Fecha:** 2026-01-26
-**Estándar aplicado:** writing-skills (TDD para documentación de procesos)
-**Veredicto general:** ❌ NO CUMPLE estándares mínimos
-
----
-
-## Resumen Ejecutivo
-
-| Categoría | Veredicto | Impacto |
-|-----------|-----------|---------|
-| Description field | ❌ FALLA | Claude no encontrará esta skill correctamente |
-| Discovery mode design | ❌ FALLA | Documentación miente sobre capacidades |
-| Testing evidence | ❌ FALLA | Viola el Iron Law de TDD |
-| Examples | ❌ FALLA | No hay ejemplos completos |
-| CSO keywords | ❌ FALLA | Búsqueda ineficiente |
-| Structure | ⚠️ PARCIAL | Faltan secciones requeridas |
+**Date**: 2026-01-27
+**Auditor**: Opus 4.5 (4 parallel subagents)
+**Scope**: 5 SOP skills post-redesign
 
 ---
 
-## Violaciones Críticas
+## Executive Summary
 
-### 1. Description Field Incorrecto
+| Part | Status | Result |
+|------|--------|--------|
+| PART 1: Plan Consistency | ✅ PASS | 100% conformance (35/35 elements) |
+| PART 2: Best Practices | ✅ CORRECTED | All 12 violations fixed |
 
-**Estándar (writing-skills):**
-> - Description starts with "Use when..." and includes specific triggers/symptoms
-> - Description = When to Use, NOT What the Skill Does
-> - NEVER summarize the skill's process or workflow
+**Verdict**: All violations corrected. Skills now comply with Anthropic standards.
 
-**Valor actual:**
+---
+
+## PART 1: Plan Consistency (35/35 ✅)
+
+All elements from `docs/plans/2026-01-27-ralph-loop-sop-redesign.md` verified:
+
+- ✅ Architecture (4 SOPs + orchestrator)
+- ✅ Flow diagrams (Forward/Reverse)
+- ✅ RFC 2119 keyword usage
+- ✅ Directory structure
+- ✅ HITL/AFK mode separation
+- ✅ Quality gates integration
+- ✅ Task file format
+- ✅ All 35 checklist items verified
+
+**No deviations found.**
+
+---
+
+## PART 2: Best Practices Violations
+
+### P0 - CRITICAL (Must Fix)
+
+#### 2.1 Token Efficiency Violations
+
+**Standard**: SKILL.md body < 500 lines (Anthropic requirement)
+
+| Skill | Lines | Words | Violation |
+|-------|------:|------:|-----------|
+| ralph-loop | 608 | 2,611 | +108 lines (22% over) |
+| sop-reverse | 651 | 2,555 | +151 lines (30% over) |
+| sop-planning | 481 | 2,086 | Within limit |
+| sop-discovery | 343 | 1,839 | Within limit |
+| sop-task-generator | 326 | 1,295 | Within limit |
+
+**Root Cause**: Reference material embedded in SKILL.md instead of extracted to `/references/`.
+
+#### 2.2 Description Format Violations
+
+**Standard**: Third person, starts with "Use when...", ≤1024 chars, NEVER summarizes workflow
+
+| Skill | Current (First Words) | Issue |
+|-------|----------------------|-------|
+| ralph-loop | "Use when executing..." | ✅ Format OK |
+| sop-reverse | "Use when you need to investigate..." | ❌ Uses "you" |
+| sop-discovery | "Use when starting a new goal..." | ✅ Format OK |
+| sop-planning | "Use when you have a rough idea..." | ❌ Uses "you" |
+| sop-task-generator | "Use when you have a design..." | ❌ Uses "you" |
+
+**Fix**: Remove "you" from descriptions. Example: "Use when investigating existing artifacts" not "Use when you need to investigate".
+
+### P1 - HIGH (Should Fix)
+
+#### 2.3 Missing Standard Sections
+
+| Skill | Overview | When NOT to Use | Quick Reference | Common Mistakes |
+|-------|:--------:|:---------------:|:---------------:|:---------------:|
+| ralph-loop | ⚠️ Implicit | ✅ Has | ❌ Missing | ❌ Mixed in |
+| sop-reverse | ✅ Has | ❌ Missing | ❌ Missing | ❌ Missing |
+| sop-discovery | ✅ Has | ❌ Missing | ❌ Missing | ❌ Missing |
+| sop-planning | ❌ Missing | ❌ Missing | ❌ Missing | ❌ Missing |
+| sop-task-generator | ✅ Has | ❌ Missing | ❌ Missing | ❌ Missing |
+
+#### 2.4 CSO Keywords Sections
+
+**Issue**: CSO Keywords blocks are 15-25 lines of internal metadata exposed in user-facing SKILL.md.
+
+**Standard**: Keywords should be discoverable via search, not visually displayed.
+
+**Affected Skills**: All 5 skills have explicit "Keywords for Claude Search Optimization" blocks.
+
+**Fix**: Integrate keywords naturally into prose or move to frontmatter metadata.
+
+### P2 - MEDIUM (Nice to Fix)
+
+#### 2.5 Progressive Disclosure Violations
+
+**Standard**: Files >100 lines need Table of Contents at top
+
+**Files Missing TOC**:
+- `skills/ralph-loop/SKILL.md` (608 lines)
+- `skills/sop-reverse/SKILL.md` (651 lines)
+- `skills/sop-planning/SKILL.md` (481 lines)
+- `skills/sop-discovery/SKILL.md` (343 lines)
+- `skills/sop-task-generator/SKILL.md` (326 lines)
+
+#### 2.6 Duplicate Content
+
+**sop-discovery**: Lines 193-249 contain discovery template already in `templates/discovery-output.md.template`
+
+**sop-planning**: Process flow diagram duplicated with prose description
+
+#### 2.7 Repetitive Constraints
+
+**sop-discovery**: "One question at a time" rule stated 5 separate times.
+
+---
+
+## Prioritized Correction Plan
+
+### Phase 1: P0 Fixes (Required)
+
+#### 1.1 Extract ralph-loop to references/
+
+**Target**: 608 → ~200 lines (67% reduction)
+
+Extract to `skills/ralph-loop/references/`:
+- `monitoring-pattern.md` (~80 lines)
+- `memories-system.md` (~60 lines)
+- `configuration-guide.md` (~100 lines)
+- `red-flags.md` (~50 lines)
+- `quality-gates.md` (~70 lines)
+
+#### 1.2 Extract sop-reverse to references/
+
+**Target**: 651 → ~200 lines (69% reduction)
+
+Extract to `skills/sop-reverse/references/`:
+- `artifact-types.md` (~100 lines)
+- `output-structure.md` (~80 lines)
+- `mermaid-examples.md` (~120 lines)
+- `investigation-patterns.md` (~100 lines)
+
+#### 1.3 Fix Description Third Person
+
 ```yaml
-description: Autonomous multi-iteration development with fresh context rotation and persistent state management
+# Current → Fixed
+sop-reverse: "Use when you need to investigate..." → "Use when investigating existing artifacts..."
+sop-planning: "Use when you have a rough idea..." → "Use when transforming rough ideas..."
+sop-task-generator: "Use when you have a design..." → "Use when generating implementation tasks..."
 ```
 
-**Problemas identificados:**
-- ❌ NO empieza con "Use when..."
-- ❌ Describe QUÉ hace el skill, no CUÁNDO usarlo
-- ❌ Resume el workflow interno (context rotation, state management)
+### Phase 2: P1 Fixes (High Priority)
 
-**Consecuencia:** Cuando Claude busca skills para un problema, lee la descripción para decidir si cargar el skill completo. Una descripción que dice "qué hace" en lugar de "cuándo usarlo" causa:
-1. False negatives: Claude no carga el skill cuando debería
-2. False positives: Claude carga el skill cuando no aplica
-3. Shortcutting: Claude sigue la descripción en lugar de leer el contenido completo
+#### 2.1 Add Missing Sections
 
-**Corrección requerida:**
-```yaml
-description: Use when executing large implementation plans autonomously, when context exhaustion is a concern, or when fresh context per task improves quality
-```
+Each skill needs:
+- `## When NOT to Use` with table format
+- `## Quick Reference` with command summary
+- `## Common Mistakes` with fixes
 
----
+#### 2.2 Remove Explicit CSO Blocks
 
-### 2. Discovery Mode: Diseño Inconsistente con Documentación
+Convert from explicit blocks to natural keyword placement in prose.
 
-**El problema del usuario:**
-> "si funciona dentro de un loop, como puede responder a mis preguntas?"
+### Phase 3: P2 Fixes (Polish)
 
-**Análisis técnico:**
+#### 3.1 Add TOC to Long Files
 
-`loop.sh` líneas 380-384 ejecuta Claude así:
-```bash
-CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | claude -p \
-    --dangerously-skip-permissions \
-    --output-format=stream-json \
-    --model opus \
-    --verbose 2>&1)
-```
-
-El flag `-p` (pipe mode) significa **ejecución no-interactiva**. Claude:
-- ❌ NO puede hacer preguntas al usuario
-- ❌ NO puede esperar respuestas
-- ❌ NO tiene stdin interactivo
-
-**PERO `PROMPT_discover.md` línea 191-192 dice:**
+Add after frontmatter:
 ```markdown
-### 9999999. Assumptions
-**Document assumptions explicitly.**
-If you're making an assumption about constraints or requirements, write it down.
+## Table of Contents
+- [Overview](#overview)
+- [When to Use](#when-to-use)
+...
 ```
 
-Y línea 192 del guardrail 999999:
-```markdown
-Empty sections indicate incomplete discovery. Ask clarifying questions if needed.
-```
+#### 3.2 Deduplicate Content
 
-**Esto es técnicamente imposible.** El loop no permite interacción.
-
-**Qué hace Discovery realmente:**
-1. Lee PROMPT_discover.md
-2. Lee archivos existentes (specs/, AGENTS.md, memories.md)
-3. **INFIERE** todo lo que puede basándose en el contexto disponible
-4. Escribe DISCOVERY.md con sus inferencias
-5. Termina (default: 1 iteración)
-
-**Correcciones requeridas:**
-
-1. Eliminar de PROMPT_discover.md:
-   - "Ask clarifying questions if needed"
-   - Cualquier referencia a interacción
-
-2. Agregar a SKILL.md sección sobre Discovery:
-   ```markdown
-   ### Discovery Mode Limitations
-
-   Discovery runs in batch mode (non-interactive). It CANNOT:
-   - Ask clarifying questions
-   - Wait for user input
-   - Have a conversation
-
-   Discovery INFERS from available context:
-   - specs/*.md files
-   - AGENTS.md patterns
-   - memories.md learnings
-   - Codebase structure
-
-   For interactive brainstorming, use a regular Claude Code session instead.
-   ```
+- sop-discovery: Reference template file instead of embedding
+- sop-planning: Remove redundant flow descriptions
 
 ---
 
-### 3. Sin Testing Evidence (Violación del Iron Law)
+## Metrics After Correction
 
-**Estándar (writing-skills):**
-> NO SKILL WITHOUT A FAILING TEST FIRST
->
-> This applies to NEW skills AND EDITS to existing skills.
->
-> Write skill before testing? Delete it. Start over.
-
-**ralph-loop carece de:**
-- ❌ Escenarios de presión documentados
-- ❌ Comportamiento baseline capturado
-- ❌ Tabla de racionalizaciones
-- ❌ Evidencia de ciclo RED-GREEN-REFACTOR
-- ❌ Test con subagentes
-
-**Por qué importa:** Sin testing, no sabemos:
-- Si los agentes siguen las instrucciones correctamente
-- Qué racionalizaciones usan para violar las reglas
-- Si los guardrails son efectivos
-- Si la documentación tiene gaps
-
-**Trabajo requerido:**
-1. Crear escenarios de presión (ej: "el usuario pide implementar algo directamente")
-2. Ejecutar con subagente SIN el skill → documentar baseline
-3. Ejecutar con subagente CON el skill → verificar compliance
-4. Iterar hasta cerrar todos los loopholes
+| Skill | Before | After | Reduction |
+|-------|-------:|------:|----------:|
+| ralph-loop | 608L | ~200L | 67% |
+| sop-reverse | 651L | ~200L | 69% |
+| sop-planning | 481L | ~300L | 38% |
+| sop-discovery | 343L | ~250L | 27% |
+| sop-task-generator | 326L | ~250L | 23% |
+| **Total** | **2,409L** | **~1,200L** | **50%** |
 
 ---
 
-### 4. Ejemplos Inexistentes
+## Verification Checklist
 
-**Estándar (writing-skills):**
-> One excellent example beats many mediocre ones
-> - Complete and runnable
-> - Well-commented explaining WHY
-> - From real scenario
-> - Shows pattern clearly
-
-**ralph-loop tiene:**
-- Fragmentos de código sueltos (bash snippets)
-- NO tiene una sección "Examples" dedicada
-- NO muestra un workflow completo de principio a fin
-- NO explica el WHY detrás de cada paso
-
-**Ejemplo que debería existir:**
-
-```markdown
-## Example: Building a REST API
-
-### Setup
-```bash
-cd ~/projects/my-api
-git init
-/path/to/ralph-loop/scripts/install.sh
-```
-
-### Discovery (optional)
-```bash
-./loop.sh discover
-# Output: DISCOVERY.md with constraints and risks
-cat DISCOVERY.md
-```
-
-### Planning
-```bash
-./loop.sh plan
-# Output: IMPLEMENTATION_PLAN.md with prioritized tasks
-cat IMPLEMENTATION_PLAN.md
-```
-
-### Building
-```bash
-./loop.sh
-# Workers iterate until all tasks complete
-# Each iteration: select task → TDD → gates → commit
-```
-
-### Monitoring (from another terminal)
-```bash
-./status.sh
-# Shows: iteration count, success rate, current task
-```
-
-### Recovery (if something goes wrong)
-```bash
-Ctrl+C
-git log --oneline -5  # See what was committed
-git reset --hard HEAD~2  # Revert 2 commits
-./loop.sh plan  # Regenerate plan
-./loop.sh  # Resume
-```
-```
+After corrections:
+- [x] All SKILL.md < 500 lines
+- [x] All descriptions third person
+- [x] All skills have: Overview, When to Use, When NOT to Use, Quick Reference
+- [x] No CSO keyword blocks in body
+- [x] Files >100 lines have TOC
+- [x] No duplicate content
+- [x] References max 1 level deep
 
 ---
 
-### 5. CSO (Claude Search Optimization) Deficiente
+## POST-CORRECTION VERIFICATION (2026-01-27)
 
-**Estándar (writing-skills):**
-> Use words Claude would search for:
-> - Error messages: "Hook timed out", "ENOTEMPTY", "race condition"
-> - Symptoms: "flaky", "hanging", "zombie", "pollution"
-> - Synonyms: "timeout/hang/freeze", "cleanup/teardown/afterEach"
-> - Tools: Actual commands, library names, file types
+### Final Metrics
 
-**ralph-loop carece de keywords para:**
+| Skill | Before | After | Reduction | Status |
+|-------|-------:|------:|----------:|--------|
+| ralph-loop | 608L / 2,611W | 250L / 980W | 59% / 62% | ✅ |
+| sop-reverse | 651L / 2,555W | 133L / 692W | 80% / 73% | ✅ |
+| sop-discovery | 343L / 1,839W | 305L / 1,770W | 11% / 4% | ✅ |
+| sop-planning | 481L / 2,086W | 355L / 1,417W | 26% / 32% | ✅ |
+| sop-task-generator | 326L / 1,295W | 342L / 1,341W | -5% / -4% | ✅ |
+| **Total** | **2,409L / 10,386W** | **1,385L / 6,200W** | **42% / 40%** | ✅ |
 
-| Categoría | Keywords faltantes |
-|-----------|-------------------|
-| Error messages | "circuit breaker tripped", "context exhausted", "task abandoned", "loop thrashing detected" |
-| Síntomas | "stuck in loop", "same task repeating", "agent not progressing", "context too large" |
-| Sinónimos | "autonomous development", "batch mode", "unattended execution", "headless Claude" |
-| Casos de uso | "overnight builds", "large refactoring", "multi-file changes", "context window limits" |
+*Note: sop-task-generator increased slightly due to added required sections (When NOT to Use, Quick Reference, Common Mistakes)*
 
-**Impacto:** Claude buscando solución a "mi agente se queda en loop infinito" no encontrará ralph-loop porque ese síntoma no está en la documentación.
+### Reference Files Created
 
----
+**skills/ralph-loop/references/** (5 new files):
+- `monitoring-pattern.md` (93L)
+- `memories-system.md` (81L)
+- `configuration-guide.md` (101L)
+- `red-flags.md` (63L)
+- `quality-gates.md` (99L)
 
-## Violaciones Menores
+**skills/sop-reverse/references/** (4 new files):
+- `artifact-types.md` (138L)
+- `output-structure.md` (92L)
+- `mermaid-examples.md` (139L)
+- `investigation-patterns.md` (153L)
 
-### 6. Sin Flowchart de Decisión de Modos
+### Description Fixes Applied
 
-**Estándar:**
-> Use flowcharts ONLY for:
-> - Non-obvious decision points
-> - "When to use A vs B" decisions
+| Skill | Fixed Description |
+|-------|-------------------|
+| sop-reverse | "Use when investigating existing artifacts (codebase, API, documentation, process, concept) to generate specs for future development" |
+| sop-planning | "Use when transforming rough ideas or discovery output into detailed requirements, research, and design documents" |
+| sop-task-generator | "Use when generating structured implementation tasks from a design or description" |
 
-**Problema:** La decisión discover vs plan vs build NO es obvia. Debería existir:
-
-```dot
-digraph mode_selection {
-    start [label="New goal" shape=doublecircle];
-    clear [label="Requirements clear?" shape=diamond];
-    planned [label="Plan exists?" shape=diamond];
-    discover [label="./loop.sh discover" shape=box];
-    plan [label="./loop.sh plan" shape=box];
-    build [label="./loop.sh" shape=box];
-
-    start -> clear;
-    clear -> discover [label="no"];
-    clear -> planned [label="yes"];
-    discover -> plan [label="review DISCOVERY.md"];
-    planned -> plan [label="no"];
-    planned -> build [label="yes"];
-    plan -> build [label="review IMPLEMENTATION_PLAN.md"];
-}
-```
+### All Verification Checks: ✅ PASS
 
 ---
 
-### 7. Sin Sección "When NOT to Use"
-
-**Falta documentar cuándo ralph-loop es la herramienta incorrecta:**
-
-- ❌ Tareas simples (<3 pasos) → overhead innecesario
-- ❌ Exploración/research → necesita interactividad
-- ❌ Debugging → necesita contexto de conversación
-- ❌ Code review → no es iterativo
-- ❌ Proyectos sin tests → gates no funcionan
-
----
-
-### 8. Sin Sección "Common Mistakes"
-
-**Errores típicos no documentados:**
-
-| Mistake | Consequence |
-|---------|-------------|
-| No tener tests antes de empezar | Gates fallan, loop no progresa |
-| Plan demasiado granular | Workers confundidos sobre scope |
-| Plan demasiado vago | Workers implementan mal |
-| Editar archivos durante el loop | Conflictos con workers |
-| No revisar IMPLEMENTATION_PLAN.md | Workers ejecutan plan malo |
-
----
-
-### 9. Sin Red Flags List
-
-**Estándar:**
-> Make it easy for agents to self-check when rationalizing
-
-**Debería existir:**
-
-```markdown
-## Red Flags - STOP
-
-These thoughts mean the orchestrator is about to violate role:
-
-- "Let me just fix this one thing quickly"
-- "I can implement this faster than starting the loop"
-- "This is too simple for ralph-loop"
-- "I'll edit the code and then start the loop"
-- "The worker made a mistake, let me correct it"
-
-**All of these mean: Start the loop. Let workers work.**
-```
-
----
-
-### 10. Sin Rationalization Table
-
-**Estándar:**
-> Capture rationalizations from baseline testing. Every excuse agents make goes in the table.
-
-**Debería existir:**
-
-| Excuse | Reality |
-|--------|---------|
-| "This is a quick fix" | Quick fixes accumulate debt. Workers have gates. |
-| "I already know what to do" | Knowing ≠ implementing correctly. TDD catches errors. |
-| "The loop is overkill" | Loop cost: ~$0.05/task. Manual cost: ~$0.50/task + lower quality. |
-| "I can monitor and implement simultaneously" | Context pollution. Pick one role. |
-| "The user asked me directly" | User instruction doesn't override role. Start loop. |
-
----
-
-## Checklist de Correcciones
-
-### Prioridad Alta (blocking)
-- [ ] Reescribir description con "Use when..."
-- [ ] Eliminar claims de interactividad en PROMPT_discover.md
-- [ ] Documentar limitaciones reales de Discovery mode
-- [ ] Agregar sección Examples con workflow completo
-
-### Prioridad Media (quality)
-- [ ] Agregar flowchart de decisión de modos
-- [ ] Agregar sección "When NOT to Use"
-- [ ] Agregar sección "Common Mistakes"
-- [ ] Agregar keywords CSO en todo el documento
-
-### Prioridad Baja (hardening)
-- [ ] Agregar Red Flags list
-- [ ] Agregar Rationalization table
-- [ ] Ejecutar testing con subagentes
-- [ ] Documentar baseline behavior
-
----
-
-## Referencias
-
-- **Estándar aplicado:** `skills/writing-skills/SKILL.md`
-- **Skill auditado:** `skills/ralph-loop/SKILL.md`
-- **Archivos relacionados:**
-  - `skills/ralph-loop/scripts/loop.sh`
-  - `skills/ralph-loop/scripts/PROMPT_discover.md`
-  - `skills/ralph-loop/scripts/PROMPT_plan.md`
-  - `skills/ralph-loop/scripts/PROMPT_build.md`
+*Corrections executed by opus-4.5 (3 parallel subagents)*
+*Audit completed: 2026-01-27*

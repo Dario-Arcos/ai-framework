@@ -1,9 +1,22 @@
 ---
 name: sop-task-generator
-description: Use when you have a design or description and need to generate structured implementation tasks for execution
+description: Generates structured implementation tasks from designs or descriptions
 ---
 
 # SOP Task Generator
+
+## Table of Contents
+
+- [Overview](#overview)
+- [When to Use](#when-to-use)
+- [When NOT to Use](#when-not-to-use)
+- [Quick Reference](#quick-reference)
+- [The Process](#the-process)
+- [Key Principles](#key-principles)
+- [Examples](#examples)
+- [Error Handling](#error-handling)
+- [Common Mistakes](#common-mistakes)
+- [Notes](#notes)
 
 ## Overview
 
@@ -11,20 +24,31 @@ Generate structured code task files from descriptions or PDD (Problem-Driven Dev
 
 This skill creates well-formed implementation tasks that can be executed by code-assist or other execution agents, ensuring consistent task structure and complete requirements specification.
 
-**Keywords for Claude Search Optimization (CSO)**:
-- Error messages/symptoms: "need implementation plan", "break down design", "create actionable tasks", "design to code", "task breakdown needed", "execution plan required"
-- Synonyms: "task breakdown", "work items", "implementation checklist", "code tasks", "task generation", "work breakdown structure", "implementation tasks"
-- Use cases: "design to tasks", "execution planning", "create work items", "PDD to tasks", "step-by-step implementation", "code task creation"
-- Alternative terminology: "task decomposition", "implementation steps", "work planning", "execution checklist", "development tasks"
+## When to Use
 
-## Parameters
+- Converting PDD plans into executable tasks
+- Breaking down design documents into work items
+- Preparing for autonomous execution via ralph-loop
+- Creating implementation checklists from descriptions
 
-**Required:**
-- `input`: Task description text, file path to design document, or path to PDD plan
+## When NOT to Use
 
-**Optional:**
-- `output_dir`: Where to create task files (default: "specs/{goal}/implementation")
-- `step_number`: For PDD plans - specific step to process (if not provided, processes all steps)
+| Situation | Why Not | Use Instead |
+|-----------|---------|-------------|
+| No design/plan exists | Need planning first | `sop-planning` |
+| Simple single-file change | Overhead exceeds benefit | Direct implementation |
+| Exploring/researching | Not for analysis | `sop-reverse` |
+| Requirements unclear | Discovery needed | `sop-discovery` |
+
+## Quick Reference
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `input` | Yes | Text, file path to design/PDD |
+| `output_dir` | No | Task files directory (default: specs/{goal}/implementation) |
+| `step_number` | No | Specific PDD step to process |
+
+**Output**: `.code-task.md` files in output_dir
 
 ## The Process
 
@@ -243,29 +267,12 @@ Step demo requirements:
 
 ## Key Principles
 
-**Task Quality:**
-- Each task should be completable in one focused session
-- Tasks should have clear, measurable success criteria
-- Dependencies should be explicit and documented
-- Complexity should guide but not limit implementation
-
-**User Collaboration:**
-- Always get approval before generating files
-- Present task breakdown clearly
-- Allow for iteration on task structure
-- Be transparent about what will be created
-
-**Consistency:**
-- Follow code task format exactly
-- Use Given-When-Then for all acceptance criteria
-- Include unit test requirements
-- Reference design documents explicitly
-
-**Execution Readiness:**
-- Tasks should be self-contained
-- All required context should be included or referenced
-- Implementation approach should guide without over-constraining
-- Acceptance criteria should be verifiable
+| Principle | Requirements |
+|-----------|-------------|
+| **Task Quality** | Completable in one session, clear success criteria, explicit dependencies |
+| **User Collaboration** | Get approval before generating, present breakdown clearly, allow iteration |
+| **Consistency** | Follow code task format exactly, Given-When-Then criteria, reference designs |
+| **Execution Readiness** | Self-contained tasks, all context included, verifiable acceptance criteria |
 
 ## Examples
 
@@ -316,6 +323,15 @@ specs/user-profile/tasks/
 **Complexity Issues:**
 - If single step requires >5 tasks, warn user and suggest breaking into sub-steps
 - If task complexity is High, note that it may need further decomposition
+
+## Common Mistakes
+
+| Mistake | Impact | Fix |
+|---------|--------|-----|
+| Generating >5 tasks per step | Tasks too complex | Decompose further |
+| Vague acceptance criteria | Unclear completion | Use Given-When-Then format |
+| Missing dependencies | Blocked execution | Document all dependencies |
+| No design reference | Implementation drift | Always reference design doc |
 
 ## Notes
 

@@ -1,9 +1,22 @@
 ---
 name: sop-discovery
-description: Use when starting a new goal or project to brainstorm constraints, risks, and prior art before detailed planning
+description: Use when starting new goals or projects to brainstorm constraints, risks, and prior art before detailed planning
 ---
 
 # SOP: Discovery Phase
+
+## Table of Contents
+
+- [Overview](#overview)
+- [When NOT to Use](#when-not-to-use)
+- [Quick Reference](#quick-reference)
+- [Steps](#steps)
+- [Key Principles](#key-principles)
+- [After Discovery](#after-discovery)
+- [Common Mistakes](#common-mistakes)
+- [Quality Checks](#quality-checks)
+- [Example Discovery Session](#example-discovery-session)
+- [Related Skills](#related-skills)
 
 ## Overview
 
@@ -18,26 +31,23 @@ The discovery process is conversational and iterative. You will ask questions on
 - When stakeholder requirements are unclear
 - To align on scope and success criteria before committing resources
 
-**Keywords for Claude Search Optimization (CSO)**:
-- Error messages/symptoms: "unclear requirements", "undefined scope", "stakeholder alignment needed", "what are the constraints", "need risk assessment"
-- Synonyms: "requirements gathering", "problem definition", "scope definition", "brainstorm constraints", "discovery phase", "requirements elicitation"
-- Use cases: "new project planning", "feature exploration", "feasibility study", "constraint analysis", "risk identification", "prior art research"
-- Alternative terminology: "pre-planning", "scoping session", "requirements workshop", "discovery workshop", "problem framing"
+## When NOT to Use
 
-## Parameters
+| Situation | Why Not | Use Instead |
+|-----------|---------|-------------|
+| Simple, well-defined tasks | Overhead exceeds benefit | Direct implementation |
+| You already have detailed specs | Discovery already done | `sop-planning` |
+| Researching existing code | Not for analysis | `sop-reverse` |
+| Mid-implementation questions | Discovery is pre-planning | Ask directly |
 
-### Required Parameters
+## Quick Reference
 
-**goal_description** (string)
-- A brief description of the goal or idea to explore
-- Examples: "Add real-time collaboration to the editor", "Migrate from REST to GraphQL", "Implement automated testing pipeline"
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `goal_description` | Yes | Brief description of goal to explore |
+| `project_dir` | No | Output directory (default: "specs") |
 
-### Optional Parameters
-
-**project_dir** (string, default: "specs")
-- Directory where the discovery document will be stored
-- Created if it doesn't exist
-- Full path: `{project_dir}/discovery.md`
+**Output**: `{project_dir}/discovery.md`
 
 ## Steps
 
@@ -189,64 +199,7 @@ The discovery process is conversational and iterative. You will ask questions on
 5. Write the complete discovery document to `{project_dir}/discovery.md`
 6. Display the summary to the user for review
 
-**Summary structure (from template):**
-```markdown
-# Discovery: {goal_name}
-
-## Summary
-- **Goal**: [One sentence]
-- **Main Constraint**: [The most limiting factor]
-- **Biggest Risk**: [Highest-impact risk]
-- **Ready for**: Planning phase
-
-## Problem Statement
-
-### Job to Be Done
-[Answer from Step 2.1]
-
-### Beneficiaries
-[Answer from Step 2.2]
-
-### Success Metrics
-[Answer from Step 2.3]
-
-## Constraints
-
-### Technical Constraints
-[Answer from Step 3.1]
-
-### Time/Resource Constraints
-[Answer from Step 3.2]
-
-### Non-Negotiables
-[Answer from Step 3.3]
-
-## Risks
-
-### Technical Risks
-[Risks from Step 4.1 with mitigations]
-- **[Risk Name]**: [Description]
-  - *Mitigation*: [Strategy]
-
-### Integration Risks
-[Risks from Step 4.2 with mitigations]
-- **[Risk Name]**: [Description]
-  - *Mitigation*: [Strategy]
-
-### Open Questions
-[Unknowns from Step 4.3]
-
-### Recommended Spikes
-[Spikes from Step 4.4, if any]
-
-## Prior Art
-
-### Patterns to Follow
-[Patterns from Step 5.1 and 5.2]
-
-### Anti-patterns to Avoid
-[Anti-patterns from Step 5.3]
-```
+See `templates/discovery-output.md.template` for summary structure.
 
 **You MUST:**
 - Generate a complete, well-formatted discovery document
@@ -289,6 +242,15 @@ Once the discovery document is complete, you **SHOULD** suggest one of the follo
 **You MUST NOT:**
 - Jump directly to implementation without planning
 - Proceed without user confirmation on next steps
+
+## Common Mistakes
+
+| Mistake | Impact | Fix |
+|---------|--------|-----|
+| Asking multiple questions at once | Shallow answers, missed nuances | ONE question per message |
+| Skipping risk mitigation | Unaddressed risks surface later | Always ask mitigation for each risk |
+| Accepting vague answers | Incomplete discovery | Probe deeper on ambiguities |
+| Assuming constraints | Missing real constraints | Always ask, even if obvious |
 
 ## Quality Checks
 
