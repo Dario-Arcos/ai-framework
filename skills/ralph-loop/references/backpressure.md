@@ -1,8 +1,17 @@
 # Backpressure Reference
 
-Quality gates that reject incomplete work.
+## Overview
+
+This reference defines the quality gates that reject incomplete work in Ralph. Backpressure ensures work meets quality standards before proceeding.
+
+---
 
 ## Standard Gates
+
+**Constraints:**
+- You MUST pass all gates before commit because partial passes indicate incomplete work
+- You MUST NOT skip gates in production/library mode because quality is mandatory
+- You SHOULD configure gates for your stack because defaults may not match your tooling
 
 ```bash
 npm test          # Tests must pass
@@ -18,6 +27,11 @@ npm run build     # Build must succeed
 ## Checkpoint-Based Backpressure
 
 Checkpoints provide execution-level backpressure by pausing for human review.
+
+**Constraints:**
+- You MUST configure checkpoint mode before execution because mid-run changes cause inconsistency
+- You MUST resume with same command after checkpoint because state persists
+- You SHOULD use milestones for multi-module features because natural breakpoints aid review
 
 ### Configuration
 
@@ -131,6 +145,11 @@ Loop pauses after "Authentication" module completes.
 
 ## Backpressure Stack
 
+**Constraints:**
+- You MUST understand all backpressure levels because each serves different purpose
+- You MUST NOT override circuit breaker without diagnosis because repeated failures indicate issues
+- You SHOULD trust quality gates in production mode because they enforce standards
+
 Ralph implements backpressure at multiple levels:
 
 ```mermaid
@@ -178,6 +197,11 @@ graph TD
 
 ## Quality Levels
 
+**Constraints:**
+- You MUST set quality level before execution because it determines gate behavior
+- You MUST NOT use prototype in production code because shortcuts accumulate debt
+- You SHOULD use library level for reusable code because polish matters for shared code
+
 Define expectations in AGENTS.md:
 
 | Level | Shortcuts OK | Tests Required | Polish Required |
@@ -198,6 +222,11 @@ Define expectations in AGENTS.md:
 
 ## Task Sizing
 
+**Constraints:**
+- You MUST ensure one task fits one context window because exceeding context degrades quality
+- You MUST split tasks that require >2000 lines to understand because complexity limits comprehension
+- You MUST NOT batch unrelated work into single task because focused tasks are more reliable
+
 One task = one context window.
 
 ### Right-sized
@@ -217,6 +246,11 @@ One task = one context window.
 
 ## Context Thresholds
 
+**Constraints:**
+- You MUST exit at red zone because quality degrades beyond 80%
+- You SHOULD wrap up at yellow zone because approaching limit is risky
+- You MAY operate freely in green zone because healthy context allows exploration
+
 | Zone | Usage | Action |
 |------|-------|--------|
 | Green | <40% | Operate freely |
@@ -226,6 +260,11 @@ One task = one context window.
 ---
 
 ## Gutter Detection
+
+**Constraints:**
+- You MUST add Sign and exit if stuck because continued attempts waste resources
+- You MUST NOT retry same failed command more than 3 times because systematic issues need different approach
+- You SHOULD recognize file modification cycles because oscillation indicates confusion
 
 **You're stuck if:**
 - Same command fails 3 times
@@ -238,6 +277,11 @@ One task = one context window.
 
 ## Circuit Breaker
 
+**Constraints:**
+- You MUST check errors.log after circuit breaker because root cause needs identification
+- You MUST fix underlying issue before restart because same failures will repeat
+- You MUST NOT disable circuit breaker because it protects against runaway failures
+
 After 3 consecutive failures, loop.sh stops:
 
 1. Check errors.log for details
@@ -248,6 +292,11 @@ After 3 consecutive failures, loop.sh stops:
 ---
 
 ## Plan Format
+
+**Constraints:**
+- You MUST keep plan under 100 lines because verbose plans confuse workers
+- You MUST limit each task to 3-5 lines because detail belongs in specs
+- You MUST NOT include implementation details because tasks define what, not how
 
 **The plan is disposable.** Regeneration costs one planning loop.
 
@@ -274,3 +323,33 @@ After 3 consecutive failures, loop.sh stops:
 - Keeping completed tasks forever
 
 **Recovery:** If plan exceeds 100 lines -> `./loop.sh plan 1`
+
+---
+
+## Troubleshooting
+
+### Gates Keep Failing
+
+If quality gates fail repeatedly:
+- You SHOULD check if task is too large
+- You SHOULD verify gate commands are correct
+- You MUST review gate output for specific errors
+
+### Circuit Breaker Trips Too Often
+
+If circuit breaker triggers frequently:
+- You SHOULD check task clarity in plan
+- You SHOULD increase HITL oversight
+- You MUST diagnose root cause before continuing
+
+### Context Exhausts Too Quickly
+
+If context limit reached before task completion:
+- You SHOULD split task into smaller parts
+- You SHOULD reduce exploration in worker prompt
+- You MUST NOT increase context limit (quality degrades)
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

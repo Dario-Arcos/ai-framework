@@ -1,13 +1,21 @@
 # Scratchpad
 
 <!--
+## Overview
+
 Iteration-to-iteration memory within a single loop session.
 Reduces exploration overhead by recording what each iteration learned.
 
-Read at start of EVERY iteration. Update before exit.
-Cleared when loop.sh starts a new session.
+## Usage Constraints
 
-The specs path ({{SPECS_PATH}}) contains:
+- You MUST read this file at start of EVERY iteration because it contains session state
+- You MUST update before exiting each iteration because this persists knowledge
+- You MUST NOT commit scratchpad.md because it's ephemeral session state
+- You SHOULD record key decisions because next iteration won't remember exploration
+- You SHOULD record blockers because this aids debugging and handoff
+- You SHOULD NOT duplicate memories.md content because that's for permanent learnings
+
+The specs path ({specs_path}) contains:
 - spec.md: Feature specification (what and why)
 - plan.md: Implementation plan (how)
 - tasks.md: Actionable task list (steps)
@@ -15,24 +23,37 @@ The specs path ({{SPECS_PATH}}) contains:
 
 ## Current State
 
-- **Specs Path**: {{SPECS_PATH}}
-- **Started**: {{DATE}}
+- **Specs Path**: {specs_path}
+- **Started**: {date}
 - **Last task completed**: [none yet]
 - **Next task to do**: [see specs/tasks.md]
 - **Files modified this session**: [none yet]
 
 ## Key Decisions This Session
 
-<!-- Record decisions so next iteration doesn't re-explore -->
+<!--
+Record decisions so next iteration doesn't re-explore.
+Include rationale because context helps future iterations.
+-->
 
 ## Blockers & Notes
 
-<!-- Issues discovered, technical debt, things to watch out for -->
+<!--
+Issues discovered, technical debt, things to watch out for.
+Be specific because vague notes waste time.
+-->
 
 ---
 
 <!--
-Update this file BEFORE exiting each iteration.
-DO NOT commit scratchpad.md - it's ephemeral session state.
-If loop.sh restarts, this file gets cleared automatically.
+## Lifecycle
+
+- Cleared automatically when loop.sh starts a new session
+- Updated by each iteration before exit
+- Read by each iteration at start
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
 -->

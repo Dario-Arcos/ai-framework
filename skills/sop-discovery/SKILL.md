@@ -9,12 +9,13 @@ description: Use when starting new goals or projects to brainstorm constraints, 
 
 - [Overview](#overview)
 - [When NOT to Use](#when-not-to-use)
-- [Quick Reference](#quick-reference)
+- [Parameters](#parameters)
 - [Steps](#steps)
 - [Key Principles](#key-principles)
 - [After Discovery](#after-discovery)
 - [Common Mistakes](#common-mistakes)
 - [Quality Checks](#quality-checks)
+- [Troubleshooting](#troubleshooting)
 - [Example Discovery Session](#example-discovery-session)
 - [Related Skills](#related-skills)
 
@@ -40,14 +41,14 @@ The discovery process is conversational and iterative. You will ask questions on
 | Researching existing code | Not for analysis | `sop-reverse` |
 | Mid-implementation questions | Discovery is pre-planning | Ask directly |
 
-## Quick Reference
+## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `goal_description` | Yes | Brief description of goal to explore |
-| `project_dir` | No | Output directory (default: "specs") |
+- **goal_description** (required): Brief description of goal to explore. Accepts text, file path, or URL.
+- **project_dir** (optional, default: "specs"): Output directory for discovery artifacts
 
-**Output**: `{project_dir}/discovery.md`
+## Output
+
+`{project_dir}/discovery.md`
 
 ## Steps
 
@@ -60,9 +61,31 @@ The discovery process is conversational and iterative. You will ask questions on
 3. Review recent git commits to understand current development focus
 4. Initialize the discovery document with the goal description
 
+**Constraints for parameter acquisition:**
+- You MUST support multiple input methods for goal_description
+- If input looks like a file path (starts with `/`, `./`, or contains `.md`), read the file
+- If input looks like a URL (starts with `http`), fetch and extract content
+- You MUST confirm the extracted goal with user before proceeding
+
 **You MUST NOT:**
 - Skip context gathering even if the goal seems simple
 - Make assumptions about the existing codebase without verification
+
+### Step 1.5: Initial Process Planning
+
+**Objective:** Determine the user's preferred exploration approach.
+
+**You MUST present options:**
+- **Option A** (recommended): Start with Problem Definition - understand the job to be done first
+- **Option B**: Start with Context Gathering - explore existing patterns and constraints first
+
+**Constraints:**
+- You MUST ask the user which option they prefer
+- You MUST wait for explicit user selection before proceeding
+- You MUST NOT assume a default without user confirmation
+- You MAY explain trade-offs: "Option A works better when the goal is unclear. Option B works better when you have domain knowledge to share."
+
+**Verification**: User has explicitly chosen Option A or B.
 
 ### Step 2: Problem Definition
 
@@ -264,6 +287,20 @@ Before marking the discovery phase complete, verify:
 - [ ] Prior art references specific examples or patterns
 - [ ] User has reviewed and approved the discovery document
 - [ ] Next steps are clearly communicated
+
+## Troubleshooting
+
+### Problem: Discovery feels incomplete but user wants to proceed
+**Cause**: Key constraints or risks not yet identified
+**Solution**: Ask "Are there any technical constraints we haven't discussed?" and "What's the biggest risk you're worried about?" before generating summary.
+
+### Problem: User gives vague answers
+**Cause**: Question may be too broad or user lacks domain knowledge
+**Solution**: Break question into smaller parts. Offer concrete examples: "For example, do you need to support X, Y, or Z?"
+
+### Problem: Discovery takes too long
+**Cause**: Exploring tangential topics or asking redundant questions
+**Solution**: After 10 questions, summarize findings and ask "Should we continue or move to planning?"
 
 ## Example Discovery Session
 

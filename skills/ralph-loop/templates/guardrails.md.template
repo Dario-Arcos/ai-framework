@@ -1,7 +1,20 @@
 # Signs
 
-<!-- Signs capture learnings across iterations. Read FIRST every time. -->
-<!-- An empty guardrails.md after multiple iterations is a FAILURE. -->
+<!--
+## Overview
+
+Signs capture learnings across iterations within a loop session. Read FIRST every time.
+An empty guardrails.md after multiple iterations is a FAILURE - it means nothing was learned.
+
+## Usage Constraints
+
+- You MUST read this file FIRST at every iteration because signs prevent repeated mistakes
+- You MUST add signs when you discover gotchas because this captures institutional knowledge
+- You MUST use the Sign format (Trigger + Instruction) because consistency enables search
+- You SHOULD categorize signs by area because this aids discovery
+- You SHOULD NOT duplicate memories here because signs are session-scoped, memories are permanent
+- You SHOULD NOT leave this file empty after multiple iterations because that indicates learning failure
+-->
 
 ## Example Signs (Remove and replace with your own)
 
@@ -50,9 +63,20 @@
 ## Your Signs (Add here as you learn)
 
 <!--
-Format for new Signs:
+## Sign Format
+
+**Constraints:**
+- You MUST include Trigger because this defines when the sign applies
+- You MUST include Instruction because this tells what to do
+- You SHOULD be specific in triggers because vague triggers are useless
+- You SHOULD keep instructions actionable because theory doesn't help in the moment
 
 ### Sign: [Problem/Learning]
 - **Trigger**: [When this applies]
 - **Instruction**: [What to do]
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
 -->

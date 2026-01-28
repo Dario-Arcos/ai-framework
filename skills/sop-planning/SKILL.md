@@ -10,10 +10,11 @@ description: Transforms rough ideas into implementation-ready designs through st
 - [Overview](#overview)
 - [When to Use](#when-to-use)
 - [When NOT to Use](#when-not-to-use)
-- [Quick Reference](#quick-reference)
+- [Parameters](#parameters)
 - [Process Overview](#process-overview)
 - [Step-by-Step Instructions](#step-by-step-instructions)
 - [Common Mistakes](#common-mistakes)
+- [Troubleshooting](#troubleshooting)
 - [Quality Standards](#quality-standards)
 - [Example Invocation](#example-invocation)
 
@@ -37,15 +38,13 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 | Exploring existing code | Not for analysis | `sop-reverse` |
 | Need constraints/risks first | Discovery comes first | `sop-discovery` |
 
-## Quick Reference
+## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `rough_idea` | Yes | Text, file path, or URL |
-| `project_dir` | No | Artifacts directory (default: specs/{name}) |
-| `discovery_path` | No | Existing discovery.md to continue from |
+- **rough_idea** (required): Initial concept to develop. Accepts text, file path, or URL.
+- **project_dir** (optional, default: specs/{name}): Directory for planning artifacts
+- **discovery_path** (optional): Path to existing discovery.md to continue from
 
-**Output Structure**:
+## Output Structure
 ```
 {project_dir}/
 ├── rough-idea.md
@@ -96,6 +95,11 @@ Create directory structure and populate initial artifacts:
 └── implementation/
 ```
 
+**Constraints:**
+- You MUST create all directories in the structure
+- You MUST populate rough-idea.md with the input parameter content
+- You MUST use templates when available
+
 **Verification**: All directories exist and rough-idea.md is populated.
 
 ---
@@ -106,16 +110,16 @@ Present options to user:
 - **Option A**: Start with requirements clarification (unclear requirements)
 - **Option B**: Start with preliminary research (domain knowledge needed)
 
+**Constraints:**
+- You MUST present both options clearly
+- You MUST NOT assume user preference
+- You MUST wait for explicit user choice before proceeding
+
 **Verification**: User has explicitly chosen Option A or B.
 
 ---
 
 ### Step 3: Requirements Clarification
-
-**Critical Constraints**:
-- Ask ONLY ONE question at a time
-- Do NOT pre-populate answers or assume user intent
-- Append each Q&A pair to `idea-honing.md` immediately
 
 **Question Categories**:
 1. **Core Functionality**: What should it do? Primary use cases? Out of scope?
@@ -136,6 +140,14 @@ Present options to user:
 4. Every 3-5 questions: "Continue clarification or move to [research/design]?"
 5. Before proceeding: "Are requirements sufficiently detailed?"
 
+**Constraints:**
+- You MUST ask ONLY ONE question at a time
+- You MUST NOT pre-populate answers or assume user intent
+- You MUST append each Q&A pair to `idea-honing.md` immediately
+- You MUST wait for user response before next question
+- You SHOULD adapt follow-up questions based on previous answers
+- You MAY suggest options when user is unsure
+
 **Verification**: User has explicitly confirmed requirements are complete.
 
 ---
@@ -148,11 +160,12 @@ Present options to user:
 4. After 2-3 research files: "Continue remaining topics or adjust focus?"
 5. Before proceeding: "Is research sufficient for design?"
 
-**Research Quality**:
-- Each file MUST be standalone
-- Include specific examples, not generic descriptions
-- Compare 2-3 options when multiple approaches exist
-- Make recommendation with justification
+**Constraints:**
+- You MUST make each research file standalone
+- You MUST include specific examples, not generic descriptions
+- You MUST compare 2-3 options when multiple approaches exist
+- You MUST make recommendation with justification
+- You SHOULD ask user to confirm research direction after 2-3 files
 
 **Verification**: User has explicitly confirmed research is sufficient.
 
@@ -173,6 +186,11 @@ Present options:
 - **Option A**: Proceed to detailed design
 - **Option B**: Return to requirements clarification
 - **Option C**: Conduct additional research
+
+**Constraints:**
+- You MUST create a summary of current state
+- You MUST present all three options clearly
+- You MUST NOT proceed to design without user explicitly choosing Option A
 
 **Verification**: User has explicitly chosen Option A.
 
@@ -202,6 +220,12 @@ Create `{project_dir}/design/detailed-design.md` using `templates/detailed-desig
 2. Ask: "Please review. Any sections needing clarification or revision?"
 3. Iterate based on feedback
 4. Before proceeding: "Is design ready for implementation planning?"
+
+**Constraints:**
+- You MUST include all required sections in the design document
+- You MUST include at least 2 mermaid diagrams
+- You MUST reference research findings when making design decisions
+- You MUST NOT proceed to implementation planning without explicit design approval
 
 **Verification**: User has explicitly approved the design.
 
@@ -250,7 +274,13 @@ Create `{project_dir}/implementation/plan.md`:
 3. Integration (connect components)
 4. Polish (error handling, edge cases, UX)
 
-**Quality**: Each step <= M complexity, completable in <= 2 hours, 5-15 steps total
+**Constraints:**
+- You MUST make each step independently testable
+- You MUST ensure each step results in demoable increment
+- You MUST include complexity estimate (S/M/L/XL) for each step
+- You MUST keep each step <= M complexity, completable in <= 2 hours
+- You MUST generate 5-15 steps total
+- You MUST NOT include steps that depend on future steps
 
 **Verification**: User has reviewed and approved implementation plan.
 
@@ -298,6 +328,12 @@ Create `{project_dir}/summary.md`:
 - Needs review: `/requesting-code-review`
 - Prototype needed: `/brainstorming`
 
+**Constraints:**
+- You MUST list all artifacts created with their purposes
+- You MUST include complexity estimate and risk level
+- You MUST provide recommended next steps
+- You SHOULD suggest relevant skills for next phase
+
 **Verification**: Summary created with all artifacts documented.
 
 ---
@@ -311,6 +347,20 @@ Create `{project_dir}/summary.md`:
 | Generating code in design | Premature implementation | Design is architecture, not code |
 | Skipping research phase | Uninformed design decisions | Complete research before design |
 | No iteration checkpoint | Design without alignment | Always checkpoint before design |
+
+## Troubleshooting
+
+### Problem: Requirements clarification stalls
+**Cause**: User unsure about decisions, or questions too abstract
+**Solution**: Suggest conducting research first, or provide concrete options: "Would you prefer A or B?"
+
+### Problem: Research uncovers conflicting information
+**Cause**: Multiple valid approaches exist, or sources outdated
+**Solution**: Document all options in research file, present trade-offs to user, let user decide.
+
+### Problem: Design document too abstract
+**Cause**: Skipped research phase or requirements incomplete
+**Solution**: Return to iteration checkpoint. Identify gaps and conduct targeted research.
 
 ## Quality Standards
 

@@ -11,7 +11,7 @@ description: Use when executing large implementation plans autonomously, when co
 > 1. **PLANNING (HITL)** - Interactive session where YOU help plan
 > 2. **EXECUTION** - Autonomous loop where YOU only MONITOR
 >
-> Planning is NON-NEGOTIABLE. Every goal goes through planning first.
+> Planning MUST be completed. Every goal goes through planning first.
 
 ---
 
@@ -27,6 +27,7 @@ description: Use when executing large implementation plans autonomously, when co
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Files & Structure](#files--structure)
+- [Troubleshooting](#troubleshooting)
 - [References](#references)
 
 ---
@@ -72,6 +73,15 @@ Ralph Loop executes implementation plans autonomously with fresh 200K token cont
 
 ---
 
+## Parameters
+
+- **goal_path** (required): Path to specs directory containing implementation plan (e.g., `specs/my-feature/`)
+- **max_iterations** (optional, default: unlimited): Maximum execution iterations before stopping
+- **quality_level** (optional, default: production): Quality gate strictness - `prototype`, `production`, or `library`
+- **mode** (optional, default: afk): Supervision mode - `afk` (fully autonomous), `checkpoint-N` (pause every N iterations), or `milestone` (pause at milestones)
+
+---
+
 ## The Two Flows
 
 ### Forward (Idea to Implementation)
@@ -94,7 +104,7 @@ Use when: You want to understand something existing before improving it. Investi
 
 ## Phase 1: Planning (HITL)
 
-**MANDATORY. No exceptions. No shortcuts.**
+**You MUST complete planning before execution.**
 
 Planning uses SOP skills in the CURRENT interactive session:
 
@@ -120,13 +130,21 @@ Ask the user:
 
 Wait for explicit selection before launching.
 
+**Constraints:**
+- You MUST ask ONE question at a time
+- You MUST wait for user response before proceeding
+- You MUST document all Q&A in specs
+- You MUST NOT batch multiple questions
+- You MUST NOT proceed without user confirmation
+- You MAY propose options but user decides
+
 ---
 
 ## Phase 2: Execution (Autonomous)
 
 **Your role: MONITOR ONLY.** See [references/monitoring-pattern.md](references/monitoring-pattern.md).
 
-### Allowed Actions
+### You MAY
 
 ```python
 Bash("./loop.sh specs/{goal}/", run_in_background=True)  # Start
@@ -135,18 +153,25 @@ Read("status.json")               # Read state
 Read("logs/*")                    # Read logs
 ```
 
-### Forbidden Actions
+### You MUST NOT
 
-- ANY Write/Edit to ANY file
-- ANY Bash that modifies state
-- Task tool for implementation
-- Research tools (workers research if needed)
+- Use Write/Edit tools on ANY file
+- Run Bash commands that modify state
+- Use Task tool for implementation work
+- Use research tools (workers research if needed)
 
 ### If User Asks to Implement
 
 *"This session monitors ralph-loop. Workers have fresh 200K token context - 10x better for implementation. Want me to update the plan and restart?"*
 
 See [references/red-flags.md](references/red-flags.md) for common mistakes.
+
+**Constraints:**
+- You MUST only monitor, never implement
+- You MUST NOT use Write/Edit tools on any file
+- You MUST NOT use Task tool for implementation work
+- You MAY read status.json, logs, and plan files
+- You SHOULD report progress to user periodically
 
 ---
 
@@ -216,7 +241,23 @@ See [references/memories-system.md](references/memories-system.md) for memory ma
 2. **Backpressure Over Prescription** - Gates reject bad work
 3. **The Plan Is Disposable** - Regeneration costs one session
 4. **Disk Is State, Git Is Memory** - Files are handoff mechanism
-5. **Planning Is Non-Negotiable** - Every objective goes through planning
+5. **Planning MUST Be Completed** - Every objective goes through planning
+
+---
+
+## Troubleshooting
+
+### Problem: Workers keep failing on same task
+**Cause**: Task too complex, requirements unclear, or missing context
+**Solution**: Check plan.md for task clarity. Consider breaking task into subtasks. Add context to AGENTS.md.
+
+### Problem: Loop thrashing (same errors repeatedly)
+**Cause**: Gates rejecting work but root cause not addressed
+**Solution**: Read logs/iteration.log for patterns. Add pattern to guardrails.md (Signs). Consider manual intervention.
+
+### Problem: Orchestrator tempted to implement
+**Cause**: Pressure to "help" workers, or impatience with progress
+**Solution**: Remember: Workers have 200K fresh context. Your intervention pollutes context. Update plan instead.
 
 ---
 

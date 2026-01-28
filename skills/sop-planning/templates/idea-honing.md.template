@@ -1,14 +1,30 @@
-# Idea Honing: [Project Name]
+# Idea Honing: {project_name}
 
-**Created**: [Date]
-**Last Updated**: [Date]
-**Status**: In Progress | Complete
+<!--
+## Overview
+
+Captures iterative refinement of requirements through structured questioning.
+Each Q&A pair represents a clarification that shapes the final design.
+
+## Usage Constraints
+
+- You MUST ask one question at a time because this enables focused discussion
+- You MUST record all answers verbatim because paraphrasing loses nuance
+- You MUST update status when complete because this signals readiness for next phase
+- You SHOULD ask follow-up questions based on answers because this deepens understanding
+- You SHOULD categorize questions by area because this ensures comprehensive coverage
+- You SHOULD NOT skip to design before completing clarification because assumptions cause rework
+-->
+
+**Created**: {created_date}
+**Last Updated**: {last_updated_date}
+**Status**: {status}
 
 ## Overview
 
 This document captures the iterative refinement of requirements through structured questioning. Each Q&A pair represents a clarification that shapes the final design.
 
-**Initial Concept**: [One-sentence description from rough-idea.md]
+**Initial Concept**: {initial_concept}
 
 ---
 
@@ -16,68 +32,96 @@ This document captures the iterative refinement of requirements through structur
 
 ### Core Functionality
 
-**Q: [First question about what the system should do]**
+**Constraints:**
+- You MUST understand core functionality first because this defines the product
+- You SHOULD identify must-haves vs nice-to-haves because this guides prioritization
 
-A: [User's answer will be recorded here]
+**Q: {core_functionality_question_1}**
+
+A: {core_functionality_answer_1}
 
 ---
 
-**Q: [Follow-up question based on previous answer]**
+**Q: {core_functionality_question_2}**
 
-A: [User's answer]
+A: {core_functionality_answer_2}
 
 ---
 
 ### Edge Cases & Constraints
 
-**Q: [Question about edge cases, constraints, or limitations]**
+**Constraints:**
+- You MUST identify edge cases early because they affect architecture
+- You SHOULD document constraints explicitly because implicit constraints cause failures
 
-A: [User's answer]
+**Q: {edge_cases_question}**
+
+A: {edge_cases_answer}
 
 ---
 
 ### User Experience
 
-**Q: [Question about who uses this and how]**
+**Constraints:**
+- You MUST understand who uses this because user needs drive design
+- You SHOULD identify user workflows because these inform interaction patterns
 
-A: [User's answer]
+**Q: {user_experience_question}**
+
+A: {user_experience_answer}
 
 ---
 
 ### Technical Context
 
-**Q: [Question about integration points, technology, or environment]**
+**Constraints:**
+- You MUST understand integration points because these constrain solutions
+- You SHOULD identify existing systems because reuse beats rebuild
 
-A: [User's answer]
+**Q: {technical_context_question}**
+
+A: {technical_context_answer}
 
 ---
 
 ### Success Criteria
 
-**Q: [Question about how to measure success or completion]**
+**Constraints:**
+- You MUST define measurable success criteria because this enables validation
+- You SHOULD get acceptance criteria from stakeholders because ownership matters
 
-A: [User's answer]
+**Q: {success_criteria_question}**
+
+A: {success_criteria_answer}
 
 ---
 
 ## Summary of Key Decisions
 
-[This section will be populated at the end with a distilled list of major decisions]
+**Constraints:**
+- You MUST distill key decisions because these drive design
+- You MUST include rationale because context prevents reversal without cause
 
-- **Decision 1**: [Brief statement]
-  - **Rationale**: [Why this was decided]
+{key_decisions_summary}
 
-- **Decision 2**: [Brief statement]
-  - **Rationale**: [Why this was decided]
+- **Decision 1**: {decision_1_statement}
+  - **Rationale**: {decision_1_rationale}
+
+- **Decision 2**: {decision_2_statement}
+  - **Rationale**: {decision_2_rationale}
 
 ---
 
 ## Open Questions
 
-[Any questions that remain unanswered or need further investigation]
+**Constraints:**
+- You MUST track open questions because they block progress
+- You SHOULD assign owners to questions because accountability drives resolution
 
-- [ ] [Open question 1]
-- [ ] [Open question 2]
+{open_questions_summary}
+
+- [ ] {open_question_1}
+- [ ] {open_question_2}
 
 ---
 
@@ -90,3 +134,8 @@ A: [User's answer]
 ---
 
 *This document follows the PDD (Prompt-Driven Development) methodology from Amazon's agent-sop framework.*
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

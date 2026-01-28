@@ -1,8 +1,17 @@
 # Observability Reference
 
-Ralph generates structured logs for monitoring and debugging.
+## Overview
+
+This reference defines the structured logging and monitoring capabilities of Ralph. Understanding observability is essential for debugging loops and tracking execution progress.
+
+---
 
 ## Output Artifacts
+
+**Constraints:**
+- You MUST monitor status.json for loop state because this is the source of truth
+- You MUST check iteration.log for debugging because detailed events are recorded there
+- You SHOULD review metrics.json for performance analysis because aggregated data reveals patterns
 
 | Artifact | Purpose |
 |----------|---------|
@@ -15,6 +24,10 @@ Ralph generates structured logs for monitoring and debugging.
 
 ## Utilities
 
+**Constraints:**
+- You MUST use status.sh for quick state checks because it formats output clearly
+- You SHOULD use tail-logs.sh for real-time monitoring because it streams events
+
 ```bash
 ./status.sh           # View current status & metrics
 ./tail-logs.sh        # Real-time log following
@@ -23,6 +36,11 @@ Ralph generates structured logs for monitoring and debugging.
 ---
 
 ## Interactive Monitoring
+
+**Constraints:**
+- You MUST use separate Claude session for monitoring because implementation sessions have polluted context
+- You MUST NOT interfere with bash loops because monitoring and execution are independent
+- You SHOULD keep monitoring sessions under 4 hours because compaction loses context
 
 Use an active Claude Code session as observer:
 
@@ -86,6 +104,11 @@ Next:       Token refresh mechanism
 
 ## Monitoring Task Progress
 
+**Constraints:**
+- You MUST use plan.md as source of truth for progress because workers update it
+- You MUST NOT modify plan.md during monitoring because workers own the file
+- You SHOULD track completion percentage because this indicates remaining work
+
 The implementation plan (`specs/{goal}/implementation/plan.md`) is the source of truth for progress tracking.
 
 ### Task Plan Format
@@ -134,6 +157,11 @@ grep "^- \[ \]" "$PLAN" | head -1 | sed 's/- \[ \] /Next: /'
 
 ## Status File Format
 
+**Constraints:**
+- You MUST check status field for loop state because this determines next actions
+- You MUST check consecutive_failures for circuit breaker because approaching threshold needs attention
+- You SHOULD check timestamp for stale status because stuck loops don't update
+
 ```json
 {
   "current_iteration": 10,
@@ -151,6 +179,11 @@ grep "^- \[ \]" "$PLAN" | head -1 | sed 's/- \[ \] /Next: /'
 
 ## Metrics File Format
 
+**Constraints:**
+- You SHOULD calculate success rate because this indicates loop health
+- You SHOULD track avg_duration because increasing duration indicates complexity growth
+- You MAY use metrics for cost estimation because tokens correlate with cost
+
 ```json
 {
   "total_iterations": 10,
@@ -164,6 +197,11 @@ grep "^- \[ \]" "$PLAN" | head -1 | sed 's/- \[ \] /Next: /'
 ---
 
 ## Log Analysis
+
+**Constraints:**
+- You MUST review errors.log after circuit breaker because root cause needs identification
+- You SHOULD search for patterns in failures because systematic issues have common causes
+- You MAY use grep for quick analysis because structured logs enable filtering
 
 ```bash
 # Count successful vs failed iterations
@@ -181,6 +219,55 @@ grep "Task:" logs/iteration.log
 
 ## Debugging Failed Iterations
 
+**Constraints:**
+- You MUST check errors.log first because this contains failure details
+- You MUST look for patterns in Signs because repeated errors indicate systematic issues
+- You MUST NOT restart loop without diagnosing because same failures will repeat
+
 1. Check `errors.log` for failure details
 2. Look for patterns in Signs (guardrails.md)
 3. Review `status.json` for circuit breaker state
+
+---
+
+## Context Health Monitoring
+
+**Constraints:**
+- You MUST exit at >80% context usage because quality degrades beyond this
+- You SHOULD warn at 60-80% because approaching limit needs attention
+- You MAY operate freely under 40% because healthy zone allows normal operation
+
+Tracks `input_tokens` from Claude responses. Zones:
+- **Green** (<60%): Healthy
+- **Yellow** (60-80%): Warning displayed
+- **Red** (>80%): EXIT_CONTEXT_EXHAUSTED
+
+---
+
+## Troubleshooting
+
+### Status File Not Updating
+
+If status.json stops updating:
+- You SHOULD check if loop process is running
+- You SHOULD check for disk space issues
+- You MUST NOT assume loop is healthy without updates
+
+### Metrics Show High Failure Rate
+
+If success rate drops below 80%:
+- You SHOULD review recent Signs for common issues
+- You SHOULD check task sizing (may be too large)
+- You MUST consider returning to HITL mode for diagnosis
+
+### Logs Missing Information
+
+If logs lack expected detail:
+- You SHOULD verify log level configuration
+- You SHOULD check disk space for truncation
+- You MUST ensure worker prompts include logging instructions
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

@@ -1,8 +1,17 @@
-# Configuration Guide
+# Configuration Guide Reference
 
-Ralph uses `.ralph/config.sh` for project-specific settings.
+## Overview
+
+This reference defines ralph configuration options in `.ralph/config.sh`. Understanding configuration is essential for customizing loop behavior to match project requirements.
+
+---
 
 ## Quality Levels
+
+**Constraints:**
+- You MUST set quality level before execution because it determines gate behavior
+- You MUST NOT use prototype in production code because shortcuts accumulate debt
+- You SHOULD use library level for reusable code because polish matters for shared code
 
 ```bash
 QUALITY_LEVEL="production"  # Default
@@ -14,7 +23,14 @@ QUALITY_LEVEL="production"  # Default
 | `production` | TDD mandatory, all gates must pass |
 | `library` | Full coverage + docs + edge cases |
 
+---
+
 ## Backpressure Gates
+
+**Constraints:**
+- You MUST configure gates for your stack because defaults may not match your tooling
+- You MUST pass all gates before commit because partial passes indicate incomplete work
+- You SHOULD leave unused gates empty because non-existent commands cause failures
 
 Customize for your stack:
 
@@ -38,7 +54,14 @@ GATE_LINT="golangci-lint run"
 GATE_BUILD="go build ./..."
 ```
 
+---
+
 ## Checkpoint Configuration
+
+**Constraints:**
+- You MUST configure checkpoint mode before execution because mid-run changes cause inconsistency
+- You MUST resume with same command after checkpoint because state persists
+- You SHOULD use milestones for multi-module features because natural breakpoints aid review
 
 ```bash
 CHECKPOINT_MODE="none"        # none|iterations|milestones
@@ -46,7 +69,14 @@ CHECKPOINT_INTERVAL=5         # Pause every N iterations (if mode=iterations)
 CHECKPOINT_ON_MODULE=true     # Pause when module completes (if mode=milestones)
 ```
 
+---
+
 ## Safety Settings (Circuit Breakers)
+
+**Constraints:**
+- You MUST NOT disable circuit breaker because it protects against runaway failures
+- You MUST set reasonable thresholds because too low causes premature stops
+- You SHOULD tune based on task complexity because complex tasks may need more attempts
 
 ```bash
 CONFESSION_MIN_CONFIDENCE=80    # 0-100, tasks below this are NOT complete
@@ -56,7 +86,14 @@ MAX_RUNTIME=0                   # Max seconds (0 = unlimited)
 CONTEXT_LIMIT=200000            # Token limit for context health
 ```
 
+---
+
 ## AFK Mode Configuration
+
+**Constraints:**
+- You MUST have strong test coverage before enabling AFK because gates rely on tests
+- You SHOULD configure notifications for long runs because silent failures waste time
+- You MAY use webhook for Slack integration because this enables remote monitoring
 
 For unattended execution:
 
@@ -66,7 +103,14 @@ AFK_NOTIFICATION="slack"        # slack|email|none
 AFK_WEBHOOK_URL=""              # Slack webhook for notifications
 ```
 
+---
+
 ## Execution Modes Summary
+
+**Constraints:**
+- You MUST use HITL mode for first-time users because learning requires observation
+- You MUST use checkpoint mode for risky tasks because human review catches critical errors
+- You MAY use 100% AFK when confident in quality gates because fresh context improves throughput
 
 | Mode | Description | Use When |
 |------|-------------|----------|
@@ -74,7 +118,14 @@ AFK_WEBHOOK_URL=""              # Slack webhook for notifications
 | Checkpoint (iterations) | Pause every N | Learning the system, want oversight |
 | Checkpoint (milestones) | Pause at modules | Complex features, natural review points |
 
+---
+
 ## Termination & Exit Codes
+
+**Constraints:**
+- You MUST check errors.log after non-zero exit because root cause needs identification
+- You MUST fix underlying issue before restart because same failures will repeat
+- You SHOULD understand all exit codes because this guides recovery action
 
 | Exit Code | Name | Trigger |
 |-----------|------|---------|
@@ -89,7 +140,14 @@ AFK_WEBHOOK_URL=""              # Slack webhook for notifications
 | 8 | CHECKPOINT_PAUSE | Checkpoint reached, waiting for resume |
 | 130 | INTERRUPTED | Ctrl+C (SIGINT) |
 
+---
+
 ## Recovery Commands
+
+**Constraints:**
+- You MUST stop the loop before making changes because concurrent edits cause conflicts
+- You MUST re-run planning phase in interactive session because this restores context
+- You SHOULD use git reset only when necessary because this discards work
 
 If Ralph goes off-track, use from terminal (not monitoring session):
 
@@ -99,3 +157,33 @@ git reset --hard HEAD~N             # Revert N commits
 # Re-run planning phase in interactive session
 ./loop.sh specs/{goal}/             # Resume building
 ```
+
+---
+
+## Troubleshooting
+
+### Gates Failing Unexpectedly
+
+If quality gates fail when they shouldn't:
+- You SHOULD verify gate commands are correct because typos cause failures
+- You SHOULD check if dependencies are installed because missing packages fail commands
+- You MUST run gate commands manually to diagnose because this reveals specific errors
+
+### Configuration Not Applied
+
+If config changes don't take effect:
+- You SHOULD verify config.sh syntax because shell syntax errors prevent loading
+- You SHOULD check if loop was restarted because running loops don't reload config
+- You MUST source config.sh manually to test because this reveals parse errors
+
+### Exit Codes Not Matching Expected
+
+If loop exits with unexpected code:
+- You SHOULD check status.json for detailed state because this reveals true cause
+- You SHOULD review logs/iteration.log for failure details because this shows progression
+- You MUST map exit code to table above because this guides recovery action
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

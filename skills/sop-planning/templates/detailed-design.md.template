@@ -1,9 +1,25 @@
-# Detailed Design: [Project Name]
+# Detailed Design: {project_name}
 
-**Created**: [Date]
-**Last Updated**: [Date]
-**Status**: Draft | In Review | Approved
-**Complexity**: [S/M/L/XL]
+<!--
+## Overview
+
+Comprehensive design document template for sop-planning.
+Provides structured approach to system design with traceability to requirements.
+
+## Usage Constraints
+
+- You MUST complete requirements section before architecture because requirements drive design
+- You MUST include mermaid diagrams for architecture because visual documentation aids understanding
+- You MUST trace requirements to design sections because traceability ensures completeness
+- You MUST include testing strategy because untestable designs fail
+- You SHOULD use consistent section structure because this enables comparison across designs
+- You SHOULD NOT skip sections without justification because incomplete designs cause problems
+-->
+
+**Created**: {created_date}
+**Last Updated**: {last_updated_date}
+**Status**: {status}
+**Complexity**: {complexity}
 
 ---
 
@@ -11,39 +27,55 @@
 
 ### 1.1 Problem Statement
 
-[Clear description of the problem this design solves. Reference specific pain points from idea-honing.md]
+**Constraints:**
+- You MUST reference specific pain points from idea-honing.md because this ensures alignment
+- You MUST distinguish current state from desired state because this defines the gap
 
-**Current State**: [What exists today?]
+{problem_statement}
+
+**Current State**: {current_state}
 
 **Pain Points**:
-- [Pain point 1]
-- [Pain point 2]
-- [Pain point 3]
+- {pain_point_1}
+- {pain_point_2}
+- {pain_point_3}
 
 ### 1.2 Proposed Solution
 
-[High-level description of the solution approach. 2-3 paragraphs max.]
+**Constraints:**
+- You MUST explain key innovation because this justifies the effort
+- You SHOULD keep high-level because details come later
 
-**Key Innovation**: [What makes this solution effective?]
+{proposed_solution}
+
+**Key Innovation**: {key_innovation}
 
 ### 1.3 Goals
 
+**Constraints:**
+- You MUST define measurable goals because this enables validation
+- You MUST distinguish primary from secondary goals because prioritization matters
+
 **Primary Goals**:
-1. [Goal 1 - what must be achieved]
-2. [Goal 2 - what must be achieved]
-3. [Goal 3 - what must be achieved]
+1. {primary_goal_1}
+2. {primary_goal_2}
+3. {primary_goal_3}
 
 **Success Metrics**:
-- [Metric 1]: [Target value]
-- [Metric 2]: [Target value]
-- [Metric 3]: [Target value]
+- {metric_1_name}: {metric_1_target}
+- {metric_2_name}: {metric_2_target}
+- {metric_3_name}: {metric_3_target}
 
 ### 1.4 Non-Goals
 
+**Constraints:**
+- You MUST explicitly state non-goals because this prevents scope creep
+- You SHOULD explain why items are out of scope because this prevents revisiting
+
 **Explicitly Out of Scope**:
-- [What we are NOT building in this version]
-- [Features deferred to future iterations]
-- [Related problems we are NOT solving]
+- {non_goal_1}
+- {non_goal_2}
+- {non_goal_3}
 
 ---
 
@@ -51,62 +83,78 @@
 
 ### 2.1 Functional Requirements
 
+**Constraints:**
+- You MUST trace each requirement to source because this enables validation
+- You MUST prioritize requirements because not all can be delivered equally
+
 | ID | Requirement | Priority | Source |
 |----|-------------|----------|--------|
-| F1 | [Requirement description] | Must Have | [idea-honing.md Q3] |
-| F2 | [Requirement description] | Must Have | [idea-honing.md Q7] |
-| F3 | [Requirement description] | Should Have | [idea-honing.md Q12] |
-| F4 | [Requirement description] | Nice to Have | [Discovery] |
+| F1 | {requirement_f1_description} | {requirement_f1_priority} | {requirement_f1_source} |
+| F2 | {requirement_f2_description} | {requirement_f2_priority} | {requirement_f2_source} |
+| F3 | {requirement_f3_description} | {requirement_f3_priority} | {requirement_f3_source} |
+| F4 | {requirement_f4_description} | {requirement_f4_priority} | {requirement_f4_source} |
 
 **Priority Levels**: Must Have = MVP requirement, Should Have = Important but not blocking, Nice to Have = Future enhancement
 
 ### 2.2 Non-Functional Requirements
 
+**Constraints:**
+- You MUST quantify performance requirements because vague targets are unverifiable
+- You MUST consider security requirements because retrofitting security fails
+
 **Performance**:
-- [Latency requirement]: [Target value]
-- [Throughput requirement]: [Target value]
-- [Resource usage]: [Target value]
+- {latency_requirement}: {latency_target}
+- {throughput_requirement}: {throughput_target}
+- {resource_usage_requirement}: {resource_usage_target}
 
 **Reliability**:
-- [Uptime requirement]: [Target value]
-- [Error rate]: [Target value]
-- [Recovery time]: [Target value]
+- {uptime_requirement}: {uptime_target}
+- {error_rate_requirement}: {error_rate_target}
+- {recovery_time_requirement}: {recovery_time_target}
 
 **Security**:
-- [Authentication requirement]
-- [Authorization requirement]
-- [Data protection requirement]
+- {authentication_requirement}
+- {authorization_requirement}
+- {data_protection_requirement}
 
 **Scalability**:
-- [Horizontal scaling capability]
-- [Vertical scaling capability]
-- [Load handling]: [Target value]
+- {horizontal_scaling_capability}
+- {vertical_scaling_capability}
+- {load_handling_requirement}: {load_handling_target}
 
 **Maintainability**:
-- [Code quality standards]
-- [Documentation requirements]
-- [Testing coverage]: [Target value]
+- {code_quality_standards}
+- {documentation_requirements}
+- {testing_coverage_requirement}: {testing_coverage_target}
 
 ### 2.3 Constraints
 
+**Constraints:**
+- You MUST document all constraints because these limit solution space
+- You SHOULD distinguish technical from business constraints because they have different flexibility
+
 **Technical Constraints**:
-- [Constraint 1 - e.g., must use existing database]
-- [Constraint 2 - e.g., cannot add new dependencies]
+- {technical_constraint_1}
+- {technical_constraint_2}
 
 **Business Constraints**:
-- [Timeline constraint]
-- [Budget constraint]
-- [Resource constraint]
+- {timeline_constraint}
+- {budget_constraint}
+- {resource_constraint}
 
 **Regulatory/Compliance**:
-- [Compliance requirement 1]
-- [Compliance requirement 2]
+- {compliance_requirement_1}
+- {compliance_requirement_2}
 
 ---
 
 ## 3. Architecture
 
 ### 3.1 System Context
+
+**Constraints:**
+- You MUST show system boundaries because this defines scope
+- You MUST show external dependencies because these are integration points
 
 ```mermaid
 C4Context
@@ -122,13 +170,17 @@ C4Context
     Rel(system, external2, "Writes to")
 ```
 
-**System Boundaries**: [What is inside vs outside this system]
+**System Boundaries**: {system_boundaries}
 
 **External Dependencies**:
-- [Dependency 1]: [Purpose and interaction pattern]
-- [Dependency 2]: [Purpose and interaction pattern]
+- {external_dependency_1}: {external_dependency_1_purpose}
+- {external_dependency_2}: {external_dependency_2_purpose}
 
 ### 3.2 Component Architecture
+
+**Constraints:**
+- You MUST define clear component responsibilities because overlap causes confusion
+- You MUST show component dependencies because this reveals coupling
 
 ```mermaid
 graph TD
@@ -151,22 +203,26 @@ graph TD
 
 **Component Descriptions**:
 
-- **Component A**: [Name]
-  - **Responsibility**: [What this component does]
-  - **Dependencies**: [What it depends on]
-  - **Interfaces**: [APIs it exposes]
+- **Component A**: {component_a_name}
+  - **Responsibility**: {component_a_responsibility}
+  - **Dependencies**: {component_a_dependencies}
+  - **Interfaces**: {component_a_interfaces}
 
-- **Component B**: [Name]
-  - **Responsibility**: [What this component does]
-  - **Dependencies**: [What it depends on]
-  - **Interfaces**: [APIs it exposes]
+- **Component B**: {component_b_name}
+  - **Responsibility**: {component_b_responsibility}
+  - **Dependencies**: {component_b_dependencies}
+  - **Interfaces**: {component_b_interfaces}
 
-- **Component C**: [Name]
-  - **Responsibility**: [What this component does]
-  - **Dependencies**: [What it depends on]
-  - **Interfaces**: [APIs it exposes]
+- **Component C**: {component_c_name}
+  - **Responsibility**: {component_c_responsibility}
+  - **Dependencies**: {component_c_dependencies}
+  - **Interfaces**: {component_c_interfaces}
 
 ### 3.3 Data Flow
+
+**Constraints:**
+- You MUST show key flows because this reveals behavior
+- You SHOULD use sequence diagrams because they show temporal ordering
 
 ```mermaid
 sequenceDiagram
@@ -185,73 +241,77 @@ sequenceDiagram
 
 **Key Flows**:
 
-1. **[Flow Name 1]**: [Description of the flow]
-   - Input: [What triggers this]
-   - Processing: [What happens]
-   - Output: [What is produced]
+1. **{flow_1_name}**: {flow_1_description}
+   - Input: {flow_1_input}
+   - Processing: {flow_1_processing}
+   - Output: {flow_1_output}
 
-2. **[Flow Name 2]**: [Description of the flow]
-   - Input: [What triggers this]
-   - Processing: [What happens]
-   - Output: [What is produced]
+2. **{flow_2_name}**: {flow_2_description}
+   - Input: {flow_2_input}
+   - Processing: {flow_2_processing}
+   - Output: {flow_2_output}
 
 ### 3.4 Technology Stack
 
-**Based on research in**: `research/[relevant-research-file].md`
+**Constraints:**
+- You MUST justify technology choices because this enables informed review
+- You MUST reference research documents because decisions need evidence
+
+**Based on research in**: `research/{research_file}.md`
 
 | Layer | Technology | Rationale |
 |-------|------------|-----------|
-| Frontend | [Technology] | [Why chosen] |
-| Backend | [Technology] | [Why chosen] |
-| Database | [Technology] | [Why chosen] |
-| Cache | [Technology] | [Why chosen] |
-| Message Queue | [Technology] | [Why chosen] |
-| Deployment | [Technology] | [Why chosen] |
+| Frontend | {frontend_technology} | {frontend_rationale} |
+| Backend | {backend_technology} | {backend_rationale} |
+| Database | {database_technology} | {database_rationale} |
+| Cache | {cache_technology} | {cache_rationale} |
+| Message Queue | {message_queue_technology} | {message_queue_rationale} |
+| Deployment | {deployment_technology} | {deployment_rationale} |
 
-**Justification**: [Reference specific research findings that led to these choices]
+**Justification**: {technology_justification}
 
 ---
 
 ## 4. Detailed Component Specifications
 
-### 4.1 Component A: [Name]
+### 4.1 Component A: {component_a_spec_name}
 
-**Purpose**: [What problem does this component solve?]
+**Constraints:**
+- You MUST define interfaces precisely because this enables parallel development
+- You MUST document state management because this affects reliability
+
+**Purpose**: {component_a_purpose}
 
 **Responsibilities**:
-- [Responsibility 1]
-- [Responsibility 2]
-- [Responsibility 3]
+- {component_a_spec_responsibility_1}
+- {component_a_spec_responsibility_2}
+- {component_a_spec_responsibility_3}
 
 **Interface Definition**:
 
 ```typescript
-// Example API/interface
-interface ComponentA {
-  method1(param: Type): ReturnType;
-  method2(param: Type): ReturnType;
-}
+{component_a_interface_definition}
 ```
 
 **Key Algorithms/Logic**:
-- [Algorithm 1]: [Description and complexity]
-- [Algorithm 2]: [Description and complexity]
+- {component_a_algorithm_1}: {component_a_algorithm_1_description}
+- {component_a_algorithm_2}: {component_a_algorithm_2_description}
 
 **State Management**:
-- [What state does this component maintain?]
-- [How is state persisted/synchronized?]
+- {component_a_state_maintained}
+- {component_a_state_persistence}
 
 **Dependencies**:
-- [Dependency 1]: [How it's used]
-- [Dependency 2]: [How it's used]
+- {component_a_dep_1}: {component_a_dep_1_usage}
+- {component_a_dep_2}: {component_a_dep_2_usage}
 
-### 4.2 Component B: [Name]
+### 4.2 Component B: {component_b_spec_name}
 
-[Repeat structure from Component A]
+{component_b_spec_content}
 
-### 4.3 Component C: [Name]
+### 4.3 Component C: {component_c_spec_name}
 
-[Repeat structure from Component A]
+{component_c_spec_content}
 
 ---
 
@@ -259,33 +319,30 @@ interface ComponentA {
 
 ### 5.1 Core Entities
 
-**Entity 1: [Name]**
+**Constraints:**
+- You MUST define validation rules because this ensures data integrity
+- You MUST document relationships because this affects queries
+
+**Entity 1: {entity_1_name}**
 
 ```typescript
-// Example schema definition
-interface Entity1 {
-  id: string;
-  field1: Type;
-  field2: Type;
-  createdAt: Date;
-  updatedAt: Date;
-}
+{entity_1_schema}
 ```
 
 **Fields**:
-- `id`: [Description, constraints, validation]
-- `field1`: [Description, constraints, validation]
-- `field2`: [Description, constraints, validation]
+- `id`: {entity_1_id_description}
+- `field1`: {entity_1_field1_description}
+- `field2`: {entity_1_field2_description}
 
 **Relationships**:
-- [Relationship to Entity2]: [Cardinality, constraints]
+- {entity_1_relationship}: {entity_1_relationship_cardinality}
 
 **Indexes**:
-- `idx_field1`: [Purpose, expected query patterns]
+- `idx_field1`: {entity_1_index_purpose}
 
-**Entity 2: [Name]**
+**Entity 2: {entity_2_name}**
 
-[Repeat structure from Entity 1]
+{entity_2_content}
 
 ### 5.2 Entity Relationships
 
@@ -300,18 +357,22 @@ erDiagram
 
 | Field | Rule | Error Message |
 |-------|------|---------------|
-| [field1] | [Validation rule] | [User-facing message] |
-| [field2] | [Validation rule] | [User-facing message] |
+| {validation_field_1} | {validation_rule_1} | {validation_message_1} |
+| {validation_field_2} | {validation_rule_2} | {validation_message_2} |
 
 ### 5.4 Data Migration Strategy
 
+**Constraints:**
+- You MUST plan migration before deployment because data loss is catastrophic
+- You MUST plan rollback because migrations fail
+
 **Initial Data**:
-- [How will initial data be seeded?]
-- [What migrations are needed?]
+- {initial_data_seeding}
+- {migrations_needed}
 
 **Backward Compatibility**:
-- [How will schema changes be handled?]
-- [What is the rollback strategy?]
+- {schema_change_handling}
+- {rollback_strategy}
 
 ---
 
@@ -319,42 +380,50 @@ erDiagram
 
 ### 6.1 Failure Modes
 
+**Constraints:**
+- You MUST identify failure modes because this enables mitigation
+- You MUST define recovery procedures because this ensures reliability
+
 | Failure Mode | Probability | Impact | Detection | Recovery |
 |--------------|-------------|--------|-----------|----------|
-| [Failure 1] | Low/Med/High | [Impact] | [How detected] | [Recovery steps] |
-| [Failure 2] | Low/Med/High | [Impact] | [How detected] | [Recovery steps] |
-| [Failure 3] | Low/Med/High | [Impact] | [How detected] | [Recovery steps] |
+| {failure_mode_1} | {failure_1_probability} | {failure_1_impact} | {failure_1_detection} | {failure_1_recovery} |
+| {failure_mode_2} | {failure_2_probability} | {failure_2_impact} | {failure_2_detection} | {failure_2_recovery} |
+| {failure_mode_3} | {failure_3_probability} | {failure_3_impact} | {failure_3_detection} | {failure_3_recovery} |
 
 ### 6.2 Error Handling Strategy
 
 **Error Categories**:
 
 1. **User Errors** (Invalid input, business rule violations)
-   - **Detection**: [Input validation, business logic checks]
-   - **Response**: [User-friendly error message, suggested corrections]
-   - **Logging**: [Log level: INFO]
+   - **Detection**: {user_error_detection}
+   - **Response**: {user_error_response}
+   - **Logging**: {user_error_logging}
 
 2. **System Errors** (Dependencies unavailable, timeouts)
-   - **Detection**: [Health checks, timeout monitoring]
-   - **Response**: [Retry with backoff, fallback to cache]
-   - **Logging**: [Log level: ERROR]
+   - **Detection**: {system_error_detection}
+   - **Response**: {system_error_response}
+   - **Logging**: {system_error_logging}
 
 3. **Data Errors** (Corruption, inconsistency)
-   - **Detection**: [Validation checks, integrity constraints]
-   - **Response**: [Alert admin, quarantine data]
-   - **Logging**: [Log level: CRITICAL]
+   - **Detection**: {data_error_detection}
+   - **Response**: {data_error_response}
+   - **Logging**: {data_error_logging}
 
 ### 6.3 Retry & Circuit Breaker Strategy
 
+**Constraints:**
+- You MUST implement retry with backoff because naive retry causes thundering herd
+- You MUST implement circuit breaker because cascading failures are catastrophic
+
 **Retry Policy**:
-- **Max Attempts**: [Number]
-- **Backoff**: [Strategy - e.g., exponential with jitter]
-- **Timeout**: [Duration]
+- **Max Attempts**: {retry_max_attempts}
+- **Backoff**: {retry_backoff_strategy}
+- **Timeout**: {retry_timeout}
 
 **Circuit Breaker**:
-- **Threshold**: [Failure rate to trigger]
-- **Timeout**: [How long to stay open]
-- **Half-Open**: [How to test recovery]
+- **Threshold**: {circuit_breaker_threshold}
+- **Timeout**: {circuit_breaker_timeout}
+- **Half-Open**: {circuit_breaker_half_open}
 
 ```mermaid
 stateDiagram-v2
@@ -367,14 +436,18 @@ stateDiagram-v2
 
 ### 6.4 Monitoring & Alerting
 
+**Constraints:**
+- You MUST define alert thresholds because silent failures are dangerous
+- You MUST define escalation paths because alerts need action
+
 **Metrics to Track**:
-- [Metric 1]: [Threshold for alert]
-- [Metric 2]: [Threshold for alert]
-- [Metric 3]: [Threshold for alert]
+- {alert_metric_1}: {alert_metric_1_threshold}
+- {alert_metric_2}: {alert_metric_2_threshold}
+- {alert_metric_3}: {alert_metric_3_threshold}
 
 **Alert Channels**:
-- [Channel 1]: [For what severity]
-- [Channel 2]: [For what severity]
+- {alert_channel_1}: {alert_channel_1_severity}
+- {alert_channel_2}: {alert_channel_2_severity}
 
 ---
 
@@ -382,38 +455,46 @@ stateDiagram-v2
 
 ### 7.1 Authentication & Authorization
 
-**Authentication Method**: [OAuth, JWT, session-based, etc.]
+**Constraints:**
+- You MUST use established auth standards because rolling your own fails
+- You MUST implement least privilege because over-permissioning is a vulnerability
 
-**Authorization Model**: [RBAC, ABAC, etc.]
+**Authentication Method**: {authentication_method}
+
+**Authorization Model**: {authorization_model}
 
 **Roles & Permissions**:
 | Role | Permissions | Justification |
 |------|-------------|---------------|
-| [Role 1] | [Permissions] | [Why needed] |
-| [Role 2] | [Permissions] | [Why needed] |
+| {role_1} | {role_1_permissions} | {role_1_justification} |
+| {role_2} | {role_2_permissions} | {role_2_justification} |
 
 ### 7.2 Data Protection
 
+**Constraints:**
+- You MUST encrypt data at rest because storage is compromised regularly
+- You MUST encrypt data in transit because network sniffing is trivial
+
 **Data at Rest**:
-- **Encryption**: [Algorithm, key management]
-- **Sensitive Fields**: [Which fields, how protected]
+- **Encryption**: {encryption_at_rest}
+- **Sensitive Fields**: {sensitive_fields_protection}
 
 **Data in Transit**:
-- **Protocol**: [TLS 1.3, etc.]
-- **Certificate Management**: [How handled]
+- **Protocol**: {transit_protocol}
+- **Certificate Management**: {certificate_management}
 
 **PII Handling**:
-- [What PII is collected]
-- [How it's protected]
-- [Retention policy]
+- {pii_collected}
+- {pii_protection}
+- {pii_retention_policy}
 
 ### 7.3 Security Threats & Mitigations
 
 | Threat | Likelihood | Impact | Mitigation |
 |--------|------------|--------|------------|
-| [Threat 1] | Low/Med/High | [Impact] | [How mitigated] |
-| [Threat 2] | Low/Med/High | [Impact] | [How mitigated] |
-| [Threat 3] | Low/Med/High | [Impact] | [How mitigated] |
+| {threat_1} | {threat_1_likelihood} | {threat_1_impact} | {threat_1_mitigation} |
+| {threat_2} | {threat_2_likelihood} | {threat_2_impact} | {threat_2_mitigation} |
+| {threat_3} | {threat_3_likelihood} | {threat_3_impact} | {threat_3_mitigation} |
 
 ---
 
@@ -421,52 +502,60 @@ stateDiagram-v2
 
 ### 8.1 Unit Testing
 
-**Scope**: [What will be unit tested]
+**Constraints:**
+- You MUST define coverage targets because this ensures quality
+- You MUST identify what to mock because excessive mocking hides bugs
 
-**Coverage Target**: [Percentage]
+**Scope**: {unit_test_scope}
+
+**Coverage Target**: {unit_test_coverage_target}
 
 **Key Test Cases**:
-- [Component A]: [Test scenarios]
-- [Component B]: [Test scenarios]
-- [Component C]: [Test scenarios]
+- {component_a_name}: {component_a_test_scenarios}
+- {component_b_name}: {component_b_test_scenarios}
+- {component_c_name}: {component_c_test_scenarios}
 
-**Mocking Strategy**: [What will be mocked, how]
+**Mocking Strategy**: {mocking_strategy}
 
 ### 8.2 Integration Testing
 
-**Scope**: [What integrations will be tested]
+**Scope**: {integration_test_scope}
 
 **Test Scenarios**:
-1. [Scenario 1]: [What's being tested]
-2. [Scenario 2]: [What's being tested]
-3. [Scenario 3]: [What's being tested]
+1. {integration_scenario_1}: {integration_scenario_1_description}
+2. {integration_scenario_2}: {integration_scenario_2_description}
+3. {integration_scenario_3}: {integration_scenario_3_description}
 
-**Test Environment**: [How will test environment be set up]
+**Test Environment**: {test_environment_setup}
 
 ### 8.3 End-to-End Testing
 
 **User Flows to Test**:
-1. [Flow 1]: [Steps]
-2. [Flow 2]: [Steps]
-3. [Flow 3]: [Steps]
+1. {e2e_flow_1}: {e2e_flow_1_steps}
+2. {e2e_flow_2}: {e2e_flow_2_steps}
+3. {e2e_flow_3}: {e2e_flow_3_steps}
 
-**Automation**: [What will be automated, what will be manual]
+**Automation**: {e2e_automation_strategy}
 
 ### 8.4 Performance Testing
 
+**Constraints:**
+- You MUST test under expected load because production surprises are expensive
+- You SHOULD test beyond expected load because growth happens
+
 **Load Testing**:
-- **Target Load**: [Requests per second, concurrent users]
-- **Success Criteria**: [Response time, error rate]
+- **Target Load**: {load_test_target}
+- **Success Criteria**: {load_test_success_criteria}
 
 **Stress Testing**:
-- **Breaking Point**: [What are we testing]
-- **Recovery**: [How should system recover]
+- **Breaking Point**: {stress_test_breaking_point}
+- **Recovery**: {stress_test_recovery}
 
 ### 8.5 Security Testing
 
-**Penetration Testing**: [Scope and approach]
+**Penetration Testing**: {penetration_testing_scope}
 
-**Vulnerability Scanning**: [Tools and frequency]
+**Vulnerability Scanning**: {vulnerability_scanning}
 
 **Security Checklist**:
 - [ ] SQL injection prevention
@@ -482,41 +571,45 @@ stateDiagram-v2
 
 ### 9.1 Deployment Strategy
 
+**Constraints:**
+- You MUST have rollback plan because deployments fail
+- You SHOULD use progressive rollout because big-bang deployments are risky
+
 **Environment Progression**:
 1. Development → 2. Staging → 3. Production
 
-**Deployment Method**: [Blue-green, canary, rolling update]
+**Deployment Method**: {deployment_method}
 
-**Rollback Plan**: [How to rollback if issues detected]
+**Rollback Plan**: {rollback_plan}
 
 ### 9.2 Configuration Management
 
 **Environment-Specific Config**:
-- [Config 1]: [Dev value | Staging value | Prod value]
-- [Config 2]: [Dev value | Staging value | Prod value]
+- {config_1_name}: {config_1_values}
+- {config_2_name}: {config_2_values}
 
-**Secrets Management**: [How secrets are stored and accessed]
+**Secrets Management**: {secrets_management}
 
 ### 9.3 Monitoring
 
 **Application Metrics**:
-- [Metric 1]: [What it measures, dashboard location]
-- [Metric 2]: [What it measures, dashboard location]
+- {app_metric_1}: {app_metric_1_description}
+- {app_metric_2}: {app_metric_2_description}
 
 **Infrastructure Metrics**:
-- [Metric 1]: [What it measures, alert threshold]
-- [Metric 2]: [What it measures, alert threshold]
+- {infra_metric_1}: {infra_metric_1_description}
+- {infra_metric_2}: {infra_metric_2_description}
 
 **Logging Strategy**:
-- **Log Levels**: [When to use each level]
-- **Structured Logging**: [Format, required fields]
-- **Log Retention**: [How long logs are kept]
+- **Log Levels**: {log_levels_usage}
+- **Structured Logging**: {structured_logging_format}
+- **Log Retention**: {log_retention_policy}
 
 ### 9.4 Maintenance Windows
 
-**Scheduled Maintenance**: [Frequency, duration, communication plan]
+**Scheduled Maintenance**: {scheduled_maintenance}
 
-**Zero-Downtime Updates**: [How achieved]
+**Zero-Downtime Updates**: {zero_downtime_strategy}
 
 ---
 
@@ -526,24 +619,24 @@ stateDiagram-v2
 
 | Operation | Target Latency | Target Throughput |
 |-----------|----------------|-------------------|
-| [Operation 1] | [p50/p95/p99] | [Requests/sec] |
-| [Operation 2] | [p50/p95/p99] | [Requests/sec] |
+| {operation_1} | {operation_1_latency} | {operation_1_throughput} |
+| {operation_2} | {operation_2_latency} | {operation_2_throughput} |
 
 ### 10.2 Optimization Strategies
 
 **Caching**:
-- **What to Cache**: [Data types, duration]
-- **Cache Invalidation**: [Strategy]
-- **Cache Warming**: [How to pre-populate]
+- **What to Cache**: {cache_what}
+- **Cache Invalidation**: {cache_invalidation_strategy}
+- **Cache Warming**: {cache_warming_strategy}
 
 **Database Optimization**:
-- **Query Optimization**: [Key optimizations]
-- **Indexing Strategy**: [What indexes, why]
-- **Connection Pooling**: [Configuration]
+- **Query Optimization**: {query_optimization}
+- **Indexing Strategy**: {indexing_strategy}
+- **Connection Pooling**: {connection_pooling_config}
 
 **Asynchronous Processing**:
-- **What to Process Async**: [Operations]
-- **Queue Management**: [Technology, configuration]
+- **What to Process Async**: {async_operations}
+- **Queue Management**: {queue_management}
 
 ---
 
@@ -552,33 +645,37 @@ stateDiagram-v2
 ### 11.1 Scalability Roadmap
 
 **Phase 1** (Current):
-- [Current capacity]
-- [Current limitations]
+- {phase_1_capacity}
+- {phase_1_limitations}
 
 **Phase 2** (6 months):
-- [Expected growth]
-- [Scaling approach]
+- {phase_2_growth}
+- {phase_2_scaling}
 
 **Phase 3** (12 months):
-- [Long-term vision]
-- [Architectural changes needed]
+- {phase_3_vision}
+- {phase_3_changes}
 
 ### 11.2 Deferred Features
 
 | Feature | Why Deferred | Planned For |
 |---------|--------------|-------------|
-| [Feature 1] | [Reason] | [Version/Date] |
-| [Feature 2] | [Reason] | [Version/Date] |
+| {deferred_feature_1} | {deferred_feature_1_reason} | {deferred_feature_1_planned} |
+| {deferred_feature_2} | {deferred_feature_2_reason} | {deferred_feature_2_planned} |
 
 ### 11.3 Technical Debt
 
+**Constraints:**
+- You MUST track technical debt because it compounds
+- You MUST plan to address debt because unaddressed debt becomes crisis
+
 **Known Shortcuts**:
-- [Shortcut 1]: [Why taken, plan to address]
-- [Shortcut 2]: [Why taken, plan to address]
+- {shortcut_1}: {shortcut_1_plan}
+- {shortcut_2}: {shortcut_2_plan}
 
 **Refactoring Opportunities**:
-- [Opportunity 1]: [Benefit, effort estimate]
-- [Opportunity 2]: [Benefit, effort estimate]
+- {refactoring_1}: {refactoring_1_estimate}
+- {refactoring_2}: {refactoring_2_estimate}
 
 ---
 
@@ -586,39 +683,39 @@ stateDiagram-v2
 
 ### Appendix A: Alternatives Considered
 
-**Alternative 1**: [Name]
-- **Description**: [What it was]
-- **Pros**: [Why it was attractive]
-- **Cons**: [Why it was rejected]
+**Alternative 1**: {alternative_1_name}
+- **Description**: {alternative_1_description}
+- **Pros**: {alternative_1_pros}
+- **Cons**: {alternative_1_cons}
 
-**Alternative 2**: [Name]
-- **Description**: [What it was]
-- **Pros**: [Why it was attractive]
-- **Cons**: [Why it was rejected]
+**Alternative 2**: {alternative_2_name}
+- **Description**: {alternative_2_description}
+- **Pros**: {alternative_2_pros}
+- **Cons**: {alternative_2_cons}
 
 ### Appendix B: Research References
 
-- [Research document 1]: `research/[filename].md`
-- [Research document 2]: `research/[filename].md`
+- {research_reference_1}: `research/{research_reference_1_filename}.md`
+- {research_reference_2}: `research/{research_reference_2_filename}.md`
 
 ### Appendix C: Requirements Traceability
 
 | Requirement ID | Design Section | Implementation Plan Step |
 |----------------|----------------|--------------------------|
-| F1 | [Section] | [Step number] |
-| F2 | [Section] | [Step number] |
+| F1 | {f1_design_section} | {f1_implementation_step} |
+| F2 | {f2_design_section} | {f2_implementation_step} |
 
 ### Appendix D: Glossary
 
-- **Term 1**: [Definition]
-- **Term 2**: [Definition]
-- **Acronym 1**: [Expansion and meaning]
+- **{glossary_term_1}**: {glossary_term_1_definition}
+- **{glossary_term_2}**: {glossary_term_2_definition}
+- **{glossary_acronym_1}**: {glossary_acronym_1_expansion}
 
 ### Appendix E: Decision Log
 
 | Date | Decision | Rationale | Stakeholders |
 |------|----------|-----------|--------------|
-| [Date] | [What was decided] | [Why] | [Who was involved] |
+| {decision_log_date} | {decision_log_decision} | {decision_log_rationale} | {decision_log_stakeholders} |
 
 ---
 
@@ -634,8 +731,8 @@ stateDiagram-v2
 - [ ] Monitoring plan defined
 
 **Reviewers**:
-- [ ] [Role 1]: [Name] - [Date]
-- [ ] [Role 2]: [Name] - [Date]
+- [ ] {reviewer_1_role}: {reviewer_1_name} - {reviewer_1_date}
+- [ ] {reviewer_2_role}: {reviewer_2_name} - {reviewer_2_date}
 
 **Approval**:
 - [ ] Ready for implementation planning
@@ -643,3 +740,8 @@ stateDiagram-v2
 ---
 
 *This design document follows the PDD (Prompt-Driven Development) methodology and supports implementation planning.*
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

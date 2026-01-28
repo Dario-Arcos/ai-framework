@@ -10,12 +10,13 @@ description: Generates structured implementation tasks from designs or descripti
 - [Overview](#overview)
 - [When to Use](#when-to-use)
 - [When NOT to Use](#when-not-to-use)
-- [Quick Reference](#quick-reference)
+- [Parameters](#parameters)
 - [The Process](#the-process)
 - [Key Principles](#key-principles)
 - [Examples](#examples)
 - [Error Handling](#error-handling)
 - [Common Mistakes](#common-mistakes)
+- [Troubleshooting](#troubleshooting)
 - [Notes](#notes)
 
 ## Overview
@@ -40,15 +41,15 @@ This skill creates well-formed implementation tasks that can be executed by code
 | Exploring/researching | Not for analysis | `sop-reverse` |
 | Requirements unclear | Discovery needed | `sop-discovery` |
 
-## Quick Reference
+## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `input` | Yes | Text, file path to design/PDD |
-| `output_dir` | No | Task files directory (default: specs/{goal}/implementation) |
-| `step_number` | No | Specific PDD step to process |
+- **input** (required): Text description or file path to design/PDD document
+- **output_dir** (optional, default: specs/{goal}/implementation): Directory for task files
+- **step_number** (optional): Specific PDD step to process (for targeted generation)
 
-**Output**: `.code-task.md` files in output_dir
+## Output
+
+`.code-task.md` files in output_dir
 
 ## The Process
 
@@ -61,6 +62,10 @@ This skill creates well-formed implementation tasks that can be executed by code
    - Has checklist format + numbered steps → **PDD mode**
    - Otherwise → **Description mode**
 4. Inform user which mode was detected and what will be generated
+
+**Constraints:**
+- You MUST inform user which mode was detected
+- You MUST NOT proceed without user acknowledgment of detected mode
 
 **Example output:**
 ```
@@ -89,6 +94,11 @@ Found: 5 implementation steps
 - Identify required skills/technologies
 - Note dependencies on other systems or components
 
+**Constraints:**
+- You MUST identify all functional requirements
+- You MUST assess complexity before proceeding
+- You SHOULD note any ambiguities for clarification
+
 ### Step 3: Structure Requirements
 
 **For PDD mode:**
@@ -104,11 +114,13 @@ Found: 5 implementation steps
 - Create measurable acceptance criteria (Given-When-Then format)
 - Ensure all "what" is captured, not "how"
 
+**Constraints:**
+- You MUST use Given-When-Then format for acceptance criteria
+- You MUST NOT include implementation details in requirements
+
 **Output:** Structured requirements ready for task generation
 
 ### Step 4: Plan Tasks
-
-**CRITICAL:** Do NOT generate files yet. Present plan for approval first.
 
 **Actions:**
 1. Determine task breakdown:
@@ -139,6 +151,11 @@ Found: 5 implementation steps
 3. Wait for user approval
 4. If user suggests changes, adjust and re-present
 5. Only proceed to Step 5 when user explicitly approves
+
+**Constraints:**
+- You MUST NOT generate files before user approval
+- You MUST present task breakdown for user review
+- You MUST wait for explicit approval before proceeding
 
 ### Step 5: Generate Tasks
 
@@ -237,12 +254,21 @@ Each task file MUST follow this exact structure:
 - Dependencies: All external dependencies documented
 - Implementation Approach: Guidance without over-prescription
 
+**Constraints:**
+- You MUST follow the exact task file format
+- You MUST include all required sections (Description, Background, Reference Documentation, etc.)
+- You MUST NOT place tasks in wrong directory structure
+
 ### Step 6: Report Results
 
 **Actions:**
 1. List all generated files with absolute paths
 2. Show file count and total lines generated
 3. Provide next steps
+
+**Constraints:**
+- You MUST list all generated files with absolute paths
+- You MUST provide clear next steps
 
 **Report format:**
 ```
@@ -332,6 +358,20 @@ specs/user-profile/tasks/
 | Vague acceptance criteria | Unclear completion | Use Given-When-Then format |
 | Missing dependencies | Blocked execution | Document all dependencies |
 | No design reference | Implementation drift | Always reference design doc |
+
+## Troubleshooting
+
+### Problem: Generated tasks are too large
+**Cause**: Step complexity underestimated during planning
+**Solution**: Decompose into sub-tasks. Each task should be completable in one session (<2 hours).
+
+### Problem: Tasks have unclear acceptance criteria
+**Cause**: Requirements missing specific success conditions
+**Solution**: Add Given-When-Then format. Each criterion must be testable.
+
+### Problem: Task dependencies create circular blocks
+**Cause**: Poor task ordering or shared state assumptions
+**Solution**: Reorder tasks to build foundation first. Extract shared code into earlier task.
 
 ## Notes
 

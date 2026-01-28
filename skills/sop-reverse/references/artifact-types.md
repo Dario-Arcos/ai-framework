@@ -1,17 +1,33 @@
 # Artifact Types Reference
 
-Detailed analysis and spec generation instructions per artifact type.
+## Overview
+
+This reference defines detailed analysis and spec generation instructions per artifact type. Understanding artifact types is essential for proper investigation and spec generation in sop-reverse.
+
+---
 
 ## Type Detection
+
+**Constraints:**
+- You MUST detect artifact type when not provided because analysis approach varies by type
+- You MUST check path existence first because this distinguishes file-based from concept-based artifacts
+- You SHOULD identify specific artifact category because this guides analysis focus
 
 When `target_type` is not provided, analyze the target:
 - **Path exists?** Check if codebase, docs, or config
 - **URL pattern?** Check if API docs, wiki, repository
 - **Description only?** Likely process or concept
 
+---
+
 ## Batch Analysis by Type
 
 ### Codebase
+
+**Constraints:**
+- You MUST analyze directory structure because organization reveals architecture
+- You MUST identify entry points because these define system boundaries
+- You SHOULD analyze dependencies because this reveals external coupling
 
 Analyze:
 - Directory structure and file organization
@@ -26,6 +42,11 @@ Analyze:
 
 ### API
 
+**Constraints:**
+- You MUST analyze authentication mechanisms because this affects integration approach
+- You MUST document endpoint inventory because this defines API surface
+- You SHOULD analyze rate limiting because this affects usage patterns
+
 Analyze:
 - Authentication mechanisms (OAuth, API keys, JWT)
 - Base URL and versioning scheme
@@ -39,6 +60,11 @@ Analyze:
 
 ### Documentation
 
+**Constraints:**
+- You MUST analyze document hierarchy because organization affects navigation
+- You MUST identify coverage gaps because missing areas need attention
+- You SHOULD assess recency because outdated docs mislead
+
 Analyze:
 - Document hierarchy and organization
 - Main topics and sections
@@ -50,6 +76,11 @@ Analyze:
 - API reference completeness
 
 ### Process
+
+**Constraints:**
+- You MUST identify process steps and sequence because this defines workflow
+- You MUST document decision points because these are critical for implementation
+- You SHOULD identify failure modes because error handling needs design
 
 Analyze:
 - Process steps and sequence
@@ -64,6 +95,11 @@ Analyze:
 
 ### Concept
 
+**Constraints:**
+- You MUST define core meaning and scope because this establishes boundaries
+- You MUST identify common implementations because this shows practical applications
+- You SHOULD document trade-offs because this guides decision-making
+
 Analyze:
 - Core definition and scope
 - Key components and relationships
@@ -74,7 +110,14 @@ Analyze:
 - Industry standards and best practices
 - Common misconceptions
 
+---
+
 ## Spec Generation by Type
+
+**Constraints:**
+- You MUST generate appropriate spec files for artifact type because specs guide forward flow
+- You MUST use consistent file naming because this enables automated processing
+- You SHOULD cross-reference specs because this maintains coherence
 
 ### Codebase -> Technical Specs
 
@@ -136,3 +179,33 @@ Analyze:
 | `use-cases.md` | Applications, examples |
 | `trade-offs.md` | Pros, cons, limitations |
 | `alternatives.md` | Related concepts, comparisons |
+
+---
+
+## Troubleshooting
+
+### Type Detection Fails
+
+If artifact type cannot be determined:
+- You SHOULD ask user for clarification because ambiguous targets need guidance
+- You SHOULD default to concept analysis because this is most flexible
+- You MUST NOT proceed with wrong type because analysis will be incomplete
+
+### Spec Files Missing Expected Content
+
+If generated specs lack detail:
+- You SHOULD verify artifact was fully accessible because partial access limits analysis
+- You SHOULD increase analysis depth because shallow passes miss important details
+- You MUST re-run analysis if critical content is missing because incomplete specs cause planning failures
+
+### Type-Specific Analysis Not Matching Artifact
+
+If analysis approach doesn't fit artifact:
+- You SHOULD reconsider type classification because initial detection may be wrong
+- You SHOULD use hybrid approach if artifact spans types because real artifacts are complex
+- You MUST document type ambiguity in specs because this informs forward planning
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

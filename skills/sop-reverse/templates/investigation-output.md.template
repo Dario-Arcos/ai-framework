@@ -1,32 +1,56 @@
-# Investigation: {{artifact_name}}
+# Investigation: {artifact_name}
 
-**Generated**: {{timestamp}}
-**Target**: {{target}}
-**Type**: {{target_type}}
+<!--
+## Overview
+
+Investigation output template for sop-reverse skill.
+Captures analysis of existing artifacts to generate forward-flow specs.
+
+## Usage Constraints
+
+- You MUST identify artifact type because analysis strategy depends on type
+- You MUST include mermaid diagrams because visual documentation aids understanding
+- You MUST provide priority questions because refinement requires user input
+- You MUST NOT generate specs without user feedback because assumptions lead to wrong specs
+- You SHOULD use consistent section structure because this enables comparison across investigations
+- You SHOULD update status as investigation progresses because this signals readiness
+-->
+
+**Generated**: {timestamp}
+**Target**: {target}
+**Type**: {target_type}
 **Investigator**: Claude Code (sop-reverse)
 
 ---
 
 ## Executive Summary
 
-{{executive_summary}}
+**Constraints:**
+- You MUST provide summary first because readers need quick orientation
+- You MUST limit to top 3 findings because focus enables action
+
+{executive_summary}
 
 **Key Findings**:
-- {{key_finding_1}}
-- {{key_finding_2}}
-- {{key_finding_3}}
+- {key_finding_1}
+- {key_finding_2}
+- {key_finding_3}
 
-**Status**: {{status}}
+**Status**: {status}
 <!-- Status: Initial Analysis | Refinement | Spec Generation | Complete -->
 
 ---
 
 ## Target Details
 
-**Location**: {{target}}
-**Type**: {{target_type}}
-**Scope**: {{scope_description}}
-**Focus Areas**: {{focus_areas}}
+**Constraints:**
+- You MUST document target location because this enables verification
+- You MUST identify artifact type because analysis depends on type
+
+**Location**: {target}
+**Type**: {target_type}
+**Scope**: {scope_description}
+**Focus Areas**: {focus_areas}
 
 ---
 
@@ -34,29 +58,33 @@
 
 ### Overview
 
-{{overview_description}}
+**Constraints:**
+- You MUST provide high-level overview first because context enables understanding
+- You SHOULD include diagrams because visual aids comprehension
 
-### {{section_1_title}}
+{overview_description}
 
-{{section_1_content}}
+### {section_1_title}
 
-**Diagram**:
-```mermaid
-{{section_1_diagram}}
-```
-
-### {{section_2_title}}
-
-{{section_2_content}}
+{section_1_content}
 
 **Diagram**:
 ```mermaid
-{{section_2_diagram}}
+{section_1_diagram}
 ```
 
-### {{section_3_title}}
+### {section_2_title}
 
-{{section_3_content}}
+{section_2_content}
+
+**Diagram**:
+```mermaid
+{section_2_diagram}
+```
+
+### {section_3_title}
+
+{section_3_content}
 
 ---
 
@@ -64,110 +92,162 @@
 
 ### Structure & Organization
 
-{{structure_findings}}
+**Constraints:**
+- You MUST document structure because this reveals architecture
+- You SHOULD identify patterns because patterns inform spec generation
+
+{structure_findings}
 
 ### Technical Stack
 
-{{tech_stack_findings}}
+**Constraints:**
+- You MUST identify technologies because this affects planning
+- You MUST document dependencies because these constrain solutions
+
+{tech_stack_findings}
 
 **Dependencies**:
-{{dependencies_table}}
+{dependencies_table}
 
 ### Patterns & Conventions
 
-{{patterns_findings}}
+{patterns_findings}
 
 ### Quality & Completeness
 
-{{quality_findings}}
+**Constraints:**
+- You MUST assess quality because this identifies improvement opportunities
+- You SHOULD include metrics because quantification enables comparison
+
+{quality_findings}
 
 **Metrics**:
-{{metrics_table}}
+{metrics_table}
 
 ---
 
 ## Observations
 
 ### Strengths
-- {{strength_1}}
-- {{strength_2}}
-- {{strength_3}}
+
+**Constraints:**
+- You MUST identify strengths because these should be preserved
+- You SHOULD limit to top 3 because focus enables action
+
+- {strength_1}
+- {strength_2}
+- {strength_3}
 
 ### Weaknesses
-- {{weakness_1}}
-- {{weakness_2}}
-- {{weakness_3}}
+
+**Constraints:**
+- You MUST identify weaknesses because these are improvement opportunities
+- You SHOULD prioritize by impact because not all weaknesses are equal
+
+- {weakness_1}
+- {weakness_2}
+- {weakness_3}
 
 ### Unknowns
-- {{unknown_1}}
-- {{unknown_2}}
-- {{unknown_3}}
+
+**Constraints:**
+- You MUST track unknowns because they need investigation
+- You SHOULD NOT assume answers because assumptions cause failures
+
+- {unknown_1}
+- {unknown_2}
+- {unknown_3}
 
 ---
 
 ## Questions for Refinement
 
 ### Priority Questions
-1. {{priority_question_1}}
-2. {{priority_question_2}}
-3. {{priority_question_3}}
+
+**Constraints:**
+- You MUST ask clarifying questions because assumptions lead to wrong specs
+- You MUST limit to 3-5 priority questions because too many overwhelms
+- You SHOULD order by importance because time may be limited
+
+1. {priority_question_1}
+2. {priority_question_2}
+3. {priority_question_3}
 
 ### Optional Questions
-1. {{optional_question_1}}
-2. {{optional_question_2}}
+
+1. {optional_question_1}
+2. {optional_question_2}
 
 ---
 
 ## User Feedback
 
+**Constraints:**
+- You MUST record user responses verbatim because paraphrasing loses nuance
+- You MUST track impact of each response because this informs spec generation
+
 <!-- This section updated during interactive refinement -->
 
-### Question 1: {{question_1_text}}
-**Response**: {{question_1_response}}
-**Impact**: {{question_1_impact}}
+### Question 1: {question_1_text}
+**Response**: {question_1_response}
+**Impact**: {question_1_impact}
 
-### Question 2: {{question_2_text}}
-**Response**: {{question_2_response}}
-**Impact**: {{question_2_impact}}
+### Question 2: {question_2_text}
+**Response**: {question_2_response}
+**Impact**: {question_2_impact}
 
-### Question 3: {{question_3_text}}
-**Response**: {{question_3_response}}
-**Impact**: {{question_3_impact}}
+### Question 3: {question_3_text}
+**Response**: {question_3_response}
+**Impact**: {question_3_impact}
 
 ---
 
 ## Scope Adjustments
 
+**Constraints:**
+- You MUST document scope changes because this provides audit trail
+- You MUST explain rationale because this prevents scope creep
+
 <!-- Updated based on user feedback -->
 
-**Original Scope**: {{original_scope}}
-**Adjusted Scope**: {{adjusted_scope}}
-**Rationale**: {{scope_rationale}}
+**Original Scope**: {original_scope}
+**Adjusted Scope**: {adjusted_scope}
+**Rationale**: {scope_rationale}
 
 ---
 
 ## Artifacts Analyzed
 
 ### Files / Endpoints / Documents
-{{artifacts_list}}
+
+**Constraints:**
+- You MUST list all analyzed artifacts because this ensures completeness
+- You SHOULD categorize by type because this aids navigation
+
+{artifacts_list}
 
 ### External References
-{{external_references}}
+
+{external_references}
 
 ---
 
 ## Next Steps
 
-**Ready for Spec Generation**: {{ready_for_specs}}
+**Constraints:**
+- You MUST indicate readiness for spec generation because this signals completion
+- You MUST list specs to generate because this defines deliverables
+
+**Ready for Spec Generation**: {ready_for_specs}
 
 **Specs to Generate**:
-- [ ] {{spec_1}}
-- [ ] {{spec_2}}
-- [ ] {{spec_3}}
-- [ ] {{spec_4}}
-- [ ] {{spec_5}}
+- [ ] {spec_1}
+- [ ] {spec_2}
+- [ ] {spec_3}
+- [ ] {spec_4}
+- [ ] {spec_5}
 
-**Forward Flow**: {{forward_flow_notes}}
+**Forward Flow**: {forward_flow_notes}
 
 ---
 
@@ -175,31 +255,44 @@
 
 ### Mermaid Diagrams
 
+**Constraints:**
+- You MUST include architecture diagram because this shows system structure
+- You SHOULD include data flow diagram because this shows behavior
+
 #### Overall Architecture
 ```mermaid
-{{overall_architecture_diagram}}
+{overall_architecture_diagram}
 ```
 
 #### Component Relationships
 ```mermaid
-{{component_relationships_diagram}}
+{component_relationships_diagram}
 ```
 
 #### Data Flow
 ```mermaid
-{{data_flow_diagram}}
+{data_flow_diagram}
 ```
 
 ### Evidence
 
-{{evidence_section}}
+{evidence_section}
 
 ### Limitations
 
-{{limitations_section}}
+**Constraints:**
+- You MUST document limitations because this enables informed decisions
+- You SHOULD NOT hide limitations because transparency builds trust
+
+{limitations_section}
 
 ---
 
-**Investigation Status**: {{final_status}}
-**Last Updated**: {{last_updated}}
-**Output Directory**: {{output_dir}}
+**Investigation Status**: {final_status}
+**Last Updated**: {last_updated}
+**Output Directory**: {output_dir}
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

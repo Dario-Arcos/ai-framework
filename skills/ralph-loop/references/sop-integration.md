@@ -1,10 +1,17 @@
 # SOP Integration Reference
 
-How ralph-loop integrates with the SOP (Standard Operating Procedure) skills framework.
+## Overview
+
+This reference defines how ralph-loop integrates with the SOP (Standard Operating Procedure) skills framework. Understanding this integration is essential for proper workflow orchestration and phase transitions.
 
 ---
 
-## Overview
+## Workflow Structure
+
+**Constraints:**
+- You MUST follow the two-phase structure because mixing planning and execution degrades both
+- You MUST complete planning phase before execution because workers need clear specifications
+- You MUST NOT skip any planning step because incomplete specs cause implementation failures
 
 Ralph-loop orchestrates SOP skills to transform ideas into implementations through a two-phase workflow:
 
@@ -50,6 +57,11 @@ graph TD
 
 ### 1. sop-discovery
 
+**Constraints:**
+- You MUST ask one question at a time because batched questions produce shallow answers
+- You MUST NOT proceed without answers to critical questions because vague requirements cause rework
+- You SHOULD capture all decisions in discovery.md because this creates an audit trail
+
 **Purpose**: Brainstorm constraints, risks, and prior art before planning
 
 **When invoked**: First step of Forward flow
@@ -88,6 +100,11 @@ Output: specs/user-auth/discovery.md
 ---
 
 ### 2. sop-reverse (Alternative Entry Point)
+
+**Constraints:**
+- You MUST use sop-reverse when investigating existing artifacts because understanding prevents breaking changes
+- You MUST complete batch analysis before refinement questions because context informs follow-up
+- You SHOULD continue to forward flow when planning improvements because reverse generates specs that feed planning
 
 **Purpose**: Investigate existing artifacts before improving them
 
@@ -142,6 +159,11 @@ User: "Continue to forward flow to add PayPal support"
 ---
 
 ### 3. sop-planning
+
+**Constraints:**
+- You MUST validate discovery completeness before proceeding because incomplete discovery causes flawed designs
+- You MUST research technology choices before design decisions because uninformed decisions create technical debt
+- You SHOULD document all research findings because this prevents repeated investigation
 
 **Purpose**: Create detailed requirements, research, and design
 
@@ -222,6 +244,11 @@ Output: specs/user-auth/design/detailed-design.md
 
 ### 4. sop-task-generator
 
+**Constraints:**
+- You MUST include acceptance criteria for each task because workers need clear completion criteria
+- You MUST size tasks appropriately (M-size optimal) because oversized tasks exhaust context
+- You MUST NOT create tasks without file lists because workers need to know scope
+
 **Purpose**: Generate structured implementation tasks from design
 
 **When invoked**: After planning completes
@@ -280,6 +307,11 @@ Output: specs/user-auth/implementation/plan.md
 
 ## The Complete Forward Flow
 
+**Constraints:**
+- You MUST complete each phase before proceeding because phases depend on prior outputs
+- You MUST wait for user approval at phase transitions because human judgment guides direction
+- You SHOULD present options at decision points because user choice determines outcome
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -330,6 +362,11 @@ sequenceDiagram
 
 ## The Complete Reverse Flow
 
+**Constraints:**
+- You MUST complete batch analysis before refinement because context informs questions
+- You MUST ask user about continuing to forward flow because direction choice matters
+- You SHOULD preserve specs even without implementation because analysis has value
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -371,6 +408,11 @@ sequenceDiagram
 ---
 
 ## Directory Structure After Full Flow
+
+**Constraints:**
+- You MUST maintain directory structure because workers expect standard paths
+- You MUST NOT modify specs structure during execution because workers read from fixed locations
+- You SHOULD commit specs before execution because this creates recovery point
 
 ```
 project-root/
@@ -414,6 +456,11 @@ project-root/
 ---
 
 ## Handoff Between Skills
+
+**Constraints:**
+- You MUST use file paths for handoff because this maintains separation of concerns
+- You MUST verify handoff files exist before proceeding because missing files cause failures
+- You SHOULD include prior investigation context because this informs planning
 
 ### Discovery → Planning
 
@@ -487,6 +534,11 @@ specs/user-auth/implementation/plan.md
 
 ## Error Handling Across Skills
 
+**Constraints:**
+- You MUST validate phase outputs before proceeding because incomplete outputs cause downstream failures
+- You MUST NOT proceed with vague requirements because this causes implementation confusion
+- You SHOULD trigger research when knowledge is missing because informed decisions require investigation
+
 ### Discovery Incomplete
 
 **Symptom**: User skips questions or provides vague answers
@@ -559,6 +611,11 @@ Resume: ./loop.sh specs/user-auth/
 
 ## Quality Gates Across Phases
 
+**Constraints:**
+- You MUST pass phase validation before proceeding because skipping gates causes downstream failures
+- You MUST reject incomplete outputs because quality compounds through phases
+- You SHOULD document rejection reasons because this guides correction
+
 Each phase has validation:
 
 | Phase | Validation | Rejection Criteria |
@@ -571,6 +628,11 @@ Each phase has validation:
 ---
 
 ## Cost Model
+
+**Constraints:**
+- You SHOULD estimate costs before starting because this sets expectations
+- You SHOULD compare with manual implementation because this justifies approach
+- You MAY adjust quality level based on ROI because prototype mode reduces cost
 
 Typical cost breakdown for medium-sized feature:
 
@@ -594,6 +656,11 @@ Typical cost breakdown for medium-sized feature:
 ---
 
 ## Advanced Patterns
+
+**Constraints:**
+- You MUST complete one goal before starting dependent goal because context from prior work informs later work
+- You SHOULD reference prior specs when building dependent features because this maintains consistency
+- You MAY use reverse flow for research without implementation because analysis has standalone value
 
 ### Pattern 1: Multi-Goal Projects
 
@@ -638,31 +705,35 @@ Typical cost breakdown for medium-sized feature:
 
 ---
 
-## Troubleshooting SOP Integration
+## Troubleshooting
 
-### Problem: Discovery takes too long
+### Discovery Takes Too Long
 
-**Cause**: Too many questions, scope creep
+If discovery exceeds 20 minutes:
+- You SHOULD time-box discovery to 20 minutes
+- You SHOULD capture remaining questions in "Future Considerations"
+- You MUST NOT skip critical constraints regardless of time pressure
 
-**Solution**: Time-box discovery to 20 minutes, capture remaining questions in "Future Considerations"
+### Planning Generates Too Much Research
 
-### Problem: Planning generates too much research
+If research loop doesn't converge:
+- You SHOULD limit research files to 3-5 per goal
+- You SHOULD prioritize implementation-critical topics
+- You MUST stop research when sufficient for design decisions
 
-**Cause**: Research loop not converging
+### Task List Too Granular
 
-**Solution**: Limit research files to 3-5, prioritize implementation-critical topics
+If task list has many S-size tasks:
+- You SHOULD combine related micro-tasks into M-size
+- You SHOULD aim for 40-60% context usage per task
+- You MUST NOT create tasks smaller than single function implementation
 
-### Problem: Task list too granular
+### Workers Can't Find Context in Specs
 
-**Cause**: Over-planning in task generation
-
-**Solution**: Combine related micro-tasks, aim for M-size tasks (~40-60% context)
-
-### Problem: Workers can't find context in specs
-
-**Cause**: Specs too scattered or poorly organized
-
-**Solution**: Ensure detailed-design.md has all implementation details, reference from plan.md
+If workers report missing information:
+- You SHOULD verify detailed-design.md has all implementation details
+- You SHOULD add cross-references from plan.md to design files
+- You MUST update specs and restart loop if information is truly missing
 
 ---
 
@@ -672,3 +743,8 @@ Typical cost breakdown for medium-sized feature:
 - [supervision-modes.md](supervision-modes.md) - HITL vs AFK execution
 - [observability.md](observability.md) - Monitoring during execution
 - [backpressure.md](backpressure.md) - Quality gates and checkpoints
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

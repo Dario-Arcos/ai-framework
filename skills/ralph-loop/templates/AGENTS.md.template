@@ -1,5 +1,20 @@
 # Project: [Name]
 
+<!--
+## Overview
+
+Project configuration template for ralph-loop. Defines quality level, build commands,
+validation gates, environment requirements, gotchas, and coding patterns.
+
+## Usage Constraints
+
+- You MUST set quality level because this determines which gates are enforced
+- You MUST define all validation commands because workers need to run them
+- You MUST document environment requirements because setup varies by machine
+- You SHOULD document gotchas as you discover them because this prevents repeated failures
+- You SHOULD NOT commit this template with example content because examples are placeholders
+-->
+
 ## Quality Level
 
 **Level: [Prototype | Production | Library]**
@@ -25,6 +40,11 @@ npm run build
 
 ## Validation
 
+**Constraints:**
+- You MUST run all gates before commit when quality level is Production or Library because this ensures code quality
+- You SHOULD run gates in order (test → typecheck → lint → build) because earlier failures are more informative
+- You MAY skip gates when quality level is Prototype because speed is prioritized
+
 **All must pass before commit:**
 - Tests: `npm test`
 - Typecheck: `npm run typecheck`
@@ -38,7 +58,10 @@ npm run build
 
 ## Gotchas
 
-<!-- Document problems you've solved. Future iterations will thank you. -->
+**Constraints:**
+- You MUST document problems you solve because future iterations will encounter them
+- You MUST include reproduction steps because context helps diagnosis
+- You SHOULD categorize by area (Environment, Build, Testing, Runtime) because this aids search
 
 ### Environment
 - **Node version matters**: Use exact version from `.nvmrc`. v18 breaks crypto module.
@@ -60,6 +83,11 @@ npm run build
 
 ## Patterns
 
+**Constraints:**
+- You MUST follow established patterns because consistency reduces cognitive load
+- You SHOULD document deviations because exceptions need justification
+- You SHOULD NOT create new patterns without team agreement because fragmentation hurts maintainability
+
 ### Architecture
 - [Module organization]
 - [State management]
@@ -78,3 +106,10 @@ npm run build
 ### Imports
 - [Absolute vs relative]
 - [Barrel exports]
+
+---
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

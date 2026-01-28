@@ -1,8 +1,17 @@
 # Mode Selection Reference
 
-Decision flowcharts for choosing the right workflow approach.
+## Overview
+
+This reference provides decision flowcharts for choosing the right workflow approach in Ralph. Proper mode selection ensures optimal resource usage and quality outcomes.
+
+---
 
 ## Flow Selection: Forward vs Reverse
+
+**Constraints:**
+- You MUST use Forward Flow for new ideas because there's no existing artifact to investigate
+- You MUST use Reverse Flow when understanding existing code before improving because blind changes break assumptions
+- You SHOULD continue to Forward after Reverse if planning improvements because Reverse generates specs that feed planning
 
 ```mermaid
 graph TD
@@ -28,6 +37,11 @@ graph TD
 ---
 
 ## When to Use Ralph-Loop vs Direct Implementation
+
+**Constraints:**
+- You MUST NOT use ralph-loop for trivial tasks (1-2 steps) because overhead exceeds benefit
+- You MUST use ralph-loop for complex tasks (5+ steps) because fresh context improves quality
+- You SHOULD use ralph-loop when context exceeds 100K tokens because compaction loses information
 
 ```mermaid
 graph TD
@@ -65,6 +79,11 @@ graph TD
 
 ## Forward Flow Decision Points
 
+**Constraints:**
+- You MUST NOT skip discovery if requirements are unclear because vague requirements cause rework
+- You MUST NOT skip planning if design doesn't exist because ad-hoc design leads to poor architecture
+- You MUST complete task generation before execution because workers need structured tasks
+
 ```mermaid
 graph TD
     Idea[Have an idea] --> Q1{Requirements<br/>clear?}
@@ -93,6 +112,11 @@ graph TD
 ---
 
 ## Reverse Flow Use Cases
+
+**Constraints:**
+- You MUST use Reverse Flow for legacy code before refactoring because understanding prevents breaking changes
+- You SHOULD use Reverse Flow for third-party library integration because patterns must be understood first
+- You MAY skip Reverse Flow for well-documented systems with clear architecture
 
 **Use Reverse Flow when investigating:**
 
@@ -138,7 +162,10 @@ graph LR
 
 ## Task Sizing for Ralph-Loop
 
-Not all tasks are suitable for ralph-loop. Use this guide:
+**Constraints:**
+- You MUST decompose XL tasks into multiple loops because single loops cannot handle weeks of work
+- You MUST NOT use ralph-loop for trivial tasks (< 3 steps) because overhead exceeds value
+- You SHOULD target M-L size tasks for optimal loop efficiency
 
 ### Perfect for Ralph-Loop (M-L size)
 
@@ -189,6 +216,11 @@ Not all tasks are suitable for ralph-loop. Use this guide:
 ---
 
 ## Execution Mode Selection
+
+**Constraints:**
+- You MUST use HITL mode for first-time ralph-loop users because learning requires observation
+- You MUST use HITL mode with checkpoints for high-risk tasks because auth/payments need human review
+- You MAY use AFK mode when confident in quality gates and codebase
 
 After planning, choose execution approach:
 
@@ -283,6 +315,12 @@ Steps:
 
 ## Anti-Patterns to Avoid
 
+**Constraints:**
+- You MUST NOT use ralph-loop for 1-line fixes because 10x overhead wastes resources
+- You MUST NOT skip planning phase because confused workers produce poor output
+- You MUST NOT use Forward Flow on legacy code without understanding because changes break existing assumptions
+- You MUST NOT run single loop for XL tasks because unclear progress leads to infinite loops
+
 ### ❌ Using Ralph-Loop for Everything
 
 ```
@@ -330,3 +368,33 @@ Solution: Decompose into features, run multiple loops
 | High-risk task (auth, payments) | HITL with checkpoints |
 | Overnight development needed | AFK unlimited |
 | Learning codebase patterns | Start HITL, graduate to AFK |
+
+---
+
+## Troubleshooting
+
+### Unsure Which Flow to Use
+
+If flow direction is unclear:
+- You SHOULD ask: "Do I need to understand something first?"
+- You SHOULD default to Reverse if existing artifact is involved
+- You MUST NOT proceed with Forward if requirements are vague
+
+### Task Size Ambiguous
+
+If task sizing is unclear:
+- You SHOULD estimate number of files to modify
+- You SHOULD estimate hours of work
+- You MUST decompose if estimate exceeds 1 week
+
+### Mode Selection Difficult
+
+If execution mode choice is hard:
+- You SHOULD start with HITL for safety
+- You SHOULD graduate to AFK after 5-10 successful HITL iterations
+- You MUST NOT use AFK for high-risk tasks regardless of experience
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

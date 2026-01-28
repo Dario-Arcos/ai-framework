@@ -1,41 +1,91 @@
-# Task: {{TASK_NAME}}
+# Task: {task_name}
+
+<!--
+## Overview
+
+Code implementation task template for sop-task-generator.
+Provides structured task definition for worker agents.
+
+## Usage Constraints
+
+- You MUST fill all required placeholders because workers need complete context
+- You MUST read the design document before implementing because it contains critical decisions
+- You MUST meet all acceptance criteria because these define "done"
+- You SHOULD follow the suggested implementation approach because it's been validated
+- You MAY propose alternative approaches if they meet all requirements
+-->
 
 ## Description
-{{DESCRIPTION}}
+{description}
 
 ## Background
-{{BACKGROUND}}
+{background}
 
 ## Reference Documentation
+
 **Required:**
-- Design: {{DESIGN_PATH}}
+- Design: {design_path}
+
+**Constraints:**
+- You MUST read the detailed design before implementing because it contains architecture decisions
+- You SHOULD check related references because they provide context
 
 **Additional References:**
-{{ADDITIONAL_REFERENCES}}
-
-**Note:** You MUST read the detailed design before implementing.
+{additional_references}
 
 ## Technical Requirements
 
-{{TECHNICAL_REQUIREMENTS}}
+**Constraints:**
+- You MUST meet all technical requirements because they define the solution space
+- You MUST NOT introduce new dependencies without justification because dependencies add complexity
+
+{technical_requirements}
 
 ## Dependencies
 
-{{DEPENDENCIES}}
+**Constraints:**
+- You MUST verify dependencies are available before starting because missing deps block progress
+- You SHOULD check dependency versions because incompatibilities cause subtle bugs
+
+{dependencies}
 
 ## Implementation Approach
 
-{{IMPLEMENTATION_APPROACH}}
+**Constraints:**
+- You SHOULD follow this approach because it's been validated during planning
+- You MAY deviate if you document rationale because accountability enables flexibility
+
+{implementation_approach}
 
 **Note:** This is suggested approach. Alternative solutions are acceptable if they meet requirements.
 
 ## Acceptance Criteria
 
-{{ACCEPTANCE_CRITERIA}}
+**Constraints:**
+- You MUST meet ALL acceptance criteria because these define "done"
+- You MUST NOT mark task complete until all criteria pass because partial completion is not completion
+- You SHOULD verify each criterion explicitly because assumptions cause rework
+- You MUST use Given-When-Then format for behavioral criteria because this clarifies expected behavior
+
+**Format Example:**
+```
+- Given [precondition/context]
+  When [action/trigger]
+  Then [expected outcome]
+```
+
+{acceptance_criteria}
 
 ## Metadata
-- **Complexity**: {{COMPLEXITY}}
-- **Estimated Effort**: {{ESTIMATED_EFFORT}}
-- **Labels**: {{LABELS}}
-- **Required Skills**: {{REQUIRED_SKILLS}}
-- **Related Tasks**: {{RELATED_TASKS}}
+- **Complexity**: {complexity}
+- **Estimated Effort**: {estimated_effort}
+- **Labels**: {labels}
+- **Required Skills**: {required_skills}
+- **Related Tasks**: {related_tasks}
+
+---
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

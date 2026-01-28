@@ -1,99 +1,127 @@
-# Research: [Topic Name]
+# Research: {topic_name}
 
-**Created**: [Date]
-**Last Updated**: [Date]
-**Research Question**: [What are we trying to learn?]
+<!--
+## Overview
+
+Research document template for exploring options and making informed technical decisions.
+Provides structured comparison of alternatives with clear recommendation.
+
+## Usage Constraints
+
+- You MUST define clear research question because this focuses investigation
+- You MUST evaluate at least 2-3 options because single-option research is confirmation bias
+- You MUST include pros/cons for each option because balanced analysis enables good decisions
+- You MUST state clear recommendation because research without conclusion is incomplete
+- You SHOULD include code examples because concrete examples aid understanding
+- You SHOULD NOT research indefinitely because analysis paralysis blocks progress
+-->
+
+**Created**: {created_date}
+**Last Updated**: {last_updated_date}
+**Research Question**: {research_question}
 
 ---
 
 ## Executive Summary
 
-[2-3 sentence summary of findings and recommendation]
+**Constraints:**
+- You MUST provide summary first because readers need quick orientation
+- You MUST state clear recommendation because this is the primary output
 
-**Recommendation**: [Clear statement of recommended approach]
+{executive_summary}
+
+**Recommendation**: {recommendation}
 
 ---
 
 ## Background
 
-**Why This Research Matters**: [Explain relevance to the project]
+**Constraints:**
+- You MUST explain why this research matters because context justifies effort
+- You MUST define scope because unbounded research never completes
 
-**Scope**: [What is covered and what is out of scope]
+**Why This Research Matters**: {research_relevance}
+
+**Scope**: {scope}
 
 ---
 
 ## Findings
 
-### Option 1: [Name]
+### Option 1: {option_1_name}
 
-**Description**: [What is this approach/technology/solution?]
+**Description**: {option_1_description}
 
 **Pros**:
-- [Advantage 1]
-- [Advantage 2]
-- [Advantage 3]
+- {option_1_pro_1}
+- {option_1_pro_2}
+- {option_1_pro_3}
 
 **Cons**:
-- [Disadvantage 1]
-- [Disadvantage 2]
-- [Disadvantage 3]
+- {option_1_con_1}
+- {option_1_con_2}
+- {option_1_con_3}
 
-**Use Cases**: [When is this the best choice?]
+**Use Cases**: {option_1_use_cases}
 
 **Example**:
 ```
-[Code snippet, configuration, or concrete example]
+{option_1_example}
 ```
 
 **References**:
-- [Link to documentation]
-- [Link to example implementation]
+- {option_1_reference_1}
+- {option_1_reference_2}
 
 ---
 
-### Option 2: [Name]
+### Option 2: {option_2_name}
 
-**Description**: [What is this approach/technology/solution?]
+**Description**: {option_2_description}
 
 **Pros**:
-- [Advantage 1]
-- [Advantage 2]
-- [Advantage 3]
+- {option_2_pro_1}
+- {option_2_pro_2}
+- {option_2_pro_3}
 
 **Cons**:
-- [Disadvantage 1]
-- [Disadvantage 2]
-- [Disadvantage 3]
+- {option_2_con_1}
+- {option_2_con_2}
+- {option_2_con_3}
 
-**Use Cases**: [When is this the best choice?]
+**Use Cases**: {option_2_use_cases}
 
 **Example**:
 ```
-[Code snippet, configuration, or concrete example]
+{option_2_example}
 ```
 
 **References**:
-- [Link to documentation]
-- [Link to example implementation]
+- {option_2_reference_1}
+- {option_2_reference_2}
 
 ---
 
-### Option 3: [Name]
+### Option 3: {option_3_name}
 
-[Repeat structure from Option 1/2]
+{option_3_content}
 
 ---
 
 ## Comparison
 
+**Constraints:**
+- You MUST use consistent criteria because apples-to-apples comparison enables decision
+- You SHOULD weight criteria by importance because not all factors are equal
+
 | Criterion | Option 1 | Option 2 | Option 3 |
 |-----------|----------|----------|----------|
-| Complexity | [S/M/L/XL] | [S/M/L/XL] | [S/M/L/XL] |
-| Performance | [Assessment] | [Assessment] | [Assessment] |
-| Maintainability | [Assessment] | [Assessment] | [Assessment] |
-| Learning Curve | [Assessment] | [Assessment] | [Assessment] |
-| Community Support | [Assessment] | [Assessment] | [Assessment] |
-| Cost | [Assessment] | [Assessment] | [Assessment] |
+| Complexity | {option_1_complexity} | {option_2_complexity} | {option_3_complexity} |
+| Performance | {option_1_performance} | {option_2_performance} | {option_3_performance} |
+| Maintainability | {option_1_maintainability} | {option_2_maintainability} | {option_3_maintainability} |
+| Learning Curve | {option_1_learning_curve} | {option_2_learning_curve} | {option_3_learning_curve} |
+| Community Support | {option_1_community_support} | {option_2_community_support} | {option_3_community_support} |
+| Cost | {option_1_cost} | {option_2_cost} | {option_3_cost} |
 
 **Legend**: S=Simple, M=Medium, L=Large, XL=Very Large
 
@@ -101,72 +129,92 @@
 
 ## Architecture Implications
 
-[If applicable, include mermaid diagram showing how this fits into the system]
+**Constraints:**
+- You MUST show how option fits into system because integration matters
+- You SHOULD include diagram because visual aids comprehension
+
+{architecture_implications_summary}
 
 ```mermaid
-graph TD
-    A[Component A] --> B[Component B]
-    B --> C[Component C]
+{architecture_diagram}
 ```
 
-**Integration Points**: [What needs to connect to this?]
+**Integration Points**: {integration_points}
 
-**Dependencies**: [What does this require?]
+**Dependencies**: {architecture_dependencies}
 
-**Impact on Existing System**: [What changes are needed?]
+**Impact on Existing System**: {impact_on_existing_system}
 
 ---
 
 ## Recommendation
 
-**Chosen Option**: [Option Name]
+**Constraints:**
+- You MUST state chosen option clearly because ambiguity blocks progress
+- You MUST explain rationale because this enables informed disagreement
+- You MUST acknowledge trade-offs because perfect options don't exist
+
+**Chosen Option**: {chosen_option}
 
 **Rationale**:
-1. [Primary reason aligned with project requirements]
-2. [Secondary reason - performance, maintainability, etc.]
-3. [Additional justification]
+1. {rationale_1}
+2. {rationale_2}
+3. {rationale_3}
 
 **Trade-offs Accepted**:
-- [What we're giving up by choosing this option]
-- [Risks we're accepting]
+- {trade_off_1}
+- {trade_off_2}
 
 **Mitigation Strategies**:
-- [How to address the main cons of chosen option]
+- {mitigation_strategy}
 
 ---
 
 ## Implementation Considerations
 
+**Constraints:**
+- You MUST estimate complexity because this affects planning
+- You MUST identify risks because these need mitigation
+
 **Setup Requirements**:
-- [Dependencies to install]
-- [Configuration needed]
-- [Access/permissions required]
+- {setup_dependency}
+- {setup_configuration}
+- {setup_access_permissions}
 
-**Estimated Complexity**: [S/M/L/XL based on CLAUDE.md budget]
+**Estimated Complexity**: {estimated_complexity}
 
-**Estimated Duration**: [Time estimate for implementation]
+**Estimated Duration**: {estimated_duration}
 
 **Risks**:
-- [Risk 1] - **Mitigation**: [How to address]
-- [Risk 2] - **Mitigation**: [How to address]
+- {risk_1} - **Mitigation**: {risk_1_mitigation}
+- {risk_2} - **Mitigation**: {risk_2_mitigation}
 
 ---
 
 ## Further Research Needed
 
-[Any questions that remain unanswered]
+**Constraints:**
+- You MUST track open questions because they may affect decision
+- You SHOULD time-box further research because diminishing returns apply
 
-- [ ] [Open question 1]
-- [ ] [Open question 2]
+{further_research_summary}
+
+- [ ] {further_research_question_1}
+- [ ] {further_research_question_2}
 
 ---
 
 ## References
 
-1. [Title] - [URL]
-2. [Title] - [URL]
-3. [Title] - [URL]
+1. {reference_1_title} - {reference_1_url}
+2. {reference_2_title} - {reference_2_url}
+3. {reference_3_title} - {reference_3_url}
 
 ---
 
 *This research document supports the PDD (Prompt-Driven Development) planning process.*
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

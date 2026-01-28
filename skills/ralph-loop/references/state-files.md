@@ -1,8 +1,17 @@
 # State Files Reference
 
-Ralph uses several files for state management across iterations.
+## Overview
+
+This reference defines the state files used by Ralph for persistent state management across iterations. Understanding these files is essential for debugging loops and maintaining context continuity.
+
+---
 
 ## File Overview
+
+**Constraints:**
+- You MUST understand file lifecycle because incorrect updates corrupt state
+- You MUST NOT modify state files during execution monitoring because workers own state during loops
+- You SHOULD read state files for debugging because they reveal loop behavior
 
 | File | Purpose | Lifecycle |
 |------|---------|-----------|
@@ -19,6 +28,11 @@ Ralph uses several files for state management across iterations.
 
 ## Signs System (guardrails.md)
 
+**Constraints:**
+- You MUST add Signs when errors occur because this prevents repeat failures
+- You MUST read Signs at iteration start because accumulated knowledge guides behavior
+- You MUST use standard Sign format because workers parse structure
+
 When errors occur, add to guardrails.md:
 
 ```markdown
@@ -34,6 +48,11 @@ Every iteration reads Signs FIRST - Compounding intelligence.
 ## Memories System (memories.md)
 
 Persistent learnings that survive loop restarts.
+
+**Constraints:**
+- You MUST update memories only during planning mode because build mode focuses on execution
+- You MUST include tags because tags enable search and categorization
+- You SHOULD include reasoning for decisions because cargo-cult decisions lack foundation
 
 ### CLI Management (memories.sh)
 
@@ -81,6 +100,11 @@ Persistent learnings that survive loop restarts.
 
 Iteration-to-iteration memory within a single loop session.
 
+**Constraints:**
+- You MUST update scratchpad after each iteration because next iteration needs context
+- You MUST NOT rely on scratchpad for persistent data because it clears on loop start
+- You SHOULD include files modified because this aids debugging
+
 ### Format
 
 ```markdown
@@ -111,6 +135,11 @@ Iteration-to-iteration memory within a single loop session.
 
 Accountability mechanism for each iteration.
 
+**Constraints:**
+- You MUST include confession at iteration end because this forces completion validation
+- You MUST provide evidence because claims without evidence are unverifiable
+- You MUST NOT hedge with "partially complete" because binary completion enforces quality
+
 ### Format
 
 ```
@@ -133,3 +162,33 @@ Accountability mechanism for each iteration.
 - Enables post-hoc verification of claims
 
 **When:** Phase 4e, after state updates, before commit.
+
+---
+
+## Troubleshooting
+
+### State File Corruption
+
+If state files become inconsistent:
+- You SHOULD check git history for last valid state
+- You SHOULD regenerate scratchpad from git log
+- You MUST NOT continue loop with corrupted state
+
+### Memories Not Loading
+
+If workers don't see memories:
+- You SHOULD verify memories.md path is correct
+- You SHOULD check memories format follows template
+- You MUST ensure memories.md is committed to branch
+
+### Signs Ignored by Workers
+
+If same errors repeat despite Signs:
+- You SHOULD verify Sign format includes Trigger and Instruction
+- You SHOULD check worker prompts include Sign reading step
+- You MUST review Sign clarity (vague instructions are ignored)
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*

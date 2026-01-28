@@ -1,15 +1,36 @@
-# Discovery: {{GOAL_NAME}}
+# Discovery: {goal_name}
 
-**Date**: {{DATE}}
+<!--
+## Overview
+
+Discovery output template for sop-discovery skill.
+Captures problem definition, constraints, risks, and prior art before planning.
+
+## Usage Constraints
+
+- You MUST complete all sections because incomplete discovery leads to failed planning
+- You MUST identify constraints before proposing solutions because constraints define solution space
+- You MUST identify risks because unmitigated risks cause failures
+- You MUST recommend spikes when uncertainty is high because spikes reduce risk
+- You SHOULD identify prior art because reuse beats rebuild
+- You SHOULD NOT proceed to planning with open blockers because this wastes effort
+-->
+
+**Date**: {date}
 **Status**: Discovery Complete
 
 ---
 
 ## Summary
 
-- **Goal**: {{GOAL_ONE_SENTENCE}}
-- **Main Constraint**: {{MAIN_CONSTRAINT}}
-- **Biggest Risk**: {{BIGGEST_RISK}}
+**Constraints:**
+- You MUST provide one-sentence goal because this focuses all subsequent work
+- You MUST identify main constraint because this shapes solution space
+- You MUST identify biggest risk because this guides mitigation
+
+- **Goal**: {goal_one_sentence}
+- **Main Constraint**: {main_constraint}
+- **Biggest Risk**: {biggest_risk}
 - **Ready for**: Planning phase
 
 ---
@@ -18,15 +39,27 @@
 
 ### Job to Be Done
 
-{{JTBD_ANSWER}}
+**Constraints:**
+- You MUST express as job-to-be-done because this reveals user intent
+- You SHOULD NOT describe solution because this is problem space
+
+{jtbd_answer}
 
 ### Beneficiaries
 
-{{BENEFICIARIES_ANSWER}}
+**Constraints:**
+- You MUST identify who benefits because this validates need
+- You SHOULD prioritize beneficiaries because not all are equal
+
+{beneficiaries_answer}
 
 ### Success Metrics
 
-{{SUCCESS_METRICS_ANSWER}}
+**Constraints:**
+- You MUST define measurable metrics because this enables validation
+- You SHOULD NOT use vague metrics because they can't be verified
+
+{success_metrics_answer}
 
 ---
 
@@ -34,15 +67,23 @@
 
 ### Technical Constraints
 
-{{TECHNICAL_CONSTRAINTS_ANSWER}}
+**Constraints:**
+- You MUST list all technical constraints because these limit solution space
+- You SHOULD distinguish hard from soft constraints because they have different flexibility
+
+{technical_constraints_answer}
 
 ### Time/Resource Constraints
 
-{{TIME_RESOURCE_CONSTRAINTS_ANSWER}}
+{time_resource_constraints_answer}
 
 ### Non-Negotiables
 
-{{NON_NEGOTIABLES_ANSWER}}
+**Constraints:**
+- You MUST explicitly state non-negotiables because violating these means failure
+- You SHOULD NOT include preferences here because non-negotiables are absolute
+
+{non_negotiables_answer}
 
 ---
 
@@ -50,33 +91,32 @@
 
 ### Technical Risks
 
-{{#TECHNICAL_RISKS}}
-- **{{RISK_NAME}}**: {{RISK_DESCRIPTION}}
-  - *Mitigation*: {{MITIGATION_STRATEGY}}
-{{/TECHNICAL_RISKS}}
+**Constraints:**
+- You MUST identify technical risks because these affect architecture
+- You MUST provide mitigation for each risk because unmitigated risks are unacceptable
+
+{technical_risks}
 
 ### Integration Risks
 
-{{#INTEGRATION_RISKS}}
-- **{{RISK_NAME}}**: {{RISK_DESCRIPTION}}
-  - *Mitigation*: {{MITIGATION_STRATEGY}}
-{{/INTEGRATION_RISKS}}
+{integration_risks}
 
 ### Open Questions
 
-{{OPEN_QUESTIONS_ANSWER}}
+**Constraints:**
+- You MUST track open questions because they may block progress
+- You SHOULD assign owners because accountability drives resolution
+
+{open_questions_answer}
 
 ### Recommended Spikes
 
-{{#RECOMMENDED_SPIKES}}
-- **{{SPIKE_NAME}}**: {{SPIKE_DESCRIPTION}}
-  - *Time-box*: {{TIME_BOX}}
-  - *Success criteria*: {{SUCCESS_CRITERIA}}
-{{/RECOMMENDED_SPIKES}}
+**Constraints:**
+- You MUST recommend spikes when uncertainty is high because spikes reduce risk
+- You MUST define success criteria for spikes because open-ended spikes waste time
+- You MUST time-box spikes because they can expand indefinitely
 
-{{^RECOMMENDED_SPIKES}}
-No spikes recommended. Uncertainty is manageable within the planning phase.
-{{/RECOMMENDED_SPIKES}}
+{recommended_spikes}
 
 ---
 
@@ -84,15 +124,23 @@ No spikes recommended. Uncertainty is manageable within the planning phase.
 
 ### Patterns to Follow
 
-{{PATTERNS_TO_FOLLOW_ANSWER}}
+**Constraints:**
+- You MUST identify reusable patterns because reuse beats rebuild
+- You SHOULD reference specific examples because abstract patterns are hard to apply
+
+{patterns_to_follow_answer}
 
 ### External Inspiration
 
-{{EXTERNAL_INSPIRATION_ANSWER}}
+{external_inspiration_answer}
 
 ### Anti-patterns to Avoid
 
-{{ANTI_PATTERNS_ANSWER}}
+**Constraints:**
+- You MUST identify anti-patterns because avoiding failure modes is as important as finding success modes
+- You SHOULD explain why each is an anti-pattern because context prevents accidental use
+
+{anti_patterns_answer}
 
 ---
 
@@ -106,11 +154,16 @@ No spikes recommended. Uncertainty is manageable within the planning phase.
 
 ## Discovery Session Metadata
 
-- **Session Duration**: {{SESSION_DURATION}}
-- **Questions Asked**: {{QUESTIONS_COUNT}}
-- **Risks Identified**: {{RISKS_COUNT}}
-- **Spikes Recommended**: {{SPIKES_COUNT}}
+- **Session Duration**: {session_duration}
+- **Questions Asked**: {questions_count}
+- **Risks Identified**: {risks_count}
+- **Spikes Recommended**: {spikes_count}
 
 ---
 
-*Generated by sop-discovery skill on {{TIMESTAMP}}*
+*Generated by sop-discovery skill on {timestamp}*
+
+<!--
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
+-->

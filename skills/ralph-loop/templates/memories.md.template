@@ -1,10 +1,20 @@
 # Memories
 
 <!--
+## Overview
+
 Persistent learnings across ralph loop sessions. Unlike Signs (guardrails.md),
 memories persist indefinitely and capture patterns, decisions, and fixes.
 
-Read at start of EVERY iteration. Update in planning mode only.
+## Usage Constraints
+
+- You MUST read this file at start of EVERY iteration because memories provide essential context
+- You MUST update in planning mode only because workers should not modify shared state
+- You MUST use memory ID format: mem-[unix-timestamp]-[4-char-hash] because this ensures uniqueness
+- You MUST include tags and creation date because this enables search and audit
+- You SHOULD capture architectural decisions because these are hard to rediscover
+- You SHOULD NOT add temporary workarounds because these belong in Signs (guardrails.md)
+- You SHOULD NOT duplicate information in docs because memories supplement, not replace
 -->
 
 ## Patterns
@@ -42,18 +52,22 @@ Read at start of EVERY iteration. Update in planning mode only.
 ---
 
 <!--
-Memory ID Format: mem-[unix-timestamp]-[4-char-hash]
-Example: mem-1737820800-a1b2
+## When to Add
 
-When to Add:
 - Discovered architectural decision not in docs
 - Found undocumented API or integration pattern
 - Learned team coding preferences
 - Identified performance considerations
 - Found deployment or CI/CD requirements
 
-When NOT to Add (use Signs instead):
+## When NOT to Add (use Signs instead)
+
 - Temporary workarounds
 - Session-specific bugs
 - One-time gotchas
+
+---
+
+*Version: 1.1.0 | Updated: 2026-01-27*
+*Compliant with strands-agents SOP format (RFC 2119)*
 -->
