@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines how ralph-loop integrates with the SOP (Standard Operating Procedure) skills framework. Understanding this integration is essential for proper workflow orchestration and phase transitions.
+This reference defines how ralph-orchestrator integrates with the SOP (Standard Operating Procedure) skills framework. Understanding this integration is essential for proper workflow orchestration and phase transitions.
 
 ---
 
@@ -21,7 +21,7 @@ Ralph-loop orchestrates SOP skills to transform ideas into implementations throu
 ```mermaid
 graph TD
     subgraph "Planning Phase - Interactive"
-        A[/ralph-loop invoked] --> B{Flow?}
+        A[/ralph-orchestrator invoked] --> B{Flow?}
         B -->|Forward| C[sop-discovery]
         B -->|Reverse| D[sop-reverse]
 
@@ -279,7 +279,7 @@ Output: specs/user-auth/design/detailed-design.md
 
 **Modes**:
 - **interactive**: User confirmation at each step (learning, uncertain requirements)
-- **auto**: Autonomous execution (batch processing, ralph-loop integration)
+- **auto**: Autonomous execution (batch processing, ralph-orchestrator integration)
 
 **Duration**: 10-60 minutes per task (varies by complexity)
 
@@ -376,7 +376,7 @@ sequenceDiagram
     participant L as loop.sh
     participant W as Workers
 
-    U->>O: /ralph-loop
+    U->>O: /ralph-orchestrator
     O->>U: Flow direction?
     U->>O: Forward
 
@@ -430,7 +430,7 @@ sequenceDiagram
     participant T as sop-task-generator
     participant L as loop.sh
 
-    U->>O: /ralph-loop
+    U->>O: /ralph-orchestrator
     O->>U: Flow direction?
     U->>O: Reverse
 
@@ -749,11 +749,11 @@ Typical cost breakdown for medium-sized feature:
 
 ```bash
 # Goal 1: Authentication
-/ralph-loop → Forward → specs/user-auth/
+/ralph-orchestrator → Forward → specs/user-auth/
 ./loop.sh specs/user-auth/
 
 # Goal 2: User Profile (depends on auth)
-/ralph-loop → Forward → specs/user-profile/
+/ralph-orchestrator → Forward → specs/user-profile/
 # In planning, reference specs/user-auth/ for context
 ./loop.sh specs/user-profile/
 ```
@@ -762,11 +762,11 @@ Typical cost breakdown for medium-sized feature:
 
 ```bash
 # Round 1: Basic auth
-/ralph-loop → Forward → specs/auth-v1/
+/ralph-orchestrator → Forward → specs/auth-v1/
 ./loop.sh specs/auth-v1/
 
 # Round 2: Add MFA
-/ralph-loop → Reverse → specs/auth-v1-investigation/
+/ralph-orchestrator → Reverse → specs/auth-v1-investigation/
 → Continue to Forward → specs/auth-mfa/
 ./loop.sh specs/auth-mfa/
 ```
@@ -775,13 +775,13 @@ Typical cost breakdown for medium-sized feature:
 
 ```bash
 # Research phase
-/ralph-loop → Reverse → "Best practices for rate limiting"
+/ralph-orchestrator → Reverse → "Best practices for rate limiting"
 → Creates specs/rate-limiting-research/
 
 # Stop at specs (no implementation)
 
 # Later, use findings
-/ralph-loop → Forward → specs/api-rate-limiter/
+/ralph-orchestrator → Forward → specs/api-rate-limiter/
 # In planning, reference specs/rate-limiting-research/
 ./loop.sh specs/api-rate-limiter/
 ```

@@ -3,7 +3,7 @@
 <!--
 ## Overview
 
-Project configuration template for ralph-loop. Defines quality level, build commands,
+Project configuration template for ralph-orchestrator. Defines quality level, build commands,
 validation gates, environment requirements, gotchas, and coding patterns.
 
 ## Usage Constraints

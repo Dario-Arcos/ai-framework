@@ -17,7 +17,7 @@ The `mode` parameter controls how code-assist interacts with the user throughout
 ### When to Use Auto Mode
 
 - **Well-Defined Tasks:** Clear requirements and acceptance criteria
-- **Batch Processing:** Multiple tasks in sequence (ralph-loop)
+- **Batch Processing:** Multiple tasks in sequence (ralph-orchestrator)
 - **Time Constraints:** Need rapid implementation
 - **Routine Tasks:** Familiar patterns with low risk
 - **Background Execution:** Non-interactive environments

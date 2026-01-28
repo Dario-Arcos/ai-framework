@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines the two supervision approaches based on human involvement level. Understanding these modes is essential for configuring ralph-loop execution appropriately.
+This reference defines the two supervision approaches based on human involvement level. Understanding these modes is essential for configuring ralph-orchestrator execution appropriately.
 
 ---
 
@@ -21,7 +21,7 @@ The planning phase uses SOP skills and requires human involvement:
 
 ```mermaid
 graph LR
-    A[User invokes<br/>/ralph-loop] --> B[Flow selection]
+    A[User invokes<br/>/ralph-orchestrator] --> B[Flow selection]
     B --> C{Forward or Reverse?}
     C -->|Forward| D[sop-discovery<br/>HITL]
     C -->|Reverse| E[sop-reverse<br/>HITL]
@@ -68,7 +68,7 @@ After planning completes, choose execution supervision mode.
 ## HITL (Human-in-the-Loop) Execution
 
 **Constraints:**
-- You MUST use HITL for first-time ralph-loop users because learning requires observation
+- You MUST use HITL for first-time ralph-orchestrator users because learning requires observation
 - You MUST use HITL for risky tasks (auth, payments) because human review catches critical errors
 - You SHOULD use HITL when testing new quality gates because gate behavior needs validation
 

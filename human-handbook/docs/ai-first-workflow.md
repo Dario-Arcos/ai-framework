@@ -11,7 +11,7 @@ Desarrollo autónomo con quality gates. Ralph Loop como motor, Superpowers como 
 flowchart TB
     subgraph CORE["AI FRAMEWORK (Core)"]
         direction TB
-        BR[brainstorming<br/>Explorar ideas] --> RL[ralph-loop<br/>Desarrollo autónomo]
+        BR[brainstorming<br/>Explorar ideas] --> RL[ralph-orchestrator<br/>Desarrollo autónomo]
         RL --> QG[Quality Gates<br/>code + security review]
         QG --> GIT[Git Flow<br/>commit → PR → cleanup]
     end
@@ -50,7 +50,7 @@ Ralph Loop es desarrollo autónomo multi-iteración con fresh context en cada ci
 # Prerequisitos: git repo existente + comandos de validación (tests, lint, build)
 
 # 1. Instalar desde skill
-RALPH_SKILL="path/to/skills/ralph-loop"
+RALPH_SKILL="path/to/skills/ralph-orchestrator"
 cp "$RALPH_SKILL/scripts/loop.sh" .
 cp "$RALPH_SKILL/scripts/PROMPT_build.md" .
 cp "$RALPH_SKILL/scripts/PROMPT_plan.md" .
@@ -305,7 +305,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 | Skill | Uso |
 |-------|-----|
 | `brainstorming` | Explorar ideas antes de implementar |
-| `ralph-loop` | Desarrollo autónomo multi-iteración |
+| `ralph-orchestrator` | Desarrollo autónomo multi-iteración |
 | `pr-workflow` | PR con quality gate integrado |
 | `webapp-testing` | E2E testing con Playwright |
 | `mobile-testing` | E2E mobile con mobile-mcp + Maestro |

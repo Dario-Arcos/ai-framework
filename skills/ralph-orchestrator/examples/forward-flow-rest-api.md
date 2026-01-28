@@ -1,6 +1,6 @@
 # Forward Flow Example: Building a REST API from Scratch
 
-This example demonstrates the complete Forward Flow: taking an idea and turning it into working code using ralph-loop's SOP-driven architecture.
+This example demonstrates the complete Forward Flow: taking an idea and turning it into working code using ralph-orchestrator's SOP-driven architecture.
 
 ---
 
@@ -16,7 +16,7 @@ This example demonstrates the complete Forward Flow: taking an idea and turning 
 
 ```mermaid
 graph TD
-    A[User: /ralph-loop] --> B[Claude: Flow direction?]
+    A[User: /ralph-orchestrator] --> B[Claude: Flow direction?]
     B --> C[User: Forward - new feature]
     C --> D[sop-discovery invoked]
     D --> E[Interactive Q&A: constraints, risks]
@@ -40,7 +40,7 @@ graph TD
 ### 1. Invocation
 
 ```
-User: /ralph-loop
+User: /ralph-orchestrator
 ```
 
 ---
@@ -592,7 +592,7 @@ Claude: Configuración completa:
 - Specs: specs/library-api/
 - Plan: 18 tareas
 
-Lanzando ralph-loop...
+Lanzando ralph-orchestrator...
 
 [Executing: Bash("./loop.sh specs/library-api/", run_in_background=True)]
 
@@ -894,7 +894,7 @@ git push origin feature/library-api
 gh pr create --title "feat: Library API" --body "Implements 18 tasks with TDD"
 
 # Or continue building
-/ralph-loop  # Add more features using same process
+/ralph-orchestrator  # Add more features using same process
 ```
 
 ---

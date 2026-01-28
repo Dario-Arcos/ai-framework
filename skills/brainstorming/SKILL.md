@@ -42,7 +42,7 @@ Start by understanding the current project context, then ask questions one at a 
 **Implementation (if continuing):**
 - Ask: "Ready to set up for implementation?"
 - Use `/worktree-create` for isolated workspace if needed
-- Use ralph-loop for autonomous execution, or Superpowers `writing-plans` for detailed implementation plan
+- Use ralph-orchestrator for autonomous execution, or Superpowers `writing-plans` for detailed implementation plan
 
 ## Key Principles
 

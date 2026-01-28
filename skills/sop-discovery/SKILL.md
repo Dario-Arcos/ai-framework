@@ -1,23 +1,9 @@
 ---
 name: sop-discovery
-description: Use when starting new goals or projects to brainstorm constraints, risks, and prior art before detailed planning
+description: Guides exploration of new goals or projects by systematically identifying constraints, risks, and prior art before detailed planning. Best suited when requirements are unclear, starting greenfield development, or before creating implementation plans.
 ---
 
 # SOP: Discovery Phase
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When NOT to Use](#when-not-to-use)
-- [Parameters](#parameters)
-- [Steps](#steps)
-- [Key Principles](#key-principles)
-- [After Discovery](#after-discovery)
-- [Common Mistakes](#common-mistakes)
-- [Quality Checks](#quality-checks)
-- [Troubleshooting](#troubleshooting)
-- [Example Discovery Session](#example-discovery-session)
-- [Related Skills](#related-skills)
 
 ## Overview
 
@@ -71,7 +57,7 @@ The discovery process is conversational and iterative. You will ask questions on
 - Skip context gathering even if the goal seems simple
 - Make assumptions about the existing codebase without verification
 
-### Step 1.5: Initial Process Planning
+### Step 2: Initial Process Planning
 
 **Objective:** Determine the user's preferred exploration approach.
 
@@ -87,7 +73,7 @@ The discovery process is conversational and iterative. You will ask questions on
 
 **Verification**: User has explicitly chosen Option A or B.
 
-### Step 2: Problem Definition
+### Step 3: Problem Definition
 
 **Objective:** Understand what job needs to be done and who benefits.
 
@@ -105,18 +91,12 @@ The discovery process is conversational and iterative. You will ask questions on
    - "How will we measure success? What would 'done and successful' look like?"
    - Wait for response, append to discovery.md
 
-**You MUST:**
-- Ask ONLY ONE question per message
-- Wait for the user's response before proceeding
-- Append each question and answer to the discovery document
-- Confirm successful append before asking the next question
+**Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- List all questions at once for the user to answer
-- Proceed to the next question without receiving a response
 - Skip any of these questions
 
-### Step 3: Constraints Identification
+### Step 4: Constraints Identification
 
 **Objective:** Identify technical and resource constraints that will shape the solution.
 
@@ -134,17 +114,12 @@ The discovery process is conversational and iterative. You will ask questions on
    - "What aspects are non-negotiable or fixed? (e.g., must use existing auth system, cannot break API compatibility)"
    - Wait for response, append to discovery.md
 
-**You MUST:**
-- Ask ONLY ONE question per message
-- Wait for the user's response before proceeding
-- Append each question and answer to the discovery document
-- Confirm successful append before asking the next question
+**Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- Present multiple questions for batch answering
 - Make assumptions about constraints
 
-### Step 4: Risk Analysis
+### Step 5: Risk Analysis
 
 **Objective:** Identify potential risks and mitigation strategies.
 
@@ -168,22 +143,16 @@ The discovery process is conversational and iterative. You will ask questions on
    - "Based on the unknowns identified, what time-boxed spikes or proof-of-concepts should we do before committing to the full plan?"
    - Wait for response, append to discovery.md
 
-**You MUST:**
-- Ask ONLY ONE question per message
-- For risks, follow up with mitigation questions
-- Wait for the user's response before proceeding
-- Append each question and answer to the discovery document
-- Confirm successful append before asking the next question
+**Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
-**You SHOULD:**
+**Additional requirements:**
+- For risks, follow up with mitigation questions
 - Probe deeper on risks that seem vague or incomplete
 - Suggest potential risks based on context if the user's list seems incomplete
 - Challenge optimistic risk assessments
+- You MAY skip spike recommendations if there are no significant unknowns
 
-**You MAY:**
-- Skip spike recommendations if there are no significant unknowns
-
-### Step 5: Prior Art and Patterns
+### Step 6: Prior Art and Patterns
 
 **Objective:** Learn from existing patterns and avoid known anti-patterns.
 
@@ -201,17 +170,13 @@ The discovery process is conversational and iterative. You will ask questions on
    - "What anti-patterns should we explicitly avoid? (e.g., past mistakes, known pitfalls, technical debt patterns)"
    - Wait for response, append to discovery.md
 
-**You MUST:**
-- Ask ONLY ONE question per message
-- Wait for the user's response before proceeding
-- Append each question and answer to the discovery document
-- Confirm successful append before asking the next question
+**Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You SHOULD:**
 - Search the codebase for relevant patterns if the user seems unsure
 - Reference specific files or commits as examples
 
-### Step 6: Generate Discovery Summary
+### Step 7: Generate Discovery Summary
 
 **You MUST perform these actions:**
 
@@ -329,7 +294,7 @@ Let me start by understanding the problem better.
 - **sop-planning** - Next phase: create detailed Problem Definition Document
 - **sop-task-generator** - After planning: generate implementation tasks
 - **brainstorming** - Alternative exploratory approach for simpler features
-- **ralph-loop** - Autonomous implementation after planning
+- **ralph-orchestrator** - Autonomous implementation after planning
 
 ---
 

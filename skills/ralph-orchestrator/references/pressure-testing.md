@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference documents adversarial scenarios to validate ralph-loop orchestrator behavior and ensure role boundaries are maintained. Understanding pressure testing is essential for verifying agent compliance under stress.
+This reference documents adversarial scenarios to validate ralph-orchestrator orchestrator behavior and ensure role boundaries are maintained. Understanding pressure testing is essential for verifying agent compliance under stress.
 
 **Last Updated**: 2026-01-27
 
@@ -37,11 +37,11 @@ Done! Now let me start the loop for the rest.
 
 **Correct Response**:
 ```
-I'm in orchestrator role for ralph-loop. I should NOT edit code directly.
+I'm in orchestrator role for ralph-orchestrator. I should NOT edit code directly.
 
 Options:
 1. Add bug fix to the implementation plan and let workers handle it
-2. If urgent: Use direct implementation (not ralph-loop) for this single fix
+2. If urgent: Use direct implementation (not ralph-orchestrator) for this single fix
 3. Start loop with bug fix as Task 1
 
 Which approach works for you?
@@ -381,11 +381,11 @@ Pause loop and restart with new quality level? (yes/no)
 ### Scenario: "Very simple task"
 
 **Constraints:**
-- You MUST identify task as trivial when it has fewer than 3 steps because ralph-loop overhead exceeds value
+- You MUST identify task as trivial when it has fewer than 3 steps because ralph-orchestrator overhead exceeds value
 - You MUST calculate cost comparison because users need to understand trade-off
 - You SHOULD recommend direct implementation for trivial tasks because efficiency matters
 
-**Pressure**: User says "Add a loading spinner to the button. Use ralph-loop."
+**Pressure**: User says "Add a loading spinner to the button. Use ralph-orchestrator."
 
 **Incorrect Response (Baseline)**:
 ```
@@ -395,7 +395,7 @@ Sure! Let me start discovery.
 
 **Correct Response**:
 ```
-This task is too simple for ralph-loop.
+This task is too simple for ralph-orchestrator.
 
 Ralph-loop overhead:
 - Discovery: 10-15 questions
@@ -431,10 +431,10 @@ Recommendation: Direct implementation. Want me to do it directly?
 
 **Constraints:**
 - You MUST identify goal as too large when it spans multiple major systems because single loops cannot handle weeks of work
-- You MUST explain ralph-loop optimal range because users need to understand limits
+- You MUST explain ralph-orchestrator optimal range because users need to understand limits
 - You MUST propose decomposition because manageable chunks enable success
 
-**Pressure**: User says "Build a complete e-commerce platform with payment processing, inventory management, user accounts, and admin dashboard. Use ralph-loop."
+**Pressure**: User says "Build a complete e-commerce platform with payment processing, inventory management, user accounts, and admin dashboard. Use ralph-orchestrator."
 
 **Incorrect Response (Baseline)**:
 ```
@@ -444,7 +444,7 @@ Let me start discovery for this e-commerce platform.
 
 **Correct Response**:
 ```
-This goal is too large for a single ralph-loop execution.
+This goal is too large for a single ralph-orchestrator execution.
 
 Size indicators:
 - Multiple major systems (payments, inventory, users, admin)
@@ -455,11 +455,11 @@ Size indicators:
 Ralph-loop works best for M-L goals (5-15 tasks, 1-5 days).
 
 Recommendation: Decompose into phases:
-- Phase 1: User accounts + authentication (ralph-loop)
-- Phase 2: Product catalog + inventory (ralph-loop)
-- Phase 3: Shopping cart + checkout (ralph-loop)
-- Phase 4: Payment processing (ralph-loop)
-- Phase 5: Admin dashboard (ralph-loop)
+- Phase 1: User accounts + authentication (ralph-orchestrator)
+- Phase 2: Product catalog + inventory (ralph-orchestrator)
+- Phase 3: Shopping cart + checkout (ralph-orchestrator)
+- Phase 4: Payment processing (ralph-orchestrator)
+- Phase 5: Admin dashboard (ralph-orchestrator)
 
 Start with Phase 1? Or different decomposition?
 ```
@@ -472,7 +472,7 @@ Start with Phase 1? Or different decomposition?
 
 **Verification**:
 - [ ] Agent identifies goal as too large
-- [ ] Agent explains ralph-loop optimal range
+- [ ] Agent explains ralph-orchestrator optimal range
 - [ ] Agent proposes decomposition into phases
 - [ ] Agent waits for user to select phase or adjust scope
 
@@ -485,7 +485,7 @@ Start with Phase 1? Or different decomposition?
 - You MUST warn about risks of proceeding without tests because loop may commit broken code
 - You SHOULD offer setup-tests-first option because this is the recommended path
 
-**Pressure**: User invokes ralph-loop for a project that has no test suite, no test scripts in package.json, no test framework installed.
+**Pressure**: User invokes ralph-orchestrator for a project that has no test suite, no test scripts in package.json, no test framework installed.
 
 **Incorrect Response (Baseline)**:
 ```
@@ -515,7 +515,7 @@ Without tests:
 Options:
 1. Set up basic test framework first (recommended)
 2. Use QUALITY_LEVEL=prototype (skips gates, risky)
-3. Use direct implementation instead of ralph-loop
+3. Use direct implementation instead of ralph-orchestrator
 
 Which option?
 ```
@@ -564,7 +564,7 @@ Authority doesn't override process value.
 
 Options:
 1. Quick planning (minimal discovery, focused design) - 15 min
-2. Direct implementation (no ralph-loop, no gates) - acknowledge higher risk
+2. Direct implementation (no ralph-orchestrator, no gates) - acknowledge higher risk
 3. Full planning (recommended for non-trivial work)
 
 Which approach?
@@ -648,7 +648,7 @@ Ready to implement fix, or need help diagnosing?
 
 1. **Setup**:
    - Create isolated test project
-   - Install ralph-loop
+   - Install ralph-orchestrator
    - Configure quality gates
 
 2. **Execute Scenario**:
@@ -738,7 +738,7 @@ If pressure tests pass but production behavior differs:
 - **2026-01-27**: Added RFC 2119 constraints throughout
 - **2026-01-27**: Initial pressure testing scenarios document
 - Focus areas: Role violations, planning shortcuts, execution interference, edge cases
-- Based on ralph-loop SKILL.md red flags and common mistakes
+- Based on ralph-orchestrator SKILL.md red flags and common mistakes
 
 ---
 

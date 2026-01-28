@@ -1,6 +1,6 @@
 # Ralph Loop Examples
 
-Complete end-to-end examples demonstrating ralph-loop's two-flow architecture.
+Complete end-to-end examples demonstrating ralph-orchestrator's two-flow architecture.
 
 ---
 
@@ -95,7 +95,7 @@ graph TD
 **Flow**: Forward
 **Example**: "Build a REST API for library management"
 **Process**:
-1. `/ralph-loop` → Select "Forward"
+1. `/ralph-orchestrator` → Select "Forward"
 2. Discovery: Answer 5 questions about constraints, risks
 3. Planning: Answer questions about requirements, design
 4. Tasks: Review generated implementation plan
@@ -110,7 +110,7 @@ graph TD
 **Flow**: Reverse (stop before Forward)
 **Example**: "Document how this authentication service works"
 **Process**:
-1. `/ralph-loop` → Select "Reverse"
+1. `/ralph-orchestrator` → Select "Reverse"
 2. Provide: `/path/to/auth-service`
 3. Batch Analysis: Automatic (45 seconds)
 4. Refinement: Answer 5 clarifying questions
@@ -126,7 +126,7 @@ graph TD
 **Flow**: Reverse → Forward (full flow)
 **Example**: "Modernize this legacy API to TypeScript + Clean Architecture"
 **Process**:
-1. `/ralph-loop` → Select "Reverse"
+1. `/ralph-orchestrator` → Select "Reverse"
 2. Provide: `/path/to/legacy-api`
 3. Batch Analysis: Finds issues, patterns, tech debt
 4. Refinement: Clarify migration objectives
@@ -146,7 +146,7 @@ graph TD
 **Flow**: Reverse (focus on security findings)
 **Example**: "Find vulnerabilities in this Node.js service"
 **Process**:
-1. `/ralph-loop` → Select "Reverse"
+1. `/ralph-orchestrator` → Select "Reverse"
 2. Provide: `/path/to/service`
 3. Batch Analysis: Scans dependencies, code patterns
 4. Refinement: Specify "security audit" as objective
@@ -348,7 +348,7 @@ User: [Answers]
 ❌ **Projects without tests**
 - Example: Project with 0% test coverage
 - Reason: Quality gates won't function
-- Use: Set up tests first, then ralph-loop
+- Use: Set up tests first, then ralph-orchestrator
 
 ---
 
@@ -356,14 +356,14 @@ User: [Answers]
 
 ### Try Forward Flow
 1. Think of a feature you want to build
-2. Invoke `/ralph-loop`
+2. Invoke `/ralph-orchestrator`
 3. Select "Forward"
 4. Follow discovery → planning → execution
 5. Review the [REST API example](forward-flow-rest-api.md) as reference
 
 ### Try Reverse Flow
 1. Find a codebase you want to understand
-2. Invoke `/ralph-loop`
+2. Invoke `/ralph-orchestrator`
 3. Select "Reverse"
 4. Provide path or URL
 5. Review the [Legacy Migration example](reverse-flow-legacy-migration.md) as reference
@@ -395,7 +395,7 @@ User: [Answers]
 
 Skipping planning = confused workers = low quality output.
 
-### "Can I use ralph-loop for one-line changes?"
+### "Can I use ralph-orchestrator for one-line changes?"
 
 **No.** Overhead exceeds benefit.
 
@@ -418,7 +418,7 @@ Ralph supports resuming from checkpoint.
 
 ## Related Documentation
 
-- [SKILL.md](../SKILL.md) - Complete ralph-loop reference
+- [SKILL.md](../SKILL.md) - Complete ralph-orchestrator reference
 - [references/sop-integration.md](../references/sop-integration.md) - How SOP skills integrate
 - [references/backpressure.md](../references/backpressure.md) - Quality gates explained
 - [references/observability.md](../references/observability.md) - Monitoring and logs
@@ -428,7 +428,7 @@ Ralph supports resuming from checkpoint.
 ## Feedback & Improvements
 
 These examples are living documents. If you:
-- Try ralph-loop and encounter issues
+- Try ralph-orchestrator and encounter issues
 - Find parts of examples confusing
 - Have suggestions for additional scenarios
 - Discover better patterns

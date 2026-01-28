@@ -1,23 +1,9 @@
 ---
 name: sop-task-generator
-description: Generates structured implementation tasks from designs or descriptions
+description: Generates structured .code-task.md files from designs or descriptions for autonomous execution. Applied after planning phase to break down designs into executable tasks for ralph-orchestrator or code-assist.
 ---
 
 # SOP Task Generator
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When to Use](#when-to-use)
-- [When NOT to Use](#when-not-to-use)
-- [Parameters](#parameters)
-- [The Process](#the-process)
-- [Key Principles](#key-principles)
-- [Examples](#examples)
-- [Error Handling](#error-handling)
-- [Common Mistakes](#common-mistakes)
-- [Troubleshooting](#troubleshooting)
-- [Notes](#notes)
 
 ## Overview
 
@@ -29,7 +15,7 @@ This skill creates well-formed implementation tasks that can be executed by code
 
 - Converting PDD plans into executable tasks
 - Breaking down design documents into work items
-- Preparing for autonomous execution via ralph-loop
+- Preparing for autonomous execution via ralph-orchestrator
 - Creating implementation checklists from descriptions
 
 ## When NOT to Use

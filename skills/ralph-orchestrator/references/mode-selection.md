@@ -23,7 +23,7 @@ graph TD
     Q2 -->|Understand before improving| Reverse[Reverse Flow]
     Q2 -->|Just improve it| Forward
 
-    Forward --> FwdSteps[1. sop-discovery<br/>2. sop-planning<br/>3. sop-task-generator<br/>4. ralph-loop execution]
+    Forward --> FwdSteps[1. sop-discovery<br/>2. sop-planning<br/>3. sop-task-generator<br/>4. ralph-orchestrator execution]
 
     Reverse --> RevSteps[1. sop-reverse<br/>2. Generate specs<br/>3. Continue to forward?]
 
@@ -39,9 +39,9 @@ graph TD
 ## When to Use Ralph-Loop vs Direct Implementation
 
 **Constraints:**
-- You MUST NOT use ralph-loop for trivial tasks (1-2 steps) because overhead exceeds benefit
-- You MUST use ralph-loop for complex tasks (5+ steps) because fresh context improves quality
-- You SHOULD use ralph-loop when context exceeds 100K tokens because compaction loses information
+- You MUST NOT use ralph-orchestrator for trivial tasks (1-2 steps) because overhead exceeds benefit
+- You MUST use ralph-orchestrator for complex tasks (5+ steps) because fresh context improves quality
+- You SHOULD use ralph-orchestrator when context exceeds 100K tokens because compaction loses information
 
 ```mermaid
 graph TD
@@ -49,7 +49,7 @@ graph TD
 
     Size -->|Trivial<br/>1-2 steps| Direct[Direct Implementation]
     Size -->|Small<br/>3-5 steps| Q1{Context concerns?}
-    Size -->|Medium+<br/>5+ steps| Ralph[Use ralph-loop]
+    Size -->|Medium+<br/>5+ steps| Ralph[Use ralph-orchestrator]
 
     Q1 -->|No concerns| Direct
     Q1 -->|Yes, large context| Ralph
@@ -99,7 +99,7 @@ graph TD
     Plan --> Tasks[sop-task-generator]
 
     Q3 -->|No| Tasks
-    Q3 -->|Yes| Exec[ralph-loop execution]
+    Q3 -->|Yes| Exec[ralph-orchestrator execution]
 
     Tasks --> Exec
 
@@ -164,7 +164,7 @@ graph LR
 
 **Constraints:**
 - You MUST decompose XL tasks into multiple loops because single loops cannot handle weeks of work
-- You MUST NOT use ralph-loop for trivial tasks (< 3 steps) because overhead exceeds value
+- You MUST NOT use ralph-orchestrator for trivial tasks (< 3 steps) because overhead exceeds value
 - You SHOULD target M-L size tasks for optimal loop efficiency
 
 ### Perfect for Ralph-Loop (M-L size)
@@ -218,7 +218,7 @@ graph LR
 ## Execution Mode Selection
 
 **Constraints:**
-- You MUST use HITL mode for first-time ralph-loop users because learning requires observation
+- You MUST use HITL mode for first-time ralph-orchestrator users because learning requires observation
 - You MUST use HITL mode with checkpoints for high-risk tasks because auth/payments need human review
 - You MAY use AFK mode when confident in quality gates and codebase
 
@@ -226,7 +226,7 @@ After planning, choose execution approach:
 
 ```mermaid
 graph TD
-    Ready[Planning Complete] --> Q1{First time<br/>with ralph-loop?}
+    Ready[Planning Complete] --> Q1{First time<br/>with ralph-orchestrator?}
 
     Q1 -->|Yes| HITL1[HITL mode<br/>1-5 iterations]
     Q1 -->|No| Q2{Task risk?}
@@ -260,7 +260,7 @@ Experience: Familiar with stack
 
 Decision: Forward Flow → AFK mode
 Steps:
-1. /ralph-loop → Forward
+1. /ralph-orchestrator → Forward
 2. sop-discovery (15 min)
 3. sop-planning (30 min)
 4. sop-task-generator (10 min)
@@ -277,7 +277,7 @@ Goal: Understand before migrating
 
 Decision: Reverse Flow → Specs only
 Steps:
-1. /ralph-loop → Reverse
+1. /ralph-orchestrator → Reverse
 2. sop-reverse → /path/to/payment-module
 3. Generate specs (automatic)
 4. Review findings
@@ -304,7 +304,7 @@ Risk: Breaking changes
 
 Decision: Forward Flow → HITL with checkpoints
 Steps:
-1. /ralph-loop → Forward
+1. /ralph-orchestrator → Forward
 2. Planning phase (interactive)
 3. Configure: Checkpoints every 5 iterations
 4. Review after each checkpoint
@@ -316,7 +316,7 @@ Steps:
 ## Anti-Patterns to Avoid
 
 **Constraints:**
-- You MUST NOT use ralph-loop for 1-line fixes because 10x overhead wastes resources
+- You MUST NOT use ralph-orchestrator for 1-line fixes because 10x overhead wastes resources
 - You MUST NOT skip planning phase because confused workers produce poor output
 - You MUST NOT use Forward Flow on legacy code without understanding because changes break existing assumptions
 - You MUST NOT run single loop for XL tasks because unclear progress leads to infinite loops
@@ -324,7 +324,7 @@ Steps:
 ### ❌ Using Ralph-Loop for Everything
 
 ```
-Problem: "I'll use ralph-loop for this 1-line fix"
+Problem: "I'll use ralph-orchestrator for this 1-line fix"
 Reality: 10x overhead for trivial task
 Solution: Direct implementation for tasks < 3 steps
 ```
@@ -348,7 +348,7 @@ Solution: Reverse → understand → Forward → improve
 ### ❌ Task Too Large
 
 ```
-Problem: "Build entire CRM system with ralph-loop"
+Problem: "Build entire CRM system with ralph-orchestrator"
 Reality: Loop runs forever, unclear progress
 Solution: Decompose into features, run multiple loops
 ```
@@ -364,7 +364,7 @@ Solution: Decompose into features, run multiple loops
 | Want to improve after understanding | Reverse → Forward |
 | Task is trivial (< 3 steps) | Direct implementation |
 | Task is complex (> 5 steps) | Ralph-loop |
-| First time using ralph-loop | HITL mode first |
+| First time using ralph-orchestrator | HITL mode first |
 | High-risk task (auth, payments) | HITL with checkpoints |
 | Overnight development needed | AFK unlimited |
 | Learning codebase patterns | Start HITL, graduate to AFK |

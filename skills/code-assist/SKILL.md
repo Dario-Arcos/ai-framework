@@ -1,25 +1,9 @@
 ---
 name: code-assist
-description: Implements code tasks using TDD following Explore → Plan → Code → Commit workflow. Use after sop-task-generator creates .code-task.md files.
+description: Implements code tasks using TDD methodology following Explore → Plan → Code → Commit workflow. Applied when executing .code-task.md files from ralph-orchestrator, or when structured requirements are ready for TDD implementation.
 ---
 
 # Code Assist
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When to Use](#when-to-use)
-- [When NOT to Use](#when-not-to-use)
-- [Parameters](#parameters)
-- [Mode Behavior](#mode-behavior)
-- [Important Notes](#important-notes)
-- [Steps](#steps)
-- [Desired Outcome](#desired-outcome)
-- [Artifacts](#artifacts)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
-- [Best Practices](#best-practices)
-- [Related Skills](#related-skills)
 
 ## Overview
 
@@ -34,7 +18,7 @@ The agent acts as a **Technical Implementation Partner** and **TDD Coach** - pro
 - After `sop-task-generator` has created `.code-task.md` files
 - When you have a structured task with clear requirements
 - For implementing features following TDD methodology
-- During the execution phase of the ralph-loop
+- During the execution phase of the ralph-orchestrator
 
 ## When NOT to Use
 
@@ -302,98 +286,26 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 └── logs/           # Build outputs (one log per package)
 ```
 
-## Examples
-
-### Example 1: Implementing a .code-task.md
-
-**Input:**
-```
-task_description: "specs/my-feature/implementation/step01/task-01-create-validator.code-task.md"
-mode: "auto"
-```
-
-**Expected Process:**
-1. Read the .code-task.md file
-2. Check for CODEASSIST.md and discover instruction files
-3. Set up directory structure in .sop/planning/implementation/create-validator/
-4. Explore requirements and create context documentation
-5. Plan test scenarios based on acceptance criteria
-6. Implement tests first (RED phase)
-7. Implement validation function (GREEN phase)
-8. Refactor to match conventions
-9. Commit with conventional commit message
-
-### Example 2: Interactive Mode with Rough Description
-
-**Input:**
-```
-task_description: "Create a utility function that validates email addresses"
-mode: "interactive"
-```
-
-**Expected Process:**
-1. Ask clarifying questions about requirements
-2. Present test strategy for approval
-3. Implement tests with user feedback
-4. Implement function with user confirmation at each step
-5. Refactor with user review
-6. Commit after user approval
-
-## Troubleshooting
-
-### Build Issues
-- Check CODEASSIST.md for build instructions
-- Verify correct directory for build system
-- Try clean builds before rebuilding
-- Check for missing dependencies
-
-### Test Failures
-- Verify test is testing the right behavior
-- Check if test setup/teardown is correct
-- Ensure mocks/stubs are properly configured
-- Document unexpected failures in progress.md
-
-### Implementation Challenges
-- Document challenge in progress.md
-- Propose alternative approaches
-- In interactive mode: ask user for guidance
-- In auto mode: select most promising alternative and document decision
-
-### Project Structure Issues
-- Check CODEASSIST.md for guidance
-- Verify repo_root is correct
-- Validate project structure matches expectations
-
-## Best Practices
-
-### Project Detection and Configuration
-- Detect project type from files (package.json, pyproject.toml, Cargo.toml, etc.)
-- Check for CODEASSIST.md for additional constraints
-- Use project-appropriate build commands
-
-### Build Output Management
-- Pipe build output to log files
-- Search for specific success/failure indicators
-- Save build logs to `{documentation_dir}/implementation/{task_name}/logs/`
-
-### Documentation Organization
-- Use consolidated files: context.md, plan.md, progress.md
-- Focus on high-level concepts rather than detailed code
-- Track progress with markdown checklists
-
 ## Related Skills
 
 - **sop-task-generator** - Creates `.code-task.md` files for this skill to consume
 - **sop-planning** - Creates detailed designs that inform task generation
 - **sop-discovery** - Explores constraints and risks before planning
-- **ralph-loop** - Autonomous execution loop that can invoke this skill
+- **ralph-orchestrator** - Autonomous execution loop that can invoke this skill
 - **test-driven-development** - Detailed TDD methodology reference
 
 ---
 
 ## References
 
-This skill implements concepts from:
+| File | Content |
+|------|---------|
+| [mode-behavior.md](references/mode-behavior.md) | Interactive vs auto mode behavior |
+| [tdd-workflow.md](references/tdd-workflow.md) | Detailed TDD cycle guidance |
+| [examples.md](references/examples.md) | Usage examples |
+| [troubleshooting.md](references/troubleshooting.md) | Common issues and solutions |
+
+**Source Materials:**
 - strands-agents/agent-sop `code-assist.sop.md`
 - ralph-orchestrator `.sops/code-assist.sop.md`
 - Test-Driven Development (TDD) methodology

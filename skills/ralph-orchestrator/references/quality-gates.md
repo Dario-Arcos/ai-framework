@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines quality gates for ralph-loop execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Workers determine "how" while gates verify "what".
+This reference defines quality gates for ralph-orchestrator execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Workers determine "how" while gates verify "what".
 
 **Core Philosophy**: Backpressure Over Prescription - Create gates that reject bad work rather than dictating how workers should implement.
 

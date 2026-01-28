@@ -1,20 +1,20 @@
 ---
-name: ralph-loop
-description: Master orchestrator for autonomous development. Handles BOTH interactive planning (HITL) and autonomous execution (AFK). Single entry point for the entire SOP workflow.
+name: ralph-orchestrator
+description: Master orchestrator for autonomous development handling both interactive planning (HITL) and autonomous execution (AFK). Single entry point for the entire SOP workflow. Ideal for starting new features, executing large implementation plans, or overnight autonomous development.
 ---
 
 # Ralph Loop: Master Orchestrator
 
 > **STOP. READ THIS FIRST.**
 >
-> Ralph-loop is the **SINGLE ENTRY POINT** for autonomous development.
-> You invoke `/ralph-loop` ONCE. It orchestrates EVERYTHING:
+> Ralph-orchestrator is the **SINGLE ENTRY POINT** for autonomous development.
+> You invoke `/ralph-orchestrator` ONCE. It orchestrates EVERYTHING:
 >
 > 1. **PLANNING (HITL)** - Interactive session where YOU guide the user through planning
 > 2. **EXECUTION (AFK)** - Autonomous loop where YOU only MONITOR
 >
 > DO NOT invoke sop-discovery, sop-planning, or sop-task-generator separately.
-> Ralph-loop invokes them FOR YOU in the correct sequence.
+> Ralph-orchestrator invokes them FOR YOU in the correct sequence.
 
 ---
 
@@ -312,7 +312,7 @@ Read("specs/*/implementation/*")  # Read plans
 ### If User Asks to Implement
 
 Respond:
-> *"This session monitors ralph-loop. Workers have fresh 200K token context - 10x better than implementing here. Want me to update the plan and restart the loop instead?"*
+> *"This session monitors ralph-orchestrator. Workers have fresh 200K token context - 10x better than implementing here. Want me to update the plan and restart the loop instead?"*
 
 ### Checkpoint Handling
 
@@ -383,7 +383,7 @@ specs/{goal}/
 
 ```bash
 # From your project root (must have .git/)
-/path/to/skills/ralph-loop/scripts/install.sh
+/path/to/skills/ralph-orchestrator/scripts/install.sh
 ```
 
 **Prerequisites**:
@@ -395,7 +395,7 @@ specs/{goal}/
 
 ## Core Principles
 
-1. **Single Entry Point** - User invokes `/ralph-loop` once, you orchestrate everything
+1. **Single Entry Point** - User invokes `/ralph-orchestrator` once, you orchestrate everything
 2. **HITL Planning** - Planning is interactive in current session
 3. **AFK Execution** - Execution is autonomous in background
 4. **Fresh Context Is Reliability** - Each iteration clears context

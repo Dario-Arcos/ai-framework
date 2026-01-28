@@ -18,7 +18,7 @@ This example demonstrates the complete Reverse Flow: investigating an existing c
 
 ```mermaid
 graph TD
-    A[User: /ralph-loop] --> B[Claude: Flow direction?]
+    A[User: /ralph-orchestrator] --> B[Claude: Flow direction?]
     B --> C[User: Reverse - investigate legacy code]
     C --> D[sop-reverse invoked]
     D --> E[User: Provides artifact path]
@@ -40,7 +40,7 @@ graph TD
 ### 1. Invocation
 
 ```
-User: /ralph-loop
+User: /ralph-orchestrator
 ```
 
 ---
@@ -1067,8 +1067,8 @@ specs/auth-migration-phase1/
 ### Continue Migration (Phase 2-5)
 
 ```bash
-# Invoke ralph-loop again for next phase
-/ralph-loop
+# Invoke ralph-orchestrator again for next phase
+/ralph-orchestrator
 
 # This time: Forward flow (specs already exist)
 # Point to: specs/legacy-auth-investigation/specs-generated/migration-strategy.md

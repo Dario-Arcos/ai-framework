@@ -21,7 +21,7 @@ Selecciona tu situación para ver las skills recomendadas
 | Crear componentes Claude Code | `claude-code-expert` |
 | Diseño frontend distintivo | `frontend-design` |
 | Humanizar texto AI-generated | `humanizer` |
-| Desarrollo autónomo multi-iteración | `ralph-loop` |
+| Desarrollo autónomo multi-iteración | `ralph-orchestrator` |
 
 ---
 
@@ -68,7 +68,7 @@ Selecciona tu situación para ver las skills recomendadas
 **Después del diseño**:
 - Documentar en `docs/plans/YYYY-MM-DD-<topic>-design.md`
 - Commit del documento
-- Continuar con ralph-loop o Superpowers `writing-plans`
+- Continuar con ralph-orchestrator o Superpowers `writing-plans`
 
 **Principios clave**:
 - **Una pregunta a la vez** - No abrumar con múltiples
@@ -352,7 +352,7 @@ Early feedback from beta testers has been positive."
 
 ## Automation
 
-### ralph-loop
+### ralph-orchestrator
 
 ::: warning Automation | Advanced
 **Cuándo**: Desarrollo autónomo multi-iteración con context rotation y state persistente
@@ -366,7 +366,7 @@ Early feedback from beta testers has been positive."
 **Instalación**:
 ```bash
 # Desde tu project root (debe tener .git/)
-RALPH_SKILL="path/to/skills/ralph-loop"
+RALPH_SKILL="path/to/skills/ralph-orchestrator"
 cp "$RALPH_SKILL/scripts/loop.sh" .
 cp "$RALPH_SKILL/scripts/PROMPT_build.md" .
 cp "$RALPH_SKILL/scripts/PROMPT_plan.md" .

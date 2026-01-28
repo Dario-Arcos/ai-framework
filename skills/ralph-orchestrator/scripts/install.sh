@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ralph Loop Installer
-# Copies ralph-loop scripts to target project directory
+# Copies ralph-orchestrator scripts to target project directory
 #
 # Usage:
 #   ./install.sh                    # Install to current directory
@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Determine script location (where ralph-loop is installed)
+# Determine script location (where ralph-orchestrator is installed)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(dirname "$SCRIPT_DIR")"
 

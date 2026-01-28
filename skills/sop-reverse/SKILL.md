@@ -1,21 +1,9 @@
 ---
 name: sop-reverse
-description: Use when investigating existing artifacts (codebase, API, documentation, process, concept) to generate specs for future development
+description: Investigates and documents existing artifacts (codebases, APIs, documentation, processes) into structured specifications. Ideal for inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration.
 ---
 
 # SOP Reverse Engineering
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When to Use](#when-to-use)
-- [When NOT to Use](#when-not-to-use)
-- [Parameters](#parameters)
-- [The Investigation Process](#the-investigation-process)
-- [Output Structure](#output-structure)
-- [Key Principles](#key-principles)
-- [Troubleshooting](#troubleshooting)
-- [References](#references)
 
 ## Overview
 
@@ -149,7 +137,7 @@ See [references/output-structure.md](references/output-structure.md) for complet
 After investigation completes, specs in `specs-generated/` feed into sop-planning:
 
 ```
-sop-reverse -> sop-planning -> sop-task-generator -> ralph-loop
+sop-reverse -> sop-planning -> sop-task-generator -> ralph-orchestrator
 ```
 
 This creates a complete loop: understand what exists, plan improvements, generate tasks, execute.
@@ -163,4 +151,4 @@ This creates a complete loop: understand what exists, plan improvements, generat
 
 ---
 
-*Part of the SOP framework: sop-reverse -> sop-planning -> sop-task-generator -> ralph-loop*
+*Part of the SOP framework: sop-reverse -> sop-planning -> sop-task-generator -> ralph-orchestrator*

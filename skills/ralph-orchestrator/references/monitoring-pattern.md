@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines the monitoring role and allowed actions during ralph-loop execution. Understanding this pattern is essential for maintaining role boundaries and preserving worker context advantage.
+This reference defines the monitoring role and allowed actions during ralph-orchestrator execution. Understanding this pattern is essential for maintaining role boundaries and preserving worker context advantage.
 
 ---
 
@@ -59,7 +59,7 @@ Read("specs/{goal}/implementation/plan.md")  # Check task status
 
 Respond with:
 
-*"This session monitors ralph-loop. To implement that, I'll update the plan
+*"This session monitors ralph-orchestrator. To implement that, I'll update the plan
 and restart the loop. Workers have fresh 200K token context - 10x better for
 implementation. Want me to update the plan and restart?"*
 

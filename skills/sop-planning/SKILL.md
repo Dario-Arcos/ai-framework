@@ -1,22 +1,9 @@
 ---
 name: sop-planning
-description: Transforms rough ideas into implementation-ready designs through structured clarification, research, and design phases using PDD methodology
+description: Transforms rough ideas into implementation-ready designs through structured PDD methodology (clarification, research, design phases). Applied after discovery phase when requirements are captured and ready for technical design and planning.
 ---
 
 # SOP Planning - Prompt-Driven Development
-
-## Table of Contents
-
-- [Overview](#overview)
-- [When to Use](#when-to-use)
-- [When NOT to Use](#when-not-to-use)
-- [Parameters](#parameters)
-- [Process Overview](#process-overview)
-- [Step-by-Step Instructions](#step-by-step-instructions)
-- [Common Mistakes](#common-mistakes)
-- [Troubleshooting](#troubleshooting)
-- [Quality Standards](#quality-standards)
-- [Example Invocation](#example-invocation)
 
 ## Overview
 
@@ -44,7 +31,7 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - **project_dir** (optional, default: specs/{name}): Directory for planning artifacts
 - **discovery_path** (optional): Path to existing discovery.md to continue from
 
-### Protección de Datos Existentes
+### Existing Data Protection
 
 **You MUST NOT:**
 - Overwrite an existing project directory without explicit user confirmation

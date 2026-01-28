@@ -50,7 +50,7 @@ Use an active Claude Code session as observer:
 
 ### Monitoring Pattern (Specs-Based Execution)
 
-Since ralph-loop now only executes (planning is separate), monitoring focuses on task progress:
+Since ralph-orchestrator now only executes (planning is separate), monitoring focuses on task progress:
 
 ```
 1. result = Bash("./loop.sh specs/{goal}/", run_in_background=true)

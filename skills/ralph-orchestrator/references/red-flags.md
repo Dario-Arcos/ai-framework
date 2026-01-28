@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference identifies dangerous thought patterns and rationalizations that indicate the orchestrator is about to violate role boundaries. Use this as a self-check before taking any action during ralph-loop execution.
+This reference identifies dangerous thought patterns and rationalizations that indicate the orchestrator is about to violate role boundaries. Use this as a self-check before taking any action during ralph-orchestrator execution.
 
 ---
 
@@ -16,7 +16,7 @@ This reference identifies dangerous thought patterns and rationalizations that i
 |---------|---------|------------------|
 | "Let me just fix this one thing quickly" | Workers fix. Start the loop. | Quick fixes bypass quality gates and TDD |
 | "I can implement this faster than the loop" | You can't. Fresh context wins. | Polluted context produces worse code |
-| "This is too simple for ralph-loop" | Use direct implementation then. | If it's in the loop, use the loop |
+| "This is too simple for ralph-orchestrator" | Use direct implementation then. | If it's in the loop, use the loop |
 | "I'll edit the code and then start the loop" | No. Planning → Loop. No edits. | Pre-edits conflict with worker state |
 | "The worker made a mistake, let me correct it" | Update plan, restart loop. | Workers have fresh context you don't |
 | "I already know what to do" | Knowing ≠ implementing correctly | TDD catches errors you won't see |
