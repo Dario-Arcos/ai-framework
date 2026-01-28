@@ -67,6 +67,7 @@ EXIT_MAX_RUNTIME=4         # Runtime limit exceeded
 EXIT_CONTEXT_EXHAUSTED=5   # Context health critical
 EXIT_LOOP_THRASHING=6      # Detected state oscillation
 EXIT_TASKS_ABANDONED=7     # Tasks repeatedly failing
+EXIT_CHECKPOINT_PAUSE=8    # Checkpoint reached, waiting for resume
 EXIT_INTERRUPTED=130       # SIGINT received (Ctrl+C)
 
 # ─────────────────────────────────────────────────────────────────
@@ -104,6 +105,10 @@ COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
 LAST_TASK=""  # Track last completed task for abandonment detection
 TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
 MAX_TASK_ATTEMPTS=3  # Exit if same task attempted this many times
+
+# Checkpoint configuration
+CHECKPOINT_MODE="${CHECKPOINT_MODE:-none}"  # none|iterations|milestones
+CHECKPOINT_INTERVAL="${CHECKPOINT_INTERVAL:-5}"  # Pause every N iterations (if mode=iterations)
 
 # Loop thrashing detection - track recent tasks to detect oscillating patterns
 TASK_HISTORY=()  # Array of recent task names
@@ -556,6 +561,22 @@ EOF
                 echo -e "${YELLOW}  COMPLETE counter reset (was ${COMPLETE_COUNT})${NC}"
             fi
             COMPLETE_COUNT=0
+        fi
+
+        # ─────────────────────────────────────────────────────────
+        # CHECKPOINT PAUSE (iterations mode)
+        # ─────────────────────────────────────────────────────────
+
+        if [ "$CHECKPOINT_MODE" = "iterations" ] && [ $((ITERATION % CHECKPOINT_INTERVAL)) -eq 0 ]; then
+            echo ""
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${YELLOW}  CHECKPOINT: Reached after $CHECKPOINT_INTERVAL iterations${NC}"
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo ""
+            echo -e "${BLUE}Review progress and resume with:${NC}"
+            echo "  ./loop.sh $SPECS_PATH $MAX_ITERATIONS"
+            echo ""
+            cleanup_and_exit $EXIT_CHECKPOINT_PAUSE "checkpoint_pause"
         fi
     else
         ((CONSECUTIVE_FAILURES++))

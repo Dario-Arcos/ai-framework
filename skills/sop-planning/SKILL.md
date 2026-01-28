@@ -44,6 +44,17 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - **project_dir** (optional, default: specs/{name}): Directory for planning artifacts
 - **discovery_path** (optional): Path to existing discovery.md to continue from
 
+### Protección de Datos Existentes
+
+**You MUST NOT:**
+- Overwrite an existing project directory without explicit user confirmation
+- Proceed if the default project directory contains files
+
+**You MUST:**
+- Check if `{project_dir}` exists before creating it
+- If exists and contains files, ask user: "Directory already contains files. Options: (1) Use different name, (2) Archive existing, (3) Overwrite (destructive)"
+- Only proceed after explicit user choice
+
 ## Output Structure
 ```
 {project_dir}/

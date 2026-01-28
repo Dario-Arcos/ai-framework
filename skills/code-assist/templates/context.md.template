@@ -1,0 +1,210 @@
+# Implementation Context: {task_name}
+
+<!--
+## Usage
+
+This template documents the implementation context for a code-assist task.
+Fill in all sections before starting the Code phase.
+
+## Constraints
+
+- You MUST fill all required sections because workers need complete context
+- You MUST focus on high-level concepts, not detailed implementation code
+- You MUST update this document as understanding evolves
+- You SHOULD include mermaid diagrams for complex relationships
+-->
+
+## Task Overview
+
+**Task Name:** {task_name}
+**Created:** {date}
+**Mode:** {mode}
+
+### Description
+{task_description}
+
+### Source
+- **Task File:** {task_file_path}
+- **Design Document:** {design_path}
+
+---
+
+## Requirements Analysis
+
+### Functional Requirements
+<!--
+List specific functional requirements extracted from the task.
+Use clear, testable statements.
+-->
+
+1. {requirement_1}
+2. {requirement_2}
+3. {requirement_3}
+
+### Non-Functional Requirements
+<!--
+Performance, security, accessibility, etc.
+-->
+
+- {nfr_1}
+- {nfr_2}
+
+### Acceptance Criteria
+<!--
+Copy from .code-task.md or derive from requirements.
+Use Given-When-Then format.
+-->
+
+1. **{criterion_1}**
+   - Given {precondition}
+   - When {action}
+   - Then {expected_result}
+
+---
+
+## Project Structure
+
+### Workspace Analysis
+<!--
+Document relevant project structure.
+-->
+
+```
+{repo_root}/
+├── src/
+│   └── {implementation_path}
+├── tests/
+│   └── {test_path}
+└── {other_relevant_paths}
+```
+
+### Technology Stack
+- **Language:** {language}
+- **Framework:** {framework}
+- **Testing:** {test_framework}
+- **Build:** {build_tool}
+
+---
+
+## Existing Patterns
+
+### Coding Conventions
+<!--
+Document conventions found in surrounding code.
+-->
+
+- **Naming:** {naming_convention}
+- **File Organization:** {file_organization}
+- **Error Handling:** {error_handling_pattern}
+- **Documentation:** {documentation_style}
+
+### Relevant Patterns Found
+<!--
+Patterns from existing codebase that apply to this task.
+-->
+
+1. **{pattern_name}**
+   - Location: `{file_path}`
+   - Relevance: {why_relevant}
+
+### Anti-Patterns to Avoid
+<!--
+Patterns explicitly NOT to follow.
+-->
+
+- {antipattern_1}
+- {antipattern_2}
+
+---
+
+## Dependencies
+
+### Internal Dependencies
+<!--
+Components this code will interact with.
+-->
+
+| Component | Interface | Purpose |
+|-----------|-----------|---------|
+| {component} | {interface} | {purpose} |
+
+### External Dependencies
+<!--
+Libraries, packages, or services required.
+-->
+
+| Dependency | Version | Purpose |
+|------------|---------|---------|
+| {dependency} | {version} | {purpose} |
+
+### Dependency Map
+<!--
+Visual representation of how this code integrates.
+-->
+
+```mermaid
+graph LR
+    A[This Implementation] --> B[Dependency 1]
+    A --> C[Dependency 2]
+    B --> D[External Service]
+```
+
+---
+
+## Implementation Paths
+
+### File Locations
+<!--
+Specific paths where code will be created/modified.
+-->
+
+| Type | Path | Action |
+|------|------|--------|
+| Implementation | `{impl_path}` | Create/Modify |
+| Tests | `{test_path}` | Create |
+| Types | `{types_path}` | Create/Modify |
+
+### Integration Points
+<!--
+Where this code connects to existing systems.
+-->
+
+1. {integration_point_1}
+2. {integration_point_2}
+
+---
+
+## Existing Documentation
+
+### Discovered Instruction Files
+<!--
+List instruction files found and key information from each.
+-->
+
+| File | Key Information |
+|------|-----------------|
+| CODEASSIST.md | {summary} |
+| README.md | {summary} |
+| CONTRIBUTING.md | {summary} |
+
+### Relevant Research
+<!--
+If from PDD planning phase, reference research documents.
+-->
+
+- {research_reference}
+
+---
+
+## Open Questions
+
+<!--
+Uncertainties or decisions deferred.
+-->
+
+- [ ] {open_question_1}
+- [ ] {open_question_2}
+
+---
+
+*Last Updated: {date}*

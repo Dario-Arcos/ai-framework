@@ -35,7 +35,17 @@ Check `.ralph/config.sh` if unsure about project quality requirements.
 
 Study these using subagents:
 1. `@AGENTS.md` - Operational guide
-2. `@IMPLEMENTATION_PLAN.md` - Task list
+2. Task sources (in priority order):
+   - `specs/*/implementation/step*/task-*.code-task.md` - SOP-generated tasks (preferred)
+   - `@IMPLEMENTATION_PLAN.md` - Legacy task list (fallback)
+
+**If .code-task.md files exist:**
+- Read the next incomplete task file
+- Follow TDD workflow: Explore → Plan → Code → Commit
+- Create artifacts in `.sop/planning/implementation/{task_name}/`
+
+**If only IMPLEMENTATION_PLAN.md exists:**
+- Use legacy mode (below)
 
 ### 0e. Study Scratchpad (Session Memory)
 
@@ -61,6 +71,13 @@ Study `specs/*` with up to 500 parallel Opus subagents.
 
 ### 1a. Select Most Important Task
 
+**Si .code-task.md files existen (modo SOP):**
+1. Listar todos los archivos `specs/*/implementation/step*/task-*.code-task.md`
+2. Filtrar los que NO tienen `## Status: COMPLETED` al inicio
+3. Ordenar por step (step01 antes de step02) y por número de task
+4. Seleccionar el primero no completado
+
+**Si solo existe IMPLEMENTATION_PLAN.md (modo legacy):**
 From `@IMPLEMENTATION_PLAN.md`, choose the most important incomplete item.
 
 Priority: Blocking deps → Risky integrations → Core features → Edge cases → Polish
@@ -160,6 +177,10 @@ source .ralph/config.sh 2>/dev/null || true
 
 ### 4a. Update Implementation Plan
 
+**Para .code-task.md files:**
+- Añadir `## Status: COMPLETED` y `## Completed: YYYY-MM-DD` al inicio del archivo
+
+**Para IMPLEMENTATION_PLAN.md (legacy):**
 Using a subagent, edit `@IMPLEMENTATION_PLAN.md`:
 - Mark completed task: `[ ]` → `[x]`
 - Add new tasks if discovered

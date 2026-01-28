@@ -1,0 +1,405 @@
+---
+name: code-assist
+description: Implements code tasks using TDD following Explore → Plan → Code → Commit workflow. Use after sop-task-generator creates .code-task.md files.
+---
+
+# Code Assist
+
+## Table of Contents
+
+- [Overview](#overview)
+- [When to Use](#when-to-use)
+- [When NOT to Use](#when-not-to-use)
+- [Parameters](#parameters)
+- [Mode Behavior](#mode-behavior)
+- [Important Notes](#important-notes)
+- [Steps](#steps)
+- [Desired Outcome](#desired-outcome)
+- [Artifacts](#artifacts)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
+- [Related Skills](#related-skills)
+
+## Overview
+
+This skill guides the implementation of code tasks using test-driven development principles, following a structured **Explore → Plan → Code → Commit** workflow. It balances automation with user collaboration while adhering to existing package patterns and prioritizing readability and extensibility.
+
+The agent acts as a **Technical Implementation Partner** and **TDD Coach** - providing guidance, generating test cases and implementation code that follows existing patterns, avoids over-engineering, and produces idiomatic, modern code in the target language.
+
+**Source:** Based on strands-agents/agent-sop `code-assist.sop.md`
+
+## When to Use
+
+- After `sop-task-generator` has created `.code-task.md` files
+- When you have a structured task with clear requirements
+- For implementing features following TDD methodology
+- During the execution phase of the ralph-loop
+
+## When NOT to Use
+
+| Situation | Why Not | Use Instead |
+|-----------|---------|-------------|
+| No task definition exists | Need structured input | `sop-task-generator` first |
+| Requirements unclear | Need clarification | `sop-planning` first |
+| Exploring existing code | Not for analysis | `sop-reverse` |
+| Simple one-liner fixes | Overhead exceeds benefit | Direct implementation |
+
+## Parameters
+
+- **task_description** (required): Description of the task to implement. Can be a `.code-task.md` file path, direct text, or URL.
+- **additional_context** (optional): Supplementary information for implementation context
+- **documentation_dir** (optional, default: `.sop/planning`): Directory for planning documents
+- **repo_root** (optional, default: current working directory): Root directory for code implementation
+- **task_name** (optional): Short descriptive name for the task. Auto-generated if not provided.
+- **mode** (optional, default: `auto`): Execution mode - `interactive` or `auto`
+
+**Constraints for parameter acquisition:**
+- You MUST ask for all parameters upfront in a single prompt because this ensures efficient workflow and prevents repeated interruptions during execution
+- You MUST support multiple input methods for task_description:
+  - Direct text input
+  - File path to `.code-task.md`
+  - Directory path (will look for task files within)
+- You MUST normalize mode input to `interactive` or `auto`
+- You MUST validate directory paths and generate task_name if not provided
+- You MUST confirm successful acquisition of all parameters before proceeding
+- If mode is `auto`, you MUST warn the user that no further interaction will be required
+
+## Mode Behavior
+
+Apply these patterns throughout all steps based on the selected mode.
+
+### Interactive Mode
+
+- Present proposed actions and ask for confirmation before proceeding
+- When multiple approaches exist, explain pros/cons and ask for user preference
+- Review artifacts and solicit specific feedback before moving forward
+- Ask clarifying questions about ambiguous requirements
+- Pause at key decision points to explain reasoning
+- Adapt to user feedback and preferences
+- Provide educational context when introducing new patterns
+
+### Auto Mode
+
+- Execute all actions autonomously without user confirmation
+- Document all decisions, assumptions, and reasoning in `progress.md`
+- When multiple approaches exist, select the most appropriate and document why
+- Provide comprehensive summaries at completion
+
+See `references/mode-behavior.md` for detailed guidance.
+
+## Important Notes
+
+### Separation of Concerns
+
+This skill maintains **strict separation** between documentation and code:
+- All documentation about the implementation process → `{documentation_dir}`
+- All actual code (tests AND implementation) → `{repo_root}`
+- **NEVER** place code files in documentation directories
+
+### CODEASSIST.md Integration
+
+If `CODEASSIST.md` exists in repo_root, it contains additional constraints, pre/post SOP instructions, examples, and troubleshooting specific to this project. Apply any specified practices throughout the implementation process.
+
+## Steps
+
+### Step 1: Setup
+
+Initialize the project environment and create necessary directory structures.
+
+**You MUST:**
+- Validate and create the documentation directory structure:
+  - Create `{documentation_dir}/implementation/{task_name}/` with `logs/` subdirectory
+  - Verify directory structure was created successfully before proceeding
+- Discover existing instruction files (CODEASSIST.md, README.md, CONTRIBUTING.md, etc.)
+- Read CODEASSIST.md if found and apply its constraints throughout
+- Create `context.md` using `templates/context.md.template`
+- Create `progress.md` using `templates/progress.md.template`
+- Document project structure, requirements, patterns, and dependencies
+
+**You MUST NOT:**
+- Proceed if directory creation fails
+- Place code implementations in documentation directory
+- Skip context gathering even if the task seems simple
+
+**Verification:** Directory structure created, context.md and progress.md initialized.
+
+---
+
+### Step 2: Explore Phase
+
+#### 2.1 Analyze Requirements and Context
+
+**You MUST:**
+- Create a clear list of functional requirements and acceptance criteria
+- Determine appropriate file paths and programming language
+- Align with existing project structure and technology stack
+- In interactive mode: engage user in discussions about requirements
+- In auto mode: document analysis in context.md
+
+**You MUST NOT:**
+- Make assumptions about requirements without verification
+- Skip edge case identification
+
+#### 2.2 Research Existing Patterns
+
+**You MUST:**
+- Search current repository for relevant code, patterns, and information
+- Create a dependency map showing how new code will integrate
+- Update context.md with identified implementation paths
+- Document any best practices found in internal documentation
+
+#### 2.3 Create Code Context Document
+
+**You MUST:**
+- Update context.md with requirements, implementation details, patterns, and dependencies
+- Focus on high-level concepts rather than detailed implementation code
+- Keep documentation concise and focused on guiding implementation
+
+**You MUST NOT:**
+- Include complete code implementations in documentation
+- Create overly detailed specifications that duplicate actual code
+
+**Verification:** context.md contains requirements, patterns, and implementation paths.
+
+---
+
+### Step 3: Plan Phase
+
+#### 3.1 Design Test Strategy
+
+**You MUST:**
+- Cover all acceptance criteria with at least one test scenario
+- Define explicit input/output pairs for each test case
+- Save test scenarios to `{documentation_dir}/implementation/{task_name}/plan.md`
+- Design tests that will initially fail (RED phase)
+
+**You MUST NOT:**
+- Create mock implementations during test design
+- Include complete test code in documentation (use high-level descriptions)
+
+#### 3.2 Implementation Planning & Tracking
+
+**You MUST:**
+- Save implementation plan to plan.md
+- Include all key implementation tasks
+- Maintain implementation checklist in progress.md using markdown checkbox format
+- Display current checklist status after each major step
+
+**You SHOULD:**
+- Consider performance, security, and maintainability implications
+- Use diagrams or pseudocode rather than actual implementation code
+
+**Verification:** plan.md contains test strategy and implementation approach.
+
+---
+
+### Step 4: Code Phase
+
+#### 4.1 Implement Test Cases
+
+**You MUST:**
+- Save test implementations to appropriate test directories in repo_root
+- Implement tests for ALL requirements BEFORE writing ANY implementation code
+- Follow testing framework conventions used in existing codebase
+- Execute tests to verify they fail as expected (RED phase)
+- Document failure reasons in progress.md
+
+**You MUST NOT:**
+- Place test code files in documentation directory
+- Write implementation code before tests
+
+**Only seek user input if:**
+- Tests fail for unexpected reasons you cannot resolve
+- Structural issues with test framework
+- Environment issues preventing test execution
+
+#### 4.2 Develop Implementation Code
+
+**You MUST:**
+- Follow strict TDD cycle: **RED → GREEN → REFACTOR**
+- Document each TDD cycle in progress.md
+- Implement only what is needed to make current test(s) pass
+- Follow coding style and conventions of existing codebase
+- Execute tests after each implementation step
+
+**You MUST:**
+- Follow YAGNI, KISS, and SOLID principles
+- Ensure all implementation code is in repo_root, not documentation_dir
+
+See `references/tdd-workflow.md` for detailed TDD guidance.
+
+#### 4.3 Refactor and Optimize
+
+**You MUST:**
+- Check that all tests pass before refactoring
+- Examine code around changes to match existing conventions:
+  - Naming conventions
+  - Code organization patterns
+  - Error handling patterns
+  - Documentation style
+  - Testing patterns
+- Prioritize readability and maintainability over clever optimizations
+- Maintain test passing status throughout refactoring
+
+#### 4.4 Validate Implementation
+
+**You MUST:**
+- Execute relevant test command and verify all tests pass
+- Execute relevant build command and verify builds succeed
+- Verify all items in implementation plan have been completed
+- Provide complete test execution output
+
+**You MUST NOT:**
+- Claim implementation is complete if any tests are failing
+- Skip build validation
+
+**Verification:** All tests pass, build succeeds, checklist complete.
+
+---
+
+### Step 5: Commit Phase
+
+**You MUST:**
+- Check that all tasks are complete before proceeding
+- Follow Conventional Commits specification
+- Use `git status` to check modified files
+- Use `git add` to stage relevant files
+- Execute `git commit` with prepared message
+- Document commit hash and status in progress.md
+
+**You MUST NOT:**
+- Commit until builds AND tests are verified passing
+- Push changes to remote repositories
+
+**You SHOULD:**
+- Include "Assisted by code-assist skill" in commit footer
+
+**Verification:** Commit created, hash documented in progress.md.
+
+---
+
+## Desired Outcome
+
+- Complete, well-tested code implementation meeting specifications
+- Comprehensive test suite validating the implementation
+- Clean, documented code that:
+  - Follows existing package patterns and conventions
+  - Prioritizes readability and extensibility
+  - Avoids over-engineering and over-abstraction
+  - Is idiomatic and modern in the target language
+- Well-organized artifacts in `{documentation_dir}/implementation/{task_name}/`
+- Documentation of key design decisions and implementation notes
+- Properly committed changes with conventional commit messages
+
+## Artifacts
+
+```
+{documentation_dir}/implementation/{task_name}/
+├── context.md      # Workspace structure, requirements, patterns, dependencies
+├── plan.md         # Test scenarios, implementation planning, strategy
+├── progress.md     # TDD cycles, refactoring notes, commit status
+└── logs/           # Build outputs (one log per package)
+```
+
+## Examples
+
+### Example 1: Implementing a .code-task.md
+
+**Input:**
+```
+task_description: "specs/my-feature/implementation/step01/task-01-create-validator.code-task.md"
+mode: "auto"
+```
+
+**Expected Process:**
+1. Read the .code-task.md file
+2. Check for CODEASSIST.md and discover instruction files
+3. Set up directory structure in .sop/planning/implementation/create-validator/
+4. Explore requirements and create context documentation
+5. Plan test scenarios based on acceptance criteria
+6. Implement tests first (RED phase)
+7. Implement validation function (GREEN phase)
+8. Refactor to match conventions
+9. Commit with conventional commit message
+
+### Example 2: Interactive Mode with Rough Description
+
+**Input:**
+```
+task_description: "Create a utility function that validates email addresses"
+mode: "interactive"
+```
+
+**Expected Process:**
+1. Ask clarifying questions about requirements
+2. Present test strategy for approval
+3. Implement tests with user feedback
+4. Implement function with user confirmation at each step
+5. Refactor with user review
+6. Commit after user approval
+
+## Troubleshooting
+
+### Build Issues
+- Check CODEASSIST.md for build instructions
+- Verify correct directory for build system
+- Try clean builds before rebuilding
+- Check for missing dependencies
+
+### Test Failures
+- Verify test is testing the right behavior
+- Check if test setup/teardown is correct
+- Ensure mocks/stubs are properly configured
+- Document unexpected failures in progress.md
+
+### Implementation Challenges
+- Document challenge in progress.md
+- Propose alternative approaches
+- In interactive mode: ask user for guidance
+- In auto mode: select most promising alternative and document decision
+
+### Project Structure Issues
+- Check CODEASSIST.md for guidance
+- Verify repo_root is correct
+- Validate project structure matches expectations
+
+## Best Practices
+
+### Project Detection and Configuration
+- Detect project type from files (package.json, pyproject.toml, Cargo.toml, etc.)
+- Check for CODEASSIST.md for additional constraints
+- Use project-appropriate build commands
+
+### Build Output Management
+- Pipe build output to log files
+- Search for specific success/failure indicators
+- Save build logs to `{documentation_dir}/implementation/{task_name}/logs/`
+
+### Documentation Organization
+- Use consolidated files: context.md, plan.md, progress.md
+- Focus on high-level concepts rather than detailed code
+- Track progress with markdown checklists
+
+## Related Skills
+
+- **sop-task-generator** - Creates `.code-task.md` files for this skill to consume
+- **sop-planning** - Creates detailed designs that inform task generation
+- **sop-discovery** - Explores constraints and risks before planning
+- **ralph-loop** - Autonomous execution loop that can invoke this skill
+- **test-driven-development** - Detailed TDD methodology reference
+
+---
+
+## References
+
+This skill implements concepts from:
+- strands-agents/agent-sop `code-assist.sop.md`
+- ralph-orchestrator `.sops/code-assist.sop.md`
+- Test-Driven Development (TDD) methodology
+- Conventional Commits specification
+
+---
+
+*Version: 1.0.0 | Created: 2026-01-28*
+*Compliant with strands-agents SOP format (RFC 2119)*
