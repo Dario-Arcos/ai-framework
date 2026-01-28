@@ -1,185 +1,104 @@
 ---
 name: claude-code-expert
-description: Use when working with Claude Code plugin development, creating, modifying, or fixing sub-agents, slash commands, hooks, or MCP integrations - ensures correct-on-first-attempt code by verifying official docs before implementation (training data is stale, APIs change every 3 months)
+description: Investigates Claude Code questions (skills, sub-agents, hooks, MCPs, SDK) in official documentation before implementation. Training data is stale - always verify current APIs. Use when user asks about Claude Code features or plugin development.
 ---
 
 # Claude Code Expert
 
-Production-ready Claude Code components with 100% consistency to official docs and ai-framework patterns.
+**Core Principle**: Official docs FIRST, implementation SECOND.
 
----
-
-## Core Principle
-
-Official docs ALWAYS before implementation. Training data is stale.
-
-**The Iron Law:**
-```
-NO COMPONENT GENERATION WITHOUT OFFICIAL DOCS VERIFICATION FIRST
-```
-
-**Your training data is 6+ months old. Claude Code APIs change every 3 months. Assume ALL syntax you remember is obsolete.**
+Your training data is 6+ months stale. Claude Code APIs change frequently. **Never assume syntax from memory.**
 
 ---
 
 ## When to Use
 
-Use claude-code-expert when:
-- ✅ Creating new sub-agents, commands, hooks, or MCP integrations
-- ✅ Modifying existing Claude Code components
-- ✅ Fixing bugs in plugin code
-- ✅ Updating components for new Claude Code versions
-- ✅ User mentions: "create agent", "add command", "new hook", "integrate MCP"
-
-### When NOT to Use
-
-**Don't use for:**
-- ❌ General Python/JavaScript code (not Claude Code-specific)
-- ❌ Project business logic (use appropriate domain agent)
-- ❌ Simple file edits that don't involve Claude Code APIs
-- ❌ Documentation updates without code changes
+- Creating/modifying sub-agents, slash commands, hooks, or MCP integrations
+- Questions about Claude Code features (skills, hooks, MCPs, SDK)
+- Fixing bugs in Claude Code plugin components
+- User mentions: "create agent", "add command", "new hook", "integrate MCP"
 
 ---
-
-## Purpose
-
-Generate correct-on-first-attempt code for sub-agents, slash commands, hooks, and MCP integrations.
 
 ## Workflow
 
-Before implementing ANY component, follow this protocol:
+### Step 1: Investigate Official Documentation
 
-### Step 1: Identify Component Type
+**Use agent-browser to research the official docs:**
 
-Determine which component user requests:
-
-- **Sub-agent**: "Create agent for X" → specialized AI assistant
-- **Slash command**: "Add command to X" → user-invoked workflow
-- **Hook**: "Add hook to X" → event handler (SessionStart, PreToolUse, etc.)
-- **MCP server**: "Integrate X server" → external tool integration
-
-### Step 2: Official Documentation
-
-**Training data is stale. APIs change every 3 months. Never assume syntax.**
-
-Load [references/doc-map.md](references/doc-map.md) and WebFetch official docs for the component type:
-
-```
-1. Read references/doc-map.md
-2. Get official URL for component type
-3. WebFetch docs.claude.com/[component-url]
-4. Extract:
-   - Exact YAML frontmatter structure
-   - Required vs optional fields
-   - Field syntax and constraints
-   - Official examples
+```bash
+agent-browser open https://code.claude.com/docs/en/overview
+agent-browser snapshot -i
 ```
 
-### Step 3: Project Patterns
+Navigate to the relevant section based on the question:
 
-Read existing ai-framework examples extracting patterns:
+| Topic | Navigate to |
+|-------|-------------|
+| Sub-agents | Agents & Agentic Coding |
+| Slash commands | Commands |
+| Hooks | Hooks |
+| MCP servers | MCP Servers |
+| Skills | Skills |
+| SDK | Claude Code SDK |
+| Settings | Settings & Configuration |
 
-**Sub-agents**: Read agents/[relevant-category]/[similar-agent].md
-- Extract: naming conventions, tool access patterns, constitutional constraints
+**Extract:**
+- Current syntax and structure
+- Required vs optional fields
+- Official examples
+- Breaking changes from previous versions
 
-**Commands**: Read commands/[relevant-category]/[similar-command].md
-- Extract: argument-hint patterns, allowed-tools restrictions, workflow structure
+### Step 2: If Official Docs Insufficient
 
-**Hooks**: Read hooks/[similar-hook].py and hooks/hooks.json
-- Extract: error handling patterns, JSON I/O format, exit code conventions
+If official documentation doesn't resolve the question:
 
-**MCP**: Read .claude/.mcp.json
-- Extract: server configuration patterns, environment variable usage
+1. **Search GitHub issues/discussions**: `agent-browser open https://github.com/anthropics/claude-code`
+2. **Search community resources**: Reliable forums, Stack Overflow
+3. **Check Anthropic blog/changelog**: Recent announcements
 
-See [references/naming-conventions.md](references/naming-conventions.md) and [references/language-conventions.md](references/language-conventions.md) for detailed standards.
+**Priority order:**
+1. Official docs (authoritative)
+2. GitHub issues (current bugs/features)
+3. Community (practical solutions)
 
-### Step 4: Generate Component
+### Step 3: Implement with Verification
 
-Merge official syntax (Step 2) + project patterns (Step 3) + constitutional principles.
+After gathering current information:
 
-Load [references/constitutional-compliance.md](references/constitutional-compliance.md) for detailed requirements.
-
-Core principles to apply:
-- **Value/Complexity ≥ 2**: Simplest solution that works
-- **Reuse First**: Use existing patterns before creating new
-- **TDD**: Tests before implementation (if applicable)
-- **AI-First**: Text/JSON interfaces for AI executability
-
-### Step 5: Validate
-
-Load appropriate checklist:
-
-| Component     | Checklist                                                          |
-| ------------- | ------------------------------------------------------------------ |
-| Sub-agent     | [references/agent-checklist.md](references/agent-checklist.md)     |
-| Slash command | [references/command-checklist.md](references/command-checklist.md) |
-| Hook          | [references/hook-checklist.md](references/hook-checklist.md)       |
-| MCP server    | [references/mcp-checklist.md](references/mcp-checklist.md)         |
-
-Execute validation:
-
-1. Run automated validators: `scripts/validate_[type].py`
-2. Manual review against checklist
-3. Execute Step 6 (Logic Review)
-4. Confirm 100% correctness
-
-**Only deliver when all gates passed.**
-
-See [references/quality-gates.md](references/quality-gates.md) for gate details.
-
-### Step 6: Logic Review
-
-Load [references/logic-anti-patterns.md](references/logic-anti-patterns.md) verifying no anti-patterns present before delivery.
-
-## Red Flags - STOP and Follow Workflow
-
-If you catch yourself thinking:
-
-- "I'm 90% confident from memory"
-- "User is waiting / urgent deadline"
-- "Just this once won't hurt"
-- "Quick path is good enough"
-- "I'll validate after delivery"
-- "APIs probably haven't changed"
-- "I saw similar syntax in training data"
-
-**ALL of these mean: STOP. Follow Steps 1-6.**
-
-## Rationalization Prevention
-
-| Excuse | Reality |
-|--------|---------|
-| "I remember the syntax" | Claude Code APIs change monthly. Your training data is 6+ months stale. |
-| "It's urgent" | Broken code in production is 10x more urgent than current deadline. |
-| "I'll validate later" | Later means never. Bugs compound with every use. |
-| "Quality gates are overkill" | Gates exist because shortcuts created production incidents. |
-| "WebFetch is slow" | 30 seconds of verification saves 30 minutes of debugging. |
-| "Training data is recent enough" | **CRITICAL**: Assume all API syntax in your training is obsolete. |
-
-## Deliverables
-
-For each component, provide:
-1. Component file(s) (agent.md, command.md, hook.py, .mcp.json entry)
-2. Validation report confirming checklist passed
-3. Integration instructions (file path, test commands)
+1. **Match project patterns**: Read existing ai-framework examples
+2. **Generate component**: Merge official syntax + project conventions
+3. **Validate**: Ensure no deprecated APIs used
 
 ---
 
-## Real-World Impact
+## Red Flags - STOP and Verify
 
-From Claude Code component generation sessions:
+If you think:
+- "I remember the syntax"
+- "It's probably the same as before"
+- "Training data should be recent enough"
 
-**Docs-first discipline:**
-- With WebFetch verification: 95% first-attempt success
-- Without verification (memory): 30% first-attempt success, 2-3 iterations needed
-- Time saved: 30 sec WebFetch prevents 30 min debugging
+**STOP. Use agent-browser to verify.**
 
-**Quality gates:**
-- With validation steps: 98% components work in production
-- Skipping validation: 45% work correctly, 55% require fixes
-- Production incidents avoided: 100% with gates vs 15% without
+30 seconds of verification saves 30 minutes of debugging.
 
-**Training data staleness:**
-- Components using remembered syntax: 70% have deprecated APIs
-- Components with docs verification: 100% use current APIs
-- Breaking changes missed: 0% with WebFetch vs 70% without
+---
+
+## Quick Reference
+
+```bash
+# Open official docs
+agent-browser open https://code.claude.com/docs/en/overview
+
+# Navigate and extract
+agent-browser snapshot -i
+agent-browser click @[element]
+
+# Search for specific topic
+agent-browser find text "hooks" click
+```
+
+---
+
+*Training data is stale. Official docs are truth. Verify before implementing.*
