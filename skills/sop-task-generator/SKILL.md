@@ -1,6 +1,6 @@
 ---
 name: sop-task-generator
-description: Generates structured .code-task.md files from designs or descriptions for autonomous execution. Applied after planning phase to break down designs into executable tasks for ralph-orchestrator or code-assist.
+description: Generates structured .code-task.md files from designs or descriptions for autonomous execution. Applied after planning phase to break down designs into executable tasks for ralph-orchestrator or sop-code-assist.
 ---
 
 # SOP Task Generator
@@ -9,7 +9,7 @@ description: Generates structured .code-task.md files from designs or descriptio
 
 Generate structured code task files from descriptions or PDD (Problem-Driven Development) plans, based on Amazon's code-task-generator SOP.
 
-This skill creates well-formed implementation tasks that can be executed by code-assist or other execution agents, ensuring consistent task structure and complete requirements specification.
+This skill creates well-formed implementation tasks that can be executed by sop-code-assist or other execution agents, ensuring consistent task structure and complete requirements specification.
 
 ## When to Use
 
@@ -267,8 +267,8 @@ Files created:
 Next steps:
 1. Review generated tasks for completeness
 2. Execute tasks in sequence:
-   - Run code-assist on task-01
-   - After completion, run code-assist on task-02
+   - Run sop-code-assist on task-01
+   - After completion, run sop-code-assist on task-02
    - Continue until all tasks complete
 
 [For PDD mode only:]
@@ -362,7 +362,7 @@ specs/user-profile/tasks/
 ## Notes
 
 - This skill creates task specifications, not implementations
-- Tasks are meant to be executed by code-assist or similar agents
+- Tasks are meant to be executed by sop-code-assist or similar agents
 - Always validate with user before creating files
 - Tasks should be implementation-agnostic where possible
 - Focus on "what" and "why", not "how" (except in Implementation Approach as guidance)

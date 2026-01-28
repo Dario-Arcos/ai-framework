@@ -461,7 +461,7 @@ specs/{goal}/
 | `sop-planning` | Step 3 | Requirements, research, design |
 | `sop-task-generator` | Step 4 | Generate implementation tasks |
 | `sop-reverse` | Step 2B | Investigate existing artifacts |
-| `code-assist` | By workers | TDD implementation per task |
+| `sop-code-assist` | By workers | TDD implementation per task |
 
 **Note:** You invoke these skills internally during orchestration. The user does NOT invoke them separately.
 

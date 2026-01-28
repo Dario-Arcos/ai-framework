@@ -253,7 +253,7 @@ Output: specs/user-auth/design/detailed-design.md
 
 ---
 
-### 5. code-assist
+### 5. sop-code-assist
 
 **Constraints:**
 - You MUST implement tests BEFORE implementation code because TDD ensures testability
@@ -286,10 +286,10 @@ Output: specs/user-auth/design/detailed-design.md
 **Example**:
 ```bash
 # Interactive mode for learning
-/code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
+/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
 
 # Auto mode for batch execution
-/code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="auto"
+/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="auto"
 ```
 
 **TDD Workflow**:
@@ -567,7 +567,7 @@ specs/user-auth/design/detailed-design.md
 // sop-task-generator reads design and generates tasks
 ```
 
-### Task Generation → code-assist (Interactive)
+### Task Generation → sop-code-assist (Interactive)
 
 **Handoff mechanism**: .code-task.md files
 
@@ -580,10 +580,10 @@ specs/user-auth/implementation/
     ├── task-02-login-endpoint.code-task.md
     └── task-03-middleware.code-task.md
 
-# For INTERACTIVE execution, use code-assist skill:
-/code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
+# For INTERACTIVE execution, use sop-code-assist skill:
+/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
 
-# code-assist reads:
+# sop-code-assist reads:
 # - The .code-task.md file (requirements)
 # - specs/user-auth/design/detailed-design.md (context)
 # - Creates .sop/planning/implementation/{task_name}/ artifacts

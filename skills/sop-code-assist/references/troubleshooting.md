@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference covers common issues encountered during code-assist execution and their solutions.
+This reference covers common issues encountered during sop-code-assist execution and their solutions.
 
 ---
 
@@ -66,7 +66,7 @@ This reference covers common issues encountered during code-assist execution and
 
 **Verification:**
 ```
-/code-assist task_description="..." mode="interactive"
+/sop-code-assist task_description="..." mode="interactive"
 ```
 
 ---

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Test-Driven Development (TDD) follows a strict cycle: **RED → GREEN → REFACTOR**. This reference documents the exact workflow to follow during the Code phase of code-assist.
+Test-Driven Development (TDD) follows a strict cycle: **RED → GREEN → REFACTOR**. This reference documents the exact workflow to follow during the Code phase of sop-code-assist.
 
 ## The TDD Cycle
 

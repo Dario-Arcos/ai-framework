@@ -2,13 +2,13 @@
 
 ## Overview
 
-This reference provides practical examples of code-assist usage, demonstrating the complete flow from task input to committed code.
+This reference provides practical examples of sop-code-assist usage, demonstrating the complete flow from task input to committed code.
 
 ## Example 1: Simple Task from Text
 
 **Input:**
 ```
-/code-assist task_description="Add logout button to navbar"
+/sop-code-assist task_description="Add logout button to navbar"
 ```
 
 **Flow:**
@@ -33,7 +33,7 @@ This reference provides practical examples of code-assist usage, demonstrating t
 
 **Input:**
 ```
-/code-assist task_description="specs/auth/implementation/step01/task-01.code-task.md"
+/sop-code-assist task_description="specs/auth/implementation/step01/task-01.code-task.md"
 ```
 
 **Flow:**
@@ -51,7 +51,7 @@ This reference provides practical examples of code-assist usage, demonstrating t
 
 **Input:**
 ```
-/code-assist task_description="Create email validator" mode="interactive"
+/sop-code-assist task_description="Create email validator" mode="interactive"
 ```
 
 **Interactive Flow:**
@@ -109,7 +109,7 @@ mode="auto"
 
 **Input:**
 ```
-/code-assist task_description="Add caching to API client"
+/sop-code-assist task_description="Add caching to API client"
 ```
 
 **Flow with Error:**

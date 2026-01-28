@@ -1,5 +1,5 @@
 ---
-name: code-assist
+name: sop-code-assist
 description: Implements code tasks using TDD methodology following Explore → Plan → Code → Commit workflow. Applied when executing .code-task.md files from ralph-orchestrator, or when structured requirements are ready for TDD implementation.
 ---
 
@@ -11,7 +11,7 @@ This skill guides the implementation of code tasks using test-driven development
 
 The agent acts as a **Technical Implementation Partner** and **TDD Coach** - providing guidance, generating test cases and implementation code that follows existing patterns, avoids over-engineering, and produces idiomatic, modern code in the target language.
 
-**Source:** Based on strands-agents/agent-sop `code-assist.sop.md`
+**Source:** Based on strands-agents/agent-sop `sop-code-assist.sop.md`
 
 ## When to Use
 
@@ -257,7 +257,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 - Push changes to remote repositories
 
 **You SHOULD:**
-- Include "Assisted by code-assist skill" in commit footer
+- Include "Assisted by sop-code-assist skill" in commit footer
 
 **Verification:** Commit created, hash documented in progress.md.
 
@@ -306,8 +306,8 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 | [troubleshooting.md](references/troubleshooting.md) | Common issues and solutions |
 
 **Source Materials:**
-- strands-agents/agent-sop `code-assist.sop.md`
-- ralph-orchestrator `.sops/code-assist.sop.md`
+- strands-agents/agent-sop `sop-code-assist.sop.md`
+- ralph-orchestrator `.sops/sop-code-assist.sop.md`
 - Test-Driven Development (TDD) methodology
 - Conventional Commits specification
 

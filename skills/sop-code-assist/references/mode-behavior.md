@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `mode` parameter controls how code-assist interacts with the user throughout the implementation process. This reference documents the exact behavior differences between `interactive` and `auto` modes.
+The `mode` parameter controls how sop-code-assist interacts with the user throughout the implementation process. This reference documents the exact behavior differences between `interactive` and `auto` modes.
 
 ## Mode Selection
 
