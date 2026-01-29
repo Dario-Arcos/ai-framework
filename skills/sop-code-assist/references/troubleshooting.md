@@ -65,7 +65,7 @@ This reference covers common issues encountered during sop-code-assist execution
 **Fix:** Restart with `mode="interactive"` parameter
 
 **Verification:**
-```
+```bash
 /sop-code-assist task_description="..." mode="interactive"
 ```
 

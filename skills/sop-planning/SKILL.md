@@ -1,6 +1,6 @@
 ---
 name: sop-planning
-description: Transforms rough ideas into implementation-ready designs through structured PDD methodology (clarification, research, design phases). Applied after discovery phase when requirements are captured and ready for technical design and planning.
+description: Use when transforming a rough idea into implementation-ready design, after discovery phase completes and requirements need structured technical planning.
 ---
 
 # SOP Planning - Prompt-Driven Development
@@ -43,7 +43,7 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - Only proceed after explicit user choice
 
 ## Output Structure
-```
+```text
 {project_dir}/
 ├── rough-idea.md
 ├── idea-honing.md
@@ -84,7 +84,7 @@ graph TD
 
 Create directory structure and populate initial artifacts:
 
-```
+```text
 {project_dir}/
 ├── rough-idea.md      # From rough_idea parameter
 ├── idea-honing.md     # Use templates/idea-honing.md.template
@@ -322,9 +322,9 @@ Create `{project_dir}/summary.md`:
 ```
 
 **Suggest next skills**:
-- Ready to implement: `/speckit.implement` or `/executing-plans`
-- Needs review: `/requesting-code-review`
-- Prototype needed: `/brainstorming`
+- Ready to implement: `sop-task-generator`
+- Need to explore code: `sop-reverse`
+- Prototype needed: `brainstorming`
 
 **Constraints:**
 - You MUST list all artifacts created with their purposes
@@ -386,7 +386,7 @@ All artifacts MUST be:
 
 ## Example Invocation
 
-```
+```text
 User: I want to build a caching layer for our API to reduce database load
 
 Claude: [Creates project structure in specs/api-caching-layer/]

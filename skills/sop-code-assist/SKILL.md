@@ -1,6 +1,6 @@
 ---
 name: sop-code-assist
-description: Implements code tasks using TDD methodology following Explore → Plan → Code → Commit workflow. Applied when executing .code-task.md files from ralph-orchestrator, or when structured requirements are ready for TDD implementation.
+description: Use when implementing code tasks with TDD methodology, executing .code-task.md files from ralph-orchestrator, or when structured requirements are ready for test-driven implementation.
 ---
 
 # Code Assist
@@ -278,7 +278,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 ## Artifacts
 
-```
+```text
 {documentation_dir}/implementation/{task_name}/
 ├── context.md      # Workspace structure, requirements, patterns, dependencies
 ├── plan.md         # Test scenarios, implementation planning, strategy

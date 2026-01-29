@@ -1,6 +1,6 @@
 ---
 name: sop-reverse
-description: Investigates and documents existing artifacts (codebases, APIs, documentation, processes) into structured specifications. Ideal for inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration.
+description: Use when inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration. Investigates existing artifacts and generates structured specifications.
 ---
 
 # SOP Reverse Engineering
@@ -96,7 +96,7 @@ See [references/output-structure.md](references/output-structure.md) for templat
 
 ## Output Structure
 
-```
+```text
 {output_dir}/
 ├── investigation.md          # Raw findings and analysis
 ├── specs-generated/          # Structured specs by type
@@ -136,7 +136,7 @@ See [references/output-structure.md](references/output-structure.md) for complet
 
 After investigation completes, specs in `specs-generated/` feed into sop-planning:
 
-```
+```text
 sop-reverse -> sop-planning -> sop-task-generator -> ralph-orchestrator
 ```
 

@@ -1,6 +1,6 @@
 ---
 name: sop-task-generator
-description: Generates structured .code-task.md files from designs or descriptions for autonomous execution. Applied after planning phase to break down designs into executable tasks for ralph-orchestrator or sop-code-assist.
+description: Use when converting designs, PDD plans, or descriptions into structured .code-task.md files for autonomous execution by ralph-orchestrator or sop-code-assist.
 ---
 
 # SOP Task Generator
@@ -54,7 +54,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 - You MUST NOT proceed without user acknowledgment of detected mode
 
 **Example output:**
-```
+```text
 Detected: PDD mode
 Source: specs/feature-x/plan.md
 Found: 5 implementation steps
@@ -119,7 +119,7 @@ Action: Will generate 5 task files (one per step)
    - PDD step → One or more tasks per step
 
 2. Present to user:
-   ```
+   ```text
    Proposed task breakdown for [Step X / Feature Y]:
 
    Task 1: [Title]
@@ -159,7 +159,7 @@ Action: Will generate 5 task files (one per step)
 4. Verify: N task files created = N steps in plan
 
 **Generation Flow:**
-```
+```text
 Plan has 5 steps → Generate 5 task files (step01, step02, step03, step04, step05)
 Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 ```
@@ -182,7 +182,7 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 **File Organization:**
 
 **For PDD mode:**
-```
+```text
 {output_dir}/
 └── stepNN/
     ├── task-01-{title}.code-task.md
@@ -191,7 +191,7 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 ```
 
 **For Description mode:**
-```
+```text
 {output_dir}/
 ├── task-01-{title}.code-task.md
 └── task-02-{title}.code-task.md
@@ -304,7 +304,7 @@ Each task file MUST follow this exact structure:
 - You MUST provide clear next steps
 
 **Report format:**
-```
+```text
 ✓ Generated [N] task file(s) for [N] steps
 
 Validation:
@@ -347,14 +347,14 @@ Demo requirements by step:
 ### Example 1: PDD Mode (All Steps)
 
 **Input:**
-```
+```text
 input: specs/auth-feature/plan.md
 ```
 
 **Detected:** PDD mode, 5 total steps
 
 **Generated (ALL steps upfront):**
-```
+```text
 specs/auth-feature/implementation/
 ├── step01/
 │   └── task-01-setup-auth-infrastructure.code-task.md
@@ -373,7 +373,7 @@ specs/auth-feature/implementation/
 ### Example 2: Description Mode
 
 **Input:**
-```
+```text
 input: "Add user profile editing with validation and profile picture upload"
 output_dir: specs/user-profile/tasks
 ```
@@ -381,7 +381,7 @@ output_dir: specs/user-profile/tasks
 **Detected:** Description mode, complex feature
 
 **Generated:**
-```
+```text
 specs/user-profile/tasks/
 ├── task-01-profile-data-validation.code-task.md
 ├── task-02-profile-update-api.code-task.md

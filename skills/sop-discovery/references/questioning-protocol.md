@@ -13,14 +13,14 @@ When gathering information from the user during discovery:
 
 ### Flow
 
-```
+```text
 Ask question → Wait for answer → Append to document → Confirm → Next question
 ```
 
 ### Example
 
 **CORRECT:**
-```
+```text
 Claude: "What technology constraints exist for this project?"
 User: "Must use Python 3.9+, no external API calls"
 [Appends to discovery.md]
@@ -28,7 +28,7 @@ Claude: "Got it, added to discovery. Next: What are the performance requirements
 ```
 
 **INCORRECT:**
-```
+```text
 Claude: "What are the constraints? And the risks? And prior art you know of?"
 ```
 

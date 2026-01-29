@@ -39,7 +39,7 @@ This reference defines investigation process, question strategies, and quality s
 - You MUST present clear options when target cannot be found because users need guidance to resolve the issue
 
 **Template:**
-```
+```text
 Target not found: {target}
 
 Please verify:
@@ -60,7 +60,7 @@ Would you like to:
 - You MUST NOT proceed without user confirmation because incorrect type selection invalidates the entire analysis
 
 **Template:**
-```
+```text
 Cannot determine target type from: {target}
 
 Could be:
@@ -77,7 +77,7 @@ Which type should I investigate?
 - You MUST request explicit approval before proceeding with limited analysis because incomplete data may lead to incorrect conclusions
 
 **Template:**
-```
+```text
 Cannot fully analyze target due to:
 - [Access issue 1]
 - [Access issue 2]
@@ -95,7 +95,7 @@ Continue with limited analysis? (yes/no)
 - You MUST present the scope explicitly because users need to understand the time/effort tradeoff
 
 **Template:**
-```
+```text
 This is a large artifact ({size} files / {endpoints} endpoints).
 
 Recommend focusing on:
@@ -153,12 +153,12 @@ Or proceed with full analysis? (This may take longer)
 ### Example 1: Codebase Investigation
 
 **Input:**
-```
+```text
 User: Investigate /path/to/legacy-api
 ```
 
 **Expected Process:**
-```
+```text
 You: Based on analysis:
      - Target: /path/to/legacy-api
      - Detected type: codebase
@@ -177,12 +177,12 @@ You: [Performs batch analysis, presents findings]
 ### Example 2: Process Investigation
 
 **Input:**
-```
+```text
 User: Investigate our deployment process
 ```
 
 **Expected Process:**
-```
+```text
 You: Target: "deployment process"
      Detected type: process
 

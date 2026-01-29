@@ -13,7 +13,7 @@ This reference defines the complete directory structure and file templates for s
 - You MUST place investigation.md at root because this is the primary findings document
 - You SHOULD organize supporting materials in artifacts/ because this maintains clarity
 
-```
+```text
 {output_dir}/
 ├── investigation.md           # Raw findings and analysis
 ├── specs-generated/          # Structured specs by category

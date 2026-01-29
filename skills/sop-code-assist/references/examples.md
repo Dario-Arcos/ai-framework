@@ -7,7 +7,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 ## Example 1: Simple Task from Text
 
 **Input:**
-```
+```bash
 /sop-code-assist task_description="Add logout button to navbar"
 ```
 
@@ -19,7 +19,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 5. **Commit**: `feat(auth): add logout button to navbar`
 
 **Artifacts Created:**
-```
+```text
 .sop/planning/implementation/logout-button/
 ├── context.md      # Navbar structure, auth patterns, dependencies
 ├── plan.md         # Test scenarios for button behavior
@@ -32,7 +32,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 ## Example 2: Task from .code-task.md File
 
 **Input:**
-```
+```bash
 /sop-code-assist task_description="specs/auth/implementation/step01/task-01.code-task.md"
 ```
 
@@ -50,7 +50,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 ## Example 3: Interactive Mode with Clarification
 
 **Input:**
-```
+```bash
 /sop-code-assist task_description="Create email validator" mode="interactive"
 ```
 
@@ -108,7 +108,7 @@ mode="auto"
 ## Example 5: Error Recovery
 
 **Input:**
-```
+```bash
 /sop-code-assist task_description="Add caching to API client"
 ```
 

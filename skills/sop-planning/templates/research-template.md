@@ -65,7 +65,7 @@ Provides structured comparison of alternatives with clear recommendation.
 **Use Cases**: {option_1_use_cases}
 
 **Example**:
-```
+```text
 {option_1_example}
 ```
 
@@ -92,7 +92,7 @@ Provides structured comparison of alternatives with clear recommendation.
 **Use Cases**: {option_2_use_cases}
 
 **Example**:
-```
+```text
 {option_2_example}
 ```
 

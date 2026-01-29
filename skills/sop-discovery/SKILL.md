@@ -1,6 +1,6 @@
 ---
 name: sop-discovery
-description: Guides exploration of new goals or projects by systematically identifying constraints, risks, and prior art before detailed planning. Best suited when requirements are unclear, starting greenfield development, or before creating implementation plans.
+description: Use when starting a new project, exploring a new technical direction, or when requirements are unclear and you need to identify constraints, risks, and prior art before planning.
 ---
 
 # SOP: Discovery Phase
@@ -52,10 +52,10 @@ For AI agents executing discovery as part of larger workflow.
 **Usage**: Specify `--mode=autonomous` or detect ralph-orchestrator context
 
 **Questions to SKIP in autonomous mode:**
-- "¿Cuánto tiempo tienes?"
-- "¿Prefieres empezar por...?"
-- "¿Necesitas un break?"
-- "¿Cómo te sientes con...?"
+- "How much time do you have?"
+- "Do you prefer to start with...?"
+- "Do you need a break?"
+- "How do you feel about...?"
 - Any question about human availability/preferences
 
 **Autonomous defaults:**

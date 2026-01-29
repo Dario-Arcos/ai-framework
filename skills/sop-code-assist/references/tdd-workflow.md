@@ -87,7 +87,7 @@ graph LR
 
 ### Test File Structure
 
-```
+```text
 tests/
 ├── unit/
 │   └── {component}_test.{ext}
@@ -99,7 +99,7 @@ tests/
 
 ### Test Naming Convention
 
-```
+```text
 test_{scenario}_{expected_behavior}
 
 Examples:

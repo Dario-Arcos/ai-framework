@@ -69,7 +69,7 @@ Use Given-When-Then format.
 Document relevant project structure.
 -->
 
-```
+```text
 {repo_root}/
 ├── src/
 │   └── {implementation_path}
