@@ -183,17 +183,65 @@ Should I:
 - **Result:** Build succeeds
 ```
 
-## Escalation Rules
+## Blocker Handling by Mode
 
-Even in auto mode, certain situations require user input:
+### Interactive Mode - Escalation
+
+User input is appropriate for:
 
 | Situation | Action |
 |-----------|--------|
-| Tests fail for reasons that cannot be resolved | Pause and document, wait for input |
-| Multiple approaches with equal merit and different trade-offs | Document both, ask user to decide |
-| Security-sensitive changes | Pause and ask for confirmation |
-| Breaking changes to public APIs | Pause and ask for confirmation |
-| Exceeding time/iteration budget | Summarize progress, ask how to proceed |
+| Tests fail for reasons that cannot be resolved | Discuss with user |
+| Multiple approaches with equal merit | Present options, ask user to decide |
+| Security-sensitive changes | Ask for confirmation |
+| Breaking changes to public APIs | Ask for confirmation |
+| Environment issues (missing dependencies) | Ask user how to proceed |
+
+### Auto Mode - NEVER Block for User Input
+
+**CRITICAL: In auto mode, AskUserQuestion is PROHIBITED.**
+
+Instead, use the blocker pattern:
+
+| Situation | Action |
+|-----------|--------|
+| Tests fail unexpectedly | Document in progress.md, emit blocker, exit |
+| Missing dependency | Document in progress.md, emit blocker, exit |
+| Ambiguous requirement | Make best guess, document assumption |
+| Security-sensitive changes | Document concern, proceed with safest option |
+| Multiple valid approaches | Choose highest ROI, document rationale |
+
+#### Blocker Pattern
+
+When blocked in auto mode:
+
+```markdown
+## In progress.md
+### Blocker Encountered
+- **Timestamp:** [ISO timestamp]
+- **Type:** missing_dependency | test_failure | environment_issue
+- **Details:** [Full description]
+- **Attempted Resolution:** [What was tried]
+- **Suggested Action:** [How orchestrator can resolve]
+```
+
+```json
+// In .ralph/blockers.json (if exists)
+{
+  "timestamp": "2026-01-29T15:45:00Z",
+  "type": "missing_dependency",
+  "dependency": "rust",
+  "suggested_action": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+  "task_file": "specs/feature/implementation/step01/task-01.code-task.md"
+}
+```
+
+#### Why This Matters
+
+- **AFK execution** cannot receive user responses (runs with `-p` flag)
+- **Blocking = failure** because no response will ever come
+- **Orchestrator handles recovery** by creating new tasks from blockers
+- **Fresh context** means next iteration can resolve the blocker
 
 ## Mode Switching
 

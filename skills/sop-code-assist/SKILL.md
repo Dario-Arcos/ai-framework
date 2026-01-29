@@ -70,6 +70,16 @@ Apply these patterns throughout all steps based on the selected mode.
 - When multiple approaches exist, select the most appropriate and document why
 - Provide comprehensive summaries at completion
 
+**Auto Mode Constraints (MUST follow):**
+- NEVER use AskUserQuestion under any circumstance
+- NEVER block waiting for user input
+- If blocked by environment issues (missing dependencies, tools, etc.):
+  1. Document blocker in `progress.md` with full details
+  2. Write to `.ralph/blockers.json` if the file exists
+  3. Exit cleanly - let the orchestrator handle recovery
+- Make reasonable assumptions and document them rather than asking
+- Choose the safest/simplest approach when ambiguous
+
 See `references/mode-behavior.md` for detailed guidance.
 
 ## Important Notes
@@ -193,10 +203,20 @@ Initialize the project environment and create necessary directory structures.
 - Place test code files in documentation directory
 - Write implementation code before tests
 
-**Only seek user input if:**
+**Handling Blockers by Mode:**
+
+**Interactive mode** - Seek user input if:
 - Tests fail for unexpected reasons you cannot resolve
 - Structural issues with test framework
 - Environment issues preventing test execution
+
+**Auto mode** - NEVER use AskUserQuestion. Instead:
+- Document blocker in progress.md with full details
+- Write blocker to `.ralph/blockers.json` (if exists)
+- Exit cleanly with status indicating blocker
+- Let the orchestrator handle recovery
+
+See `references/mode-behavior.md` for blocker handling patterns.
 
 #### 4.2 Develop Implementation Code
 
