@@ -20,7 +20,7 @@ Find uncovered code and write tests systematically.
 
 ```markdown
 # specs/coverage.md
-Target: 80% line coverage
+Target: 90% line coverage
 Focus: src/core/*.ts (critical paths)
 Ignore: src/generated/*, *.test.ts
 ```

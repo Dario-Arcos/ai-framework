@@ -556,6 +556,22 @@ EOF
         [ -z "$TASK_NAME" ] && TASK_NAME="[no marker]"
 
         # ─────────────────────────────────────────────────────────
+        # TDD SIGNAL TRACKING
+        # ─────────────────────────────────────────────────────────
+
+        TDD_RED_COUNT=$(echo "$CLAUDE_OUTPUT" | grep -c "> tdd:red" || echo 0)
+        TDD_GREEN_COUNT=$(echo "$CLAUDE_OUTPUT" | grep -c "> tdd:green" || echo 0)
+
+        if [ "$TDD_GREEN_COUNT" -gt 0 ] && [ "$TDD_RED_COUNT" -eq 0 ]; then
+            echo -e "${YELLOW}⚠ TDD warning: GREEN signals without RED phase${NC}"
+            echo "[$TIMESTAMP] TDD_WARNING - GREEN signals ($TDD_GREEN_COUNT) without RED phase" >> "$ITERATION_LOG"
+        fi
+
+        if [ "$TDD_RED_COUNT" -gt 0 ]; then
+            echo "[$TIMESTAMP] TDD_COMPLIANCE - RED: $TDD_RED_COUNT, GREEN: $TDD_GREEN_COUNT" >> "$ITERATION_LOG"
+        fi
+
+        # ─────────────────────────────────────────────────────────
         # CONFESSION CONFIDENCE PARSING
         # ─────────────────────────────────────────────────────────
 

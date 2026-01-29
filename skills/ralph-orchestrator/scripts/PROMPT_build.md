@@ -118,6 +118,22 @@ npm test -- --testNamePattern="your test"
 
 **If test passes on first run → Your test is WRONG. Fix the test.**
 
+**Emit TDD signals for tracking:**
+- `> tdd:red {test_name}` — After writing test, before implementation
+- `> tdd:green {test_name}` — After minimal code passes
+
+Example:
+```
+> tdd:red test_user_authentication
+[write test code]
+[run test - verify it fails]
+> tdd:green test_user_authentication
+[write minimal implementation]
+[run test - verify it passes]
+```
+
+Missing signals appear in metrics as TDD compliance warnings.
+
 ### 2b. Implementation Rules
 
 - Follow patterns in `@AGENTS.md`

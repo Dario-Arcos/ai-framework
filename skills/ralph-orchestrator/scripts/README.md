@@ -7,16 +7,14 @@
 ./install.sh /path/to/your/project
 
 # Or copy files manually
-cp loop.sh status.sh tail-logs.sh PROMPT_*.md /path/to/project/
+cp loop.sh status.sh tail-logs.sh memories.sh PROMPT_build.md /path/to/project/
 ```
 
 ## Main Loop
 
 ```bash
-./loop.sh              # Build mode, unlimited iterations
-./loop.sh 20           # Build mode, max 20 iterations
-./loop.sh plan         # Planning mode, unlimited iterations
-./loop.sh plan 5       # Planning mode, max 5 iterations
+./loop.sh specs/{goal}/      # Execute plan, unlimited iterations
+./loop.sh specs/{goal}/ 20   # Execute plan, max 20 iterations
 ```
 
 ## Observability Utilities

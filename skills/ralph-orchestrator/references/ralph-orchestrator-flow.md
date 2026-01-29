@@ -1,106 +1,106 @@
-# Ralph-Orchestrator: Flujo Paso a Paso
+# Ralph-Orchestrator: Step-by-Step Flow
 
-> Guía definitiva del proceso completo de orquestación
+> Definitive guide to the complete orchestration process
 
 ---
 
-## Resumen
+## Summary
 
-Ralph-orchestrator ejecuta proyectos complejos dividiendo el trabajo en fases SOP (Standard Operating Procedures) y delegando la implementación a un loop autónomo que mantiene contexto fresco.
+Ralph-orchestrator executes complex projects by dividing work into SOP (Standard Operating Procedures) phases and delegating implementation to an autonomous loop that maintains fresh context.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    RALPH-ORCHESTRATOR                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  FASE HITL (Human-in-the-Loop)                                 │
+│  HITL PHASE (Human-in-the-Loop)                                 │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐               │
 │  │Discovery│→│Planning │→│  Tasks  │→│ Config  │               │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘               │
 ├─────────────────────────────────────────────────────────────────┤
-│  FASE AFK (Away-From-Keyboard)                                 │
+│  AFK PHASE (Away-From-Keyboard)                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  LOOP.SH: Iteraciones con contexto fresco (~100K max)   │   │
+│  │  LOOP.SH: Iterations with fresh context (~100K max)     │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Fase 0: Verificación de Infraestructura
+## Phase 0: Infrastructure Verification
 
-**Objetivo**: Asegurar que el proyecto tiene la infraestructura necesaria.
+**Objective**: Ensure the project has the necessary infrastructure.
 
-### Pasos:
+### Steps:
 
-1. **Verificar si existe `./loop.sh`** en la raíz del proyecto
-2. **Si NO existe**, ejecutar instalación:
+1. **Check if `./loop.sh` exists** in the project root
+2. **If it does NOT exist**, run installation:
    ```bash
    ./skills/ralph-orchestrator/scripts/install.sh /path/to/project
    ```
-3. **Verificar archivos creados**:
-   - `./loop.sh` - Script de ejecución
-   - `.ralph/config.sh` - Configuración
-   - `guardrails.md` - Signs de sesión
-   - `scratchpad.md` - Estado temporal
+3. **Verify created files**:
+   - `./loop.sh` - Execution script
+   - `.ralph/config.sh` - Configuration
+   - `guardrails.md` - Session signs
+   - `scratchpad.md` - Temporary state
 
-### Si falla:
-- STOP inmediato
-- Reportar qué falta
-- NO improvisar
+### If it fails:
+- Immediate STOP
+- Report what is missing
+- DO NOT improvise
 
 ---
 
-## Fase 1: Discovery (sop-discovery)
+## Phase 1: Discovery (sop-discovery)
 
-**Objetivo**: Documentar el problema antes de diseñar soluciones.
+**Objective**: Document the problem before designing solutions.
 
-### Pasos:
+### Steps:
 
-1. **Ejecutar skill** `sop-discovery`
-2. **Documentar en** `specs/{feature}/discovery.md`:
+1. **Execute skill** `sop-discovery`
+2. **Document in** `specs/{feature}/discovery.md`:
    - JTBD (Job To Be Done)
    - Constraints
    - Risks
    - Prior Art
    - Decision
 
-### Modos:
-- `--mode=interactive` - Con preguntas humanas (default)
-- `--mode=autonomous` - Para ejecución AI (omite preguntas irrelevantes)
+### Modes:
+- `--mode=interactive` - With human questions (default)
+- `--mode=autonomous` - For AI execution (skips irrelevant questions)
 
-### Validación:
-- ✓ `specs/{feature}/discovery.md` existe
-- ✓ JTBD está documentado
-
----
-
-## Fase 2: Planning (sop-planning)
-
-**Objetivo**: Diseñar la arquitectura antes de implementar.
-
-### Pasos:
-
-1. **Ejecutar skill** `sop-planning`
-2. **Crear en** `specs/{feature}/design/`:
-   - `detailed-design.md` - Arquitectura
-   - Decisiones técnicas
-   - Trade-offs evaluados
-
-### Validación:
-- ✓ `specs/{feature}/design/` directorio existe
-- ✓ `detailed-design.md` existe
+### Validation:
+- ✓ `specs/{feature}/discovery.md` exists
+- ✓ JTBD is documented
 
 ---
 
-## Fase 3: Task Generation (sop-task-generator)
+## Phase 2: Planning (sop-planning)
 
-**Objetivo**: Dividir el trabajo en tareas atómicas.
+**Objective**: Design the architecture before implementing.
 
-### Pasos:
+### Steps:
 
-1. **Ejecutar skill** `sop-task-generator`
-2. **Crear** `specs/{feature}/implementation/plan.md` con steps
-3. **Generar UN task file para CADA step**:
+1. **Execute skill** `sop-planning`
+2. **Create in** `specs/{feature}/design/`:
+   - `detailed-design.md` - Architecture
+   - Technical decisions
+   - Evaluated trade-offs
+
+### Validation:
+- ✓ `specs/{feature}/design/` directory exists
+- ✓ `detailed-design.md` exists
+
+---
+
+## Phase 3: Task Generation (sop-task-generator)
+
+**Objective**: Divide work into atomic tasks.
+
+### Steps:
+
+1. **Execute skill** `sop-task-generator`
+2. **Create** `specs/{feature}/implementation/plan.md` with steps
+3. **Generate ONE task file for EACH step**:
    ```
    specs/{feature}/implementation/
    ├── plan.md
@@ -112,74 +112,74 @@ Ralph-orchestrator ejecuta proyectos complejos dividiendo el trabajo en fases SO
        └── task-01-description.code-task.md
    ```
 
-### Validación:
-- ✓ N task files = N steps en plan
-- ✓ Cada task tiene acceptance criteria
+### Validation:
+- ✓ N task files = N steps in plan
+- ✓ Each task has acceptance criteria
 
 ---
 
-## Fase 4: Configuración
+## Phase 4: Configuration
 
-**Objetivo**: Preparar el loop para ejecución.
+**Objective**: Prepare the loop for execution.
 
-### Archivo `.ralph/config.sh`:
+### File `.ralph/config.sh`:
 
 ```bash
-# Modelo y contexto
+# Model and context
 MODEL=claude-sonnet-4-20250514
 CONTEXT_LIMIT=200000      # 200K tokens
-CONTEXT_WARNING=40        # Warning al 40%
-CONTEXT_CRITICAL=60       # Iterar al 60%
+CONTEXT_WARNING=40        # Warning at 40%
+CONTEXT_CRITICAL=60       # Iterate at 60%
 
 # Quality gates
 QUALITY_LEVEL=production  # prototype | production | world-class
-MIN_TEST_COVERAGE=90      # 0-100, 0 deshabilita
+MIN_TEST_COVERAGE=90      # 0-100, 0 disables
 
-# Iteraciones
+# Iterations
 MAX_ITERATIONS=10
 ```
 
 ---
 
-## Fase 5: Ejecución del Loop
+## Phase 5: Loop Execution
 
-**Objetivo**: Implementar tareas de forma autónoma.
+**Objective**: Implement tasks autonomously.
 
-### Lanzamiento:
+### Launch:
 
 ```bash
-# SIEMPRE en background
+# ALWAYS in background
 Bash(command="./loop.sh", run_in_background=true)
 ```
 
-### El loop hace por cada iteración:
+### The loop does for each iteration:
 
-1. **Lee** `scratchpad.md` para contexto
-2. **Lee** `guardrails.md` para signs
-3. **Ejecuta** la tarea actual
-4. **Valida** gates (test, lint, typecheck, build)
-5. **Actualiza** estado
-6. **Captura** signs si encuentra gotchas
-7. **Decide**: continuar o iterar (según contexto)
+1. **Reads** `scratchpad.md` for context
+2. **Reads** `guardrails.md` for signs
+3. **Executes** the current task
+4. **Validates** gates (test, lint, typecheck, build)
+5. **Updates** state
+6. **Captures** signs if it finds gotchas
+7. **Decides**: continue or iterate (based on context)
 
-### Gestión de Contexto:
+### Context Management:
 
 ```
-0-40%   → Zona verde, continuar
-40-60%  → Zona amarilla, considerar iterar
-60%+    → Zona roja, DEBE iterar
+0-40%   → Green zone, continue
+40-60%  → Yellow zone, consider iterating
+60%+    → Red zone, MUST iterate
 ```
 
-El cálculo incluye:
+The calculation includes:
 - `input_tokens`
 - `cache_read_input_tokens`
 - `cache_creation_input_tokens`
 
 ---
 
-## Fase 6: Validaciones Pre-Complete
+## Phase 6: Pre-Complete Validations
 
-Antes de aceptar `<promise>COMPLETE</promise>`:
+Before accepting `<promise>COMPLETE</promise>`:
 
 ### 1. Test Coverage Gate
 ```bash
@@ -189,7 +189,7 @@ if coverage < MIN_TEST_COVERAGE (90%):
 
 ### 2. Guardrails Learning
 ```bash
-if guardrails vacío after N iterations:
+if guardrails empty after N iterations:
     WARNING → "Learning failure - no signs captured"
 ```
 
@@ -201,108 +201,108 @@ if AGENTS.md.QUALITY_LEVEL != config.sh.QUALITY_LEVEL:
 
 ---
 
-## Fase 7: Monitoreo
+## Phase 7: Monitoring
 
-### Cómo monitorear (no-bloqueante):
+### How to monitor (non-blocking):
 
 ```bash
-# Check estado
+# Check state
 TaskOutput(task_id="{id}", block=false)
 
-# Ver log completo
+# View complete log
 Read(file_path="logs/iteration-{N}.log")
 
-# Ver último output
+# View latest output
 Read(file_path="logs/current.log")
 ```
 
-### NO hacer:
-- `tail -f` (bloquea)
-- Timeout largo (puede matar proceso)
+### DO NOT:
+- `tail -f` (blocks)
+- Long timeout (may kill process)
 
 ---
 
-## Fase 8: Completitud
+## Phase 8: Completeness
 
-### Señal de completitud:
+### Completeness signal:
 
-El loop emite `<promise>COMPLETE</promise>` cuando:
-- Todos los tasks en plan.md están `[x]`
-- Gates pasan (test, lint, build)
+The loop emits `<promise>COMPLETE</promise>` when:
+- All tasks in plan.md are `[x]`
+- Gates pass (test, lint, build)
 - Coverage >= 90%
-- Doble verificación exitosa
+- Double verification successful
 
-### Artefactos finales:
+### Final artifacts:
 
 ```
-proyecto/
-├── src/                    # Código implementado
+project/
+├── src/                    # Implemented code
 ├── tests/                  # Tests (90%+ coverage)
 ├── specs/{feature}/
-│   ├── discovery.md        # JTBD documentado
+│   ├── discovery.md        # Documented JTBD
 │   ├── design/
 │   │   └── detailed-design.md
 │   └── implementation/
-│       ├── plan.md         # Todos [x]
+│       ├── plan.md         # All [x]
 │       └── step*/task*.md  # Status: COMPLETED
-├── guardrails.md           # Signs capturados
-├── scratchpad.md           # Estado final
-└── logs/                   # Historia de iteraciones
+├── guardrails.md           # Captured signs
+├── scratchpad.md           # Final state
+└── logs/                   # Iteration history
 ```
 
 ---
 
-## Diagrama de Flujo Completo
+## Complete Flow Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         INICIO                                  │
+│                          START                                  │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 0: ¿Existe ./loop.sh?                                     │
-│  ├─ NO → Ejecutar install.sh                                    │
-│  └─ SÍ → Continuar                                              │
+│  PHASE 0: Does ./loop.sh exist?                                 │
+│  ├─ NO → Execute install.sh                                     │
+│  └─ YES → Continue                                              │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 1: DISCOVERY                                              │
-│  └─ Crear specs/{feature}/discovery.md                          │
+│  PHASE 1: DISCOVERY                                             │
+│  └─ Create specs/{feature}/discovery.md                         │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 2: PLANNING                                               │
-│  └─ Crear specs/{feature}/design/detailed-design.md             │
+│  PHASE 2: PLANNING                                              │
+│  └─ Create specs/{feature}/design/detailed-design.md            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 3: TASK GENERATION                                        │
-│  └─ Crear plan.md + N task files                                │
+│  PHASE 3: TASK GENERATION                                       │
+│  └─ Create plan.md + N task files                               │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 4: CONFIGURACIÓN                                          │
-│  └─ Verificar .ralph/config.sh                                  │
+│  PHASE 4: CONFIGURATION                                         │
+│  └─ Verify .ralph/config.sh                                     │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 5: LOOP AUTÓNOMO                                          │
+│  PHASE 5: AUTONOMOUS LOOP                                       │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Para cada iteración:                                    │   │
-│  │  1. Leer scratchpad + guardrails                         │   │
-│  │  2. Ejecutar tarea                                       │   │
-│  │  3. Validar gates                                        │   │
-│  │  4. Actualizar estado                                    │   │
-│  │  5. ¿Contexto > 60%? → Nueva iteración                   │   │
-│  │  6. ¿Todo completo? → Salir                              │   │
+│  │  For each iteration:                                     │   │
+│  │  1. Read scratchpad + guardrails                         │   │
+│  │  2. Execute task                                         │   │
+│  │  3. Validate gates                                       │   │
+│  │  4. Update state                                         │   │
+│  │  5. Context > 60%? → New iteration                       │   │
+│  │  6. All complete? → Exit                                 │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  FASE 6: VALIDACIONES                                           │
+│  PHASE 6: VALIDATIONS                                           │
 │  ├─ Coverage >= 90%?                                            │
-│  ├─ Guardrails no vacío?                                        │
-│  └─ Config consistente?                                         │
+│  ├─ Guardrails not empty?                                       │
+│  └─ Config consistent?                                          │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -312,28 +312,28 @@ proyecto/
 
 ---
 
-## Errores Comunes y Soluciones
+## Common Errors and Solutions
 
-| Error | Causa | Solución |
+| Error | Cause | Solution |
 |-------|-------|----------|
-| "loop.sh not found" | Infraestructura no instalada | Ejecutar install.sh |
-| "Context: 0%" | Bug de cálculo (ya corregido) | Actualizar loop.sh |
-| "discovery.md missing" | SOP saltado | Ejecutar sop-discovery primero |
-| "design/ missing" | Planning saltado | Ejecutar sop-planning primero |
-| "Coverage < 90%" | Tests insuficientes | Agregar más tests |
-| "No signs captured" | Learning failure | Agregar signs manualmente |
+| "loop.sh not found" | Infrastructure not installed | Execute install.sh |
+| "Context: 0%" | Calculation bug (already fixed) | Update loop.sh |
+| "discovery.md missing" | SOP skipped | Execute sop-discovery first |
+| "design/ missing" | Planning skipped | Execute sop-planning first |
+| "Coverage < 90%" | Insufficient tests | Add more tests |
+| "No signs captured" | Learning failure | Add signs manually |
 
 ---
 
-## Principios Clave
+## Key Principles
 
-1. **Contexto Fresco = Calidad**: El modelo es más efectivo en el primer 40-60% del contexto
-2. **SOP No Negociable**: Discovery → Planning → Tasks → Execute
-3. **Validación Continua**: Gates en cada iteración
-4. **Aprendizaje Capturado**: Signs documentan gotchas para futuras iteraciones
-5. **Autonomía Controlada**: El loop es autónomo pero validado
+1. **Fresh Context = Quality**: The model is more effective in the first 40-60% of context
+2. **SOP Non-Negotiable**: Discovery → Planning → Tasks → Execute
+3. **Continuous Validation**: Gates on each iteration
+4. **Captured Learning**: Signs document gotchas for future iterations
+5. **Controlled Autonomy**: The loop is autonomous but validated
 
 ---
 
-*Generado: 2026-01-28*
-*Versión: Post-auditoría con 16 mejoras implementadas*
+*Generated: 2026-01-28*
+*Version: Post-audit with 16 improvements implemented*
