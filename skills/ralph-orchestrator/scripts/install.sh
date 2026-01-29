@@ -38,12 +38,13 @@ FILES=(
     "scripts/status.sh"
     "scripts/tail-logs.sh"
     "scripts/memories.sh"
+    "scripts/truncate-context.sh"
     "scripts/PROMPT_build.md"
 )
 
 # Templates to copy (source:dest)
+# Note: memories.md removed - decisions live in specs/design/, gotchas in guardrails.md
 TEMPLATES=(
-    "templates/memories.md.template:memories.md"
     "templates/AGENTS.md.template:AGENTS.md"
     "templates/guardrails.md.template:guardrails.md"
     "templates/scratchpad.md.template:scratchpad.md"

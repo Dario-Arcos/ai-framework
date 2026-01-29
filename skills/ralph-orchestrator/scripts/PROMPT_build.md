@@ -14,15 +14,7 @@ You are a fresh AI instance. Previous work lives in files, not your memory.
 
 Follow ALL Signs. They contain lessons from previous iterations.
 
-### 0b. Study Memories (Read-Only)
-
-```
-@memories.md
-```
-
-Review persistent learnings. **DO NOT update memories in build mode** - only planning mode updates memories.
-
-### 0c. Load Configuration
+### 0b. Load Configuration
 
 The loop loads `.ralph/config.sh` automatically. Key settings:
 - **QUALITY_LEVEL**: prototype | production | library

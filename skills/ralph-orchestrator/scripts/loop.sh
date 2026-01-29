@@ -423,26 +423,11 @@ fi
 [ ! -d "specs" ] && mkdir specs
 # NOTE: IMPLEMENTATION_PLAN.md is DEPRECATED. Use specs/{goal}/implementation/plan.md instead.
 
-# Create memories.md if not exists
-if [ ! -f "memories.md" ]; then
-    echo -e "${YELLOW}Creating memories.md...${NC}"
-    if [ -n "${SKILL_DIR:-}" ] && [ -f "$SKILL_DIR/templates/memories.md.template" ]; then
-        cp "$SKILL_DIR/templates/memories.md.template" memories.md
-    else
-        cat > memories.md << 'MEMEOF'
-# Memories
+# Note: memories.md removed - decisions live in specs/design/, gotchas in guardrails.md
 
-## Patterns
-
-## Decisions
-
-## Fixes
-MEMEOF
-    fi
-fi
-
-# Clear scratchpad at loop start (fresh session memory)
-cat > scratchpad.md << EOF
+# Create scratchpad if not exists (persists between loop restarts)
+if [ ! -f "scratchpad.md" ]; then
+    cat > scratchpad.md << EOF
 # Scratchpad
 
 ## Current State
@@ -456,6 +441,7 @@ cat > scratchpad.md << EOF
 ## Blockers & Notes
 
 EOF
+fi
 
 # Initialize metrics if not exists
 if [ ! -f "$METRICS_FILE" ]; then
@@ -530,6 +516,12 @@ while true; do
   "timestamp": "$TIMESTAMP"
 }
 EOF
+
+    # ─────────────────────────────────────────────────────────────
+    # CONTEXT BUDGET ENFORCEMENT
+    # ─────────────────────────────────────────────────────────────
+
+    [ -x "./truncate-context.sh" ] && ./truncate-context.sh
 
     # ─────────────────────────────────────────────────────────────
     # RUN CLAUDE

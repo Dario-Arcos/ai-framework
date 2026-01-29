@@ -81,8 +81,8 @@ EMPTY=$((BAR_WIDTH - FILLED))
 
 # Build bar without seq (macOS seq counts down for seq 1 0)
 BAR=""
-i=0; while [ "$i" -lt "$FILLED" ]; do BAR+="━"; i=$((i + 1)); done
-i=0; while [ "$i" -lt "$EMPTY" ]; do BAR+="╌"; i=$((i + 1)); done
+i=0; while [ "$i" -lt "$FILLED" ]; do BAR+="█"; i=$((i + 1)); done
+i=0; while [ "$i" -lt "$EMPTY" ]; do BAR+="░"; i=$((i + 1)); done
 
 # Color based on context usage
 if [ "$PERCENT" -lt 50 ]; then
