@@ -639,11 +639,13 @@ EOF
         # CONTEXT HEALTH CHECK
         # ─────────────────────────────────────────────────────────
 
-        # Extract all token types from Claude's usage stats (cache counts toward context)
-        USAGE_LINE=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1)
-        INPUT_TOKENS=$(echo "$USAGE_LINE" | jq -r '.usage.input_tokens // 0' 2>/dev/null || echo "0")
-        CACHE_READ=$(echo "$USAGE_LINE" | jq -r '.usage.cache_read_input_tokens // 0' 2>/dev/null || echo "0")
-        CACHE_CREATE=$(echo "$USAGE_LINE" | jq -r '.usage.cache_creation_input_tokens // 0' 2>/dev/null || echo "0")
+        # Extract all token types from Claude's usage stats
+        # Format: {"type":"message_start","message":{"usage":{...}}}
+        # BUG FIX: Was using "type":"result" which doesn't exist in Claude Code output
+        MESSAGE_START=$(echo "$CLAUDE_OUTPUT" | grep '"type":"message_start"' | tail -1)
+        INPUT_TOKENS=$(echo "$MESSAGE_START" | jq -r '.message.usage.input_tokens // 0' 2>/dev/null || echo "0")
+        CACHE_READ=$(echo "$MESSAGE_START" | jq -r '.message.usage.cache_read_input_tokens // 0' 2>/dev/null || echo "0")
+        CACHE_CREATE=$(echo "$MESSAGE_START" | jq -r '.message.usage.cache_creation_input_tokens // 0' 2>/dev/null || echo "0")
 
         # Calculate total context usage (input + cached reads + cache creation)
         TOTAL_CONTEXT=$((INPUT_TOKENS + CACHE_READ + CACHE_CREATE))
@@ -694,9 +696,11 @@ EOF
         # DOUBLE COMPLETION VERIFICATION
         # ─────────────────────────────────────────────────────────
 
-        # Check completion signal - only check final result, not thinking blocks
-        # Bug fix: The worker's thinking may mention the marker in negative context
-        FINAL_RESULT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.result // empty' 2>/dev/null)
+        # Check completion signal in the final text output
+        # The text is in content_block_delta events: {"type":"content_block_delta","delta":{"text":"..."}}
+        # We extract all text deltas and check for the COMPLETE marker
+        FINAL_TEXT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"content_block_delta"' | jq -r '.delta.text // empty' 2>/dev/null | tr -d '\n')
+        FINAL_RESULT="$FINAL_TEXT"
         if echo "$FINAL_RESULT" | grep -q "<promise>COMPLETE</promise>"; then
             ((COMPLETE_COUNT++))
             echo -e "${GREEN}  COMPLETE signal received (${COMPLETE_COUNT}/2)${NC}"
