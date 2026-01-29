@@ -15,7 +15,7 @@
 ## Implementation Checklist
 
 - [x] Task 01: Project setup + file readers
-- [ ] Task 02: HTTP server + API endpoint
+- [x] Task 02: HTTP server + API endpoint
 - [ ] Task 03: HTML dashboard UI
 - [ ] Task 04: Integration + polish
 
