@@ -31,6 +31,42 @@ The discovery process is conversational and iterative. You will ask questions on
 
 - **goal_description** (required): Brief description of goal to explore. Accepts text, file path, or URL.
 - **project_dir** (optional, default: "specs"): Output directory for discovery artifacts
+- **mode** (optional, default: "interactive"): Execution mode - "interactive" or "autonomous"
+
+## Execution Modes
+
+### Interactive Mode (Default)
+For human users directly interacting with discovery process.
+- Includes all questions including time/resource availability
+- Pauses for user input at each step
+- Collects preferences and constraints
+
+**Usage**: Default when user invokes discovery skill
+
+### Autonomous Mode
+For AI agents executing discovery as part of larger workflow.
+- Omits irrelevant questions (time, breaks, preferences)
+- Uses reasonable defaults for project constraints
+- Focuses on technical requirements only
+
+**Usage**: Specify `--mode=autonomous` or detect ralph-orchestrator context
+
+**Questions to SKIP in autonomous mode:**
+- "¿Cuánto tiempo tienes?"
+- "¿Prefieres empezar por...?"
+- "¿Necesitas un break?"
+- "¿Cómo te sientes con...?"
+- Any question about human availability/preferences
+
+**Autonomous defaults:**
+- Time: Unlimited (loop will manage iterations)
+- Complexity: Infer from project scope
+- Quality: Match QUALITY_LEVEL from AGENTS.md
+- Breaks: Not applicable
+
+### Mode Detection
+
+If called from ralph-orchestrator context (detected by presence of `.ralph/` directory), automatically use autonomous mode unless explicitly overridden.
 
 ## Output
 
@@ -42,10 +78,14 @@ The discovery process is conversational and iterative. You will ask questions on
 
 **You MUST perform these actions:**
 
-1. Create the project directory if it doesn't exist
-2. Check for existing project documentation (README, architecture docs, recent specs)
-3. Review recent git commits to understand current development focus
-4. Initialize the discovery document with the goal description
+1. **Detect execution mode:**
+   - If `--mode=autonomous` specified → use autonomous mode
+   - If `.ralph/` directory exists in project root → use autonomous mode (unless `--mode=interactive` specified)
+   - Otherwise → use interactive mode (default)
+2. Create the project directory if it doesn't exist
+3. Check for existing project documentation (README, architecture docs, recent specs)
+4. Review recent git commits to understand current development focus
+5. Initialize the discovery document with the goal description (include mode in header)
 
 **Constraints for parameter acquisition:**
 - You MUST support multiple input methods for goal_description
@@ -57,7 +97,7 @@ The discovery process is conversational and iterative. You will ask questions on
 - Skip context gathering even if the goal seems simple
 - Make assumptions about the existing codebase without verification
 
-### Step 2: Initial Process Planning
+### Step 2: Initial Process Planning [INTERACTIVE ONLY]
 
 **Objective:** Determine the user's preferred exploration approach.
 
@@ -72,6 +112,8 @@ The discovery process is conversational and iterative. You will ask questions on
 - You MAY explain trade-offs: "Option A works better when the goal is unclear. Option B works better when you have domain knowledge to share."
 
 **Verification**: User has explicitly chosen Option A or B.
+
+**Autonomous mode**: Skip this step entirely. Default to Option A (Problem Definition first).
 
 ### Step 3: Problem Definition
 
@@ -106,9 +148,10 @@ The discovery process is conversational and iterative. You will ask questions on
    - "What are the technical constraints we must work within? (e.g., existing architecture, technology choices, compatibility requirements, performance requirements)"
    - Wait for response, append to discovery.md
 
-2. **Time/Resource Constraints:**
+2. **Time/Resource Constraints:** [INTERACTIVE ONLY]
    - "What are the time and resource constraints? (e.g., deadlines, team size, budget, opportunity costs)"
    - Wait for response, append to discovery.md
+   - **Autonomous mode**: Skip this question. Document as "Time: Managed by orchestrator. Resources: AI-driven iteration."
 
 3. **Non-Negotiables:**
    - "What aspects are non-negotiable or fixed? (e.g., must use existing auth system, cannot break API compatibility)"
@@ -194,9 +237,11 @@ See `templates/discovery-output.md.template` for summary structure.
 - Highlight the main constraint and biggest risk in the summary
 - Use the template structure exactly
 
-**You SHOULD:**
+**You SHOULD:** [INTERACTIVE ONLY]
 - Ask the user if they want to proceed to planning phase
 - Offer to commit the discovery document to git
+
+**Autonomous mode**: Skip user confirmation. Return discovery document path and signal ready for next phase.
 
 **You MUST NOT:**
 - Skip any sections in the final document
@@ -229,7 +274,12 @@ Once the discovery document is complete, you **SHOULD** suggest one of the follo
 
 **You MUST NOT:**
 - Jump directly to implementation without planning
-- Proceed without user confirmation on next steps
+- Proceed without user confirmation on next steps [INTERACTIVE ONLY]
+
+**Autonomous mode behavior:**
+- Auto-proceed to `sop-planning` unless spikes are required
+- If spikes needed, document them and halt with `SPIKE_REQUIRED` status
+- Return structured output: `{status: "complete", discovery_path: "...", next_phase: "planning|spike"}`
 
 ## Common Mistakes
 

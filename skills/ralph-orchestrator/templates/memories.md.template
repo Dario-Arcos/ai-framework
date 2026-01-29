@@ -6,6 +6,20 @@
 Persistent learnings across ralph loop sessions. Unlike Signs (guardrails.md),
 memories persist indefinitely and capture patterns, decisions, and fixes.
 
+## Memories vs Signs - Key Distinction
+
+**Memories (this file)**: Permanent architectural decisions
+- "We decided this because..." → Add a Memory
+- Why library X over Y, trade-offs made, patterns established
+- Survives session restarts, for future sessions/developers
+
+**Signs (guardrails.md)**: Session-scoped technical gotchas
+- "I hit this error" → Add a Sign
+- ESM quirks, config issues, build workarounds
+- Relevant for current loop session only
+
+**Rule of thumb**: If it's a decision with rationale → Memory. If it's a gotcha you hit → Sign.
+
 ## Usage Constraints
 
 - You MUST read this file at start of EVERY iteration because memories provide essential context

@@ -20,9 +20,19 @@ This reference defines the state files used by Ralph for persistent state manage
 | `guardrails.md` | Signs (session error lessons) | Current loop |
 | `memories.md` | Persistent learnings | Indefinite |
 | `scratchpad.md` | Iteration-to-iteration state | Current loop |
-| `DISCOVERY.md` | Problem definition, constraints | Current goal |
-| `IMPLEMENTATION_PLAN.md` | Prioritized tasks | Current goal |
+| `specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
+| `specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
 | `specs/*.md` | Requirements per topic | Feature lifetime |
+
+### Implementation Plan Location
+
+The implementation plan is located at:
+```
+specs/{feature}/implementation/plan.md
+```
+
+> **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
+> Do not use or create this file. All planning goes through the SOP structure.
 
 ---
 
@@ -150,7 +160,7 @@ Accountability mechanism for each iteration.
 
 | Field | Content |
 |-------|---------|
-| `objective` | Task from IMPLEMENTATION_PLAN.md |
+| `objective` | Task from `specs/{goal}/implementation/plan.md` |
 | `met` | Yes or No (no hedging) |
 | `evidence` | Test output, file paths, command results |
 

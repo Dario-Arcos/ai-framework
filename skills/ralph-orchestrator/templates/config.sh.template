@@ -69,6 +69,15 @@ CONTEXT_CRITICAL=80           # Exit threshold (%)
 CONFESSION_MIN_CONFIDENCE=80  # 0-100, tasks below this are NOT complete
 
 # ─────────────────────────────────────────────────────────────────
+# TEST COVERAGE GATE
+# ─────────────────────────────────────────────────────────────────
+# Minimum test coverage percentage required to mark project complete
+# Set to 0 to disable coverage gate entirely
+# Supported formats: Jest/Istanbul, Python coverage.py, lcov
+
+MIN_TEST_COVERAGE=90          # 0-100, coverage below this blocks COMPLETE
+
+# ─────────────────────────────────────────────────────────────────
 # CHECKPOINT CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
 # Control when the loop pauses for user review

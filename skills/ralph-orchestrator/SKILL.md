@@ -29,7 +29,9 @@ description: Master orchestrator for autonomous development handling both intera
 - [Phase 2: Execution Monitoring](#phase-2-execution-monitoring)
 - [Configuration](#configuration)
 - [Files & Structure](#files--structure)
+- [Knowledge Management](#knowledge-management)
 - [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
 - [References](#references)
 
 ---
@@ -83,6 +85,13 @@ Ralph Loop is the **master orchestrator** for the SOP development framework. It 
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
 │  │              PHASE 1: PLANNING (Interactive - This Session)           │ │
 │  │                                                                        │ │
+│  │   Step 0: Validate Prerequisites                                      │ │
+│  │   ┌─────────────────────────────────────────────────────────────────┐ │ │
+│  │   │ Check: discovery.md, detailed-design.md, plan.md, task files   │ │ │
+│  │   │ If missing: Execute required SOP skill FIRST                   │ │ │
+│  │   └──────────────────────────┬──────────────────────────────────────┘ │ │
+│  │                              │                                        │ │
+│  │                              ▼                                        │ │
 │  │   Step 1: Detect Flow                                                 │ │
 │  │   ┌─────────────────────┐                                             │ │
 │  │   │ Forward or Reverse? │                                             │ │
@@ -126,6 +135,87 @@ Ralph Loop is the **master orchestrator** for the SOP development framework. It 
 ---
 
 ## Steps
+
+### Infrastructure Setup
+
+**Before starting ANY work, verify infrastructure:**
+
+1. Check if `./loop.sh` exists in project root
+2. If NOT exists:
+   ```bash
+   # Run from ai-framework directory
+   ./skills/ralph-orchestrator/scripts/install.sh /path/to/project
+   ```
+3. Verify installation completed:
+   - `./loop.sh` exists
+   - `.ralph/config.sh` exists
+   - `guardrails.md` exists
+   - `scratchpad.md` exists
+
+**You MUST:**
+- Always verify loop.sh exists before planning
+- Run install.sh if infrastructure is missing
+- Verify all required files after installation
+
+**You MUST NOT:**
+- Proceed to planning if infrastructure is missing
+- Implement directly if loop.sh is absent
+- Assume infrastructure exists without checking
+
+---
+
+### Error Handling
+
+**If Prerequisites Fail:**
+1. STOP immediately
+2. Report missing prerequisites to user:
+   - "Missing: loop.sh - Run install.sh first"
+   - "Missing: .ralph/config.sh - Infrastructure incomplete"
+3. DO NOT improvise or implement directly
+4. Suggest remediation steps
+5. Wait for user to fix, then retry
+
+**If Loop Fails:**
+1. Check logs/ directory for error details
+2. Read last iteration output
+3. Identify root cause
+4. Fix and restart loop (do not start fresh)
+
+---
+
+### Step 0: Validate SOP Prerequisites (BEFORE any work)
+
+**You MUST validate these artifacts exist before proceeding:**
+
+1. **Discovery Phase**
+   - Check: `specs/{feature}/discovery.md` exists
+   - If missing: Execute sop-discovery skill FIRST
+   - Verify: JTBD is documented
+
+2. **Planning Phase**
+   - Check: `specs/{feature}/design/` directory exists
+   - Check: `specs/{feature}/design/detailed-design.md` exists
+   - If missing: Execute sop-planning skill FIRST
+   - Verify: Architecture decisions documented
+
+3. **Task Generation**
+   - Check: `specs/{feature}/implementation/plan.md` exists
+   - Check: Task files exist for ALL steps in plan
+   - If missing: Execute sop-task-generator skill FIRST
+
+**You MUST NOT:**
+- Skip discovery and use AGENTS.md as substitute
+- Skip planning and improvise architecture
+- Generate tasks without design artifacts
+- Proceed to execution if ANY prerequisite is missing
+
+**If prerequisites fail:**
+1. STOP immediately
+2. Report which artifacts are missing
+3. Execute the required SOP skill
+4. Re-validate before continuing
+
+---
 
 ### Step 1: Detect Flow and Goal
 
@@ -404,6 +494,55 @@ specs/{goal}/
 
 ---
 
+## Knowledge Management
+
+Ralph uses two complementary systems for capturing knowledge:
+
+### Guardrails (Signs) - Session Scope
+
+**File**: `guardrails.md`
+**Purpose**: Capture technical gotchas discovered DURING the current session
+**Lifetime**: Read at start of each iteration, relevant for current project
+**Examples**:
+- ESM import quirks
+- Configuration issues
+- Build tool workarounds
+- Testing environment setup
+
+**When to add a Sign**:
+- You encountered an unexpected error
+- A workaround was needed
+- Something didn't work as documented
+- Future iterations might hit the same issue
+
+### Memories - Permanent Scope
+
+**File**: `memories.md`
+**Purpose**: Capture DECISIONS that should persist across sessions
+**Lifetime**: Permanent project knowledge, survives session restarts
+**Examples**:
+- Why we chose library X over Y
+- Architecture trade-offs made
+- Patterns established for the codebase
+- Constraints that shouldn't be violated
+
+**When to add a Memory**:
+- A significant architectural decision was made
+- A trade-off was evaluated and decided
+- A pattern was established intentionally
+- Future developers need this context
+
+### Comparison
+
+| Aspect | Guardrails (Signs) | Memories |
+|--------|-------------------|----------|
+| Scope | Session | Permanent |
+| Content | Technical gotchas | Decisions & rationale |
+| Trigger | "I hit this error" | "We decided this because..." |
+| Audience | Same iteration/loop | Future sessions/developers |
+
+---
+
 ## Troubleshooting
 
 ### Problem: User unsure which flow
@@ -422,7 +561,76 @@ specs/{goal}/
 
 ---
 
+## Best Practices
+
+### Loop Execution
+
+**Always use background execution:**
+```bash
+# Correct: Use run_in_background=true
+Bash(command="./loop.sh", run_in_background=true)
+
+# Incorrect: Foreground execution risks timeout
+Bash(command="./loop.sh")  # May be killed by timeout
+```
+
+**Monitor without blocking:**
+```bash
+# Check status without waiting
+TaskOutput(task_id="{id}", block=false)
+
+# Read full log for details
+Read(file_path="logs/iteration-{N}.log")
+
+# DO NOT use these (they block):
+# tail -f logs/current.log  # Blocks indefinitely
+# Bash with long timeout    # May kill process
+```
+
+### Context Management
+
+**Target 40-60% context usage:**
+- Fresh context = better quality output
+- After 60%, consider iterating to reset context
+- The first 40-60% of context window is most effective
+
+**Configuration recommendations:**
+```bash
+CONTEXT_LIMIT=200000    # 200K tokens (Claude Opus)
+CONTEXT_WARNING=40      # Start warning at 40%
+CONTEXT_CRITICAL=60     # Force iteration at 60%
+```
+
+### Iteration Strategy
+
+**When to let it iterate:**
+- Complex multi-file changes
+- Debugging cycles
+- When tests are failing
+
+**When to intervene:**
+- Loop seems stuck on same error
+- Approaching 3+ iterations on simple task
+- Quality degrading instead of improving
+
+### Knowledge Capture
+
+**After every session, verify:**
+1. `guardrails.md` has at least 1 new Sign (if gotchas found)
+2. `memories.md` captures major decisions
+3. `scratchpad.md` reflects final state
+
+---
+
 ## Constraints Summary
+
+### Prerequisite Phase (Step 0)
+- You MUST validate SOP artifacts exist BEFORE any work
+- You MUST check: discovery.md, detailed-design.md, plan.md, task files
+- You MUST execute the required SOP skill if artifacts are missing
+- You MUST NOT skip discovery and use AGENTS.md as substitute
+- You MUST NOT skip planning and improvise architecture
+- You MUST NOT proceed to execution if ANY prerequisite is missing
 
 ### Planning Phase (Steps 1-5)
 - You MUST ask ONE question at a time

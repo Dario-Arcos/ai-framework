@@ -35,17 +35,17 @@ Check `.ralph/config.sh` if unsure about project quality requirements.
 
 Study these using subagents:
 1. `@AGENTS.md` - Operational guide
-2. Task sources (in priority order):
-   - `specs/*/implementation/step*/task-*.code-task.md` - SOP-generated tasks (preferred)
-   - `@IMPLEMENTATION_PLAN.md` - Legacy task list (fallback)
+2. Task sources:
+   - `specs/*/implementation/plan.md` - Implementation plan with task checklist
+   - `specs/*/implementation/step*/task-*.code-task.md` - SOP-generated task files (if exist)
 
-**If .code-task.md files exist:**
-- Read the next incomplete task file
-- Follow TDD workflow: Explore → Plan → Code → Commit
+**Task Selection:**
+- Read the implementation plan from specs
+- If `.code-task.md` files exist, follow TDD workflow: Explore → Plan → Code → Commit
 - Create artifacts in `.sop/planning/implementation/{task_name}/`
 
-**If only IMPLEMENTATION_PLAN.md exists:**
-- Use legacy mode (below)
+> **DEPRECATED**: `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
+> All planning goes through: `specs/{feature}/implementation/plan.md`
 
 ### 0e. Study Scratchpad (Session Memory)
 
@@ -71,14 +71,14 @@ Study `specs/*` with up to 500 parallel Opus subagents.
 
 ### 1a. Select Most Important Task
 
-**Si .code-task.md files existen (modo SOP):**
-1. Listar todos los archivos `specs/*/implementation/step*/task-*.code-task.md`
-2. Filtrar los que NO tienen `## Status: COMPLETED` al inicio
-3. Ordenar por step (step01 antes de step02) y por número de task
-4. Seleccionar el primero no completado
-
-**Si solo existe IMPLEMENTATION_PLAN.md (modo legacy):**
-From `@IMPLEMENTATION_PLAN.md`, choose the most important incomplete item.
+**Task Selection from SOP Structure:**
+1. Read `specs/{goal}/implementation/plan.md` for task checklist
+2. If `.code-task.md` files exist in `specs/*/implementation/step*/`:
+   - List all `task-*.code-task.md` files
+   - Filter those WITHOUT `## Status: COMPLETED` header
+   - Order by step (step01 before step02) and task number
+   - Select first incomplete task
+3. If no `.code-task.md` files, use checklist in `plan.md` directly
 
 Priority: Blocking deps → Risky integrations → Core features → Edge cases → Polish
 
@@ -177,11 +177,11 @@ source .ralph/config.sh 2>/dev/null || true
 
 ### 4a. Update Implementation Plan
 
-**Para .code-task.md files:**
-- Añadir `## Status: COMPLETED` y `## Completed: YYYY-MM-DD` al inicio del archivo
+**For .code-task.md files:**
+- Add `## Status: COMPLETED` and `## Completed: YYYY-MM-DD` at the file header
 
-**Para IMPLEMENTATION_PLAN.md (legacy):**
-Using a subagent, edit `@IMPLEMENTATION_PLAN.md`:
+**For plan.md checklist:**
+Using a subagent, edit `specs/{goal}/implementation/plan.md`:
 - Mark completed task: `[ ]` → `[x]`
 - Add new tasks if discovered
 - Remove completed items when plan becomes large
@@ -219,7 +219,7 @@ Using a subagent, add to `@guardrails.md`:
 
 Using a subagent, update `@scratchpad.md`:
 - **Last task completed**: What you just finished
-- **Next task to do**: What's next in IMPLEMENTATION_PLAN.md
+- **Next task to do**: What's next in `specs/{goal}/implementation/plan.md`
 - **Files modified this session**: Add files you touched
 - **Key decisions**: Any decisions made that next iteration should know
 - **Blockers**: Any issues discovered
@@ -234,7 +234,7 @@ This helps the next iteration start faster.
 ## Confession
 
 ### Objectives Assessment
-- **Objective**: [task from IMPLEMENTATION_PLAN.md]
+- **Objective**: [task from specs/{goal}/implementation/plan.md]
   - **Met?**: Yes/No/Partial
   - **Evidence**: [file:line or test output]
 
@@ -263,7 +263,7 @@ This helps the next iteration start faster.
 | 80-100 | Task complete, ready to commit | Mark complete, commit |
 
 **CRITICAL: If Confidence < ${CONFESSION_MIN_CONFIDENCE:-80}:**
-1. Do NOT mark task as complete in IMPLEMENTATION_PLAN.md
+1. Do NOT mark task as complete in the implementation plan
 2. Add a Sign to guardrails.md explaining the blocker
 3. Update scratchpad.md with what's left to do
 4. Exit normally - next iteration will continue
@@ -271,7 +271,7 @@ This helps the next iteration start faster.
 **Output markers (MANDATORY for loop.sh parsing):**
 ```
 > confession: objective=[task name], met=[Yes/No/Partial], confidence=[N], evidence=[proof]
-> task_completed: [Task name from IMPLEMENTATION_PLAN.md]
+> task_completed: [Task name from implementation plan]
 ```
 
 **Example:**
@@ -312,7 +312,7 @@ git push
 
 ## Phase 6: Check Completion
 
-If ALL tasks in `@IMPLEMENTATION_PLAN.md` are complete:
+If ALL tasks in `specs/{goal}/implementation/plan.md` are complete:
 
 ```
 <promise>COMPLETE</promise>
@@ -342,7 +342,7 @@ Add extra logging if required to debug issues.
 
 ### 999999999. Keep plan current
 
-Using a subagent, keep `@IMPLEMENTATION_PLAN.md` current with learnings. Update after finishing.
+Using a subagent, keep `specs/{goal}/implementation/plan.md` current with learnings. Update after finishing.
 
 ### 9999999999. Update AGENTS.md
 
@@ -350,7 +350,7 @@ Using a subagent, update `@AGENTS.md` when you learn correct commands. Keep brie
 
 ### 99999999999. Resolve or document bugs
 
-For any bugs noticed, resolve them or document in `@IMPLEMENTATION_PLAN.md` using a subagent.
+For any bugs noticed, resolve them or document in `specs/{goal}/implementation/plan.md` using a subagent.
 
 ### 999999999999. Implement completely
 
@@ -358,7 +358,7 @@ No placeholders. No stubs. Complete implementation only.
 
 ### 9999999999999. Clean completed items
 
-Periodically clean completed items from `@IMPLEMENTATION_PLAN.md` using a subagent.
+Periodically clean completed items from `specs/{goal}/implementation/plan.md` using a subagent.
 
 ### 99999999999999. Fix spec inconsistencies
 
@@ -366,7 +366,7 @@ If you find inconsistencies in specs/*, use an Opus subagent to update them.
 
 ### 999999999999999. AGENTS.md operational only
 
-Keep `@AGENTS.md` operational only. Status updates and progress notes belong in `@IMPLEMENTATION_PLAN.md`. Bloated AGENTS.md pollutes every future loop's context.
+Keep `@AGENTS.md` operational only. Status updates and progress notes belong in `specs/{goal}/implementation/plan.md`. Bloated AGENTS.md pollutes every future loop's context.
 
 ---
 

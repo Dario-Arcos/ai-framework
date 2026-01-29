@@ -6,6 +6,20 @@
 Signs capture learnings across iterations within a loop session. Read FIRST every time.
 An empty guardrails.md after multiple iterations is a FAILURE - it means nothing was learned.
 
+## Signs vs Memories - Key Distinction
+
+**Signs (this file)**: Session-scoped technical gotchas
+- "I hit this error" → Add a Sign
+- ESM quirks, config issues, build workarounds
+- Relevant for current loop session
+
+**Memories (memories.md)**: Permanent architectural decisions
+- "We decided this because..." → Add a Memory
+- Why library X over Y, trade-offs made
+- Survives session restarts, for future developers
+
+**Rule of thumb**: If it's a gotcha you hit → Sign. If it's a decision you made → Memory.
+
 ## Usage Constraints
 
 - You MUST read this file FIRST at every iteration because signs prevent repeated mistakes
@@ -57,6 +71,42 @@ An empty guardrails.md after multiple iterations is a FAILURE - it means nothing
 ### Sign: Environment Variable Not Found
 - **Trigger**: Works locally but fails in CI
 - **Instruction**: Check CI secrets config. Local `.env` not committed. Add to CI secrets.
+
+### Documentation Examples
+
+### Sign: Broken Internal Links
+- **Trigger**: Links between docs files returning 404
+- **Instruction**: Use relative paths (../other-file.md). Verify with `find . -name "*.md" -exec grep -l "](/" {} \;`
+
+### Sign: Inconsistent Terminology
+- **Trigger**: Same concept called different names across docs
+- **Instruction**: Check glossary.md first. Use grep to find all usages before renaming.
+
+### Sign: Word Count Exceeded
+- **Trigger**: Documentation exceeds word limit in AGENTS.md
+- **Instruction**: Run `wc -w docs/**/*.md` before finalizing. Cut verbose sections.
+
+### Sign: Placeholder URLs Not Replaced
+- **Trigger**: URLs like "your-org", "example.com" in production docs
+- **Instruction**: Search for placeholder patterns before commit: `grep -r "your-org\|example\.com" docs/`
+
+### Research Examples
+
+### Sign: Source Bias Detection
+- **Trigger**: Evaluating frameworks or tools
+- **Instruction**: Check if source is vendor docs (biased) vs independent comparison. Weight accordingly.
+
+### Sign: Scope Creep in Analysis
+- **Trigger**: Research expanding beyond original question
+- **Instruction**: Re-read original criteria.md. Cut tangential sections that don't serve the core question.
+
+### Sign: Outdated Information
+- **Trigger**: Citing version numbers or features
+- **Instruction**: Verify against official docs. Note "as of [date]" for time-sensitive claims.
+
+### Sign: Missing Comparison Criteria
+- **Trigger**: Comparing alternatives without consistent framework
+- **Instruction**: Define criteria.md FIRST. Score each alternative against same dimensions.
 
 ---
 

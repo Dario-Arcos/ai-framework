@@ -31,7 +31,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 
 - **input** (required): Text description or file path to design/PDD document
 - **output_dir** (optional, default: specs/{goal}/implementation): Directory for task files
-- **step_number** (optional): Specific PDD step to process (for targeted generation)
+- **step_number** (deprecated): In PDD mode, ALL steps are processed automatically. This parameter is only used for edge cases requiring single-step regeneration.
 
 ## Output
 
@@ -58,16 +58,20 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 Detected: PDD mode
 Source: specs/feature-x/plan.md
 Found: 5 implementation steps
+Action: Will generate 5 task files (one per step)
 ```
 
 ### Step 2: Analyze Input
 
 **For PDD mode:**
 - Parse the implementation plan structure
-- Extract all numbered steps
-- Identify which step to process (from parameter or ask user)
-- Read step description and demo requirements
-- Extract technical requirements and constraints
+- Extract ALL numbered steps from the plan
+- Count total steps (N) to determine scope
+- For EACH step: read description, demo requirements, and constraints
+- Build complete dependency graph across all steps
+- Extract technical requirements for every step
+
+**CRITICAL: You MUST process ALL steps, not just one.**
 
 **For Description mode:**
 - Identify core functionality being described
@@ -143,6 +147,36 @@ Found: 5 implementation steps
 - You MUST present task breakdown for user review
 - You MUST wait for explicit approval before proceeding
 
+### Task File Generation Requirements (PDD Mode)
+
+**You MUST generate a task file for EVERY step in the plan:**
+
+1. Read `specs/{feature}/implementation/plan.md`
+2. Count total steps (N)
+3. For EACH step, create:
+   - Directory: `specs/{feature}/implementation/step{NN}/`
+   - File: `task-{NN}-{description}.code-task.md`
+4. Verify: N task files created = N steps in plan
+
+**Generation Flow:**
+```
+Plan has 5 steps → Generate 5 task files (step01, step02, step03, step04, step05)
+Plan has 3 steps → Generate 3 task files (step01, step02, step03)
+```
+
+**Validation Checklist:**
+- [ ] All steps from plan have corresponding task files
+- [ ] Each task file has complete acceptance criteria
+- [ ] Dependencies between tasks are documented
+- [ ] No orphan steps without task files
+- [ ] Task numbering matches step numbering
+
+**You MUST NOT:**
+- Create only the first task and leave others for later
+- Generate tasks ad-hoc during execution
+- Skip steps that seem "simple"
+- Ask which step to process (process ALL of them)
+
 ### Step 5: Generate Tasks
 
 **File Organization:**
@@ -168,6 +202,9 @@ Found: 5 implementation steps
 Each task file MUST follow this exact structure:
 
 ```markdown
+## Status: PENDING
+## Completed: [DATE when done]
+
 # Task: [Task Name]
 
 ## Description
@@ -229,16 +266,26 @@ Each task file MUST follow this exact structure:
 - **Labels**: [comma, separated, tags]
 - **Required Skills**: [Skills or expertise needed]
 - **Related Tasks**: [Links to dependent or related tasks]
+- **Step**: [NN of total] (e.g., "03 of 05")
 ```
 
+**Status Field Values:**
+- `PENDING` - Initial state, not yet started
+- `IN_PROGRESS` - Currently being executed
+- `COMPLETED` - Successfully finished (update Completed date)
+- `BLOCKED` - Waiting on dependencies
+
 **Quality Requirements:**
+- Status: Always starts as `PENDING`
+- Completed: Empty on creation, filled when done
 - Description: 2-4 sentences, clear purpose
 - Background: Sufficient context, no jargon without explanation
 - Technical Requirements: Specific, measurable, testable
 - Acceptance Criteria: At least 3 criteria, all in Given-When-Then format
 - Include unit test requirements in acceptance criteria
-- Dependencies: All external dependencies documented
+- Dependencies: All external dependencies documented, including previous steps
 - Implementation Approach: Guidance without over-prescription
+- Metadata Step: Must include position (e.g., "03 of 05")
 
 **Constraints:**
 - You MUST follow the exact task file format
@@ -258,23 +305,32 @@ Each task file MUST follow this exact structure:
 
 **Report format:**
 ```
-✓ Generated [N] task file(s)
+✓ Generated [N] task file(s) for [N] steps
+
+Validation:
+- Steps in plan: [N]
+- Task files created: [N]
+- Status: ✓ All steps covered
 
 Files created:
-- /absolute/path/to/task-01-{title}.code-task.md
-- /absolute/path/to/task-02-{title}.code-task.md
+- /absolute/path/to/step01/task-01-{title}.code-task.md
+- /absolute/path/to/step02/task-02-{title}.code-task.md
+- /absolute/path/to/step03/task-03-{title}.code-task.md
+- ...
 
 Next steps:
 1. Review generated tasks for completeness
 2. Execute tasks in sequence:
-   - Run sop-code-assist on task-01
-   - After completion, run sop-code-assist on task-02
+   - Run sop-code-assist on step01/task-01
+   - After completion, run sop-code-assist on step02/task-02
    - Continue until all tasks complete
+3. Update Status field as tasks progress
 
 [For PDD mode only:]
-Step demo requirements:
-- [Demo requirement 1 from PDD]
-- [Demo requirement 2 from PDD]
+Demo requirements by step:
+- Step 01: [Demo requirement]
+- Step 02: [Demo requirement]
+- ...
 ```
 
 ## Key Principles
@@ -288,21 +344,31 @@ Step demo requirements:
 
 ## Examples
 
-### Example 1: PDD Mode
+### Example 1: PDD Mode (All Steps)
 
 **Input:**
 ```
 input: specs/auth-feature/plan.md
-step_number: 3
 ```
 
-**Detected:** PDD mode, Step 3 of 5
+**Detected:** PDD mode, 5 total steps
 
-**Generated:**
+**Generated (ALL steps upfront):**
 ```
-specs/auth-feature/implementation/step03/
-└── task-01-implement-jwt-validation.code-task.md
+specs/auth-feature/implementation/
+├── step01/
+│   └── task-01-setup-auth-infrastructure.code-task.md
+├── step02/
+│   └── task-02-implement-user-model.code-task.md
+├── step03/
+│   └── task-03-implement-jwt-validation.code-task.md
+├── step04/
+│   └── task-04-create-login-endpoint.code-task.md
+└── step05/
+    └── task-05-add-session-management.code-task.md
 ```
+
+**Verification:** 5 steps in plan → 5 task files created ✓
 
 ### Example 2: Description Mode
 
@@ -340,10 +406,13 @@ specs/user-profile/tasks/
 
 | Mistake | Impact | Fix |
 |---------|--------|-----|
+| Creating only first task file | Incomplete task set, manual generation later | Generate ALL task files upfront |
+| Generating tasks ad-hoc during execution | Inconsistent scope, missed steps | Process entire plan in one pass |
 | Generating >5 tasks per step | Tasks too complex | Decompose further |
 | Vague acceptance criteria | Unclear completion | Use Given-When-Then format |
 | Missing dependencies | Blocked execution | Document all dependencies |
 | No design reference | Implementation drift | Always reference design doc |
+| Missing Status field | No progress tracking | Always include Status: PENDING |
 
 ## Troubleshooting
 

@@ -94,13 +94,15 @@ GATE_TYPECHECK="${GATE_TYPECHECK:-npm run typecheck}"
 GATE_LINT="${GATE_LINT:-npm run lint}"
 GATE_BUILD="${GATE_BUILD:-npm run build}"
 CONFESSION_MIN_CONFIDENCE="${CONFESSION_MIN_CONFIDENCE:-80}"
+MIN_TEST_COVERAGE="${MIN_TEST_COVERAGE:-90}"
 
 ITERATION=0
 CONSECUTIVE_FAILURES=0
 MAX_CONSECUTIVE_FAILURES=3
 MAX_RUNTIME="${MAX_RUNTIME:-0}"  # 0 = unlimited, or seconds from env
 CONTEXT_LIMIT="${CONTEXT_LIMIT:-200000}"  # Default 200K tokens (Claude Opus)
-CONTEXT_CRITICAL_THRESHOLD=80  # Exit if context usage > 80%
+CONTEXT_WARNING="${CONTEXT_WARNING:-40}"   # Warning at 40% (80K tokens)
+CONTEXT_CRITICAL="${CONTEXT_CRITICAL:-60}" # Critical at 60% (120K tokens)
 COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
 LAST_TASK=""  # Track last completed task for abandonment detection
 TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
@@ -241,6 +243,142 @@ create_from_template() {
 }
 
 # ─────────────────────────────────────────────────────────────────
+# CONFIGURATION CONSISTENCY VALIDATION
+# ─────────────────────────────────────────────────────────────────
+
+# Validate that AGENTS.md and config.sh have matching QUALITY_LEVEL values
+validate_config_consistency() {
+    local agents_file="AGENTS.md"
+    local config_file=".ralph/config.sh"
+
+    if [ -f "$agents_file" ] && [ -f "$config_file" ]; then
+        # Extract QUALITY_LEVEL from AGENTS.md (format: QUALITY_LEVEL: value or **QUALITY_LEVEL**: value)
+        local agents_level=$(grep -i "quality.level" "$agents_file" | head -1 | sed 's/.*:\s*\**\([^*]*\)\**.*/\1/' | tr -d ' ' | tr '[:upper:]' '[:lower:]')
+
+        # Extract QUALITY_LEVEL from config.sh
+        local config_level=$(grep "^QUALITY_LEVEL=" "$config_file" | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]')
+
+        if [ -n "$agents_level" ] && [ -n "$config_level" ]; then
+            if [ "$agents_level" != "$config_level" ]; then
+                echo ""
+                echo -e "${YELLOW}⚠️  CONFIG MISMATCH WARNING${NC}"
+                echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo "QUALITY_LEVEL inconsistency detected:"
+                echo "  AGENTS.md:  $agents_level"
+                echo "  config.sh:  $config_level"
+                echo ""
+                echo "This may cause unexpected behavior. Consider aligning these values."
+                echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+                echo ""
+            fi
+        fi
+    fi
+}
+
+# ─────────────────────────────────────────────────────────────────
+# GUARDRAILS LEARNING VALIDATION
+# ─────────────────────────────────────────────────────────────────
+
+# Validate that guardrails.md has real Signs after completion
+# Per PROMPT_build.md: "An empty guardrails.md after multiple iterations is a FAILURE"
+validate_guardrails_learning() {
+    local guardrails_file="guardrails.md"
+    local iterations=$ITERATION
+
+    if [ -f "$guardrails_file" ]; then
+        # Check if only template content exists (no real signs)
+        local sign_count=$(grep -c "^### Sign:" "$guardrails_file" 2>/dev/null || echo "0")
+        local has_template=$(grep -q "Your Signs (Add here as you learn)" "$guardrails_file" && echo "1" || echo "0")
+
+        # Subtract example signs if they still exist
+        local example_count=$(grep -c "Example Signs" "$guardrails_file" 2>/dev/null || echo "0")
+        if [ "$example_count" -gt 0 ]; then
+            # Still has examples, likely no real signs added
+            local real_signs=$((sign_count - 8))  # Assuming 8 example signs
+        else
+            local real_signs=$sign_count
+        fi
+
+        if [ "$real_signs" -lt 1 ] && [ "$iterations" -gt 2 ]; then
+            echo ""
+            echo -e "${YELLOW}⚠️  LEARNING WARNING${NC}"
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo "guardrails.md has no real Signs after $iterations iterations."
+            echo "This indicates a learning failure - gotchas were not captured."
+            echo ""
+            echo "Consider adding Signs for:"
+            echo "  - Technical gotchas encountered"
+            echo "  - Configuration issues solved"
+            echo "  - Workarounds discovered"
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        fi
+    fi
+}
+
+# ─────────────────────────────────────────────────────────────────
+# TEST COVERAGE VALIDATION
+# ─────────────────────────────────────────────────────────────────
+
+# Validate that test coverage meets minimum threshold before completion
+# Returns 0 if coverage is sufficient, 1 if below threshold
+validate_test_coverage() {
+    # Skip if coverage gate is disabled
+    if [ "${MIN_TEST_COVERAGE:-90}" -eq 0 ]; then
+        return 0
+    fi
+
+    # Only validate for code projects (check if package.json or similar exists)
+    if [ ! -f "package.json" ] && [ ! -f "pyproject.toml" ] && [ ! -f "go.mod" ] && [ ! -f "Cargo.toml" ]; then
+        echo -e "${BLUE}  Coverage gate skipped (no code project detected)${NC}"
+        return 0  # Skip for non-code projects (docs, research)
+    fi
+
+    # Try to extract coverage from last test run
+    local coverage=0
+
+    # Look for coverage in various formats
+    if [ -f "coverage/coverage-summary.json" ]; then
+        # Jest/Istanbul format
+        coverage=$(jq -r '.total.statements.pct // 0' "coverage/coverage-summary.json" 2>/dev/null || echo "0")
+    elif [ -f "coverage.json" ]; then
+        # Python coverage.py format
+        coverage=$(jq -r '.totals.percent_covered // 0' "coverage.json" 2>/dev/null || echo "0")
+    elif [ -f ".coverage.json" ]; then
+        # Alternative Python format
+        coverage=$(jq -r '.totals.percent_covered // 0' ".coverage.json" 2>/dev/null || echo "0")
+    elif [ -f "coverage/lcov-report/index.html" ]; then
+        # Try to extract from lcov HTML
+        coverage=$(grep -oP '(?<=<span class="strong">)[0-9.]+(?=% </span>)' "coverage/lcov-report/index.html" 2>/dev/null | head -1 || echo "0")
+    fi
+
+    # Handle empty or invalid coverage
+    [ -z "$coverage" ] && coverage=0
+
+    # Convert to integer for comparison (handle decimals)
+    local coverage_int=${coverage%.*}
+    [ -z "$coverage_int" ] && coverage_int=0
+
+    if [ "$coverage_int" -lt "$MIN_TEST_COVERAGE" ]; then
+        echo ""
+        echo -e "${RED}❌ TEST COVERAGE GATE FAILED${NC}"
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo "Current coverage: ${coverage}%"
+        echo "Minimum required: ${MIN_TEST_COVERAGE}%"
+        echo ""
+        echo "Cannot mark project as COMPLETE until coverage meets minimum."
+        echo "Options:"
+        echo "  1. Add more tests to increase coverage"
+        echo "  2. Set MIN_TEST_COVERAGE=0 in .ralph/config.sh to disable"
+        echo "  3. Lower MIN_TEST_COVERAGE threshold in .ralph/config.sh"
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        return 1
+    fi
+
+    echo -e "${GREEN}✓ Test coverage: ${coverage}% (>=${MIN_TEST_COVERAGE}% required)${NC}"
+    return 0
+}
+
+# ─────────────────────────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────────────────────────
 
@@ -282,8 +420,8 @@ EOF
 fi
 
 [ ! -f "guardrails.md" ] && echo "# Signs" > guardrails.md
-[ ! -f "IMPLEMENTATION_PLAN.md" ] && touch IMPLEMENTATION_PLAN.md
 [ ! -d "specs" ] && mkdir specs
+# NOTE: IMPLEMENTATION_PLAN.md is DEPRECATED. Use specs/{goal}/implementation/plan.md instead.
 
 # Create memories.md if not exists
 if [ ! -f "memories.md" ]; then
@@ -304,13 +442,13 @@ MEMEOF
 fi
 
 # Clear scratchpad at loop start (fresh session memory)
-cat > scratchpad.md << 'EOF'
+cat > scratchpad.md << EOF
 # Scratchpad
 
 ## Current State
 
 - **Last task completed**: [none yet]
-- **Next task to do**: [see IMPLEMENTATION_PLAN.md]
+- **Next task to do**: [see ${SPECS_PATH}/implementation/plan.md]
 - **Files modified this session**: [none yet]
 
 ## Key Decisions This Session
@@ -346,6 +484,9 @@ echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
 [ -f "$CONFIG_FILE" ] && echo -e "  Config: ${BLUE}$CONFIG_FILE${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
+
+# Validate configuration consistency before starting loop
+validate_config_consistency
 
 # ─────────────────────────────────────────────────────────────────
 # THE LOOP
@@ -490,28 +631,35 @@ EOF
         # CONTEXT HEALTH CHECK
         # ─────────────────────────────────────────────────────────
 
-        # Extract input_tokens from Claude's usage stats
-        INPUT_TOKENS=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.usage.input_tokens // 0' 2>/dev/null || echo "0")
+        # Extract all token types from Claude's usage stats (cache counts toward context)
+        USAGE_LINE=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1)
+        INPUT_TOKENS=$(echo "$USAGE_LINE" | jq -r '.usage.input_tokens // 0' 2>/dev/null || echo "0")
+        CACHE_READ=$(echo "$USAGE_LINE" | jq -r '.usage.cache_read_input_tokens // 0' 2>/dev/null || echo "0")
+        CACHE_CREATE=$(echo "$USAGE_LINE" | jq -r '.usage.cache_creation_input_tokens // 0' 2>/dev/null || echo "0")
 
-        if [ "$INPUT_TOKENS" -gt 0 ] && [ "$CONTEXT_LIMIT" -gt 0 ]; then
-            CONTEXT_PERCENT=$((INPUT_TOKENS * 100 / CONTEXT_LIMIT))
+        # Calculate total context usage (input + cached reads + cache creation)
+        TOTAL_CONTEXT=$((INPUT_TOKENS + CACHE_READ + CACHE_CREATE))
 
-            # Determine context zone
-            if [ "$CONTEXT_PERCENT" -ge "$CONTEXT_CRITICAL_THRESHOLD" ]; then
+        if [ "$TOTAL_CONTEXT" -gt 0 ] && [ "$CONTEXT_LIMIT" -gt 0 ]; then
+            CONTEXT_PERCENT=$((TOTAL_CONTEXT * 100 / CONTEXT_LIMIT))
+
+            # Determine context zone using configurable thresholds
+            if [ "$CONTEXT_PERCENT" -ge "$CONTEXT_CRITICAL" ]; then
                 # Red zone - critical, exit
                 echo ""
                 echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo -e "${RED}  CONTEXT EXHAUSTED: ${CONTEXT_PERCENT}% (${INPUT_TOKENS}/${CONTEXT_LIMIT} tokens)${NC}"
+                echo -e "${RED}  CONTEXT EXHAUSTED: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT}/${CONTEXT_LIMIT} tokens)${NC}"
+                echo -e "${RED}  Breakdown: input=${INPUT_TOKENS} cache_read=${CACHE_READ} cache_create=${CACHE_CREATE}${NC}"
                 echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                 echo ""
                 echo -e "${YELLOW}The context window is nearly full. A fresh session is needed.${NC}"
                 cleanup_and_exit $EXIT_CONTEXT_EXHAUSTED "context_exhausted"
-            elif [ "$CONTEXT_PERCENT" -ge 60 ]; then
+            elif [ "$CONTEXT_PERCENT" -ge "$CONTEXT_WARNING" ]; then
                 # Yellow zone - warning
-                echo -e "${YELLOW}  Context: ${CONTEXT_PERCENT}% (yellow zone)${NC}"
+                echo -e "${YELLOW}  Context: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT} tokens - warning zone)${NC}"
             else
                 # Green zone - healthy
-                echo -e "${BLUE}  Context: ${CONTEXT_PERCENT}%${NC}"
+                echo -e "${BLUE}  Context: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT} tokens)${NC}"
             fi
         fi
 
@@ -547,10 +695,20 @@ EOF
 
             # Require 2 consecutive COMPLETE signals to confirm
             if [ "$COMPLETE_COUNT" -ge 2 ]; then
+                # Validate test coverage gate before accepting completion
+                if ! validate_test_coverage; then
+                    echo -e "${YELLOW}  COMPLETE rejected - coverage gate failed${NC}"
+                    COMPLETE_COUNT=0  # Reset counter, need to add tests
+                    continue
+                fi
+
                 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                 echo -e "${GREEN}  ALL TASKS COMPLETE (double-verified)${NC}"
                 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                 echo "[$TIMESTAMP] COMPLETE - Total iterations: $ITERATION (verified with $COMPLETE_COUNT confirmations)" >> "$ITERATION_LOG"
+
+                # Validate learning before exit
+                validate_guardrails_learning
 
                 git push origin "$CURRENT_BRANCH" 2>/dev/null || true
                 cleanup_and_exit $EXIT_SUCCESS "complete"
