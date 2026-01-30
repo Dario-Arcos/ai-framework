@@ -12,12 +12,13 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 ┌─────────────────────────────────────────────────────────────────┐
 │                    RALPH-ORCHESTRATOR                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  HITL PHASE (Human-in-the-Loop)                                 │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐               │
-│  │Discovery│→│Planning │→│  Tasks  │→│ Config  │               │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘               │
+│  PLANNING PHASE (Interactive OR Autonomous - user chooses)      │
+│  ┌──────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐ │
+│  │Mode      │→│Discovery│→│Planning │→│  Tasks  │→│Checkpoint│ │
+│  │Selection │ │         │ │         │ │         │ │ (Review) │ │
+│  └──────────┘ └─────────┘ └─────────┘ └─────────┘ └──────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
-│  AFK PHASE (Away-From-Keyboard)                                 │
+│  EXECUTION PHASE (AFK / Checkpoint / HITL - user chooses)       │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  LOOP.SH: Iterations with fresh context (~100K max)     │   │
 │  └─────────────────────────────────────────────────────────┘   │
@@ -50,13 +51,39 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ---
 
+## Phase 0.5: Planning Mode Selection
+
+**Objective**: Determine how the planning phases will operate.
+
+### Question to User:
+```text
+"¿Estarás presente durante la planificación?"
+- Interactive (Recommended): Guiaré paso a paso, preguntando sobre requisitos y diseño
+- Autonomous: Planificaré autónomamente, documentando decisiones. Revisarás antes de ejecutar.
+```
+
+### Mode Effects:
+
+| Planning Mode | SOP Skills Behavior |
+|---------------|---------------------|
+| **Interactive** | Ask questions, wait for answers, iterate with user |
+| **Autonomous** | Make reasonable decisions, document rationale, never block |
+
+### Recommendations:
+- **Interactive** → Unclear requirements, complex decisions, learning opportunity
+- **Autonomous** → Clear requirements, similar to past projects, user has limited time
+
+**Store as `PLANNING_MODE` for all subsequent SOP skill invocations.**
+
+---
+
 ## Phase 1: Discovery (sop-discovery)
 
 **Objective**: Document the problem before designing solutions.
 
 ### Steps:
 
-1. **Execute skill** `sop-discovery`
+1. **Execute skill** `sop-discovery --mode={PLANNING_MODE}`
 2. **Document in** `specs/{feature}/discovery.md`:
    - JTBD (Job To Be Done)
    - Constraints
@@ -64,9 +91,9 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
    - Prior Art
    - Decision
 
-### Modes:
-- `--mode=interactive` - With human questions (default)
-- `--mode=autonomous` - For AI execution (skips irrelevant questions)
+### Mode Behavior:
+- `interactive`: Asks questions one at a time, waits for answers
+- `autonomous`: Generates comprehensive discovery, documents assumptions
 
 ### Validation:
 - ✓ `specs/{feature}/discovery.md` exists
@@ -80,11 +107,15 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ### Steps:
 
-1. **Execute skill** `sop-planning`
+1. **Execute skill** `sop-planning --mode={PLANNING_MODE}`
 2. **Create in** `specs/{feature}/design/`:
    - `detailed-design.md` - Architecture
    - Technical decisions
    - Evaluated trade-offs
+
+### Mode Behavior:
+- `interactive`: Iterates on requirements, research, design with user feedback
+- `autonomous`: Generates complete design in single pass, documents all decisions
 
 ### Validation:
 - ✓ `specs/{feature}/design/` directory exists
@@ -98,7 +129,7 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ### Steps:
 
-1. **Execute skill** `sop-task-generator`
+1. **Execute skill** `sop-task-generator --mode={PLANNING_MODE}`
 2. **Create** `specs/{feature}/implementation/plan.md` with steps
 3. **Generate ONE task file for EACH step**:
    ```
@@ -112,9 +143,49 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
        └── task-01-description.code-task.md
    ```
 
+### Mode Behavior:
+- `interactive`: Presents task breakdown for approval, allows iteration
+- `autonomous`: Generates all task files, adds "[AUTO-GENERATED]" metadata
+
 ### Validation:
 - ✓ N task files = N steps in plan
 - ✓ Each task has acceptance criteria
+
+---
+
+## Phase 3.5: Plan Review Checkpoint
+
+**Objective**: User approval before execution (MANDATORY regardless of planning mode).
+
+### Present Summary:
+```markdown
+## Plan Review
+
+**Planning Mode Used:** {PLANNING_MODE}
+
+### Artifacts Generated
+- Discovery: `specs/{feature}/discovery.md`
+- Design: `specs/{feature}/design/detailed-design.md`
+- Tasks: {N} task files
+
+### Key Decisions Made
+1. [From design document]
+2. [From design document]
+3. [From design document]
+
+### Blockers Found
+- [From blockers.md or "None"]
+```
+
+### User Options:
+- **Aprobar y continuar**: Proceed to execution configuration
+- **Revisar artifacts**: Show artifact contents before deciding
+- **Rehacer planificación**: Return to Phase 1 with interactive mode
+
+### Critical Rules:
+- **NEVER skip this checkpoint** even if planning was interactive
+- **NEVER launch execution** without explicit user approval
+- If user requests artifact review, show artifacts first
 
 ---
 
@@ -259,23 +330,36 @@ project/
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 1: DISCOVERY                                             │
+│  PHASE 0.5: PLANNING MODE SELECTION                             │
+│  ├─ Interactive: Guide step by step, ask questions              │
+│  └─ Autonomous: Plan independently, document decisions          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 1: DISCOVERY (--mode={PLANNING_MODE})                    │
 │  └─ Create specs/{feature}/discovery.md                         │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 2: PLANNING                                              │
+│  PHASE 2: PLANNING (--mode={PLANNING_MODE})                     │
 │  └─ Create specs/{feature}/design/detailed-design.md            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 3: TASK GENERATION                                       │
+│  PHASE 3: TASK GENERATION (--mode={PLANNING_MODE})              │
 │  └─ Create plan.md + N task files                               │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 3.5: PLAN REVIEW CHECKPOINT (MANDATORY)                  │
+│  ├─ Present summary of all artifacts                            │
+│  ├─ Show key decisions made                                     │
+│  └─ User approves / reviews / redoes                            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 4: CONFIGURATION                                         │
-│  └─ Verify .ralph/config.sh                                     │
+│  └─ Configure .ralph/config.sh (AFK/Checkpoint/HITL)            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -286,8 +370,7 @@ project/
 │  │  2. Execute task                                         │   │
 │  │  3. Validate gates                                       │   │
 │  │  4. Update state                                         │   │
-│  │  5. Context > 60%? → New iteration                       │   │
-│  │  6. All complete? → Exit                                 │   │
+│  │  5. All complete? → Exit                                 │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
@@ -328,5 +411,5 @@ project/
 
 ---
 
-*Generated: 2026-01-28*
-*Version: Post-audit with 16 improvements implemented*
+*Generated: 2026-01-29*
+*Version: 3.1.0 - Added planning mode selection and mandatory review checkpoint*

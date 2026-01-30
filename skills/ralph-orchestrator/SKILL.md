@@ -12,8 +12,8 @@ description: Use when building features requiring planning + autonomous executio
 
 ## Overview
 
-- **Planning (HITL)**: Guide user through discovery, design, task generation
-- **Execution (AFK)**: Workers implement with fresh 200K context per iteration
+- **Planning**: Interactive OR autonomous (user chooses)
+- **Execution**: Workers implement with fresh 200K context per iteration (AFK/Checkpoint/HITL)
 
 ---
 
@@ -40,16 +40,19 @@ description: Use when building features requiring planning + autonomous executio
 
 - **goal** (optional): High-level description. Asked in Step 1 if not provided.
 - **flow** (optional): `forward` (new) or `reverse` (investigate existing).
+- **planning_mode** (optional): `interactive` (default) or `autonomous`. Determines how SOP skills operate during planning phase.
 
 ---
 
 ## The Complete Flow
 
-1. **Step 0-1**: Validate infrastructure + detect flow (Forward/Reverse)
-2. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
-3. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
-4. **Step 5**: Configure execution mode (AFK/Checkpoint/HITL)
-5. **Step 6**: Launch `./loop.sh specs/{goal}/` in background
+1. **Step 0**: Choose planning mode (Interactive/Autonomous)
+2. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
+3. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
+4. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
+5. **Step 5**: Plan Review Checkpoint (mandatory before execution)
+6. **Step 6**: Configure execution mode (AFK/Checkpoint/HITL)
+7. **Step 7**: Launch `./loop.sh specs/{goal}/` in background
 
 > Full diagram: [ralph-orchestrator-flow.md](references/ralph-orchestrator-flow.md)
 
@@ -69,22 +72,42 @@ description: Use when building features requiring planning + autonomous executio
 
 ---
 
-### Step 0: Validate SOP Prerequisites
+### Step 0: Choose Planning Mode
 
+**Use AskUserQuestion:**
+```text
+Question: "¿Estarás presente durante la planificación?"
+Header: "Planning Mode"
+Options:
+- Interactive (Recommended): Te guiaré paso a paso, preguntando sobre requisitos y diseño
+- Autonomous: Planificaré autónomamente, documentando todas las decisiones. Revisarás el plan completo antes de ejecutar.
+```
+
+**Mode determines how SOP skills operate:**
+
+| Planning Mode | SOP Skills Behavior |
+|---------------|---------------------|
+| **Interactive** | Ask questions, wait for answers, iterate with user |
+| **Autonomous** | Make reasonable decisions, document rationale, continue without blocking |
+
+**Store selection:** `PLANNING_MODE={interactive|autonomous}` for use in subsequent steps.
+
+**Recommendations:**
+- **Interactive** → Projects with unclear requirements, complex decisions, or when user wants to learn
+- **Autonomous** → Clear requirements, similar to past projects, or user has limited time
+
+**You MUST NOT** proceed without explicit mode selection.
+
+---
+
+### Step 1: Validate Prerequisites and Detect Flow
+
+**Validate SOP Prerequisites:**
 - [ ] `specs/{feature}/discovery.md` exists → If missing: Execute `sop-discovery`
 - [ ] `specs/{feature}/design/detailed-design.md` exists → If missing: Execute `sop-planning`
 - [ ] `specs/{feature}/implementation/plan.md` + task files exist → If missing: Execute `sop-task-generator`
 
-**You MUST NOT:**
-- Skip discovery and use AGENTS.md as substitute
-- Skip planning and improvise architecture
-- Proceed if ANY prerequisite is missing
-
----
-
-### Step 1: Detect Flow and Goal
-
-**Use AskUserQuestion:**
+**Detect Flow (Use AskUserQuestion):**
 ```text
 Question: "What type of flow do you need?"
 Options:
@@ -92,15 +115,23 @@ Options:
 - Reverse: Investigate something existing before modifying it
 ```
 
-**You MUST NOT** proceed without knowing the flow type.
+**You MUST NOT:**
+- Skip discovery and use AGENTS.md as substitute
+- Skip planning and improvise architecture
+- Proceed if ANY prerequisite is missing or flow type unknown
 
 ---
 
 ### Step 2A: Discovery (Forward)
 
 ```text
-/sop-discovery goal="{goal}"
+/sop-discovery goal="{goal}" --mode={PLANNING_MODE}
 ```
+
+**Mode behavior:**
+- `interactive`: Asks questions one at a time, waits for answers
+- `autonomous`: Generates comprehensive discovery, documents assumptions
+
 Output: `specs/{goal}/discovery.md` → Continue to Step 3.
 
 ---
@@ -108,17 +139,27 @@ Output: `specs/{goal}/discovery.md` → Continue to Step 3.
 ### Step 2B: Reverse Investigation
 
 ```text
-/sop-reverse artifact="{path}"
+/sop-reverse artifact="{path}" --mode={PLANNING_MODE}
 ```
-Ask user if continuing to Forward. If no → End.
+
+**Mode behavior:**
+- `interactive`: Confirms artifact type, asks clarifying questions
+- `autonomous`: Auto-detects type, completes investigation, documents deferred questions
+
+Ask user if continuing to Forward (in interactive mode). In autonomous mode, continue to Forward by default.
 
 ---
 
 ### Step 3: Planning
 
 ```text
-/sop-planning discovery_path="specs/{goal}/discovery.md"
+/sop-planning discovery_path="specs/{goal}/discovery.md" --mode={PLANNING_MODE}
 ```
+
+**Mode behavior:**
+- `interactive`: Iterates on requirements, research, and design with user feedback
+- `autonomous`: Generates complete design in single pass, documents all decisions
+
 Output: `specs/{goal}/design/detailed-design.md` → Continue to Step 4.
 
 ---
@@ -126,13 +167,64 @@ Output: `specs/{goal}/design/detailed-design.md` → Continue to Step 4.
 ### Step 4: Task Generation
 
 ```text
-/sop-task-generator input="specs/{goal}/design/detailed-design.md"
+/sop-task-generator input="specs/{goal}/design/detailed-design.md" --mode={PLANNING_MODE}
 ```
+
+**Mode behavior:**
+- `interactive`: Presents task breakdown for approval, allows iteration
+- `autonomous`: Generates all task files, adds "[AUTO-GENERATED]" metadata
+
 Output: `plan.md` + `.code-task.md` files → Continue to Step 5.
 
 ---
 
-### Step 5: Configure Execution
+### Step 5: Plan Review Checkpoint
+
+**MANDATORY before execution, regardless of planning mode.**
+
+**Present summary to user:**
+```markdown
+## Plan Review
+
+**Planning Mode Used:** {PLANNING_MODE}
+
+### Artifacts Generated
+- Discovery: `specs/{goal}/discovery.md`
+- Design: `specs/{goal}/design/detailed-design.md`
+- Tasks: {N} task files in `specs/{goal}/implementation/`
+
+### Key Decisions Made
+1. [Decision 1 from design document]
+2. [Decision 2 from design document]
+3. [Decision 3 from design document]
+
+### Blockers Found
+- [List from blockers.md if exists, or "None"]
+
+### Task Summary
+| Step | Tasks | Complexity |
+|------|-------|------------|
+| 01   | N     | S/M/L      |
+| ...  | ...   | ...        |
+```
+
+**Use AskUserQuestion:**
+```text
+Question: "¿Aprobar plan y continuar a ejecución?"
+Options:
+- Aprobar y continuar: Proceder a configurar ejecución
+- Revisar artifacts: Mostrar contenido de artifacts antes de decidir
+- Rehacer planificación: Volver a Step 2 con modo interactivo
+```
+
+**You MUST NOT:**
+- Skip this checkpoint even if planning was interactive
+- Launch execution without explicit user approval
+- Proceed if user requests artifact review (show artifacts first)
+
+---
+
+### Step 6: Configure Execution
 
 | Question | Options |
 |----------|---------|
@@ -144,12 +236,13 @@ Update `.ralph/config.sh` with selections. Details: [configuration-guide.md](ref
 
 ---
 
-### Step 6: Launch Execution
+### Step 7: Launch Execution
 
 **Prerequisites checklist:**
 - [ ] `specs/{goal}/implementation/plan.md` exists
 - [ ] `.code-task.md` files exist
 - [ ] `.ralph/config.sh` configured
+- [ ] **Plan Review Checkpoint passed (Step 5)**
 
 **Launch:**
 ```bash
@@ -179,7 +272,7 @@ Transition to Phase 2: Monitoring mode.
 ## Core Principles
 
 1. **Single Entry Point** - Invoke once, orchestrate everything
-2. **HITL Planning, AFK Execution** - Interactive planning, autonomous execution
+2. **Flexible Planning, Checkpoint Before Execution** - Planning can be interactive OR autonomous, but user ALWAYS approves before execution
 3. **Fresh Context Is Reliability** - Each iteration clears context
 4. **Disk Is State, Git Is Memory** - Files are handoff mechanism
 
@@ -220,4 +313,4 @@ Transition to Phase 2: Monitoring mode.
 
 ---
 
-*Version: 3.0.0 | Updated: 2026-01-28*
+*Version: 3.1.0 | Updated: 2026-01-29*
