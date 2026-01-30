@@ -133,7 +133,7 @@ Options:
 ### Step 2A: Discovery (Forward)
 
 ```text
-/sop-discovery goal_description="{goal}" --mode={PLANNING_MODE}
+/sop-discovery goal_description="{goal}" mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**
@@ -147,7 +147,7 @@ Output: `specs/{goal}/discovery.md` → Continue to Step 3.
 ### Step 2B: Reverse Investigation
 
 ```text
-/sop-reverse target="{path}" --mode={PLANNING_MODE}
+/sop-reverse target="{path}" mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**
@@ -161,7 +161,7 @@ Ask user if continuing to Forward (in interactive mode). In autonomous mode, con
 ### Step 3: Planning
 
 ```text
-/sop-planning rough_idea="{goal}" discovery_path="specs/{goal}/discovery.md" project_dir="specs/{goal}" --mode={PLANNING_MODE}
+/sop-planning rough_idea="{goal}" discovery_path="specs/{goal}/discovery.md" project_dir="specs/{goal}" mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**
@@ -175,7 +175,7 @@ Output: `specs/{goal}/design/detailed-design.md` → Continue to Step 4.
 ### Step 4: Task Generation
 
 ```text
-/sop-task-generator input="specs/{goal}/implementation/plan.md" --mode={PLANNING_MODE}
+/sop-task-generator input="specs/{goal}/implementation/plan.md" mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**

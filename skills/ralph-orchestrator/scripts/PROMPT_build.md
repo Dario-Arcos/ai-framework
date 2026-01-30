@@ -23,7 +23,7 @@ The loop loads `.ralph/config.sh` automatically. Key settings:
 
 Check `.ralph/config.sh` if unsure about project quality requirements.
 
-### 0d. Study State Files
+### 0c. Study State Files
 
 Study these using subagents:
 1. `@AGENTS.md` - Operational guide
@@ -39,7 +39,7 @@ Study these using subagents:
 > **DEPRECATED**: `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
 > All planning goes through: `specs/{feature}/implementation/plan.md`
 
-### 0e. Study Scratchpad (Session Memory)
+### 0d. Study Scratchpad (Session Memory)
 
 ```
 @scratchpad.md
@@ -53,7 +53,7 @@ Fast context recovery from previous iteration:
 
 **If scratchpad doesn't exist**: First iteration, proceed normally.
 
-### 0f. Study Specs
+### 0e. Study Specs
 
 Study `specs/*` with up to 500 parallel Opus subagents.
 
@@ -125,6 +125,8 @@ Example:
 ```
 
 Missing signals appear in metrics as TDD compliance warnings.
+
+> **Note**: TDD signals (`tdd:red`, `tdd:green`) are currently logged for metrics tracking but NOT enforced. The loop will not block commits if signals are missing. This may change in future versions.
 
 ### 2b. Implementation Rules
 
@@ -274,13 +276,15 @@ This helps the next iteration start faster.
 1. Do NOT mark task as complete in the implementation plan
 2. Add a Sign to guardrails.md explaining the blocker
 3. Update scratchpad.md with what's left to do
-4. Exit normally - next iteration will continue
+4. Exit normally - simply end your response. The loop will detect this via exit code 0 and continue with the next iteration.
 
 **Output markers (MANDATORY for loop.sh parsing):**
 ```
 > confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
 > task_completed: [Task name from implementation plan]
 ```
+
+> **Note**: The brackets `[]` are LITERAL - include them in your output exactly as shown. Example: `objective=[Add auth]` not `objective=Add auth`.
 
 **Example:**
 ```
@@ -313,7 +317,7 @@ This helps the next iteration start faster.
 ```bash
 git add -A
 git commit -m "feat: [description]"
-git push
+# NOTE: Do NOT push - this is handled by loop.sh after verification
 ```
 
 ---

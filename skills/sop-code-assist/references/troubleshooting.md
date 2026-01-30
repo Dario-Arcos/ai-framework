@@ -60,7 +60,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Symptom:** Expected prompts for feedback not appearing
 
-**Cause:** Mode set to 'auto' instead of 'interactive'
+**Cause:** Mode set to 'autonomous' instead of 'interactive'
 
 **Fix:** Restart with `mode="interactive"` parameter
 
@@ -123,7 +123,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ---
 
-## Auto mode stuck in loop
+## Autonomous mode stuck in loop
 
 **Symptom:** Same error keeps occurring, no progress
 
@@ -160,7 +160,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Symptom:** progress.md empty or outdated
 
-**Cause:** Auto mode not logging, or file write failed
+**Cause:** Autonomous mode not logging, or file write failed
 
 **Fix:** Verify write permissions, manually update if needed
 

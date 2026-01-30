@@ -16,7 +16,7 @@ Quick navigation for detailed documentation.
 | File | Description |
 |------|-------------|
 | [monitoring-pattern.md](monitoring-pattern.md) | How to monitor execution loops |
-| [supervision-modes.md](supervision-modes.md) | AFK / HITL / Checkpoint modes |
+| [supervision-modes.md](supervision-modes.md) | Autonomous / Checkpoint modes |
 | [quality-gates.md](quality-gates.md) | TDD and quality gate requirements |
 | [backpressure.md](backpressure.md) | Circuit breakers and rate limiting |
 
@@ -70,7 +70,7 @@ references/
 │   └── execution-paths.md           # Interactive vs autonomous
 ├── Execution
 │   ├── monitoring-pattern.md        # Loop monitoring
-│   ├── supervision-modes.md         # AFK/HITL/Checkpoint
+│   ├── supervision-modes.md         # Autonomous/Checkpoint
 │   ├── quality-gates.md             # TDD gates
 │   └── backpressure.md              # Circuit breakers
 ├── State & Knowledge

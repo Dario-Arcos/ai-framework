@@ -18,7 +18,7 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 │  │Selection │ │         │ │         │ │         │ │ (Review) │ │
 │  └──────────┘ └─────────┘ └─────────┘ └─────────┘ └──────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
-│  EXECUTION PHASE (AFK / Checkpoint / HITL - user chooses)       │
+│  EXECUTION PHASE (Autonomous / Checkpoint - user chooses)       │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  LOOP.SH: Iterations with fresh context (~100K max)     │   │
 │  └─────────────────────────────────────────────────────────┘   │

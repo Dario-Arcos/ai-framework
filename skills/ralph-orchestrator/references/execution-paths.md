@@ -11,7 +11,7 @@ Ralph-orchestrator supports two execution paths for implementing tasks. This ref
 | Aspect | Interactive (sop-code-assist) | Autonomous (loop.sh workers) |
 |--------|-------------------------------|------------------------------|
 | **When used** | User present, learning, complex decisions | User away, batch processing |
-| **Invoker** | User manually or orchestrator in HITL mode | loop.sh in AFK mode |
+| **Invoker** | User manually or orchestrator in interactive mode | loop.sh in autonomous mode |
 | **Context** | Single session, full context retained | Fresh context each iteration |
 | **User interaction** | Confirms at each step | None after launch |
 | **Blocker handling** | AskUserQuestion | Document in blockers.md, exit cleanly |
@@ -22,7 +22,7 @@ Ralph-orchestrator supports two execution paths for implementing tasks. This ref
 
 ## Interactive Path: sop-code-assist
 
-**Trigger**: Manual invocation or ralph-orchestrator with HITL mode.
+**Trigger**: Manual invocation or ralph-orchestrator in interactive mode.
 
 ```bash
 /sop-code-assist task="specs/user-auth/implementation/step01/task-01.code-task.md" mode="interactive"

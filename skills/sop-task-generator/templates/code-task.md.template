@@ -1,3 +1,6 @@
+## Status: PENDING
+## Completed: [DATE when done]
+
 # Task: {task_name}
 
 <!--
@@ -82,6 +85,7 @@ Provides structured task definition for worker agents.
 - **Labels**: {labels}
 - **Required Skills**: {required_skills}
 - **Related Tasks**: {related_tasks}
+- **Step**: {step}
 
 ---
 

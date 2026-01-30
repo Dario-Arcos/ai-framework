@@ -64,9 +64,9 @@ GATE_BUILD="go build ./..."
 - You SHOULD use milestones for multi-module features because natural breakpoints aid review
 
 ```bash
-CHECKPOINT_MODE="none"        # none|iterations|milestones
+CHECKPOINT_MODE="none"        # none|iterations (milestones not implemented)
 CHECKPOINT_INTERVAL=5         # Pause every N iterations (if mode=iterations)
-CHECKPOINT_ON_MODULE=true     # Pause when module completes (if mode=milestones)
+# CHECKPOINT_ON_MODULE=true   # NOT IMPLEMENTED - milestones mode planned for future
 ```
 
 ---
@@ -89,17 +89,14 @@ MAX_RUNTIME=0                   # Max seconds (0 = unlimited)
 
 ## AFK Mode Configuration
 
-**Constraints:**
-- You MUST have strong test coverage before enabling AFK because gates rely on tests
-- You SHOULD configure notifications for long runs because silent failures waste time
-- You MAY use webhook for Slack integration because this enables remote monitoring
-
-For unattended execution:
+> **NOT IMPLEMENTED**: The following options are documented but not yet implemented in loop.sh.
+> Autonomous execution works by default - these notification options are planned for future versions.
 
 ```bash
-AFK_MODE=true                   # Enable AFK mode
-AFK_NOTIFICATION="slack"        # slack|email|none
-AFK_WEBHOOK_URL=""              # Slack webhook for notifications
+# NOT IMPLEMENTED - Planned for future release
+AFK_MODE=true                   # Enable AFK mode (not implemented)
+AFK_NOTIFICATION="slack"        # slack|email|none (not implemented)
+AFK_WEBHOOK_URL=""              # Slack webhook for notifications (not implemented)
 ```
 
 ---
@@ -107,15 +104,15 @@ AFK_WEBHOOK_URL=""              # Slack webhook for notifications
 ## Execution Modes Summary
 
 **Constraints:**
-- You MUST use HITL mode for first-time users because learning requires observation
+- You SHOULD use frequent checkpoints for first-time users because learning requires observation
 - You MUST use checkpoint mode for risky tasks because human review catches critical errors
 - You MAY use 100% AFK when confident in quality gates because fresh context improves throughput
 
 | Mode | Description | Use When |
 |------|-------------|----------|
-| 100% AFK | No interruptions | Overnight runs, high confidence |
+| Autonomous | No interruptions | Overnight runs, high confidence |
 | Checkpoint (iterations) | Pause every N | Learning the system, want oversight |
-| Checkpoint (milestones) | Pause at modules | Complex features, natural review points |
+| Checkpoint (milestones) | Pause at modules | *NOT IMPLEMENTED* |
 
 ---
 

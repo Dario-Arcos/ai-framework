@@ -169,7 +169,7 @@ When something goes wrong:
 
 - [configuration-guide.md](configuration-guide.md) - All configuration options and exit codes
 - [monitoring-pattern.md](monitoring-pattern.md) - How to monitor execution properly
-- [supervision-modes.md](supervision-modes.md) - AFK vs Checkpoint vs HITL modes
+- [supervision-modes.md](supervision-modes.md) - Autonomous vs Checkpoint modes
 
 ---
 

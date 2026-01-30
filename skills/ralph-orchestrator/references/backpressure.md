@@ -38,14 +38,14 @@ Checkpoints provide execution-level backpressure by pausing for human review.
 In `.ralph/config.sh`:
 
 ```bash
-# Mode: none, iterations, milestones
+# Mode: none, iterations (milestones not implemented)
 CHECKPOINT_MODE="iterations"
 
 # For iterations mode: pause every N iterations
 CHECKPOINT_INTERVAL=5
 
-# For milestones mode: pause when module completes
-CHECKPOINT_ON_MODULE=true
+# NOT IMPLEMENTED - milestones mode planned for future
+# CHECKPOINT_ON_MODULE=true
 ```
 
 ### Checkpoint Modes
@@ -105,41 +105,22 @@ echo 'CHECKPOINT_INTERVAL=5' >> .ralph/config.sh
 # Repeat until complete
 ```
 
-#### 3. Milestones (Module Boundaries)
+#### 3. Milestones (Module Boundaries) - NOT IMPLEMENTED
+
+> **NOT IMPLEMENTED**: This mode is documented but not yet implemented in loop.sh.
+> Planned for a future release.
 
 ```bash
+# NOT IMPLEMENTED
 CHECKPOINT_MODE="milestones"
 CHECKPOINT_ON_MODULE=true
 ```
 
-**Behavior:**
+**Planned behavior (when implemented):**
 - Pauses when module/component completes
 - Detected via plan.md section markers
 - Natural breakpoints in implementation
 - Allows architectural review
-
-**Use when:**
-- Multi-module features
-- Architectural decisions at boundaries
-- Want to review module integration
-- Incremental delivery
-
-**Example plan.md structure:**
-```markdown
-## Module: Authentication
-
-- [x] Setup routes
-- [x] Implement JWT generation
-- [x] Add validation middleware
-
-## Module: User Profile
-
-- [ ] Create profile schema
-- [ ] Implement CRUD operations
-- [ ] Add profile validation
-```
-
-Loop pauses after "Authentication" module completes.
 
 ---
 
@@ -328,7 +309,7 @@ If quality gates fail repeatedly:
 
 If circuit breaker triggers frequently:
 - You SHOULD check task clarity in plan
-- You SHOULD increase HITL oversight
+- You SHOULD use more frequent checkpoints
 - You MUST diagnose root cause before continuing
 
 ### Tasks Taking Too Long

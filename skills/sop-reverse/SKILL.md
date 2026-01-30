@@ -139,6 +139,15 @@ You MUST generate `recommendations.md` with improvements, risks, migration paths
 
 See [references/output-structure.md](references/output-structure.md) for template.
 
+**Handoff to sop-planning:**
+
+The `specs-generated/` output is designed to feed into sop-planning as the `rough_idea` parameter:
+- Use `specs-generated/` directory contents as `rough_idea` input to sop-planning
+- Alternatively, `investigation.md` serves as a discovery.md equivalent and can be passed as `discovery_path`
+- Example: `/sop-planning rough_idea="./specs-generated/" discovery_path="./investigation.md"`
+
+This enables the complete reverse-to-forward flow: investigate existing artifacts, then plan improvements based on documented findings.
+
 ## Output Structure
 
 ```text

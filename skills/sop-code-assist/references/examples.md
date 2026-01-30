@@ -43,7 +43,7 @@ specs/{goal}/implementation/{task_name}/
 4. **Code**: Implements per Specification section with TDD
 5. **Commit**: Conventional commit, marks task as COMPLETED
 
-**Key Difference:** The .code-task.md file provides structured requirements, reducing the exploration phase and enabling auto mode execution.
+**Key Difference:** The .code-task.md file provides structured requirements, reducing the exploration phase and enabling autonomous mode execution.
 
 ---
 
@@ -79,15 +79,15 @@ specs/{goal}/implementation/{task_name}/
 
 ---
 
-## Example 4: Auto Mode Batch Processing
+## Example 4: Autonomous Mode Batch Processing
 
 **Input (via ralph-orchestrator):**
 ```
 task_description="specs/feature/implementation/step02/task-03-add-tests.code-task.md"
-mode="auto"
+mode="autonomous"
 ```
 
-**Auto Flow:**
+**Autonomous Flow:**
 - No user prompts during execution
 - All decisions documented in progress.md
 - Errors trigger pause and documentation, not user interaction
@@ -128,7 +128,7 @@ mode="auto"
 > 2. Use in-memory cache instead (no external dependency)
 > 3. Something else?"
 
-**Error Handling (Auto):**
+**Error Handling (Autonomous):**
 ```markdown
 ### Challenge: Missing Dependency
 - **Error:** ModuleNotFoundError: No module named 'redis'

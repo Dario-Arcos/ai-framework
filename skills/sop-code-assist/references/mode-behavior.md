@@ -205,8 +205,8 @@ Instead, use the blocker pattern:
 
 | Situation | Action |
 |-----------|--------|
-| Tests fail unexpectedly | Document in progress.md, emit blocker, exit |
-| Missing dependency | Document in progress.md, emit blocker, exit |
+| Tests fail unexpectedly | Document in blockers.md, emit blocker, exit |
+| Missing dependency | Document in blockers.md, emit blocker, exit |
 | Ambiguous requirement | Make best guess, document assumption |
 | Security-sensitive changes | Document concern, proceed with safest option |
 | Multiple valid approaches | Choose highest ROI, document rationale |
@@ -216,7 +216,7 @@ Instead, use the blocker pattern:
 When blocked in autonomous mode:
 
 ```markdown
-## In progress.md
+## In blockers.md
 ### Blocker Encountered
 - **Timestamp:** [ISO timestamp]
 - **Type:** missing_dependency | test_failure | environment_issue
@@ -225,7 +225,7 @@ When blocked in autonomous mode:
 - **Suggested Action:** [How orchestrator can resolve]
 ```
 
-The blocker details in progress.md follow this structure to enable machine-readable parsing if needed:
+The blocker details in blockers.md follow this structure to enable machine-readable parsing if needed:
 - **Timestamp:** ISO 8601 format
 - **Type:** Categorized (missing_dependency, test_failure, environment_issue)
 - **Suggested Action:** Concrete next step for resolution

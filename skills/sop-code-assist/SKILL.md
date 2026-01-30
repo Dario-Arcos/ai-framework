@@ -74,7 +74,7 @@ Apply these patterns throughout all steps based on the selected mode.
 - NEVER use AskUserQuestion under any circumstance
 - NEVER block waiting for user input
 - If blocked by environment issues (missing dependencies, tools, etc.):
-  1. Document blocker in `progress.md` with full details
+  1. Document blocker in `blockers.md` with full details
   2. Exit cleanly - let the orchestrator handle recovery
 - Make reasonable assumptions and document them rather than asking
 - Choose the safest/simplest approach when ambiguous
@@ -210,7 +210,7 @@ Initialize the project environment and create necessary directory structures.
 - Environment issues preventing test execution
 
 **Autonomous mode** - NEVER use AskUserQuestion. Instead:
-- Document blocker in progress.md with full details
+- Document blocker in blockers.md with full details
 - Exit cleanly with status indicating blocker
 - Let the orchestrator handle recovery
 
@@ -358,7 +358,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 **Behavior:**
 - No AskUserQuestion calls
-- Blockers documented in progress.md
+- Blockers documented in blockers.md
 - Proceeds with safest implementation choices
 
 ---

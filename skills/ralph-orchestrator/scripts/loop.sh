@@ -70,10 +70,8 @@ EXIT_CHECKPOINT_PAUSE=8    # Checkpoint reached, waiting for resume
 EXIT_INTERRUPTED=130       # SIGINT received (Ctrl+C)
 
 # ─────────────────────────────────────────────────────────────────
-# SKILL_DIR (for templates)
+# SKILL_DIR (for templates) - REMOVED: variable was never used
 # ─────────────────────────────────────────────────────────────────
-
-SKILL_DIR="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")")"
 
 # ─────────────────────────────────────────────────────────────────
 # CONFIGURATION
@@ -82,8 +80,11 @@ SKILL_DIR="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null |
 # Load project configuration
 CONFIG_FILE=".ralph/config.sh"
 if [ -f "$CONFIG_FILE" ]; then
-    source "$CONFIG_FILE"
-    echo -e "${BLUE:-\033[0;34m}Config loaded from $CONFIG_FILE${NC:-\033[0m}"
+    if source "$CONFIG_FILE" 2>/dev/null; then
+        echo -e "${BLUE:-\033[0;34m}Config loaded from $CONFIG_FILE${NC:-\033[0m}"
+    else
+        echo -e "${YELLOW:-\033[1;33m}Warning: Failed to source $CONFIG_FILE, using defaults${NC:-\033[0m}"
+    fi
 fi
 
 # Defaults (only set if not already defined)
@@ -143,19 +144,26 @@ cleanup_and_exit() {
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-    # Update status with exit reason
-    cat > "$STATUS_FILE" << EOF
-{
-  "current_iteration": $ITERATION,
-  "consecutive_failures": $CONSECUTIVE_FAILURES,
-  "status": "$exit_reason",
-  "exit_reason": "$exit_reason",
-  "exit_code": $exit_code,
-  "mode": "$MODE",
-  "branch": "$CURRENT_BRANCH",
-  "timestamp": "$timestamp"
-}
-EOF
+    # Update status with exit reason (using jq for proper JSON escaping)
+    jq -n \
+        --argjson iter "$ITERATION" \
+        --argjson failures "$CONSECUTIVE_FAILURES" \
+        --arg status "$exit_reason" \
+        --arg exit_reason "$exit_reason" \
+        --argjson exit_code "$exit_code" \
+        --arg mode "$MODE" \
+        --arg branch "$CURRENT_BRANCH" \
+        --arg timestamp "$timestamp" \
+        '{
+            current_iteration: $iter,
+            consecutive_failures: $failures,
+            status: $status,
+            exit_reason: $exit_reason,
+            exit_code: $exit_code,
+            mode: $mode,
+            branch: $branch,
+            timestamp: $timestamp
+        }' > "$STATUS_FILE"
 
     echo "[$timestamp] EXIT - Reason: $exit_reason (code $exit_code)" >> "$ITERATION_LOG" 2>/dev/null || true
     exit "$exit_code"
@@ -192,7 +200,6 @@ update_metrics() {
 EOF
     fi
 
-    local iter_duration="${ITER_DURATION:-0}"
     local total success failed duration avg
 
     total=$(jq '.total_iterations + 1' "$METRICS_FILE")
@@ -279,7 +286,6 @@ validate_guardrails_learning() {
     if [ -f "$guardrails_file" ]; then
         # Check if only template content exists (no real signs)
         local sign_count=$(grep -c "^### Sign:" "$guardrails_file" 2>/dev/null || echo "0")
-        local has_template=$(grep -q "Your Signs (Add here as you learn)" "$guardrails_file" && echo "1" || echo "0")
 
         # Subtract example signs if they still exist
         local example_count=$(grep -c "Example Signs" "$guardrails_file" 2>/dev/null || echo "0")
@@ -511,23 +517,28 @@ while true; do
     echo -e "${GREEN}[ITERATION $ITERATION]${NC} $(date +%H:%M:%S)"
     echo "[$TIMESTAMP] ITERATION $ITERATION START" >> "$ITERATION_LOG"
 
-    # Update status
-    cat > "$STATUS_FILE" << EOF
-{
-  "current_iteration": $ITERATION,
-  "consecutive_failures": $CONSECUTIVE_FAILURES,
-  "status": "running",
-  "mode": "$MODE",
-  "branch": "$CURRENT_BRANCH",
-  "timestamp": "$TIMESTAMP"
-}
-EOF
+    # Update status (using jq for proper JSON escaping)
+    jq -n \
+        --argjson iter "$ITERATION" \
+        --argjson failures "$CONSECUTIVE_FAILURES" \
+        --arg status "running" \
+        --arg mode "$MODE" \
+        --arg branch "$CURRENT_BRANCH" \
+        --arg timestamp "$TIMESTAMP" \
+        '{
+            current_iteration: $iter,
+            consecutive_failures: $failures,
+            status: $status,
+            mode: $mode,
+            branch: $branch,
+            timestamp: $timestamp
+        }' > "$STATUS_FILE"
 
     # ─────────────────────────────────────────────────────────────
     # CONTEXT BUDGET ENFORCEMENT
     # ─────────────────────────────────────────────────────────────
 
-    [ -x "./truncate-context.sh" ] && ./truncate-context.sh
+    [ -x "./truncate-context.sh" ] && (./truncate-context.sh || true)
 
     # ─────────────────────────────────────────────────────────────
     # RUN CLAUDE

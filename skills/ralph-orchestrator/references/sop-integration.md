@@ -15,7 +15,7 @@ This reference defines how ralph-orchestrator integrates with the SOP (Standard 
 
 Ralph-loop orchestrates SOP skills to transform ideas into implementations through a two-phase workflow:
 
-1. **Planning Phase (HITL)**: Interactive session using SOP skills
+1. **Planning Phase (Interactive)**: Interactive session using SOP skills
 2. **Execution Phase**: Autonomous loop executing the plan
 
 ```mermaid
@@ -825,7 +825,7 @@ If workers report missing information:
 ## Related Documentation
 
 - [mode-selection.md](mode-selection.md) - Choosing Forward vs Reverse
-- [supervision-modes.md](supervision-modes.md) - HITL vs AFK execution
+- [supervision-modes.md](supervision-modes.md) - Autonomous vs Checkpoint execution
 - [observability.md](observability.md) - Monitoring during execution
 - [backpressure.md](backpressure.md) - Quality gates and checkpoints
 

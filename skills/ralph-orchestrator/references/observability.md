@@ -252,7 +252,7 @@ If status.json stops updating:
 If success rate drops below 80%:
 - You SHOULD review recent Signs for common issues
 - You SHOULD check task sizing (may be too large)
-- You MUST consider returning to HITL mode for diagnosis
+- You SHOULD increase checkpoint frequency for diagnosis
 
 ### Logs Missing Information
 

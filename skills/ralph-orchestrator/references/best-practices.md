@@ -87,14 +87,14 @@ After every session verify:
 
 | Mode | Use Case | Intervention |
 |------|----------|--------------|
-| AFK | Overnight runs, high confidence tasks | None until completion |
-| Checkpoint | Complex features, want visibility | At defined checkpoints |
-| HITL | Critical systems, learning phase | Before each action |
+| Autonomous | Overnight runs, high confidence tasks | None until completion |
+| Checkpoint (iterations) | Complex features, want visibility | Every N iterations |
+| Checkpoint (milestones) | Multi-module features | At module boundaries |
 
 **Mode selection criteria:**
-- **AFK**: Confident in SOP, well-tested pipeline, low-risk changes
-- **Checkpoint**: New features, moderate complexity, want progress visibility
-- **HITL**: First time with codebase, critical systems, debugging issues
+- **Autonomous**: Confident in SOP, well-tested pipeline, low-risk changes
+- **Checkpoint (iterations)**: New features, moderate complexity, want progress visibility
+- **Checkpoint (milestones)**: Multi-module work, want review at natural boundaries
 
 > Cross-reference: [supervision-modes.md](supervision-modes.md) for detailed mode documentation.
 > Cross-reference: [mode-selection.md](mode-selection.md) for mode selection flowchart.
