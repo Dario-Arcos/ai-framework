@@ -270,7 +270,7 @@ Output: specs/user-auth/design/detailed-design.md
 **Output**:
 - Implementation code in repo_root
 - Test code in appropriate test directories
-- Artifacts in `.sop/planning/implementation/{task_name}/`
+- Artifacts in `specs/{goal}/implementation/{task_name}/`
 
 **Artifacts created**:
 - `context.md` - Requirements, patterns, dependencies
@@ -585,7 +585,7 @@ specs/user-auth/implementation/
 # sop-code-assist reads:
 # - The .code-task.md file (requirements)
 # - specs/user-auth/design/detailed-design.md (context)
-# - Creates .sop/planning/implementation/{task_name}/ artifacts
+# - Creates specs/{goal}/implementation/{task_name}/ artifacts
 ```
 
 ### Task Generation → Execution (Autonomous Loop)

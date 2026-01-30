@@ -59,7 +59,7 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 **Behavior:**
 - SOP skills make decisions independently
 - All decisions documented in artifacts
-- Blockers written to `blockers.md` and `.ralph/blockers.json`
+- Blockers written to `blockers.md` in relevant spec directory
 - Continues without blocking for input
 
 **Duration:** 15-30 minutes typical

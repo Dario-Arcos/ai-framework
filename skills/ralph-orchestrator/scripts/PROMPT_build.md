@@ -34,7 +34,7 @@ Study these using subagents:
 **Task Selection:**
 - Read the implementation plan from specs
 - If `.code-task.md` files exist, follow TDD workflow: Explore → Plan → Code → Commit
-- Create artifacts in `.sop/planning/implementation/{task_name}/`
+- Create artifacts in `specs/{goal}/implementation/{task_name}/`
 
 > **DEPRECATED**: `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
 > All planning goes through: `specs/{feature}/implementation/plan.md`

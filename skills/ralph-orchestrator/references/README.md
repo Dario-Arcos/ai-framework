@@ -9,6 +9,7 @@ Quick navigation for detailed documentation.
 | [ralph-orchestrator-flow.md](ralph-orchestrator-flow.md) | Complete step-by-step flow diagram |
 | [sop-integration.md](sop-integration.md) | SOP skill connections and integration points |
 | [mode-selection.md](mode-selection.md) | Decision flowcharts for choosing modes |
+| [execution-paths.md](execution-paths.md) | Interactive vs autonomous execution paths |
 
 ## Execution
 
@@ -58,14 +59,15 @@ Quick navigation for detailed documentation.
 
 ---
 
-## File Overview (14 files)
+## File Overview (15 files)
 
 ```
 references/
 ├── Core Workflow
 │   ├── ralph-orchestrator-flow.md   # Main flow diagram
 │   ├── sop-integration.md           # SOP connections
-│   └── mode-selection.md            # Mode decision trees
+│   ├── mode-selection.md            # Mode decision trees
+│   └── execution-paths.md           # Interactive vs autonomous
 ├── Execution
 │   ├── monitoring-pattern.md        # Loop monitoring
 │   ├── supervision-modes.md         # AFK/HITL/Checkpoint

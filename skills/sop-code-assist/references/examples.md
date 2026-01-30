@@ -12,7 +12,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 ```
 
 **Flow:**
-1. **Setup**: Creates `.sop/planning/implementation/logout-button/`
+1. **Setup**: Creates `specs/logout-button/implementation/logout-button/`
 2. **Explore**: Analyzes navbar component, existing auth patterns
 3. **Plan**: Designs test strategy (button renders, click logs out, redirect works)
 4. **Code**: RED -> GREEN -> REFACTOR cycle
@@ -20,7 +20,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 
 **Artifacts Created:**
 ```text
-.sop/planning/implementation/logout-button/
+specs/{goal}/implementation/{task_name}/
 ├── context.md      # Navbar structure, auth patterns, dependencies
 ├── plan.md         # Test scenarios for button behavior
 ├── progress.md     # TDD cycles, refactoring notes

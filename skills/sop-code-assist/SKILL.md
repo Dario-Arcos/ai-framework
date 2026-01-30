@@ -75,8 +75,7 @@ Apply these patterns throughout all steps based on the selected mode.
 - NEVER block waiting for user input
 - If blocked by environment issues (missing dependencies, tools, etc.):
   1. Document blocker in `progress.md` with full details
-  2. Write to `.ralph/blockers.json` if the file exists
-  3. Exit cleanly - let the orchestrator handle recovery
+  2. Exit cleanly - let the orchestrator handle recovery
 - Make reasonable assumptions and document them rather than asking
 - Choose the safest/simplest approach when ambiguous
 
@@ -212,7 +211,6 @@ Initialize the project environment and create necessary directory structures.
 
 **Autonomous mode** - NEVER use AskUserQuestion. Instead:
 - Document blocker in progress.md with full details
-- Write blocker to `.ralph/blockers.json` (if exists)
 - Exit cleanly with status indicating blocker
 - Let the orchestrator handle recovery
 
@@ -360,7 +358,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 **Behavior:**
 - No AskUserQuestion calls
-- Blockers written to `.ralph/blockers.json`
+- Blockers documented in progress.md
 - Proceeds with safest implementation choices
 
 ---
@@ -407,8 +405,8 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 **Cause:** Unhandled blocker or ambiguous requirement.
 
 **Solution:**
-- Check `.ralph/blockers.json` for documented issues
 - Review `progress.md` for blocker details and deferred decisions
+- Check `blockers.md` in the documentation directory if exists
 - Re-run in interactive mode to resolve ambiguity
 
 ---

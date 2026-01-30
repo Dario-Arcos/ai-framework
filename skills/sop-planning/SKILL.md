@@ -65,9 +65,8 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - NEVER block waiting for user input
 - If blocked by missing information or ambiguity:
   1. Document blocker in `{project_dir}/blockers.md` with full details
-  2. Write to `.ralph/blockers.json` if the file exists
-  3. Make reasonable assumption OR skip section with "[BLOCKED: reason]"
-  4. Continue with remaining work
+  2. Make reasonable assumption OR skip section with "[BLOCKED: reason]"
+  3. Continue with remaining work
 - Choose safest/simplest approach when ambiguous
 - Document all assumptions in artifacts
 

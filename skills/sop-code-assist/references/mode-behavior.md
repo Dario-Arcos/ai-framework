@@ -225,16 +225,10 @@ When blocked in auto mode:
 - **Suggested Action:** [How orchestrator can resolve]
 ```
 
-```json
-// In .ralph/blockers.json (if exists)
-{
-  "timestamp": "2026-01-29T15:45:00Z",
-  "type": "missing_dependency",
-  "dependency": "rust",
-  "suggested_action": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
-  "task_file": "specs/feature/implementation/step01/task-01.code-task.md"
-}
-```
+The blocker details in progress.md follow this structure to enable machine-readable parsing if needed:
+- **Timestamp:** ISO 8601 format
+- **Type:** Categorized (missing_dependency, test_failure, environment_issue)
+- **Suggested Action:** Concrete next step for resolution
 
 #### Why This Matters
 

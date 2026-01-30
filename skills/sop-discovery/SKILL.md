@@ -68,10 +68,9 @@ For AI agents executing discovery as part of larger workflow.
 - NEVER use AskUserQuestion under any circumstance
 - NEVER block waiting for user input
 - If blocked by missing information or ambiguity:
-  1. Document blocker in `{project_dir}/blockers.md`
-  2. Write to `.ralph/blockers.json` if file exists
-  3. Make reasonable assumption and document it
-  4. Continue with discovery process
+  1. Document blocker in `{project_dir}/blockers.md` with full context
+  2. Make reasonable assumption and document rationale
+  3. Continue with discovery process
 - Choose safest/simplest approach when ambiguous
 
 ### Mode Detection

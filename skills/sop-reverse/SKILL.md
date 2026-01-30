@@ -65,9 +65,8 @@ Systematically investigate existing artifacts and generate structured specificat
 - NEVER block waiting for user input
 - If blocked by ambiguous artifact type or missing access:
   1. Document blocker in `{output_dir}/blockers.md` with full details
-  2. Write to `.ralph/blockers.json` if the file exists
-  3. Make best-effort determination and document reasoning
-  4. Continue with investigation
+  2. Make best-effort determination and document reasoning
+  3. Continue with investigation
 - Choose most common/conservative interpretation when ambiguous
 - Document all assumptions in investigation.md
 
