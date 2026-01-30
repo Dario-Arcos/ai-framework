@@ -39,8 +39,16 @@ description: Use when building features requiring planning + autonomous executio
 ## Parameters
 
 - **goal** (optional): High-level description. Asked in Step 1 if not provided.
-- **flow** (optional): `forward` (new) or `reverse` (investigate existing).
+- **flow** (optional, default: `"forward"`): `forward` (new) or `reverse` (investigate existing).
 - **planning_mode** (optional): `interactive` (default) or `autonomous`. Determines how SOP skills operate during planning phase.
+
+---
+
+## Output
+
+This skill orchestrates other SOP skills and produces:
+- Artifacts from sop-discovery, sop-planning, sop-task-generator in `specs/{goal}/`
+- Autonomous execution via `./loop.sh` with status in `status.json`
 
 ---
 

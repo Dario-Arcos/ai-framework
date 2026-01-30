@@ -29,7 +29,7 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 
 - **rough_idea** (required): Initial concept to develop. Accepts text, file path, or URL.
 - **project_dir** (optional, default: specs/{name}): Directory for planning artifacts
-- **discovery_path** (optional): Path to existing discovery.md to continue from
+- **discovery_path** (optional, default: none - if not provided, starts fresh planning): Path to existing discovery.md to continue from
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Ask user questions, wait for confirmations
   - `autonomous`: Document decisions, never block for input

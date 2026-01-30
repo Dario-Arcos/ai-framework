@@ -34,7 +34,7 @@ Systematically investigate existing artifacts and generate structured specificat
 - **target** (required): Path, URL, or description of artifact to investigate
 - **target_type** (optional, default: auto-detect): Type of artifact - `codebase`, `api`, `documentation`, `process`, or `concept`
 - **output_dir** (optional, default: specs/{name}-{timestamp}): Directory for investigation output
-- **focus_areas** (optional): Specific aspects to prioritize (e.g., "auth flow", "data model")
+- **focus_areas** (optional, default: none - investigates all aspects if not specified): Specific aspects to prioritize (e.g., "auth flow", "data model")
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Confirm with user, ask clarifying questions
   - `autonomous`: Complete investigation without interaction

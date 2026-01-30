@@ -32,7 +32,7 @@ The agent acts as a **Technical Implementation Partner** and **TDD Coach** - pro
 ## Parameters
 
 - **task_description** (required): Description of the task to implement. Can be a `.code-task.md` file path, direct text, or URL.
-- **additional_context** (optional): Supplementary information for implementation context
+- **additional_context** (optional, default: none): Supplementary information for implementation context
 - **documentation_dir** (optional, default: `specs/{task_name}`): Directory for planning documents. When invoked from ralph-orchestrator, uses `specs/{goal}/implementation/{task_name}/`.
 - **repo_root** (optional, default: current working directory): Root directory for code implementation
 - **task_name** (optional): Short descriptive name for the task. Auto-generated if not provided.
@@ -294,7 +294,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 - Documentation of key design decisions and implementation notes
 - Properly committed changes with conventional commit messages
 
-## Artifacts
+## Output
 
 ```text
 {documentation_dir}/implementation/{task_name}/
