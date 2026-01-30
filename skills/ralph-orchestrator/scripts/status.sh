@@ -40,6 +40,21 @@ if [ -f "status.json" ]; then
         max_iterations)
             echo -e "  Status: ${YELLOW}MAX ITERATIONS${NC}"
             ;;
+        max_runtime)
+            echo -e "  Status: ${YELLOW}MAX RUNTIME${NC}"
+            ;;
+        loop_thrashing)
+            echo -e "  Status: ${RED}LOOP THRASHING${NC}"
+            ;;
+        tasks_abandoned)
+            echo -e "  Status: ${RED}TASKS ABANDONED${NC}"
+            ;;
+        checkpoint_pause)
+            echo -e "  Status: ${YELLOW}CHECKPOINT PAUSE${NC}"
+            ;;
+        interrupted)
+            echo -e "  Status: ${YELLOW}INTERRUPTED${NC}"
+            ;;
         *)
             echo -e "  Status: $STATUS"
             ;;

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `mode` parameter controls how sop-code-assist interacts with the user throughout the implementation process. This reference documents the exact behavior differences between `interactive` and `auto` modes.
+The `mode` parameter controls how sop-code-assist interacts with the user throughout the implementation process. This reference documents the exact behavior differences between `interactive` and `autonomous` modes.
 
 ## Mode Selection
 
@@ -14,7 +14,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 - **New Domain:** Unfamiliar technology or patterns
 - **Collaboration:** User wants to participate in decisions
 
-### When to Use Auto Mode
+### When to Use Autonomous Mode
 
 - **Well-Defined Tasks:** Clear requirements and acceptance criteria
 - **Batch Processing:** Multiple tasks in sequence (ralph-orchestrator)
@@ -26,7 +26,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Setup Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Parameter confirmation | Ask user to confirm | Log and proceed |
 | Directory creation | Notify user | Log in progress.md |
@@ -35,7 +35,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Explore Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Requirements analysis | Discuss with user, ask clarifying questions | Document analysis in context.md |
 | Pattern research | Share findings, ask if sufficient | Select most relevant patterns |
@@ -44,7 +44,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Plan Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Test strategy | Present strategy for approval | Document strategy and proceed |
 | Test coverage | Discuss with user | Apply project defaults or 80% |
@@ -53,7 +53,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Code Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Before each test | Explain what will be tested | Proceed directly |
 | Test failure (RED) | Confirm failure is expected | Log and continue if expected |
@@ -64,7 +64,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Validation Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Test results | Present full results | Log summary |
 | Build results | Present output | Log success/failure |
@@ -73,7 +73,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### Commit Phase
 
-| Action | Interactive | Auto |
+| Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Commit message | Present for approval | Generate following conventions |
 | Staged files | List and confirm | Stage relevant files |
@@ -112,7 +112,7 @@ Moving to the next test: `validate_email_handles_unicode_characters`.
 Should I continue?"
 ```
 
-### Auto Mode Logging
+### Autonomous Mode Logging
 
 ```markdown
 ## Decision Logging in progress.md
@@ -163,7 +163,7 @@ Should I:
 3. Investigate further?"
 ```
 
-### Auto Mode
+### Autonomous Mode
 
 ```markdown
 ## On Unexpected Test Failure
@@ -197,9 +197,9 @@ User input is appropriate for:
 | Breaking changes to public APIs | Ask for confirmation |
 | Environment issues (missing dependencies) | Ask user how to proceed |
 
-### Auto Mode - NEVER Block for User Input
+### Autonomous Mode - NEVER Block for User Input
 
-**CRITICAL: In auto mode, AskUserQuestion is PROHIBITED.**
+**CRITICAL: In autonomous mode, AskUserQuestion is PROHIBITED.**
 
 Instead, use the blocker pattern:
 
@@ -213,7 +213,7 @@ Instead, use the blocker pattern:
 
 #### Blocker Pattern
 
-When blocked in auto mode:
+When blocked in autonomous mode:
 
 ```markdown
 ## In progress.md
@@ -242,16 +242,16 @@ The blocker details in progress.md follow this structure to enable machine-reada
 You MAY suggest switching modes during execution:
 
 ```markdown
-## Interactive → Auto
+## Interactive → Autonomous
 "We've resolved the initial uncertainties. The remaining 3 tests follow
-the same pattern. Would you like me to continue in auto mode for the rest?"
+the same pattern. Would you like me to continue in autonomous mode for the rest?"
 
-## Auto → Interactive
+## Autonomous → Interactive
 "I've encountered a decision that requires your input:
 [describe situation]
 
 Switching to interactive mode for this decision.
-After resolution, would you like to continue in auto or interactive mode?"
+After resolution, would you like to continue in autonomous or interactive mode?"
 ```
 
 ## Configuration
@@ -268,7 +268,7 @@ Projects can override default mode behavior in CODEASSIST.md:
 - Database schema modifications
 - API contract changes
 
-### Force Auto For
+### Force Autonomous For
 - Test file updates only
 - Documentation updates
 - Style/formatting changes
@@ -276,8 +276,8 @@ Projects can override default mode behavior in CODEASSIST.md:
 
 ## Summary
 
-| Aspect | Interactive | Auto |
-|--------|-------------|------|
+| Aspect | Interactive | Autonomous |
+|--------|-------------|------------|
 | **Pace** | User-controlled | Self-paced |
 | **Decisions** | User makes or approves | Agent makes and documents |
 | **Errors** | Discuss with user | Attempt to resolve, escalate if stuck |

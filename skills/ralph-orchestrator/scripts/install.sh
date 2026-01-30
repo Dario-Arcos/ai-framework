@@ -90,6 +90,7 @@ done
 chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/status.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/tail-logs.sh" 2>/dev/null || true
+chmod +x "$TARGET_DIR/truncate-context.sh" 2>/dev/null || true
 
 # Create directories
 mkdir -p "$TARGET_DIR/specs"

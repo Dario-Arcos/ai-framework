@@ -307,13 +307,13 @@ Output: specs/user-auth/design/detailed-design.md
 
 **When invoked**: After planning completes
 
-**Input**: `specs/{goal}/design/detailed-design.md`
+**Input**: `specs/{goal}/implementation/plan.md` (created by sop-planning)
 
-**Output**: `specs/{goal}/implementation/plan.md`
+**Output**: `specs/{goal}/implementation/step*/task-*.code-task.md` files
 
 **What it contains**:
-- Checklist of implementation tasks
-- Each task with:
+- `.code-task.md` files for each task
+- Each task file with:
   - Clear description
   - File list
   - Size estimate (S/M/L)
@@ -517,7 +517,7 @@ project-root/
 
 ### Discovery → Planning
 
-**Handoff mechanism**: File path
+**Handoff mechanism**: File path + goal context
 
 ```javascript
 // sop-discovery outputs:
@@ -525,7 +525,9 @@ specs/user-auth/discovery.md
 
 // Orchestrator invokes sop-planning with:
 {
-  discovery_path: "specs/user-auth/discovery.md"
+  rough_idea: "user-auth",  // The goal name serves as rough idea
+  discovery_path: "specs/user-auth/discovery.md",
+  project_dir: "specs/user-auth"
 }
 
 // sop-planning reads discovery context and proceeds

@@ -141,11 +141,15 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 
 | Code | Meaning | Action |
 |------|---------|--------|
-| 0 | Success | Continue to next task |
-| 1 | Task failed | Check logs, update context |
-| 2 | Config error | Fix `.ralph/config.sh` |
-| 3 | Prerequisites missing | Run install.sh |
-| 4 | Circuit breaker | Too many failures, manual intervention needed |
+| 0 | SUCCESS | All tasks completed successfully |
+| 1 | ERROR | Validation or setup failure - check logs |
+| 2 | CIRCUIT_BREAKER | Max consecutive failures reached - review failing task |
+| 3 | MAX_ITERATIONS | Iteration limit reached - increase limit or review progress |
+| 4 | MAX_RUNTIME | Runtime limit exceeded - increase limit or split work |
+| 6 | LOOP_THRASHING | Oscillating task pattern detected - review task dependencies |
+| 7 | TASKS_ABANDONED | Same task failed repeatedly - manual intervention needed |
+| 8 | CHECKPOINT_PAUSE | Checkpoint reached, awaiting resume - run `./loop.sh` to continue |
+| 130 | INTERRUPTED | User interrupt (Ctrl+C) - resume when ready |
 
 ---
 

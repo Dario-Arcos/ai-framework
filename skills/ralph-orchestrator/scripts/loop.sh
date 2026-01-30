@@ -97,12 +97,12 @@ MIN_TEST_COVERAGE="${MIN_TEST_COVERAGE:-90}"
 
 ITERATION=0
 CONSECUTIVE_FAILURES=0
-MAX_CONSECUTIVE_FAILURES=3
+MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-3}"  # From config or default
 MAX_RUNTIME="${MAX_RUNTIME:-0}"  # 0 = unlimited, or seconds from env
 COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
 LAST_TASK=""  # Track last completed task for abandonment detection
 TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
-MAX_TASK_ATTEMPTS=3  # Exit if same task attempted this many times
+MAX_TASK_ATTEMPTS="${MAX_TASK_ATTEMPTS:-3}"  # From config or default
 
 # Checkpoint configuration
 CHECKPOINT_MODE="${CHECKPOINT_MODE:-none}"  # none|iterations|milestones
@@ -115,7 +115,7 @@ fi
 
 # Loop thrashing detection - track recent tasks to detect oscillating patterns
 TASK_HISTORY=()  # Array of recent task names
-TASK_HISTORY_SIZE=6  # How many tasks to remember for pattern detection
+TASK_HISTORY_SIZE="${TASK_HISTORY_SIZE:-6}"  # From config or default
 CURRENT_BRANCH=""  # Set after git validation
 START_TIME=$(date +%s)
 

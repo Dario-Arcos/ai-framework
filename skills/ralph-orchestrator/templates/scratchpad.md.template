@@ -26,7 +26,7 @@ The specs path contains:
 - **Specs Path**: [pending]
 - **Started**: [session start]
 - **Last task completed**: [none yet]
-- **Next task to do**: [see specs/tasks.md]
+- **Next task to do**: [see specs/{goal}/implementation/plan.md]
 - **Files modified this session**: [none yet]
 
 ## Key Decisions This Session

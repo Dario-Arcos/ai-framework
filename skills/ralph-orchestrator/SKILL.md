@@ -125,7 +125,7 @@ Options:
 ### Step 2A: Discovery (Forward)
 
 ```text
-/sop-discovery goal="{goal}" --mode={PLANNING_MODE}
+/sop-discovery goal_description="{goal}" --mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**
@@ -153,7 +153,7 @@ Ask user if continuing to Forward (in interactive mode). In autonomous mode, con
 ### Step 3: Planning
 
 ```text
-/sop-planning discovery_path="specs/{goal}/discovery.md" --mode={PLANNING_MODE}
+/sop-planning rough_idea="{goal}" discovery_path="specs/{goal}/discovery.md" project_dir="specs/{goal}" --mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**

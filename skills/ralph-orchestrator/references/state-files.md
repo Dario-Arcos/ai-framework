@@ -102,7 +102,7 @@ Accountability mechanism for each iteration.
 ### Format
 
 ```
-> confession: objective=[task], met=[Yes/No], evidence=[proof]
+> confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof]
 ```
 
 ### Components
@@ -111,6 +111,7 @@ Accountability mechanism for each iteration.
 |-------|---------|
 | `objective` | Task from `specs/{goal}/implementation/plan.md` |
 | `met` | Yes or No (no hedging) |
+| `confidence` | 0-100 integer (minimum 80 to mark complete) |
 | `evidence` | Test output, file paths, command results |
 
 ### Why This Matters
