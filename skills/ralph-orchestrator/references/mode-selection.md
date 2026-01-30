@@ -215,36 +215,38 @@ graph LR
 
 ---
 
-## Execution Mode Selection
+## Checkpoint Configuration
 
 **Constraints:**
-- You MUST use HITL mode for first-time ralph-orchestrator users because learning requires observation
-- You MUST use HITL mode with checkpoints for high-risk tasks because auth/payments need human review
-- You MAY use AFK mode when confident in quality gates and codebase
+- You MUST use frequent checkpoints for first-time ralph-orchestrator users because learning requires observation
+- You MUST enable checkpoints for high-risk tasks because auth/payments need human review
+- You MAY disable checkpoints when confident in quality gates and codebase
 
-After planning, choose execution approach:
+After planning, configure checkpoint frequency:
+
+> **Key insight**: Execution is ALWAYS autonomous via loop.sh. The only choice is checkpoint frequency—how often (if ever) the loop pauses for human review.
 
 ```mermaid
 graph TD
     Ready[Planning Complete] --> Q1{First time<br/>with ralph-orchestrator?}
 
-    Q1 -->|Yes| HITL1[HITL mode<br/>1-5 iterations]
+    Q1 -->|Yes| CP1[Frequent checkpoints<br/>every 1-5 tasks]
     Q1 -->|No| Q2{Task risk?}
 
-    Q2 -->|High<br/>Auth/Payments| HITL2[HITL with checkpoints]
+    Q2 -->|High<br/>Auth/Payments| CP2[Checkpoints enabled<br/>every N tasks]
     Q2 -->|Low| Q3{Duration?}
 
-    Q3 -->|< 1 hour| AFK1[AFK short<br/>10-20 iterations]
-    Q3 -->|> 1 hour| AFK2[AFK unlimited<br/>Until complete]
+    Q3 -->|< 1 hour| NCP1[No checkpoints<br/>10-20 iterations]
+    Q3 -->|> 1 hour| NCP2[No checkpoints<br/>Until complete]
 
-    HITL1 --> Review[Review & Learn]
-    HITL2 --> Review
-    AFK1 --> Monitor[Passive monitoring]
-    AFK2 --> Monitor
+    CP1 --> Review[Review & Learn]
+    CP2 --> Review
+    NCP1 --> Monitor[Passive monitoring]
+    NCP2 --> Monitor
 
     Review --> Q4{Confident?}
-    Q4 -->|Yes| AFK2
-    Q4 -->|No| HITL1
+    Q4 -->|Yes| NCP2
+    Q4 -->|No| CP1
 ```
 
 ---
@@ -258,13 +260,13 @@ Situation: Build user profile page
 Complexity: Medium (4-6 files, tests, styling)
 Experience: Familiar with stack
 
-Decision: Forward Flow → AFK mode
+Decision: Forward Flow → no checkpoints
 Steps:
 1. /ralph-orchestrator → Forward
 2. sop-discovery (15 min)
 3. sop-planning (30 min)
 4. sop-task-generator (10 min)
-5. Configure: AFK, production quality
+5. Configure: no checkpoints, production quality
 6. Launch and monitor
 ```
 
@@ -302,11 +304,11 @@ Situation: Extract shared utilities into library
 Complexity: Large (15+ files)
 Risk: Breaking changes
 
-Decision: Forward Flow → HITL with checkpoints
+Decision: Forward Flow → checkpoints enabled
 Steps:
 1. /ralph-orchestrator → Forward
 2. Planning phase (interactive)
-3. Configure: Checkpoints every 5 iterations
+3. Configure: Checkpoints every 5 tasks
 4. Review after each checkpoint
 5. Adjust plan if needed
 ```
@@ -364,10 +366,10 @@ Solution: Decompose into features, run multiple loops
 | Want to improve after understanding | Reverse → Forward |
 | Task is trivial (< 3 steps) | Direct implementation |
 | Task is complex (> 5 steps) | Ralph-loop |
-| First time using ralph-orchestrator | HITL mode first |
-| High-risk task (auth, payments) | HITL with checkpoints |
-| Overnight development needed | AFK unlimited |
-| Learning codebase patterns | Start HITL, graduate to AFK |
+| First time using ralph-orchestrator | Frequent checkpoints |
+| High-risk task (auth, payments) | Checkpoints enabled |
+| Overnight development needed | No checkpoints |
+| Learning codebase patterns | Start with checkpoints, graduate to none |
 
 ---
 
@@ -387,14 +389,14 @@ If task sizing is unclear:
 - You SHOULD estimate hours of work
 - You MUST decompose if estimate exceeds 1 week
 
-### Mode Selection Difficult
+### Checkpoint Configuration Difficult
 
-If execution mode choice is hard:
-- You SHOULD start with HITL for safety
-- You SHOULD graduate to AFK after 5-10 successful HITL iterations
-- You MUST NOT use AFK for high-risk tasks regardless of experience
+If checkpoint configuration is unclear:
+- You SHOULD start with checkpoints enabled for safety
+- You SHOULD graduate to no checkpoints after 5-10 successful supervised runs
+- You MUST NOT disable checkpoints for high-risk tasks regardless of experience
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 2.0.0 | Updated: 2026-01-30*
 *Compliant with strands-agents SOP format (RFC 2119)*

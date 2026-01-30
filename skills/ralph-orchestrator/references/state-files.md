@@ -18,7 +18,6 @@ This reference defines the state files used by Ralph for persistent state manage
 | `.ralph/config.sh` | Project configuration | Project lifetime |
 | `AGENTS.md` | Operational guide (~50 lines) | Project lifetime |
 | `guardrails.md` | Signs (session error lessons) | Current loop |
-| `memories.md` | Persistent learnings | Indefinite |
 | `scratchpad.md` | Iteration-to-iteration state | Current loop |
 | `specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
 | `specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
@@ -55,57 +54,6 @@ Every iteration reads Signs FIRST - Compounding intelligence.
 
 ---
 
-## Memories System (memories.md)
-
-Persistent learnings that survive loop restarts.
-
-**Constraints:**
-- You MUST update memories only during planning mode because build mode focuses on execution
-- You MUST include tags because tags enable search and categorization
-- You SHOULD include reasoning for decisions because cargo-cult decisions lack foundation
-
-### CLI Management (memories.sh)
-
-```bash
-# Add memories
-./memories.sh add pattern "All APIs return Result<T>" --tags api,error-handling
-./memories.sh add decision "Chose PostgreSQL" --reason "ACID compliance" --tags database
-./memories.sh add fix "Set NODE_ENV in CI" --tags ci,testing
-
-# Query memories
-./memories.sh search "database"
-./memories.sh list --type pattern --limit 5
-```
-
-### Format
-
-```markdown
-### mem-[timestamp]-[hash]
-> [Learning or decision with context]
-> Reason: [Why this matters]  (optional, from --reason flag)
-<!-- tags: tag1, tag2 | created: YYYY-MM-DD -->
-```
-
-### Categories
-
-| Category | Content |
-|----------|---------|
-| **Patterns** | Architecture approaches, coding conventions |
-| **Decisions** | Tech choices, design trade-offs |
-| **Fixes** | Solutions to persistent problems |
-| **Context** | Confessions and accountability records |
-
-### Signs vs Memories
-
-| Aspect | Signs (guardrails.md) | Memories (memories.md) |
-|--------|----------------------|------------------------|
-| Scope | Current loop session | All future sessions |
-| Content | Error lessons, gotchas | Patterns, preferences |
-| Lifecycle | Cleared with new goal | Persists indefinitely |
-| Updates | Build mode (errors) | Planning mode only |
-
----
-
 ## Scratchpad System (scratchpad.md)
 
 Iteration-to-iteration memory within a single loop session.
@@ -132,12 +80,12 @@ Iteration-to-iteration memory within a single loop session.
 
 ### Comparison
 
-| Aspect | Scratchpad | Signs | Memories |
-|--------|------------|-------|----------|
-| Scope | Current iteration | Current loop | All loops |
-| Lifecycle | Cleared on loop start | Cleared manually | Persists |
-| Content | Progress, decisions | Errors, gotchas | Patterns |
-| Updates | Every iteration | On errors | Planning only |
+| Aspect | Scratchpad | Signs |
+|--------|------------|-------|
+| Scope | Current iteration | Current loop |
+| Lifecycle | Cleared on loop start | Cleared manually |
+| Content | Progress, decisions | Errors, gotchas |
+| Updates | Every iteration | On errors |
 
 ---
 
@@ -184,13 +132,6 @@ If state files become inconsistent:
 - You SHOULD regenerate scratchpad from git log
 - You MUST NOT continue loop with corrupted state
 
-### Memories Not Loading
-
-If workers don't see memories:
-- You SHOULD verify memories.md path is correct
-- You SHOULD check memories format follows template
-- You MUST ensure memories.md is committed to branch
-
 ### Signs Ignored by Workers
 
 If same errors repeat despite Signs:
@@ -200,5 +141,5 @@ If same errors repeat despite Signs:
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 1.2.0 | Updated: 2026-01-30*
 *Compliant with strands-agents SOP format (RFC 2119)*

@@ -824,7 +824,6 @@ Total: 32 files, ~1,350 LOC, 65 tests passing, 0 failures
 ├── .ralph/
 │   ├── config.sh                # Project config
 │   ├── guardrails.md            # 2 Signs added
-│   ├── memories.md              # Learnings
 │   └── logs/                    # 18 iteration logs
 └── status.json                  # Final state
 ```

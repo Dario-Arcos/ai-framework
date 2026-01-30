@@ -489,7 +489,6 @@ project-root/
 │
 ├── AGENTS.md                         # Project context
 ├── guardrails.md                     # Signs (error lessons)
-├── memories.md                       # Persistent learnings
 ├── scratchpad.md                     # Session state
 │
 ├── logs/                             # Created during execution

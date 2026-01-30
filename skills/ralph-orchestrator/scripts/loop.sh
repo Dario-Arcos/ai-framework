@@ -167,6 +167,38 @@ handle_sigint() {
 trap handle_sigint SIGINT
 
 # ─────────────────────────────────────────────────────────────────
+# METRICS UPDATE
+# ─────────────────────────────────────────────────────────────────
+
+# Update metrics file
+# Args: $1 = "success" or "failure"
+update_metrics() {
+    local result_type="$1"
+    local total success failed duration avg
+
+    total=$(jq '.total_iterations + 1' "$METRICS_FILE")
+    if [ "$result_type" = "success" ]; then
+        success=$(jq '.successful + 1' "$METRICS_FILE")
+        failed=$(jq '.failed' "$METRICS_FILE")
+    else
+        success=$(jq '.successful' "$METRICS_FILE")
+        failed=$(jq '.failed + 1' "$METRICS_FILE")
+    fi
+    duration=$(jq ".total_duration_seconds + $ITER_DURATION" "$METRICS_FILE")
+    avg=$(echo "scale=2; $duration / $total" | bc)
+
+    cat > "$METRICS_FILE" << EOF
+{
+  "total_iterations": $total,
+  "successful": $success,
+  "failed": $failed,
+  "total_duration_seconds": $duration,
+  "avg_duration_seconds": $avg
+}
+EOF
+}
+
+# ─────────────────────────────────────────────────────────────────
 # LOOP THRASHING DETECTION
 # ─────────────────────────────────────────────────────────────────
 
@@ -213,29 +245,6 @@ detect_loop_thrashing() {
     fi
 
     return 1  # No thrashing
-}
-
-# ─────────────────────────────────────────────────────────────────
-# TEMPLATE FUNCTION
-# ─────────────────────────────────────────────────────────────────
-
-create_from_template() {
-    local file="$1"
-    local template_name="$2"
-    local skill_dir="${SKILL_DIR:-}"
-
-    if [ -f "$file" ]; then
-        return 0  # Already exists
-    fi
-
-    local template_path="$skill_dir/templates/${template_name}.template"
-    if [ -n "$skill_dir" ] && [ -f "$template_path" ]; then
-        cp "$template_path" "$file"
-        echo -e "${YELLOW}Created $file (from template)${NC}"
-        return 0
-    fi
-
-    return 1  # No template found
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -343,8 +352,8 @@ validate_test_coverage() {
         # Alternative Python format
         coverage=$(jq -r '.totals.percent_covered // 0' ".coverage.json" 2>/dev/null || echo "0")
     elif [ -f "coverage/lcov-report/index.html" ]; then
-        # Try to extract from lcov HTML
-        coverage=$(grep -oP '(?<=<span class="strong">)[0-9.]+(?=% </span>)' "coverage/lcov-report/index.html" 2>/dev/null | head -1 || echo "0")
+        # Try to extract from lcov HTML (POSIX-compatible, no grep -P)
+        coverage=$(sed -n 's/.*<span class="strong">\([0-9.]*\)% <\/span>.*/\1/p' "coverage/lcov-report/index.html" 2>/dev/null | head -1 || echo "0")
     fi
 
     # Handle empty or invalid coverage
@@ -654,21 +663,7 @@ EOF
         echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s) - $TASK_NAME${NC}"
         echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Task: \"$TASK_NAME\" - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
 
-        # Update metrics (read ALL values before overwriting)
-        TOTAL=$(jq '.total_iterations + 1' "$METRICS_FILE")
-        SUCCESS=$(jq '.successful + 1' "$METRICS_FILE")
-        FAILED=$(jq '.failed' "$METRICS_FILE")
-        DURATION=$(jq ".total_duration_seconds + $ITER_DURATION" "$METRICS_FILE")
-        AVG=$(echo "scale=2; $DURATION / $TOTAL" | bc)
-        cat > "$METRICS_FILE" << EOF
-{
-  "total_iterations": $TOTAL,
-  "successful": $SUCCESS,
-  "failed": $FAILED,
-  "total_duration_seconds": $DURATION,
-  "avg_duration_seconds": $AVG
-}
-EOF
+        update_metrics success
 
         # ─────────────────────────────────────────────────────────
         # DOUBLE COMPLETION VERIFICATION
@@ -730,21 +725,7 @@ EOF
         echo "[$TIMESTAMP] ITERATION $ITERATION FAILED - Exit: $CLAUDE_EXIT - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
         echo "[$(date)] Iteration $ITERATION failed (exit $CLAUDE_EXIT)" >> errors.log
 
-        # Update metrics (read ALL values before overwriting)
-        TOTAL=$(jq '.total_iterations + 1' "$METRICS_FILE")
-        SUCCESS=$(jq '.successful' "$METRICS_FILE")
-        FAILED=$(jq '.failed + 1' "$METRICS_FILE")
-        DURATION=$(jq ".total_duration_seconds + $ITER_DURATION" "$METRICS_FILE")
-        AVG=$(echo "scale=2; $DURATION / $TOTAL" | bc)
-        cat > "$METRICS_FILE" << EOF
-{
-  "total_iterations": $TOTAL,
-  "successful": $SUCCESS,
-  "failed": $FAILED,
-  "total_duration_seconds": $DURATION,
-  "avg_duration_seconds": $AVG
-}
-EOF
+        update_metrics failure
 
         # ─────────────────────────────────────────────────────────
         # CIRCUIT BREAKER

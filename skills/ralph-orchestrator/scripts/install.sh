@@ -37,7 +37,6 @@ FILES=(
     "scripts/loop.sh"
     "scripts/status.sh"
     "scripts/tail-logs.sh"
-    "scripts/memories.sh"
     "scripts/truncate-context.sh"
     "scripts/PROMPT_build.md"
 )
@@ -91,7 +90,6 @@ done
 chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/status.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/tail-logs.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/memories.sh" 2>/dev/null || true
 
 # Create directories
 mkdir -p "$TARGET_DIR/specs"
@@ -112,4 +110,3 @@ echo ""
 echo "Utilities:"
 echo "  ./status.sh              # View current status"
 echo "  ./tail-logs.sh           # View last iteration output"
-echo "  ./memories.sh            # Manage persistent memories"

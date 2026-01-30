@@ -71,17 +71,14 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 After every session verify:
 1. `guardrails.md` has new Signs (if gotchas found)
-2. `memories.md` captures major decisions
-3. `scratchpad.md` reflects final state
+2. `scratchpad.md` reflects final state
 
 **Capture checklist:**
 | Artifact | Check | Purpose |
 |----------|-------|---------|
 | guardrails.md | New Signs added? | Prevent repeat mistakes |
-| memories.md | Decisions documented? | Context for future sessions |
 | scratchpad.md | State updated? | Resume point for next iteration |
 
-> Cross-reference: [memories-system.md](memories-system.md) for memory capture patterns.
 > Cross-reference: [state-files.md](state-files.md) for state file management.
 
 ---
@@ -140,5 +137,4 @@ echo "ITERATE" > specs/{goal}/control/iteration-trigger
 
 **Knowledge artifacts:**
 - `guardrails.md`: Warning signs and rules
-- `memories.md`: Decisions and context
 - `scratchpad.md`: Current state

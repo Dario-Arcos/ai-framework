@@ -70,7 +70,10 @@ if [ -f "logs/metrics.json" ]; then
     echo "  Total Iterations: $TOTAL"
     echo "  Successful: $SUCCESS"
     echo "  Failed: $FAILED"
-    [ "$TOTAL" -gt 0 ] && echo "  Success Rate: $(echo "scale=1; $SUCCESS * 100 / $TOTAL" | bc)%"
+    # Guard against division by zero (TOTAL could be empty, null, or 0)
+    if [ -n "$TOTAL" ] && [ "$TOTAL" != "null" ] && [ "$TOTAL" -gt 0 ] 2>/dev/null; then
+        echo "  Success Rate: $(echo "scale=1; $SUCCESS * 100 / $TOTAL" | bc)%"
+    fi
     echo "  Avg Duration: ${AVG}s"
     echo "  Total Duration: ${TOTAL_DUR}s ($(echo "$TOTAL_DUR / 60" | bc)m)"
 else

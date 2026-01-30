@@ -7,7 +7,7 @@
 ./install.sh /path/to/your/project
 
 # Or copy files manually
-cp loop.sh status.sh tail-logs.sh memories.sh PROMPT_build.md /path/to/project/
+cp loop.sh status.sh tail-logs.sh PROMPT_build.md /path/to/project/
 ```
 
 ## Main Loop

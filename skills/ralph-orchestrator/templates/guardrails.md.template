@@ -6,19 +6,19 @@
 Signs capture learnings across iterations within a loop session. Read FIRST every time.
 An empty guardrails.md after multiple iterations is a FAILURE - it means nothing was learned.
 
-## Signs vs Memories - Key Distinction
+## Signs vs Architectural Decisions - Key Distinction
 
 **Signs (this file)**: Session-scoped technical gotchas
 - "I hit this error" → Add a Sign
 - ESM quirks, config issues, build workarounds
 - Relevant for current loop session
 
-**Memories (memories.md)**: Permanent architectural decisions
-- "We decided this because..." → Add a Memory
+**Architectural Decisions**: Live in specs/design/ documents
+- "We decided this because..." → Document in design/
 - Why library X over Y, trade-offs made
 - Survives session restarts, for future developers
 
-**Rule of thumb**: If it's a gotcha you hit → Sign. If it's a decision you made → Memory.
+**Rule of thumb**: If it's a gotcha you hit → Sign. If it's a decision you made → specs/design/.
 
 ## Usage Constraints
 
@@ -26,7 +26,7 @@ An empty guardrails.md after multiple iterations is a FAILURE - it means nothing
 - You MUST add signs when you discover gotchas because this captures institutional knowledge
 - You MUST use the Sign format (Trigger + Instruction) because consistency enables search
 - You SHOULD categorize signs by area because this aids discovery
-- You SHOULD NOT duplicate memories here because signs are session-scoped, memories are permanent
+- You SHOULD NOT duplicate architectural decisions here because signs are session-scoped, decisions are permanent
 - You SHOULD NOT leave this file empty after multiple iterations because that indicates learning failure
 -->
 
