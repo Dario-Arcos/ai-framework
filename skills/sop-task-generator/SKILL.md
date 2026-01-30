@@ -231,6 +231,7 @@ Each task file MUST follow this exact structure:
 
 ```markdown
 ## Status: PENDING
+## Blocked-By: [stepXX/task-XX if blocked, empty if not]
 ## Completed: [DATE when done]
 
 # Task: [Task Name]
@@ -302,6 +303,12 @@ Each task file MUST follow this exact structure:
 - `IN_PROGRESS` - Currently being executed
 - `COMPLETED` - Successfully finished (update Completed date)
 - `BLOCKED` - Waiting on dependencies
+
+**Blocked-By Field:**
+- Empty string if task has no blockers
+- Path to blocking task if blocked (e.g., `step01/task-01-setup.code-task.md`)
+- Multiple blockers separated by comma
+- Used by loop to skip blocked tasks and select next available
 
 **Quality Requirements:**
 - Status: Always starts as `PENDING`

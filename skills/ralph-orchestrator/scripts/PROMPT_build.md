@@ -68,11 +68,12 @@ Study `specs/*` with up to 500 parallel Opus subagents.
 2. If `.code-task.md` files exist in `specs/*/implementation/step*/`:
    - List all `task-*.code-task.md` files
    - Filter those WITHOUT `## Status: COMPLETED` header
+   - Filter those WITHOUT `## Blocked-By:` pointing to incomplete tasks
    - Order by step (step01 before step02) and task number
-   - Select first incomplete task
+   - Select first available (not completed, not blocked) task
 3. If no `.code-task.md` files, use checklist in `plan.md` directly
 
-Priority: Blocking deps → Risky integrations → Core features → Edge cases → Polish
+**Note:** Tasks are selected in sequential order. If a task is blocked, mark it with `## Blocked-By: stepXX/task-XX` and Claude will skip to the next available task.
 
 ### 1b. Search Before Implementing
 

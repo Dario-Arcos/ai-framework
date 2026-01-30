@@ -549,7 +549,11 @@ while true; do
     # ─────────────────────────────────────────────────────────────
 
     # Capture output and exit code (|| true prevents set -e from terminating)
+    # --no-session-persistence: Ensures truly fresh context per iteration
+    #   - Prevents reading previous session files (isolation guarantee)
+    #   - Aligns with Ralph's "fresh 200K context per worker" philosophy
     CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | claude -p \
+        --no-session-persistence \
         --dangerously-skip-permissions \
         --output-format=stream-json \
         --model opus \
