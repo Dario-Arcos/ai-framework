@@ -408,7 +408,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 **Solution:**
 - Check `.ralph/blockers.json` for documented issues
-- Review blockers.md for deferred decisions
+- Review `progress.md` for blocker details and deferred decisions
 - Re-run in interactive mode to resolve ambiguity
 
 ---

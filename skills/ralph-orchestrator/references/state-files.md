@@ -20,6 +20,7 @@ This reference defines the state files used by Ralph for persistent state manage
 | `guardrails.md` | Signs (session error lessons) | Current loop |
 | `scratchpad.md` | Iteration-to-iteration state | Current loop |
 | `specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
+| `specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
 | `specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
 | `specs/*.md` | Requirements per topic | Feature lifetime |
 
