@@ -166,10 +166,7 @@ graph TD
     G -->|OK| I{Tasks abandoned?}
 
     I -->|Same task 3x| J[Stop: Exit code 7]
-    I -->|OK| K{Context exhausted?}
-
-    K -->|>80%| L[Stop: Exit code 5]
-    K -->|OK| M[Continue]
+    I -->|OK| M[Continue]
 
     F --> N[Human review]
     N --> O[Resume loop]
@@ -179,7 +176,6 @@ graph TD
     style F fill:#fff4e1
     style H fill:#ffe1e1
     style J fill:#ffe1e1
-    style L fill:#ffe1e1
     style M fill:#e1ffe1
 ```
 
@@ -191,7 +187,6 @@ graph TD
 | **Checkpoint** | Iteration/Milestone | N iterations OR module done | Pause for review |
 | **Circuit breaker** | Consecutive failures | 3 failures | Stop loop |
 | **Abandonment** | Task repetition | Same task 3x | Stop loop |
-| **Context** | Token usage | >80% context | Stop loop |
 
 ---
 
@@ -244,18 +239,12 @@ One task = one context window.
 
 ---
 
-## Context Thresholds
+## Context Philosophy
 
-**Constraints:**
-- You MUST exit at red zone because quality degrades beyond 80%
-- You SHOULD wrap up at yellow zone because approaching limit is risky
-- You MAY operate freely in green zone because healthy context allows exploration
+Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges naturally from atomic task design.
 
-| Zone | Usage | Action |
-|------|-------|--------|
-| Green | <40% | Operate freely |
-| Yellow | 40-60% | Wrap up current task |
-| Red | >60% | Force rotation |
+**INPUT-based control**: `truncate-context.sh` limits file sizes before each iteration
+**No OUTPUT measurement**: We don't track or exit based on context percentage
 
 ---
 
@@ -342,12 +331,12 @@ If circuit breaker triggers frequently:
 - You SHOULD increase HITL oversight
 - You MUST diagnose root cause before continuing
 
-### Context Exhausts Too Quickly
+### Tasks Taking Too Long
 
-If context limit reached before task completion:
-- You SHOULD split task into smaller parts
+If tasks consistently fail to complete in one iteration:
+- You SHOULD split task into smaller atomic parts
 - You SHOULD reduce exploration in worker prompt
-- You MUST NOT increase context limit (quality degrades)
+- You SHOULD use `truncate-context.sh` to reduce input size
 
 ---
 

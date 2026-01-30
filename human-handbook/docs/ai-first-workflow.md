@@ -75,7 +75,7 @@ chmod +x loop.sh
 ### Safety Features
 
 - **Double Completion**: Requiere 2 señales `COMPLETE` consecutivas
-- **Context Health**: Exit automático si >80% contexto usado
+- **Fresh Context**: Cada iteración comienza con contexto limpio (INPUT-based control)
 - **Task Abandonment**: Exit si mismo task falla 3+ veces
 - **Loop Thrashing**: Detecta patrones oscilantes (A→B→A→B)
 - **Circuit Breaker**: 3 fallos Claude consecutivos → exit
@@ -88,7 +88,6 @@ chmod +x loop.sh
 | 1 | ERROR - Validación fallida |
 | 2 | CIRCUIT_BREAKER - 3 fallos consecutivos |
 | 3 | MAX_ITERATIONS - Límite alcanzado |
-| 5 | CONTEXT_EXHAUSTED - >80% contexto |
 | 6 | LOOP_THRASHING - Patrón oscilante |
 | 7 | TASKS_ABANDONED - 3+ fallos mismo task |
 | 130 | INTERRUPTED - Ctrl+C |

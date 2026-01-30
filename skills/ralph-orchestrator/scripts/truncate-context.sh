@@ -1,5 +1,5 @@
 #!/bin/bash
-# Context Budget Enforcement - Ensures each iteration stays in 40-60% zone
+# Input Size Control - Limits initial context size per iteration (INPUT-based control)
 # Called by loop.sh BEFORE each claude -p invocation
 set -euo pipefail
 

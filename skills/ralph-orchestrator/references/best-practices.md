@@ -33,28 +33,18 @@ Read(file_path="logs/iteration-{N}.log")
 
 ---
 
-## Context Management
+## Context Philosophy
 
-| Zone | Usage | Action |
-|------|-------|--------|
-| Green | <40% | Operate freely |
-| Yellow | 40-60% | Wrap up current task |
-| Red | >60% | Force iteration |
+The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
-**Target 40-60% context usage:**
-- Fresh context = better quality output
-- After 60%, consider iterating to reset context
-- The first 40-60% of context window is most effective
+- Atomic task design naturally stays within effective context range
+- Control is INPUT-based (truncate scratchpad/guardrails before iteration)
+- No post-hoc measurement or exit conditions based on context percentage
 
-**Configuration recommendations:**
-```bash
-CONTEXT_LIMIT=200000    # 200K tokens (Claude Opus)
-CONTEXT_WARNING=40      # Start warning at 40%
-CONTEXT_CRITICAL=60     # Force iteration at 60%
-```
+**Configuration**: Use `max_iterations` and `max_runtime` for limits, not context percentages.
 
 > Cross-reference: [configuration-guide.md](configuration-guide.md) for all configuration options.
-> Cross-reference: [backpressure.md](backpressure.md) for context pressure handling.
+> Cross-reference: [backpressure.md](backpressure.md) for backpressure handling.
 
 ---
 
@@ -143,10 +133,10 @@ Read(file_path="logs/iteration-{N}.log")
 echo "ITERATE" > specs/{goal}/control/iteration-trigger
 ```
 
-**Context thresholds:**
-- `<40%`: Green zone - operate freely
-- `40-60%`: Yellow zone - wrap up current task
-- `>60%`: Red zone - force iteration
+**Context philosophy:**
+- 40-60% sweet spot emerges from atomic task design
+- INPUT-based control via `truncate-context.sh`
+- No OUTPUT measurement or context-based exits
 
 **Knowledge artifacts:**
 - `guardrails.md`: Warning signs and rules

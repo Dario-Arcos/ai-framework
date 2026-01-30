@@ -64,7 +64,6 @@ EXIT_ERROR=1               # Generic error (validation, setup failure)
 EXIT_CIRCUIT_BREAKER=2     # Max consecutive failures reached
 EXIT_MAX_ITERATIONS=3      # Iteration limit reached
 EXIT_MAX_RUNTIME=4         # Runtime limit exceeded
-EXIT_CONTEXT_EXHAUSTED=5   # Context health critical
 EXIT_LOOP_THRASHING=6      # Detected state oscillation
 EXIT_TASKS_ABANDONED=7     # Tasks repeatedly failing
 EXIT_CHECKPOINT_PAUSE=8    # Checkpoint reached, waiting for resume
@@ -100,9 +99,6 @@ ITERATION=0
 CONSECUTIVE_FAILURES=0
 MAX_CONSECUTIVE_FAILURES=3
 MAX_RUNTIME="${MAX_RUNTIME:-0}"  # 0 = unlimited, or seconds from env
-CONTEXT_LIMIT="${CONTEXT_LIMIT:-200000}"  # Default 200K tokens (Claude Opus)
-CONTEXT_WARNING="${CONTEXT_WARNING:-40}"   # Warning at 40% (80K tokens)
-CONTEXT_CRITICAL="${CONTEXT_CRITICAL:-60}" # Critical at 60% (120K tokens)
 COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
 LAST_TASK=""  # Track last completed task for abandonment detection
 TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
@@ -639,39 +635,21 @@ EOF
         # CONTEXT HEALTH CHECK
         # ─────────────────────────────────────────────────────────
 
-        # Extract all token types from Claude's usage stats
-        # Format: {"type":"message_start","message":{"usage":{...}}}
-        # BUG FIX: Was using "type":"result" which doesn't exist in Claude Code output
-        MESSAGE_START=$(echo "$CLAUDE_OUTPUT" | grep '"type":"message_start"' | tail -1)
-        INPUT_TOKENS=$(echo "$MESSAGE_START" | jq -r '.message.usage.input_tokens // 0' 2>/dev/null || echo "0")
-        CACHE_READ=$(echo "$MESSAGE_START" | jq -r '.message.usage.cache_read_input_tokens // 0' 2>/dev/null || echo "0")
-        CACHE_CREATE=$(echo "$MESSAGE_START" | jq -r '.message.usage.cache_creation_input_tokens // 0' 2>/dev/null || echo "0")
+        # Extract final usage stats for logging only (NOT for context limit enforcement)
+        # Following mikeyobrien pattern: Control INPUT by construction, don't measure post-hoc
+        # The "type":"result" event contains CUMULATIVE session totals (not per-message)
+        RESULT_LINE=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1)
+        NUM_TURNS=$(echo "$RESULT_LINE" | jq -r '.num_turns // 0' 2>/dev/null || echo "0")
+        TOTAL_COST=$(echo "$RESULT_LINE" | jq -r '.total_cost_usd // 0' 2>/dev/null || echo "0")
 
-        # Calculate total context usage (input + cached reads + cache creation)
-        TOTAL_CONTEXT=$((INPUT_TOKENS + CACHE_READ + CACHE_CREATE))
-
-        if [ "$TOTAL_CONTEXT" -gt 0 ] && [ "$CONTEXT_LIMIT" -gt 0 ]; then
-            CONTEXT_PERCENT=$((TOTAL_CONTEXT * 100 / CONTEXT_LIMIT))
-
-            # Determine context zone using configurable thresholds
-            if [ "$CONTEXT_PERCENT" -ge "$CONTEXT_CRITICAL" ]; then
-                # Red zone - critical, exit
-                echo ""
-                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo -e "${RED}  CONTEXT EXHAUSTED: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT}/${CONTEXT_LIMIT} tokens)${NC}"
-                echo -e "${RED}  Breakdown: input=${INPUT_TOKENS} cache_read=${CACHE_READ} cache_create=${CACHE_CREATE}${NC}"
-                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo ""
-                echo -e "${YELLOW}The context window is nearly full. A fresh session is needed.${NC}"
-                cleanup_and_exit $EXIT_CONTEXT_EXHAUSTED "context_exhausted"
-            elif [ "$CONTEXT_PERCENT" -ge "$CONTEXT_WARNING" ]; then
-                # Yellow zone - warning
-                echo -e "${YELLOW}  Context: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT} tokens - warning zone)${NC}"
-            else
-                # Green zone - healthy
-                echo -e "${BLUE}  Context: ${CONTEXT_PERCENT}% (${TOTAL_CONTEXT} tokens)${NC}"
-            fi
+        # Log session stats for observability (not for enforcement)
+        if [ "$NUM_TURNS" -gt 0 ]; then
+            echo -e "${BLUE}  Session: ${NUM_TURNS} turns, \$${TOTAL_COST} cost${NC}"
         fi
+
+        # Context limit enforcement is DISABLED following mikeyobrien pattern
+        # Rationale: Input budget control via truncate-context.sh is sufficient
+        # Measuring post-hoc accumulation is unreliable (cache_read is cumulative across messages)
 
         echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s) - $TASK_NAME${NC}"
         echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Task: \"$TASK_NAME\" - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
@@ -696,11 +674,9 @@ EOF
         # DOUBLE COMPLETION VERIFICATION
         # ─────────────────────────────────────────────────────────
 
-        # Check completion signal in the final text output
-        # The text is in content_block_delta events: {"type":"content_block_delta","delta":{"text":"..."}}
-        # We extract all text deltas and check for the COMPLETE marker
-        FINAL_TEXT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"content_block_delta"' | jq -r '.delta.text // empty' 2>/dev/null | tr -d '\n')
-        FINAL_RESULT="$FINAL_TEXT"
+        # Check completion signal from final result
+        # "type":"result" contains the full response text
+        FINAL_RESULT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.result // empty' 2>/dev/null)
         if echo "$FINAL_RESULT" | grep -q "<promise>COMPLETE</promise>"; then
             ((COMPLETE_COUNT++))
             echo -e "${GREEN}  COMPLETE signal received (${COMPLETE_COUNT}/2)${NC}"

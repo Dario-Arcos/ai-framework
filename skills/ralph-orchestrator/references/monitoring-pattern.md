@@ -135,17 +135,11 @@ Iteration logs are stored in `logs/` directory:
 
 ---
 
-## Context Health Monitoring
+## Context Philosophy
 
-**Constraints:**
-- You MUST exit at red zone (>80%) because quality degrades beyond this threshold
-- You SHOULD warn at yellow zone (60-80%) because approaching limit needs attention
-- You MAY operate freely in green zone (<60%) because healthy zone allows normal operation
+Ralph does NOT monitor context percentages. The INPUT-based approach (truncating files before iteration) ensures each iteration starts fresh without measuring output.
 
-Tracks `input_tokens` from Claude responses. Zones:
-- **Green** (<60%): Healthy
-- **Yellow** (60-80%): Warning displayed
-- **Red** (>80%): EXIT_CONTEXT_EXHAUSTED
+**Observability**: Track `num_turns` and `total_cost_usd` for session metrics, not context percentage.
 
 ---
 

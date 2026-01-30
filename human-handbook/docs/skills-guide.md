@@ -392,7 +392,7 @@ chmod +x loop.sh
 **Safety Features**:
 - Double completion verification (2 señales COMPLETE consecutivas)
 - Runtime limit configurable
-- Context health monitoring (exit >80%)
+- Fresh context per iteration (INPUT-based control via truncate-context.sh)
 - Task abandonment detection (3+ intentos fallidos)
 - Loop thrashing detection (patrones oscilantes)
 

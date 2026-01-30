@@ -83,7 +83,6 @@ CONFESSION_MIN_CONFIDENCE=80    # 0-100, tasks below this are NOT complete
 MAX_CONSECUTIVE_FAILURES=3      # Circuit breaker threshold
 MAX_TASK_ATTEMPTS=3             # Exit if same task fails N times
 MAX_RUNTIME=0                   # Max seconds (0 = unlimited)
-CONTEXT_LIMIT=200000            # Token limit for context health
 ```
 
 ---
@@ -134,7 +133,6 @@ AFK_WEBHOOK_URL=""              # Slack webhook for notifications
 | 2 | CIRCUIT_BREAKER | 3 consecutive Claude failures |
 | 3 | MAX_ITERATIONS | User-defined iteration limit reached |
 | 4 | MAX_RUNTIME | Runtime limit exceeded |
-| 5 | CONTEXT_EXHAUSTED | Context usage > 80% of limit |
 | 6 | LOOP_THRASHING | Oscillating task pattern (A-B-A-B) |
 | 7 | TASKS_ABANDONED | Same task failed 3+ times |
 | 8 | CHECKPOINT_PAUSE | Checkpoint reached, waiting for resume |

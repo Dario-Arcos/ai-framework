@@ -159,11 +159,9 @@ MAX_RUNTIME=0                     # Unlimited time (default)
 
 **Constraints:**
 - You MUST rely on circuit breaker because 3 consecutive failures indicate systematic issues
-- You MUST monitor context usage because >80% context degrades quality
 - You MUST check for task abandonment because repeated failures indicate unclear requirements
 
 - **Circuit breaker**: Stops after 3 consecutive failures
-- **Context monitoring**: Exits when >80% context used
 - **Task abandonment detection**: Exits if same task fails 3+ times
 - **Loop thrashing detection**: Detects oscillating patterns
 - **Quality gates**: All gates must pass before commit

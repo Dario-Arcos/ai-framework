@@ -389,11 +389,13 @@ Keep `@AGENTS.md` operational only. Status updates and progress notes belong in 
 
 ---
 
-## Context Health (Smart Zone Optimized)
+## Fresh Context Philosophy
 
-- 🟢 <40%: Operate freely - full capability
-- 🟡 40-60%: Wrap up current task - entering degradation zone
-- 🔴 >60%: EXIT NOW - context rot begins, fresh context required
+Each iteration gets fresh 200K context. Complete ONE atomic task, then exit with `<promise>COMPLETE</promise>`.
+
+The 40-60% "sweet spot" emerges naturally from well-designed atomic tasks - do not measure or enforce it. Focus on task atomicity, not context percentages.
+
+**Key principle**: Control is INPUT-based (truncate files before iteration), not OUTPUT-based (measure and exit).
 
 ---
 

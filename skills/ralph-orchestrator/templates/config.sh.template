@@ -6,7 +6,6 @@
 # Usage Constraints:
 # - You MUST set QUALITY_LEVEL because this determines enforcement behavior
 # - You MUST configure GATE_* commands for your stack because defaults are Node.js
-# - You MUST NOT set CONTEXT_CRITICAL below 70 because this risks context overflow
 # - You SHOULD tune CHECKPOINT settings for your workflow because defaults may not fit
 # - You MAY adjust safety limits but exercise caution because these prevent infinite loops
 
@@ -50,16 +49,6 @@ GATE_BUILD="npm run build"
 #   GATE_TYPECHECK=""  # Rust is compiled
 #   GATE_LINT="cargo clippy"
 #   GATE_BUILD="cargo build"
-
-# ─────────────────────────────────────────────────────────────────
-# CONTEXT LIMITS
-# ─────────────────────────────────────────────────────────────────
-# Claude Opus context window settings
-# MUST NOT set CONTEXT_CRITICAL below 70 because overflow causes data loss
-
-CONTEXT_LIMIT=200000          # Total context window (Opus: 200K)
-CONTEXT_WARNING=60            # Yellow zone threshold (%)
-CONTEXT_CRITICAL=80           # Exit threshold (%)
 
 # ─────────────────────────────────────────────────────────────────
 # CONFESSION SETTINGS

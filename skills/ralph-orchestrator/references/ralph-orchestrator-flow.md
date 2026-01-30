@@ -125,11 +125,8 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 ### File `.ralph/config.sh`:
 
 ```bash
-# Model and context
+# Model
 MODEL=claude-sonnet-4-20250514
-CONTEXT_LIMIT=200000      # 200K tokens
-CONTEXT_WARNING=40        # Warning at 40%
-CONTEXT_CRITICAL=60       # Iterate at 60%
 
 # Quality gates
 QUALITY_LEVEL=production  # prototype | production | world-class
@@ -162,18 +159,14 @@ Bash(command="./loop.sh", run_in_background=true)
 6. **Captures** signs if it finds gotchas
 7. **Decides**: continue or iterate (based on context)
 
-### Context Management:
+### Context Philosophy:
 
-```
-0-40%   → Green zone, continue
-40-60%  → Yellow zone, consider iterating
-60%+    → Red zone, MUST iterate
-```
+Ralph does NOT measure context percentages post-hoc. The 40-60% effectiveness observation is EMERGENT from atomic task design, not enforced by code.
 
-The calculation includes:
-- `input_tokens`
-- `cache_read_input_tokens`
-- `cache_creation_input_tokens`
+**How it works:**
+- Tasks are designed to be atomic (completable in ~40-60% of context)
+- Input files are truncated BEFORE each iteration (input-based approach)
+- Workers start fresh each iteration without context measurement
 
 ---
 
@@ -327,7 +320,7 @@ project/
 
 ## Key Principles
 
-1. **Fresh Context = Quality**: The model is more effective in the first 40-60% of context
+1. **Fresh Context = Quality**: The model is more effective in the first 40-60% of context (emergent observation, not enforced)
 2. **SOP Non-Negotiable**: Discovery → Planning → Tasks → Execute
 3. **Continuous Validation**: Gates on each iteration
 4. **Captured Learning**: Signs document gotchas for future iterations
