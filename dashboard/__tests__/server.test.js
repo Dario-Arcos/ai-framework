@@ -128,4 +128,124 @@ describe('Server API', () => {
       assert.strictEqual(response.status, 404);
     });
   });
+
+  describe('Static file serving', () => {
+    const PUBLIC_DIR = join(TEST_DIR, 'public');
+
+    beforeEach(async () => {
+      await mkdir(PUBLIC_DIR, { recursive: true });
+    });
+
+    afterEach(async () => {
+      await rm(PUBLIC_DIR, { recursive: true, force: true });
+    });
+
+    it('serves public/index.html for GET / when file exists', async () => {
+      const htmlContent = '<!DOCTYPE html><html><body>Test Dashboard</body></html>';
+      await writeFile(join(PUBLIC_DIR, 'index.html'), htmlContent);
+
+      // Create a new server with the test public directory
+      await new Promise(resolve => server.close(resolve));
+      server = createServer({
+        statusPath: STATUS_PATH,
+        metricsPath: METRICS_PATH,
+        logsPath: ITERATION_LOG,
+        publicPath: PUBLIC_DIR
+      });
+      await new Promise(resolve => server.listen(0, resolve));
+      const address = server.address();
+      baseUrl = `http://localhost:${address.port}`;
+
+      const response = await fetch(`${baseUrl}/`);
+      const body = await response.text();
+
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.headers.get('content-type'), 'text/html');
+      assert.strictEqual(body, htmlContent);
+    });
+
+    it('serves CSS files with correct MIME type', async () => {
+      const cssContent = 'body { color: red; }';
+      await writeFile(join(PUBLIC_DIR, 'styles.css'), cssContent);
+
+      await new Promise(resolve => server.close(resolve));
+      server = createServer({
+        statusPath: STATUS_PATH,
+        metricsPath: METRICS_PATH,
+        logsPath: ITERATION_LOG,
+        publicPath: PUBLIC_DIR
+      });
+      await new Promise(resolve => server.listen(0, resolve));
+      const address = server.address();
+      baseUrl = `http://localhost:${address.port}`;
+
+      const response = await fetch(`${baseUrl}/styles.css`);
+      const body = await response.text();
+
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.headers.get('content-type'), 'text/css');
+      assert.strictEqual(body, cssContent);
+    });
+
+    it('serves JavaScript files with correct MIME type', async () => {
+      const jsContent = 'console.log("test");';
+      await writeFile(join(PUBLIC_DIR, 'app.js'), jsContent);
+
+      await new Promise(resolve => server.close(resolve));
+      server = createServer({
+        statusPath: STATUS_PATH,
+        metricsPath: METRICS_PATH,
+        logsPath: ITERATION_LOG,
+        publicPath: PUBLIC_DIR
+      });
+      await new Promise(resolve => server.listen(0, resolve));
+      const address = server.address();
+      baseUrl = `http://localhost:${address.port}`;
+
+      const response = await fetch(`${baseUrl}/app.js`);
+      const body = await response.text();
+
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.headers.get('content-type'), 'text/javascript');
+      assert.strictEqual(body, jsContent);
+    });
+
+    it('returns 404 for non-existent static files', async () => {
+      await new Promise(resolve => server.close(resolve));
+      server = createServer({
+        statusPath: STATUS_PATH,
+        metricsPath: METRICS_PATH,
+        logsPath: ITERATION_LOG,
+        publicPath: PUBLIC_DIR
+      });
+      await new Promise(resolve => server.listen(0, resolve));
+      const address = server.address();
+      baseUrl = `http://localhost:${address.port}`;
+
+      const response = await fetch(`${baseUrl}/nonexistent.css`);
+
+      assert.strictEqual(response.status, 404);
+    });
+
+    it('returns placeholder HTML for GET / when public/index.html does not exist', async () => {
+      // No index.html created, should fall back to placeholder
+      await new Promise(resolve => server.close(resolve));
+      server = createServer({
+        statusPath: STATUS_PATH,
+        metricsPath: METRICS_PATH,
+        logsPath: ITERATION_LOG,
+        publicPath: PUBLIC_DIR
+      });
+      await new Promise(resolve => server.listen(0, resolve));
+      const address = server.address();
+      baseUrl = `http://localhost:${address.port}`;
+
+      const response = await fetch(`${baseUrl}/`);
+      const body = await response.text();
+
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.headers.get('content-type'), 'text/html');
+      assert.ok(body.includes('Ralph Dashboard'));
+    });
+  });
 });
