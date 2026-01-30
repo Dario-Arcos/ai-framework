@@ -713,7 +713,7 @@ while true; do
                 # Validate learning before exit
                 validate_guardrails_learning
 
-                git push origin "$CURRENT_BRANCH" 2>/dev/null || true
+                # NOTE: No automatic git push - user decides when to push
                 cleanup_and_exit $EXIT_SUCCESS "complete"
             fi
         else
@@ -774,12 +774,7 @@ while true; do
         fi
     fi
 
-    # ─────────────────────────────────────────────────────────────
-    # GIT PUSH
-    # ─────────────────────────────────────────────────────────────
-
-    git push origin "$CURRENT_BRANCH" 2>/dev/null || \
-        git push -u origin "$CURRENT_BRANCH" 2>/dev/null || true
+    # NOTE: No automatic git push - user decides when to push
 
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 done

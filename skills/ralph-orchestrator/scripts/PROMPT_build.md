@@ -318,7 +318,7 @@ This helps the next iteration start faster.
 ```bash
 git add -A
 git commit -m "feat: [description]"
-# NOTE: Do NOT push - this is handled by loop.sh after verification
+# NOTE: Do NOT push - user decides when to push after reviewing changes
 ```
 
 ---
