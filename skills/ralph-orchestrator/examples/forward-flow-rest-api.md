@@ -790,7 +790,7 @@ Total: 32 files, ~1,350 LOC, 65 tests passing, 0 failures
 ### What Worked
 
 1. **ONE question at a time** - Discovery and planning were conversational, not overwhelming
-2. **Clear separation** - Planning (HITL) vs Execution (AFK)
+2. **Clear separation** - Planning (Interactive) vs Execution (Autonomous)
 3. **Fresh context per task** - Each of 18 tasks executed with clean context
 4. **Backpressure gates** - All commits had passing tests (TDD enforced)
 5. **Quality consistency** - Task 1 and Task 18 same quality (no context rot)
@@ -807,7 +807,7 @@ Total: 32 files, ~1,350 LOC, 65 tests passing, 0 failures
 | Approach | Time | Cost | Quality |
 |----------|------|------|---------|
 | Human developer | 1-2 days | $400-800 | Variable |
-| HITL Claude (long session) | 4-6 hours | $80-120 | Degrades after iteration 8 |
+| Interactive Claude (long session) | 4-6 hours | $80-120 | Degrades after iteration 8 |
 | Ralph-loop (AFK) | 22 minutes | $4-8 | Consistent across all 18 tasks |
 
 ---

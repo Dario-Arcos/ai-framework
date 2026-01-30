@@ -334,7 +334,7 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 |------|-------------|
 | [ralph-orchestrator-flow.md](references/ralph-orchestrator-flow.md) | Complete step-by-step flow diagram |
 | [monitoring-pattern.md](references/monitoring-pattern.md) | Dashboard, log reading, status |
-| [supervision-modes.md](references/supervision-modes.md) | AFK vs Checkpoint vs HITL |
+| [supervision-modes.md](references/supervision-modes.md) | Autonomous vs Checkpoint modes |
 | [configuration-guide.md](references/configuration-guide.md) | All config options |
 | [quality-gates.md](references/quality-gates.md) | Gate descriptions, TDD |
 | [sop-integration.md](references/sop-integration.md) | How SOP skills connect |

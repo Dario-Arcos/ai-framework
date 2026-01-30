@@ -245,7 +245,7 @@ This helps the next iteration start faster.
 
 ### Objectives Assessment
 - **Objective**: [task from specs/{goal}/implementation/plan.md]
-  - **Met?**: Yes/No/Partial
+  - **Met?**: Yes/No
   - **Evidence**: [file:line or test output]
 
 ### Uncertainties & Conflicts

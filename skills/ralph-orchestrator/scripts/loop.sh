@@ -213,15 +213,19 @@ EOF
     duration=$(jq ".total_duration_seconds + $ITER_DURATION" "$METRICS_FILE")
     avg=$(echo "scale=2; $duration / $total" | bc)
 
-    cat > "$METRICS_FILE" << EOF
-{
-  "total_iterations": $total,
-  "successful": $success,
-  "failed": $failed,
-  "total_duration_seconds": $duration,
-  "avg_duration_seconds": $avg
-}
-EOF
+    jq -n \
+        --argjson total "$total" \
+        --argjson success "$success" \
+        --argjson failed "$failed" \
+        --argjson duration "$duration" \
+        --arg avg "$avg" \
+        '{
+            total_iterations: $total,
+            successful: $success,
+            failed: $failed,
+            total_duration_seconds: $duration,
+            avg_duration_seconds: ($avg | tonumber)
+        }' > "$METRICS_FILE"
 }
 
 # ─────────────────────────────────────────────────────────────────
