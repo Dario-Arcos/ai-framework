@@ -33,10 +33,10 @@ The agent acts as a **Technical Implementation Partner** and **TDD Coach** - pro
 
 - **task_description** (required): Description of the task to implement. Can be a `.code-task.md` file path, direct text, or URL.
 - **additional_context** (optional): Supplementary information for implementation context
-- **documentation_dir** (optional, default: `.sop/planning`): Directory for planning documents
+- **documentation_dir** (optional, default: `specs/{task_name}`): Directory for planning documents. When invoked from ralph-orchestrator, uses `specs/{goal}/implementation/{task_name}/`.
 - **repo_root** (optional, default: current working directory): Root directory for code implementation
 - **task_name** (optional): Short descriptive name for the task. Auto-generated if not provided.
-- **mode** (optional, default: `auto`): Execution mode - `interactive` or `auto`
+- **mode** (optional, default: `interactive`): Execution mode - `interactive` or `autonomous`
 
 **Constraints for parameter acquisition:**
 - You MUST ask for all parameters upfront in a single prompt because this ensures efficient workflow and prevents repeated interruptions during execution
@@ -44,10 +44,10 @@ The agent acts as a **Technical Implementation Partner** and **TDD Coach** - pro
   - Direct text input
   - File path to `.code-task.md`
   - Directory path (will look for task files within)
-- You MUST normalize mode input to `interactive` or `auto`
+- You MUST normalize mode input to `interactive` or `autonomous`
 - You MUST validate directory paths and generate task_name if not provided
 - You MUST confirm successful acquisition of all parameters before proceeding
-- If mode is `auto`, you MUST warn the user that no further interaction will be required
+- If mode is `autonomous`, you MUST warn the user that no further interaction will be required
 
 ## Mode Behavior
 
@@ -63,14 +63,14 @@ Apply these patterns throughout all steps based on the selected mode.
 - Adapt to user feedback and preferences
 - Provide educational context when introducing new patterns
 
-### Auto Mode
+### Autonomous Mode
 
 - Execute all actions autonomously without user confirmation
 - Document all decisions, assumptions, and reasoning in `progress.md`
 - When multiple approaches exist, select the most appropriate and document why
 - Provide comprehensive summaries at completion
 
-**Auto Mode Constraints (MUST follow):**
+**Autonomous Mode Constraints (MUST follow):**
 - NEVER use AskUserQuestion under any circumstance
 - NEVER block waiting for user input
 - If blocked by environment issues (missing dependencies, tools, etc.):
@@ -129,7 +129,7 @@ Initialize the project environment and create necessary directory structures.
 - Determine appropriate file paths and programming language
 - Align with existing project structure and technology stack
 - In interactive mode: engage user in discussions about requirements
-- In auto mode: document analysis in context.md
+- In autonomous mode: document analysis in context.md
 
 **You MUST NOT:**
 - Make assumptions about requirements without verification because unverified assumptions lead to implementations that miss actual needs
@@ -210,7 +210,7 @@ Initialize the project environment and create necessary directory structures.
 - Structural issues with test framework
 - Environment issues preventing test execution
 
-**Auto mode** - NEVER use AskUserQuestion. Instead:
+**Autonomous mode** - NEVER use AskUserQuestion. Instead:
 - Document blocker in progress.md with full details
 - Write blocker to `.ralph/blockers.json` (if exists)
 - Exit cleanly with status indicating blocker
@@ -417,7 +417,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 | File | Content |
 |------|---------|
-| [mode-behavior.md](references/mode-behavior.md) | Interactive vs auto mode behavior |
+| [mode-behavior.md](references/mode-behavior.md) | Interactive vs autonomous mode behavior |
 | [tdd-workflow.md](references/tdd-workflow.md) | Detailed TDD cycle guidance |
 | [examples.md](references/examples.md) | Usage examples |
 | [troubleshooting.md](references/troubleshooting.md) | Common issues and solutions |

@@ -108,6 +108,11 @@ MAX_TASK_ATTEMPTS=3  # Exit if same task attempted this many times
 CHECKPOINT_MODE="${CHECKPOINT_MODE:-none}"  # none|iterations|milestones
 CHECKPOINT_INTERVAL="${CHECKPOINT_INTERVAL:-5}"  # Pause every N iterations (if mode=iterations)
 
+# Validate checkpoint interval (prevent division by zero)
+if [ "${CHECKPOINT_INTERVAL:-5}" -lt 1 ] 2>/dev/null; then
+    CHECKPOINT_INTERVAL=5
+fi
+
 # Loop thrashing detection - track recent tasks to detect oscillating patterns
 TASK_HISTORY=()  # Array of recent task names
 TASK_HISTORY_SIZE=6  # How many tasks to remember for pattern detection
@@ -164,7 +169,7 @@ handle_sigint() {
     cleanup_and_exit $EXIT_INTERRUPTED "interrupted"
 }
 
-trap handle_sigint SIGINT
+trap handle_sigint SIGINT SIGTERM SIGHUP
 
 # ─────────────────────────────────────────────────────────────────
 # METRICS UPDATE
@@ -174,6 +179,20 @@ trap handle_sigint SIGINT
 # Args: $1 = "success" or "failure"
 update_metrics() {
     local result_type="$1"
+
+    # Defensive: reinitialize if file invalid
+    if [ ! -f "$METRICS_FILE" ] || ! jq empty "$METRICS_FILE" 2>/dev/null; then
+        cat > "$METRICS_FILE" << 'EOF'
+{
+  "total_iterations": 0,
+  "successful": 0,
+  "failed": 0,
+  "total_duration_seconds": 0
+}
+EOF
+    fi
+
+    local iter_duration="${ITER_DURATION:-0}"
     local total success failed duration avg
 
     total=$(jq '.total_iterations + 1' "$METRICS_FILE")
@@ -323,8 +342,11 @@ validate_test_coverage() {
         coverage=$(sed -n 's/.*<span class="strong">\([0-9.]*\)% <\/span>.*/\1/p' "coverage/lcov-report/index.html" 2>/dev/null | head -1 || echo "0")
     fi
 
-    # Handle empty or invalid coverage
-    [ -z "$coverage" ] && coverage=0
+    # Validate coverage is numeric
+    if ! [[ "$coverage" =~ ^[0-9]*\.?[0-9]*$ ]] || [ -z "$coverage" ]; then
+        echo -e "${BLUE}  Coverage could not be parsed, skipping gate${NC}"
+        return 0
+    fi
 
     # Convert to integer for comparison (handle decimals)
     local coverage_int=${coverage%.*}

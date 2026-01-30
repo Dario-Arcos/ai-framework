@@ -167,7 +167,7 @@ Output: `specs/{goal}/design/detailed-design.md` → Continue to Step 4.
 ### Step 4: Task Generation
 
 ```text
-/sop-task-generator input="specs/{goal}/design/detailed-design.md" --mode={PLANNING_MODE}
+/sop-task-generator input="specs/{goal}/implementation/plan.md" --mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**
@@ -277,6 +277,46 @@ Transition to Phase 2: Monitoring mode.
 2. **Flexible Planning, Checkpoint Before Execution** - Planning can be interactive OR autonomous, but user ALWAYS approves before execution
 3. **Fresh Context Is Reliability** - Each iteration clears context
 4. **Disk Is State, Git Is Memory** - Files are handoff mechanism
+
+---
+
+## Configuration
+
+Located in `.ralph/config.sh`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| QUALITY_LEVEL | production | prototype/production/library |
+| GATE_TEST | npm test | Test command |
+| GATE_TYPECHECK | npm run typecheck | Type checking command |
+| GATE_LINT | npm run lint | Lint command |
+| GATE_BUILD | npm run build | Build command |
+| CONFESSION_MIN_CONFIDENCE | 80 | Minimum confidence % to accept task completion |
+| MIN_TEST_COVERAGE | 90 | Minimum test coverage % required before COMPLETE |
+| MAX_RUNTIME | 0 | Runtime limit in seconds (0 = unlimited) |
+| MAX_ITERATIONS | 0 | Iteration limit (0 = unlimited) |
+| CHECKPOINT_MODE | none | none/iterations/milestones |
+| CHECKPOINT_INTERVAL | 5 | Pause every N iterations (if mode=iterations) |
+
+### Completion Verification
+
+Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before terminating. This double-verification prevents premature exit from single spurious completion claims.
+
+---
+
+## Exit Codes
+
+| Code | Name | Meaning |
+|------|------|---------|
+| 0 | SUCCESS | All tasks completed with double verification |
+| 1 | ERROR | Validation or setup failure |
+| 2 | CIRCUIT_BREAKER | Max consecutive failures reached |
+| 3 | MAX_ITERATIONS | Iteration limit reached |
+| 4 | MAX_RUNTIME | Runtime limit exceeded |
+| 6 | LOOP_THRASHING | Oscillating task pattern detected |
+| 7 | TASKS_ABANDONED | Same task failed repeatedly |
+| 8 | CHECKPOINT_PAUSE | Checkpoint reached, awaiting resume |
+| 130 | INTERRUPTED | User interrupt (Ctrl+C) |
 
 ---
 
