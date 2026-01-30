@@ -39,19 +39,26 @@ Systematically investigate existing artifacts and generate structured specificat
   - `interactive`: Confirm with user, ask clarifying questions
   - `autonomous`: Complete investigation without interaction
 
+**Constraints for parameter acquisition:**
+- You MUST validate that target path exists or URL is accessible because invalid targets waste investigation time
+- You MUST auto-detect target_type if not specified because manual specification is error-prone
+- You SHOULD confirm target type with user in interactive mode because auto-detection may be wrong
+- You MUST create output_dir if it doesn't exist because missing directories cause silent failures
+
 ## Mode Behavior
 
 ### Interactive Mode (default)
-- Confirm artifact type with user before proceeding
-- Ask ONE clarifying question at a time during refinement
-- Wait for user to confirm "ready to generate specs"
-- Ask permission before invoking sop-planning
+- You MUST confirm artifact type with user before proceeding because incorrect type wastes entire investigation
+- You MUST ask ONE clarifying question at a time during refinement because batched questions reduce response quality
+- You MUST wait for user to confirm "ready to generate specs" because premature generation produces incomplete specs
+- You MUST ask permission before invoking sop-planning because unexpected tool invocation disrupts user workflow
 
 ### Autonomous Mode
-- Auto-detect artifact type and proceed (log determination)
-- Skip interactive refinement phase entirely
-- Generate specs immediately after batch analysis
-- Document what would have been asked in `investigation.md`
+- You MUST auto-detect artifact type and proceed because blocking defeats autonomous purpose
+- You MUST log type determination because traceability enables debugging
+- You MUST skip interactive refinement phase entirely because user interaction is unavailable
+- You MUST generate specs immediately after batch analysis because autonomous mode should complete without delay
+- You MUST document what would have been asked in `investigation.md` because deferred questions enable future follow-up
 
 **Autonomous Mode Constraints (MUST follow):**
 - NEVER use AskUserQuestion under any circumstance
@@ -68,56 +75,68 @@ Systematically investigate existing artifacts and generate structured specificat
 
 ### Step 1: Identify Target Type
 
-Analyze the target to determine type. Present determination with evidence.
+You MUST analyze the target to determine its type because misclassification leads to irrelevant analysis. You MUST present determination with evidence because unsubstantiated claims erode user trust.
 
 **Constraints:**
-- In interactive mode: Confirm type with user, wait for explicit confirmation
-- In autonomous mode: Auto-detect type, log determination, proceed immediately
-- You MUST NOT proceed without confirmation in interactive mode
+- You MUST confirm type with user in interactive mode because auto-detection may misclassify hybrid artifacts
+- You MUST wait for explicit confirmation before proceeding in interactive mode because implicit assumption causes wasted work
+- You MUST auto-detect type and log determination in autonomous mode because blocking on user input defeats autonomous purpose
+- You MUST NOT proceed without confirmation in interactive mode because proceeding with wrong type wastes entire investigation
+- You SHOULD present multiple candidate types when confidence is low because transparency enables better user decisions
 
 See [references/artifact-types.md](references/artifact-types.md) for type detection criteria.
 
 ### Step 2: Initial Batch Analysis
 
-Perform comprehensive first-pass analysis without user interaction. Cover all relevant aspects for the artifact type. Create `investigation.md` with executive summary, detailed findings, observations, and questions.
+You MUST perform comprehensive first-pass analysis without user interaction because fragmented analysis leads to incomplete understanding. You MUST cover all relevant aspects for the artifact type because partial coverage misses critical dependencies. You MUST create `investigation.md` with executive summary, detailed findings, observations, and questions because structured documentation enables effective refinement.
 
 **Constraints:**
-- You MUST complete entire analysis BEFORE asking user questions
-- You MUST create investigation.md with all findings
-- You SHOULD cover all checklist items for the artifact type
+- You MUST complete entire analysis BEFORE asking user questions because premature questions reveal incomplete understanding
+- You MUST create investigation.md with all findings because undocumented findings are lost and unrepeatable
+- You MUST document artifact boundaries and scope because undefined scope leads to scope creep
+- You SHOULD cover all checklist items for the artifact type because checklists ensure comprehensive coverage
+- You SHOULD identify dependencies and integrations because isolated analysis misses system interactions
+- You MAY skip checklist items with explicit justification when irrelevant to target
 
 See [references/artifact-types.md](references/artifact-types.md) for analysis checklist by type.
 
 ### Step 3: Interactive Refinement
 
-Present findings summary, then ask clarifying questions one at a time. Incorporate responses into investigation.md. Continue until user confirms "ready to generate specs."
+You MUST present findings summary before asking questions because context enables better user responses. You MUST ask clarifying questions one at a time because batched questions overwhelm users and reduce response quality. You MUST incorporate responses into investigation.md because untracked responses get lost. You MUST continue until user confirms "ready to generate specs" because premature spec generation produces incomplete outputs.
 
 **Constraints:**
-- In interactive mode: Ask ONE clarifying question at a time, wait for responses
-- In autonomous mode: Skip interactive refinement, document questions that would have been asked in investigation.md under "## Deferred Questions"
-- You MUST NOT batch questions in interactive mode
+- You MUST ask ONE clarifying question at a time in interactive mode because focused questions yield precise answers
+- You MUST wait for user response before asking next question because rapid-fire questions frustrate users
+- You MUST skip interactive refinement in autonomous mode because user interaction defeats autonomous purpose
+- You MUST document deferred questions under "## Deferred Questions" in autonomous mode because capturing questions enables future follow-up
+- You MUST NOT batch questions in interactive mode because users cannot effectively answer multiple questions at once
+- You SHOULD prioritize questions by impact on spec quality because limited user patience should be spent on high-value questions
 
 See [references/investigation-patterns.md](references/investigation-patterns.md) for question guidelines.
 
 ### Step 4: Generate Specs
 
-Create structured specifications in `specs-generated/` directory. Use appropriate spec structure for artifact type. Include mermaid diagrams for flows and relationships.
+You MUST create structured specifications in `specs-generated/` directory because consistent output location enables automation. You MUST use appropriate spec structure for artifact type because mismatched structure confuses downstream consumers. You SHOULD include mermaid diagrams for flows and relationships because visual representation accelerates comprehension.
 
 **Constraints:**
-- You MUST generate specs compatible with sop-planning for forward flow
-- You MUST use appropriate spec structure for artifact type
-- You SHOULD include mermaid diagrams for flows and relationships
+- You MUST generate specs compatible with sop-planning for forward flow because incompatible specs break the SOP pipeline
+- You MUST use appropriate spec structure for artifact type because generic structures miss type-specific details
+- You MUST include source references in specs because traceability enables verification
+- You SHOULD include mermaid diagrams for flows and relationships because diagrams communicate structure faster than text
+- You MAY generate additional artifact-specific outputs when they add value
 
 See [references/artifact-types.md](references/artifact-types.md) for spec templates by type.
 
 ### Step 5: Recommendations
 
-Generate `recommendations.md` with improvements, risks, migration paths, and prioritized next steps. Present final summary and ask if user wants to continue to sop-planning (forward flow).
+You MUST generate `recommendations.md` with improvements, risks, migration paths, and prioritized next steps because investigation without recommendations wastes analysis effort. You MUST present final summary because users need executive overview before deciding next steps. You SHOULD ask if user wants to continue to sop-planning in interactive mode because forward flow enables immediate action.
 
 **Constraints:**
-- In interactive mode: Ask user if they want to continue to sop-planning
-- In autonomous mode: Do NOT auto-invoke sop-planning, just document recommendation
-- You MUST NOT auto-invoke sop-planning without user permission in interactive mode
+- You MUST ask user if they want to continue to sop-planning in interactive mode because auto-invocation removes user agency
+- You MUST NOT auto-invoke sop-planning in autonomous mode because autonomous investigation should complete without spawning new processes
+- You MUST NOT auto-invoke sop-planning without user permission in interactive mode because unexpected tool invocation breaks user workflow
+- You MUST prioritize recommendations by ROI because limited resources should focus on highest-impact improvements
+- You SHOULD include effort estimates for recommendations because estimates enable prioritization decisions
 
 See [references/output-structure.md](references/output-structure.md) for template.
 
@@ -158,6 +177,32 @@ See [references/output-structure.md](references/output-structure.md) for complet
 ### Problem: Generated specs don't match user expectations
 **Cause**: Interactive refinement skipped or cut short
 **Solution**: Return to Step 3. Ask more targeted questions about specific findings.
+
+## Examples
+
+### Example 1: Codebase Investigation
+```text
+/sop-reverse target="./legacy-api" focus_areas="authentication,database"
+```
+Output: `investigation.md` with architecture analysis, `specs-generated/` with reconstructed specs
+
+### Example 2: API Documentation
+```text
+/sop-reverse target="https://api.example.com/docs" target_type="api"
+```
+Output: OpenAPI-style specification, endpoint catalog, auth patterns
+
+### Example 3: Process Documentation
+```text
+/sop-reverse target="onboarding process" target_type="process" mode="interactive"
+```
+Output: Process flow diagrams, role responsibilities, bottleneck analysis
+
+### Example 4: Autonomous Legacy System Analysis
+```text
+/sop-reverse target="./monolith-app" mode="autonomous" output_dir="specs/monolith-audit"
+```
+Output: Complete investigation without user interaction, deferred questions documented
 
 ## Integration with Forward Flow
 

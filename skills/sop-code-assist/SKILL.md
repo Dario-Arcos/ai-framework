@@ -112,9 +112,9 @@ Initialize the project environment and create necessary directory structures.
 - Document project structure, requirements, patterns, and dependencies
 
 **You MUST NOT:**
-- Proceed if directory creation fails
-- Place code implementations in documentation directory
-- Skip context gathering even if the task seems simple
+- Proceed if directory creation fails because missing directories cause file write failures and lost work later
+- Place code implementations in documentation directory because mixing code with docs violates separation of concerns and breaks build processes
+- Skip context gathering even if the task seems simple because missing context leads to implementations that don't fit project patterns
 
 **Verification:** Directory structure created, context.md and progress.md initialized.
 
@@ -132,8 +132,8 @@ Initialize the project environment and create necessary directory structures.
 - In auto mode: document analysis in context.md
 
 **You MUST NOT:**
-- Make assumptions about requirements without verification
-- Skip edge case identification
+- Make assumptions about requirements without verification because unverified assumptions lead to implementations that miss actual needs
+- Skip edge case identification because unhandled edge cases cause production bugs and user frustration
 
 #### 2.2 Research Existing Patterns
 
@@ -151,8 +151,8 @@ Initialize the project environment and create necessary directory structures.
 - Keep documentation concise and focused on guiding implementation
 
 **You MUST NOT:**
-- Include complete code implementations in documentation
-- Create overly detailed specifications that duplicate actual code
+- Include complete code implementations in documentation because documentation should guide, not duplicate, and duplicated code becomes stale
+- Create overly detailed specifications that duplicate actual code because over-specification creates maintenance burden and divergence from implementation
 
 **Verification:** context.md contains requirements, patterns, and implementation paths.
 
@@ -169,8 +169,8 @@ Initialize the project environment and create necessary directory structures.
 - Design tests that will initially fail (RED phase)
 
 **You MUST NOT:**
-- Create mock implementations during test design
-- Include complete test code in documentation (use high-level descriptions)
+- Create mock implementations during test design because mocks during design contaminate the RED phase and mask failing tests
+- Include complete test code in documentation (use high-level descriptions) because test code belongs in test files, not documentation that becomes stale
 
 #### 3.2 Implementation Planning & Tracking
 
@@ -200,8 +200,8 @@ Initialize the project environment and create necessary directory structures.
 - Document failure reasons in progress.md
 
 **You MUST NOT:**
-- Place test code files in documentation directory
-- Write implementation code before tests
+- Place test code files in documentation directory because tests must be in repo_root to be discovered and executed by test runners
+- Write implementation code before tests because writing code first violates TDD and produces tests that verify implementation rather than requirements
 
 **Handling Blockers by Mode:**
 
@@ -255,8 +255,8 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 - Provide complete test execution output
 
 **You MUST NOT:**
-- Claim implementation is complete if any tests are failing
-- Skip build validation
+- Claim implementation is complete if any tests are failing because failing tests indicate unmet requirements or broken functionality
+- Skip build validation because unbuildable code cannot be deployed and may have syntax or dependency errors
 
 **Verification:** All tests pass, build succeeds, checklist complete.
 
@@ -273,8 +273,8 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 - Document commit hash and status in progress.md
 
 **You MUST NOT:**
-- Commit until builds AND tests are verified passing
-- Push changes to remote repositories
+- Commit until builds AND tests are verified passing because committing broken code pollutes history and may break CI/CD pipelines
+- Push changes to remote repositories because pushing is a user decision that may require review, approval, or coordination with team
 
 **You SHOULD:**
 - Include "Assisted by sop-code-assist skill" in commit footer
@@ -316,6 +316,103 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 ---
 
+## Examples
+
+### Example 1: New Feature Implementation
+
+**Input:**
+```text
+/sop-code-assist task="specs/auth/implementation/step01/task-01-jwt-auth.code-task.md"
+```
+
+**Process:**
+1. Read task file, extract acceptance criteria
+2. Write failing test for JWT token generation
+3. Implement minimal code to pass
+4. Refactor for clarity
+5. Run all quality gates
+
+**Output:**
+- `src/auth/jwt.ts` - Implementation
+- `tests/auth/jwt.test.ts` - Test coverage
+- Task file updated with Status: COMPLETED
+
+### Example 2: Bug Fix with TDD
+
+**Input:**
+```text
+/sop-code-assist task="Fix null pointer in user validation" --mode=interactive
+```
+
+**Process:**
+1. Write test reproducing the bug
+2. Verify test fails
+3. Fix minimal code
+4. Verify test passes
+5. Check no regression
+
+### Example 3: Autonomous Mode
+
+**Input:**
+```text
+/sop-code-assist task="path/to/task.code-task.md" --mode=autonomous
+```
+
+**Behavior:**
+- No AskUserQuestion calls
+- Blockers written to `.ralph/blockers.json`
+- Proceeds with safest implementation choices
+
+---
+
+## Troubleshooting
+
+### Test Won't Fail First
+
+**Symptom:** Test passes immediately without implementation.
+
+**Cause:** Test is checking wrong behavior or mocking too much.
+
+**Solution:**
+- Review test assertions match acceptance criteria
+- Reduce mocking to only external dependencies
+- Ensure test exercises the actual code path
+
+### Quality Gates Failing
+
+**Symptom:** Implementation works but gates reject it.
+
+**Cause:** Lint errors, type errors, or coverage gaps.
+
+**Solution:**
+- Run `npm run lint -- --fix` for auto-fixable issues
+- Check TypeScript errors with `npm run typecheck`
+- Add tests for uncovered branches
+
+### Task File Format Errors
+
+**Symptom:** Skill can't parse task file.
+
+**Cause:** Malformed .code-task.md structure.
+
+**Solution:**
+- Verify required sections: Context, Requirements, Acceptance Criteria
+- Check markdown formatting
+- Regenerate with sop-task-generator if needed
+
+### Autonomous Mode Stuck
+
+**Symptom:** Skill stops without completing in autonomous mode.
+
+**Cause:** Unhandled blocker or ambiguous requirement.
+
+**Solution:**
+- Check `.ralph/blockers.json` for documented issues
+- Review blockers.md for deferred decisions
+- Re-run in interactive mode to resolve ambiguity
+
+---
+
 ## References
 
 | File | Content |
@@ -333,5 +430,5 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 
 ---
 
-*Version: 1.0.0 | Created: 2026-01-28*
+*Version: 1.1.0 | Created: 2026-01-28 | Updated: 2026-01-30*
 *Compliant with strands-agents SOP format (RFC 2119)*

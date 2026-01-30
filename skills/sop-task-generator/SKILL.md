@@ -80,7 +80,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 **Constraints:**
 - In interactive mode: Inform user of detected mode, wait for acknowledgment
 - In autonomous mode: Log detected mode, proceed immediately
-- You MUST NOT proceed without acknowledgment in interactive mode
+- You MUST NOT proceed without acknowledgment in interactive mode because proceeding without user awareness may generate tasks for incorrect input interpretation
 
 **Example output:**
 ```text
@@ -135,7 +135,7 @@ Action: Will generate 5 task files (one per step)
 
 **Constraints:**
 - You MUST use Given-When-Then format for acceptance criteria
-- You MUST NOT include implementation details in requirements
+- You MUST NOT include implementation details in requirements because requirements should specify "what" not "how" to allow implementation flexibility
 
 **Output:** Structured requirements ready for task generation
 
@@ -174,7 +174,7 @@ Action: Will generate 5 task files (one per step)
 **Constraints:**
 - In interactive mode: Present breakdown, wait for explicit approval
 - In autonomous mode: Log breakdown, proceed to generation immediately
-- You MUST NOT generate files before user approval in interactive mode
+- You MUST NOT generate files before user approval in interactive mode because generating unapproved files creates artifacts that may need deletion or cause confusion
 
 ### Task File Generation Requirements (PDD Mode)
 
@@ -201,10 +201,10 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 - [ ] Task numbering matches step numbering
 
 **You MUST NOT:**
-- Create only the first task and leave others for later
-- Generate tasks ad-hoc during execution
-- Skip steps that seem "simple"
-- Ask which step to process (process ALL of them)
+- Create only the first task and leave others for later because incomplete task generation leaves orchestrator without full execution scope
+- Generate tasks ad-hoc during execution because ad-hoc generation causes inconsistent scope and missed dependencies
+- Skip steps that seem "simple" because simplicity is subjective and skipped steps create gaps in the execution sequence
+- Ask which step to process (process ALL of them) because selective processing defeats the purpose of complete upfront task generation
 
 ### Step 5: Generate Tasks
 
@@ -319,7 +319,7 @@ Each task file MUST follow this exact structure:
 **Constraints:**
 - You MUST follow the exact task file format
 - You MUST include all required sections (Description, Background, Reference Documentation, etc.)
-- You MUST NOT place tasks in wrong directory structure
+- You MUST NOT place tasks in wrong directory structure because incorrect placement breaks orchestrator discovery and task sequencing
 
 ### Step 6: Report Results
 
