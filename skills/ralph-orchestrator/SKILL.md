@@ -147,7 +147,7 @@ Output: `specs/{goal}/discovery.md` → Continue to Step 3.
 ### Step 2B: Reverse Investigation
 
 ```text
-/sop-reverse artifact="{path}" --mode={PLANNING_MODE}
+/sop-reverse target="{path}" --mode={PLANNING_MODE}
 ```
 
 **Mode behavior:**

@@ -90,7 +90,7 @@ Direct tool output and AskUserQuestion. No special signals needed.
 
 | Signal | Purpose | Format |
 |--------|---------|--------|
-| `> confession:` | Task completion status | `> confession: objective=[name], met=[Yes/No], confidence=[N], evidence=[proof]` |
+| `> confession:` | Task completion status | `> confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof]` |
 | `> task_completed:` | Mark task done | `> task_completed: [Task name from plan.md]` |
 | `> tdd:red` | TDD tracking | `> tdd:red {test_name}` |
 | `> tdd:green` | TDD tracking | `> tdd:green {test_name}` |

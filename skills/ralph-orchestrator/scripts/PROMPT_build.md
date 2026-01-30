@@ -278,7 +278,7 @@ This helps the next iteration start faster.
 
 **Output markers (MANDATORY for loop.sh parsing):**
 ```
-> confession: objective=[task name], met=[Yes/No/Partial], confidence=[N], evidence=[proof]
+> confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
 > task_completed: [Task name from implementation plan]
 ```
 
@@ -325,6 +325,8 @@ If ALL tasks in `specs/{goal}/implementation/plan.md` are complete:
 ```
 <promise>COMPLETE</promise>
 ```
+
+**Note:** The loop requires TWO consecutive COMPLETE signals for termination. This prevents premature exit from spurious single signals. If you emit COMPLETE and the loop continues, it's verifying your claim.
 
 If tasks remain: exit normally. Loop continues with fresh context.
 
