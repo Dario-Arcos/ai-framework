@@ -30,17 +30,46 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - **rough_idea** (required): Initial concept to develop. Accepts text, file path, or URL.
 - **project_dir** (optional, default: specs/{name}): Directory for planning artifacts
 - **discovery_path** (optional): Path to existing discovery.md to continue from
+- **mode** (optional, default: `interactive`): Execution mode
+  - `interactive`: Ask user questions, wait for confirmations
+  - `autonomous`: Document decisions, never block for input
 
 ### Existing Data Protection
 
 **You MUST NOT:**
-- Overwrite an existing project directory without explicit user confirmation
-- Proceed if the default project directory contains files
+- Overwrite an existing project directory without explicit user confirmation (interactive mode)
+- Proceed if the default project directory contains files (interactive mode)
 
 **You MUST:**
 - Check if `{project_dir}` exists before creating it
-- If exists and contains files, ask user: "Directory already contains files. Options: (1) Use different name, (2) Archive existing, (3) Overwrite (destructive)"
-- Only proceed after explicit user choice
+- In interactive mode: If exists and contains files, ask user: "Directory already contains files. Options: (1) Use different name, (2) Archive existing, (3) Overwrite (destructive)"
+- In autonomous mode: If exists and contains files, append timestamp suffix (e.g., `{project_dir}-20250129`) and document in blockers.md
+- Only proceed after explicit user choice (interactive) or with renamed directory (autonomous)
+
+## Mode Behavior
+
+### Interactive Mode (default)
+- Present options and ask for user choice
+- Wait for explicit confirmation before phase transitions
+- Ask ONE question at a time during clarification
+- Iterate based on user feedback
+
+### Autonomous Mode
+- Execute all phases without user interaction
+- Make reasonable decisions and document rationale
+- When multiple approaches exist, choose most conservative and document why
+- Generate complete artifacts in single pass
+
+**Autonomous Mode Constraints (MUST follow):**
+- NEVER use AskUserQuestion under any circumstance
+- NEVER block waiting for user input
+- If blocked by missing information or ambiguity:
+  1. Document blocker in `{project_dir}/blockers.md` with full details
+  2. Write to `.ralph/blockers.json` if the file exists
+  3. Make reasonable assumption OR skip section with "[BLOCKED: reason]"
+  4. Continue with remaining work
+- Choose safest/simplest approach when ambiguous
+- Document all assumptions in artifacts
 
 ## Output Structure
 ```text
@@ -109,11 +138,11 @@ Present options to user:
 - **Option B**: Start with preliminary research (domain knowledge needed)
 
 **Constraints:**
-- You MUST present both options clearly
-- You MUST NOT assume user preference
-- You MUST wait for explicit user choice before proceeding
+- In interactive mode: Present both options, wait for explicit user choice
+- In autonomous mode: Choose Option A (requirements first) by default, document choice
+- You MUST NOT assume user preference in interactive mode
 
-**Verification**: User has explicitly chosen Option A or B.
+**Verification**: User has explicitly chosen Option A or B (interactive) or choice documented (autonomous).
 
 ---
 
@@ -139,14 +168,14 @@ Present options to user:
 5. Before proceeding: "Are requirements sufficiently detailed?"
 
 **Constraints:**
-- You MUST ask ONLY ONE question at a time
-- You MUST NOT pre-populate answers or assume user intent
+- In interactive mode: Ask ONE question at a time, wait for user response
+- In autonomous mode: Generate comprehensive Q&A pairs based on rough idea, document assumptions
+- You MUST NOT pre-populate answers or assume user intent in interactive mode
 - You MUST append each Q&A pair to `idea-honing.md` immediately
-- You MUST wait for user response before next question
-- You SHOULD adapt follow-up questions based on previous answers
-- You MAY suggest options when user is unsure
+- You SHOULD adapt follow-up questions based on previous answers (interactive)
+- You MAY suggest options when user is unsure (interactive)
 
-**Verification**: User has explicitly confirmed requirements are complete.
+**Verification**: User has explicitly confirmed requirements are complete (interactive) or Q&A documented with assumptions (autonomous).
 
 ---
 
@@ -163,9 +192,10 @@ Present options to user:
 - You MUST include specific examples, not generic descriptions
 - You MUST compare 2-3 options when multiple approaches exist
 - You MUST make recommendation with justification
-- You SHOULD ask user to confirm research direction after 2-3 files
+- In interactive mode: Ask user to confirm research direction after 2-3 files
+- In autonomous mode: Complete all proposed research topics, document rationale for recommendations
 
-**Verification**: User has explicitly confirmed research is sufficient.
+**Verification**: User has explicitly confirmed research is sufficient (interactive) or all topics researched with documented recommendations (autonomous).
 
 ---
 
@@ -187,10 +217,11 @@ Present options:
 
 **Constraints:**
 - You MUST create a summary of current state
-- You MUST present all three options clearly
-- You MUST NOT proceed to design without user explicitly choosing Option A
+- In interactive mode: Present all three options, wait for explicit user choice
+- In autonomous mode: Proceed to design (Option A) by default, document decision
+- You MUST NOT proceed to design without user explicitly choosing Option A in interactive mode
 
-**Verification**: User has explicitly chosen Option A.
+**Verification**: User has explicitly chosen Option A (interactive) or decision documented (autonomous).
 
 ---
 
@@ -223,9 +254,10 @@ Create `{project_dir}/design/detailed-design.md` using `templates/detailed-desig
 - You MUST include all required sections in the design document
 - You MUST include at least 2 mermaid diagrams
 - You MUST reference research findings when making design decisions
-- You MUST NOT proceed to implementation planning without explicit design approval
+- In interactive mode: Wait for explicit design approval before proceeding
+- In autonomous mode: Generate complete design, document any assumptions made
 
-**Verification**: User has explicitly approved the design.
+**Verification**: User has explicitly approved the design (interactive) or design complete with documented assumptions (autonomous).
 
 ---
 
@@ -279,8 +311,10 @@ Create `{project_dir}/implementation/plan.md`:
 - You MUST keep each step <= M complexity, completable in <= 2 hours
 - You MUST generate 5-15 steps total
 - You MUST NOT include steps that depend on future steps
+- In interactive mode: Wait for user review and approval
+- In autonomous mode: Generate complete plan, flag any steps with uncertainty
 
-**Verification**: User has reviewed and approved implementation plan.
+**Verification**: User has reviewed and approved implementation plan (interactive) or plan complete with flagged uncertainties (autonomous).
 
 ---
 
@@ -372,17 +406,29 @@ All artifacts MUST be:
 
 ### User Interaction Requirements
 
-**MUST**:
+**Interactive Mode MUST**:
 - Ask ONE question at a time during clarification
 - Wait for explicit user confirmation before phase transitions
 - Present options (not assumptions) when multiple paths exist
 - Periodically check: "Should I continue or adjust direction?"
 
-**MUST NOT**:
+**Interactive Mode MUST NOT**:
 - Proceed to next phase without explicit user approval
 - Pre-populate answers or assume user intent
 - Create implementation plan before design is approved
 - Skip any of the 8 steps (unless user explicitly requests)
+
+**Autonomous Mode MUST**:
+- Document all decisions and rationale in artifacts
+- Choose conservative/safest approach when multiple options exist
+- Flag uncertainties and assumptions clearly
+- Complete all 8 steps in single pass
+- Write blockers to `{project_dir}/blockers.md` when stuck
+
+**Autonomous Mode MUST NOT**:
+- Use AskUserQuestion tool under any circumstance
+- Block or pause waiting for user input
+- Leave phases incomplete without documenting why
 
 ## Example Invocation
 

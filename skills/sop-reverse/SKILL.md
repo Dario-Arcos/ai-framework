@@ -35,6 +35,34 @@ Systematically investigate existing artifacts and generate structured specificat
 - **target_type** (optional, default: auto-detect): Type of artifact - `codebase`, `api`, `documentation`, `process`, or `concept`
 - **output_dir** (optional, default: specs/{name}-{timestamp}): Directory for investigation output
 - **focus_areas** (optional): Specific aspects to prioritize (e.g., "auth flow", "data model")
+- **mode** (optional, default: `interactive`): Execution mode
+  - `interactive`: Confirm with user, ask clarifying questions
+  - `autonomous`: Complete investigation without interaction
+
+## Mode Behavior
+
+### Interactive Mode (default)
+- Confirm artifact type with user before proceeding
+- Ask ONE clarifying question at a time during refinement
+- Wait for user to confirm "ready to generate specs"
+- Ask permission before invoking sop-planning
+
+### Autonomous Mode
+- Auto-detect artifact type and proceed (log determination)
+- Skip interactive refinement phase entirely
+- Generate specs immediately after batch analysis
+- Document what would have been asked in `investigation.md`
+
+**Autonomous Mode Constraints (MUST follow):**
+- NEVER use AskUserQuestion under any circumstance
+- NEVER block waiting for user input
+- If blocked by ambiguous artifact type or missing access:
+  1. Document blocker in `{output_dir}/blockers.md` with full details
+  2. Write to `.ralph/blockers.json` if the file exists
+  3. Make best-effort determination and document reasoning
+  4. Continue with investigation
+- Choose most common/conservative interpretation when ambiguous
+- Document all assumptions in investigation.md
 
 ## The Investigation Process
 
@@ -43,9 +71,9 @@ Systematically investigate existing artifacts and generate structured specificat
 Analyze the target to determine type. Present determination with evidence.
 
 **Constraints:**
-- You MUST confirm type with user before proceeding
-- You MUST ask one yes/no question and wait for explicit confirmation
-- You MUST NOT proceed to analysis without user agreement on artifact type
+- In interactive mode: Confirm type with user, wait for explicit confirmation
+- In autonomous mode: Auto-detect type, log determination, proceed immediately
+- You MUST NOT proceed without confirmation in interactive mode
 
 See [references/artifact-types.md](references/artifact-types.md) for type detection criteria.
 
@@ -65,10 +93,9 @@ See [references/artifact-types.md](references/artifact-types.md) for analysis ch
 Present findings summary, then ask clarifying questions one at a time. Incorporate responses into investigation.md. Continue until user confirms "ready to generate specs."
 
 **Constraints:**
-- You MUST ask ONE clarifying question at a time
-- You MUST wait for response before next question
-- You MUST NOT batch questions or ask multiple at once
-- You SHOULD incorporate responses into investigation.md immediately
+- In interactive mode: Ask ONE clarifying question at a time, wait for responses
+- In autonomous mode: Skip interactive refinement, document questions that would have been asked in investigation.md under "## Deferred Questions"
+- You MUST NOT batch questions in interactive mode
 
 See [references/investigation-patterns.md](references/investigation-patterns.md) for question guidelines.
 
@@ -88,9 +115,9 @@ See [references/artifact-types.md](references/artifact-types.md) for spec templa
 Generate `recommendations.md` with improvements, risks, migration paths, and prioritized next steps. Present final summary and ask if user wants to continue to sop-planning (forward flow).
 
 **Constraints:**
-- You MUST NOT auto-invoke sop-planning without user permission
-- You MUST ask user if they want to continue to forward flow
-- You SHOULD present prioritized next steps clearly
+- In interactive mode: Ask user if they want to continue to sop-planning
+- In autonomous mode: Do NOT auto-invoke sop-planning, just document recommendation
+- You MUST NOT auto-invoke sop-planning without user permission in interactive mode
 
 See [references/output-structure.md](references/output-structure.md) for template.
 

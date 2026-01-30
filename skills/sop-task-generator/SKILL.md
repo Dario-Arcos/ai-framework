@@ -32,6 +32,34 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 - **input** (required): Text description or file path to design/PDD document
 - **output_dir** (optional, default: specs/{goal}/implementation): Directory for task files
 - **step_number** (deprecated): In PDD mode, ALL steps are processed automatically. This parameter is only used for edge cases requiring single-step regeneration.
+- **mode** (optional, default: `interactive`): Execution mode
+  - `interactive`: Ask user questions, wait for approvals
+  - `autonomous`: Generate tasks without interaction, document decisions
+
+## Mode Behavior
+
+### Interactive Mode (default)
+- Inform user of detected mode and wait for acknowledgment
+- Present task breakdown for user review
+- Wait for explicit approval before generating files
+- Allow iteration based on user feedback
+
+### Autonomous Mode
+- Log detected mode but proceed without waiting
+- Generate task breakdown based on best judgment
+- Create all task files without approval prompts
+- Document all decisions in generated files
+
+**Autonomous Mode Constraints (MUST follow):**
+- NEVER use AskUserQuestion under any circumstance
+- NEVER block waiting for user input
+- If blocked by missing information or ambiguity:
+  1. Document blocker in output_dir/blockers.md with full details
+  2. Write to `.ralph/blockers.json` if the file exists
+  3. Make reasonable assumption and document it in task file
+  4. Continue generating remaining tasks
+- Choose safest/simplest approach when ambiguous
+- Add "[AUTO-GENERATED]" note to task metadata when in autonomous mode
 
 ## Output
 
@@ -50,8 +78,9 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 4. Inform user which mode was detected and what will be generated
 
 **Constraints:**
-- You MUST inform user which mode was detected
-- You MUST NOT proceed without user acknowledgment of detected mode
+- In interactive mode: Inform user of detected mode, wait for acknowledgment
+- In autonomous mode: Log detected mode, proceed immediately
+- You MUST NOT proceed without acknowledgment in interactive mode
 
 **Example output:**
 ```text
@@ -138,14 +167,14 @@ Action: Will generate 5 task files (one per step)
    Approve task breakdown? (yes/no)
    ```
 
-3. Wait for user approval
-4. If user suggests changes, adjust and re-present
-5. Only proceed to Step 5 when user explicitly approves
+3. Wait for user approval (interactive mode only)
+4. If user suggests changes, adjust and re-present (interactive mode only)
+5. Only proceed to Step 5 when user explicitly approves (interactive mode) or immediately (autonomous mode)
 
 **Constraints:**
-- You MUST NOT generate files before user approval
-- You MUST present task breakdown for user review
-- You MUST wait for explicit approval before proceeding
+- In interactive mode: Present breakdown, wait for explicit approval
+- In autonomous mode: Log breakdown, proceed to generation immediately
+- You MUST NOT generate files before user approval in interactive mode
 
 ### Task File Generation Requirements (PDD Mode)
 
@@ -338,7 +367,7 @@ Demo requirements by step:
 | Principle | Requirements |
 |-----------|-------------|
 | **Task Quality** | Completable in one session, clear success criteria, explicit dependencies |
-| **User Collaboration** | Get approval before generating, present breakdown clearly, allow iteration |
+| **User Collaboration** | Interactive: Get approval before generating, present breakdown clearly, allow iteration. Autonomous: Document decisions, proceed without approval |
 | **Consistency** | Follow code task format exactly, Given-When-Then criteria, reference designs |
 | **Execution Readiness** | Self-contained tasks, all context included, verifiable acceptance criteria |
 
@@ -391,15 +420,18 @@ specs/user-profile/tasks/
 ## Error Handling
 
 **Invalid Input:**
-- If input file doesn't exist, inform user and ask for correct path
-- If input is neither valid file nor clear description, ask for clarification
+- Interactive mode: If input file doesn't exist, inform user and ask for correct path
+- Autonomous mode: If input file doesn't exist, document blocker and abort with error
+- Interactive mode: If input is neither valid file nor clear description, ask for clarification
+- Autonomous mode: If input is ambiguous, make reasonable assumption and document in blockers.md
 
 **Missing Dependencies:**
-- If referenced design document doesn't exist, warn user but continue
+- If referenced design document doesn't exist, warn user (interactive) or log (autonomous) but continue
 - Mark as "TODO: Create design document" in task
 
 **Complexity Issues:**
-- If single step requires >5 tasks, warn user and suggest breaking into sub-steps
+- Interactive mode: If single step requires >5 tasks, warn user and suggest breaking into sub-steps
+- Autonomous mode: If single step requires >5 tasks, proceed with best judgment and document in task metadata
 - If task complexity is High, note that it may need further decomposition
 
 ## Common Mistakes
@@ -432,6 +464,7 @@ specs/user-profile/tasks/
 
 - This skill creates task specifications, not implementations
 - Tasks are meant to be executed by sop-code-assist or similar agents
-- Always validate with user before creating files
+- In interactive mode: Always validate with user before creating files
+- In autonomous mode: Document all decisions, proceed without validation
 - Tasks should be implementation-agnostic where possible
 - Focus on "what" and "why", not "how" (except in Implementation Approach as guidance)
