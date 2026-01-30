@@ -2,271 +2,232 @@
 
 ## Overview
 
-This reference defines the two supervision approaches based on human involvement level. Understanding these modes is essential for configuring ralph-orchestrator execution appropriately.
+Ralph-orchestrator has two distinct phases with different supervision options. This reference clarifies exactly what modes exist and eliminates ambiguity.
 
 ---
 
-## Planning Phase: ALWAYS HITL
+## The Two Phases
 
-**Constraints:**
-- You MUST complete planning phase interactively because automated planning produces poor specifications
-- You MUST NOT skip or automate planning because workers need clear requirements
-
-**Constraints:**
-- You MUST complete planning phase interactively because automated planning produces poor specifications
-- You MUST NOT skip or automate planning because workers need clear requirements
-- You MUST capture all Q&A in specs because decisions need documentation
-
-The planning phase uses SOP skills and requires human involvement:
-
-```mermaid
-graph LR
-    A[User invokes<br/>/ralph-orchestrator] --> B[Flow selection]
-    B --> C{Forward or Reverse?}
-    C -->|Forward| D[sop-discovery<br/>HITL]
-    C -->|Reverse| E[sop-reverse<br/>HITL]
-    E --> F{Continue?}
-    F -->|Yes| D
-    D --> G[sop-planning<br/>HITL]
-    G --> H[sop-task-generator<br/>HITL]
-    H --> I[Configure Execution]
-    I --> J{Execution mode?}
-    J -->|HITL| K[Interactive execution]
-    J -->|AFK| L[Autonomous execution]
 ```
-
-### Planning Characteristics
-
-**Constraints:**
-- You MUST ask one question at a time because batched questions produce shallow answers
-- You MUST confirm alignment after each phase because misalignment compounds
-- You MUST document all Q&A in specs because this creates audit trail
-
-- **Interactive Q&A**: One question at a time
-- **User decisions**: You propose, user chooses
-- **Incremental validation**: Confirm alignment after each phase
-- **Document everything**: All Q&A captured in specs
-- You MUST NOT skip or automate planning because workers need documented requirements
-
-### Planning Duration
-
-| Phase | Typical Duration | User Involvement |
-|-------|-----------------|------------------|
-| sop-discovery | 10-20 min | High - answering questions |
-| sop-planning | 20-40 min | Medium - reviewing options |
-| sop-task-generator | 5-15 min | Low - approving task list |
-| Configuration | 2-5 min | High - choosing execution mode |
-
-**Total planning time:** 40-80 minutes for typical projects
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 1: PLANNING                                              │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  Mode: Interactive OR Autonomous (user chooses)         │    │
+│  │  Tools: SOP skills (discovery, planning, task-gen)      │    │
+│  │  Duration: 30-90 minutes                                │    │
+│  └─────────────────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────────────────┤
+│  MANDATORY CHECKPOINT: User approves plan before execution      │
+├─────────────────────────────────────────────────────────────────┤
+│  PHASE 2: EXECUTION                                             │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  Mode: ALWAYS AUTONOMOUS (loop.sh in background)        │    │
+│  │  Optional: Checkpoints every N tasks for review         │    │
+│  │  Duration: 1-8 hours                                    │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Execution Phase: HITL or AFK
+## Phase 1: Planning Modes
 
-After planning completes, choose execution supervision mode.
+### Interactive Mode (Default)
 
-## HITL (Human-in-the-Loop) Execution
+**When to use:**
+- Requirements are unclear or complex
+- First time working with this type of project
+- User wants to learn from the process
+- Architectural decisions need discussion
 
-**Constraints:**
-- You MUST use HITL for first-time ralph-orchestrator users because learning requires observation
-- You MUST use HITL for risky tasks (auth, payments) because human review catches critical errors
-- You SHOULD use HITL when testing new quality gates because gate behavior needs validation
+**Behavior:**
+- SOP skills ask questions one at a time
+- User answers, skill iterates
+- User confirms before phase transitions
+- Full collaboration throughout
 
-### When to Use HITL Execution
+**Duration:** 60-90 minutes typical
 
-- Learning how Ralph handles your codebase
-- Risky tasks (auth, payments, migrations)
-- Architectural decisions that need approval
-- First-time setup of a new project
-- Testing new quality gates
+### Autonomous Mode
 
-### Configuration Methods
+**When to use:**
+- Requirements are clear and well-defined
+- Similar to past projects
+- User has limited time
+- Trust the system to make reasonable decisions
 
-#### 1. Iteration Limits
+**Behavior:**
+- SOP skills make decisions independently
+- All decisions documented in artifacts
+- Blockers written to `blockers.md` and `.ralph/blockers.json`
+- Continues without blocking for input
 
-```bash
-./loop.sh specs/my-feature/ 1     # Single iteration, review after
-./loop.sh specs/my-feature/ 5     # Few iterations, frequent review
-```
+**Duration:** 15-30 minutes typical
 
-#### 2. Checkpoint Mode (Preferred)
+### Planning Mode Comparison
 
-In `.ralph/config.sh`:
-
-```bash
-CHECKPOINT_MODE="iterations"
-CHECKPOINT_INTERVAL=5           # Pause every 5 iterations
-```
-
-Or milestone-based:
-
-```bash
-CHECKPOINT_MODE="milestones"
-CHECKPOINT_ON_MODULE=true       # Pause when module completes
-```
-
-### Behavior
-
-- Short runs or checkpoints
-- Human reviews after each batch
-- Adjust Signs and specs between runs
-- Incremental confidence building
-- Safe experimentation
+| Aspect | Interactive | Autonomous |
+|--------|-------------|------------|
+| User presence | Required | Not required |
+| Questions | Asked one at a time | Answered with reasonable defaults |
+| Decisions | User chooses | System chooses, documents why |
+| Blockers | User resolves immediately | Documented for later review |
+| Duration | 60-90 min | 15-30 min |
+| Best for | Complex/unclear projects | Clear/familiar projects |
 
 ---
 
-## AFK (Away-From-Keyboard) Execution
+## Mandatory Checkpoint
 
-**Constraints:**
-- You MUST NOT use AFK for high-risk tasks because human review catches critical errors
-- You MUST have strong test coverage before AFK because gates rely on tests
-- You SHOULD use AFK for bulk implementation work because fresh context improves throughput
+**ALWAYS required between planning and execution, regardless of planning mode.**
 
-### When to Use AFK Execution
+The checkpoint presents:
+- Summary of all artifacts generated
+- Key decisions made (with rationale if autonomous)
+- Any blockers found
+- Task count and complexity breakdown
 
-- Bulk implementation work
-- Low-risk, well-defined tasks
-- Overnight batch processing
-- Tasks with strong test coverage
+User options:
+- **Approve**: Continue to execution
+- **Review**: Inspect artifact contents
+- **Redo**: Return to planning with interactive mode
+
+**You MUST NOT skip this checkpoint.**
+
+---
+
+## Phase 2: Execution
+
+### Core Truth
+
+**Execution is ALWAYS autonomous.** The loop.sh script runs in the background and executes tasks with fresh context per iteration. There is no "interactive execution" - that's a contradiction.
+
+### Checkpoint Configuration
+
+The ONLY configuration choice for execution is checkpoint frequency:
+
+| Option | Configuration | Behavior |
+|--------|---------------|----------|
+| **No checkpoints** | `CHECKPOINT_MODE="none"` | Run until complete or failure |
+| **Every N tasks** | `CHECKPOINT_MODE="iterations"` + `CHECKPOINT_INTERVAL=N` | Pause every N tasks for review |
+
+### When to Use Checkpoints
+
+**No checkpoints (recommended for most cases):**
+- Well-defined tasks with clear acceptance criteria
+- Strong test coverage (90%+)
 - Confident in quality gates
-- Well-understood codebase
+- Overnight/AFK runs
 
-### Configuration
+**Checkpoints every 3-5 tasks:**
+- First time using ralph-orchestrator
+- Learning how the system handles your codebase
+- Higher-risk changes (auth, payments)
+- Testing new quality gate configurations
 
-```bash
-./loop.sh specs/my-feature/ 20    # Medium batch
-./loop.sh specs/my-feature/ 50    # Long overnight run
-./loop.sh specs/my-feature/       # Unlimited (until complete)
-```
-
-Or in `.ralph/config.sh`:
+### Configuration Example
 
 ```bash
-CHECKPOINT_MODE="none"            # No interruptions
-MAX_RUNTIME=0                     # Unlimited time (default)
+# .ralph/config.sh
+
+# No checkpoints - run until complete
+CHECKPOINT_MODE="none"
+
+# OR: Checkpoint every 5 tasks
+CHECKPOINT_MODE="iterations"
+CHECKPOINT_INTERVAL=5
 ```
 
-### Behavior
+---
 
-- Long runs (10-50+ iterations)
-- Circuit breaker handles failures
-- Review aggregated results at end
-- Trust backpressure gates
-- Workers operate autonomously
-- Passive monitoring only
+## Safety Features (Always Active)
 
-### Safety Features
+These protections work regardless of checkpoint configuration:
 
-**Constraints:**
-- You MUST rely on circuit breaker because 3 consecutive failures indicate systematic issues
-- You MUST check for task abandonment because repeated failures indicate unclear requirements
-
-- **Circuit breaker**: Stops after 3 consecutive failures
-- **Task abandonment detection**: Exits if same task fails 3+ times
-- **Loop thrashing detection**: Detects oscillating patterns
-- **Quality gates**: All gates must pass before commit
+| Feature | Trigger | Action |
+|---------|---------|--------|
+| **Circuit breaker** | 3 consecutive failures | Exit with code 2 |
+| **Task abandonment** | Same task fails 3 times | Exit with code 7 |
+| **Loop thrashing** | Oscillating task patterns | Exit with code 6 |
+| **Quality gates** | Test/lint/build failure | Reject iteration, retry |
 
 ---
 
-## The Two-Phase Structure
+## Common Misconceptions
 
-Ralph-loop has a strict separation between planning and execution:
+### "HITL Execution"
 
-| Phase | Supervision | Duration | Purpose |
-|-------|-------------|----------|---------|
-| **Planning** | HITL (mandatory) | 40-80 min | Define what to build |
-| **Execution** | HITL or AFK (choice) | 1-8 hours | Build it with quality |
+**Wrong:** "I want human-in-the-loop execution where I review each task."
 
-### Why This Separation?
+**Right:** Execution is always autonomous. If you want frequent review, use checkpoints every 1-3 tasks. But the loop itself runs autonomously - you review at pauses, not during execution.
 
-**Constraints:**
-- You MUST separate planning from execution because mixing degrades both
-- You MUST NOT automate planning because human judgment is required for scope
-- You SHOULD automate execution when confident because fresh context improves quality
+### "AFK vs HITL"
 
-- **Planning requires human judgment**: Architectural decisions, trade-offs, scope
-- **Execution benefits from fresh context**: Each worker gets clean 200K token window
-- **Planning is one-time cost**: Pay once, execute multiple times if needed
-- **Execution is parallelizable**: Multiple workers can execute simultaneously
+**Wrong:** "AFK and HITL are two different execution modes."
+
+**Right:** There's only ONE execution mode: autonomous via loop.sh. "AFK" means no checkpoints. "Frequent checkpoints" replaces what was misleadingly called "HITL".
+
+### "Autonomous Planning = No Control"
+
+**Wrong:** "If I use autonomous planning, I lose all control."
+
+**Right:** The mandatory checkpoint before execution means you ALWAYS review and approve the plan. Autonomous planning just means you weren't present during generation - you still approve before anything executes.
 
 ---
 
-## Progression Path for Execution
-
-**Constraints:**
-- You MUST start with HITL on first project because learning patterns requires observation
-- You MUST graduate gradually to AFK because premature automation causes failures
-- You SHOULD never fully trust AFK for high-risk tasks because human review is valuable
+## Decision Flowchart
 
 ```
-First project       -> HITL (1-5 iterations)  -> Learn patterns
-Stable codebase     -> HITL (checkpoints)     -> Supervised autonomy
-High test coverage  -> AFK (20-50)            -> Bulk work
-Full confidence     -> AFK (unlimited)        -> Overnight runs
+Start
+  │
+  ▼
+┌─────────────────────────────┐
+│ Will you be present during  │
+│ the planning phase?         │
+└─────────────┬───────────────┘
+              │
+    ┌─────────┴─────────┐
+    ▼                   ▼
+┌────────┐         ┌──────────┐
+│  Yes   │         │    No    │
+└───┬────┘         └────┬─────┘
+    │                   │
+    ▼                   ▼
+Interactive         Autonomous
+Planning            Planning
+    │                   │
+    └─────────┬─────────┘
+              │
+              ▼
+┌─────────────────────────────┐
+│ MANDATORY CHECKPOINT        │
+│ Review and approve plan     │
+└─────────────┬───────────────┘
+              │
+              ▼
+┌─────────────────────────────┐
+│ Do you want review pauses   │
+│ during execution?           │
+└─────────────┬───────────────┘
+              │
+    ┌─────────┴─────────┐
+    ▼                   ▼
+┌────────┐         ┌──────────┐
+│  Yes   │         │    No    │
+└───┬────┘         └────┬─────┘
+    │                   │
+    ▼                   ▼
+Checkpoints         No checkpoints
+every N tasks       (full AFK)
+    │                   │
+    └─────────┬─────────┘
+              │
+              ▼
+       Launch loop.sh
+       (ALWAYS autonomous)
 ```
 
-**Recommendation:**
-1. Always HITL planning (non-negotiable)
-2. Start with HITL execution (1-5 iterations)
-3. Graduate to checkpoint-based HITL
-4. Move to AFK when confident
-
 ---
 
-## Security Considerations
-
-**Constraints:**
-- You MUST NOT use `--dangerously-skip-permissions` in production because this bypasses safety
-- You MUST use isolated environment for AFK because unattended execution has risk
-- You SHOULD use Docker sandbox for overnight runs because filesystem isolation prevents damage
-
-**Use protection:**
-- Run with `--dangerously-skip-permissions` in sandbox only
-- "It's not if it gets popped, it's when"
-- Isolated environment (Docker/VM) recommended for AFK
-
-### Docker Sandbox Setup (Optional)
-
-```bash
-# Create isolated container
-docker run -it --rm \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  node:20 bash
-
-# Inside container
-npm install
-./loop.sh
-```
-
-This prevents any filesystem damage outside the mounted volume.
-
----
-
-## Troubleshooting
-
-### HITL Too Slow
-
-If HITL execution feels inefficient:
-- You SHOULD increase checkpoint interval to reduce interruptions
-- You SHOULD batch review multiple iterations when confident
-- You MUST NOT skip HITL for high-risk tasks regardless of time pressure
-
-### AFK Keeps Failing
-
-If AFK execution has high failure rate:
-- You SHOULD review quality gate configuration
-- You SHOULD check task sizing (may be too large)
-- You MUST return to HITL mode to diagnose issues
-
-### Unsure Which Mode to Choose
-
-If mode selection is difficult:
-- You SHOULD default to HITL for safety
-- You SHOULD try short AFK runs (5-10 iterations) to test
-- You MUST NOT use unlimited AFK without prior HITL experience
-
----
-
-*Version: 1.1.0 | Updated: 2026-01-27*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-01-29*
+*Rewritten to eliminate HITL/AFK ambiguity*

@@ -193,6 +193,8 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 **Objective**: Prepare the loop for execution.
 
+**Execution is ALWAYS autonomous.** The only choice is checkpoint frequency.
+
 ### File `.ralph/config.sh`:
 
 ```bash
@@ -200,8 +202,12 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 MODEL=claude-sonnet-4-20250514
 
 # Quality gates
-QUALITY_LEVEL=production  # prototype | production | world-class
+QUALITY_LEVEL=production  # prototype | production | library
 MIN_TEST_COVERAGE=90      # 0-100, 0 disables
+
+# Checkpoints (optional review pauses)
+CHECKPOINT_MODE="none"      # "none" or "iterations"
+CHECKPOINT_INTERVAL=5       # Only if CHECKPOINT_MODE="iterations"
 
 # Iterations
 MAX_ITERATIONS=10
@@ -213,11 +219,13 @@ MAX_ITERATIONS=10
 
 **Objective**: Implement tasks autonomously.
 
+**Execution is ALWAYS autonomous via loop.sh.** Optional checkpoints pause for review but the loop itself runs autonomously.
+
 ### Launch:
 
 ```bash
-# ALWAYS in background
-Bash(command="./loop.sh", run_in_background=true)
+# ALWAYS in background, ALWAYS autonomous
+Bash(command="./loop.sh specs/{feature}/", run_in_background=true)
 ```
 
 ### The loop does for each iteration:
@@ -359,7 +367,7 @@ project/
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 4: CONFIGURATION                                         │
-│  └─ Configure .ralph/config.sh (AFK/Checkpoint/HITL)            │
+│  └─ Configure .ralph/config.sh (quality, optional checkpoints)  │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐

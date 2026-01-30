@@ -13,7 +13,7 @@ description: Use when building features requiring planning + autonomous executio
 ## Overview
 
 - **Planning**: Interactive OR autonomous (user chooses)
-- **Execution**: Workers implement with fresh 200K context per iteration (AFK/Checkpoint/HITL)
+- **Execution**: ALWAYS autonomous via loop.sh (optional checkpoints for review)
 
 ---
 
@@ -51,8 +51,8 @@ description: Use when building features requiring planning + autonomous executio
 3. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
 4. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 5. **Step 5**: Plan Review Checkpoint (mandatory before execution)
-6. **Step 6**: Configure execution mode (AFK/Checkpoint/HITL)
-7. **Step 7**: Launch `./loop.sh specs/{goal}/` in background
+6. **Step 6**: Configure execution (quality level, optional checkpoints)
+7. **Step 7**: Launch `./loop.sh specs/{goal}/` (ALWAYS autonomous)
 
 > Full diagram: [ralph-orchestrator-flow.md](references/ralph-orchestrator-flow.md)
 
@@ -226,10 +226,12 @@ Options:
 
 ### Step 6: Configure Execution
 
+**Execution is ALWAYS autonomous via loop.sh.** The only choice is checkpoint frequency.
+
 | Question | Options |
 |----------|---------|
-| Supervision Mode | **AFK**: Fully autonomous (Recommended) / **Checkpoint**: Pause every N tasks / **HITL**: Active supervision |
-| Checkpoint Interval | 3 / 5 / 10 tasks |
+| Checkpoints | **None** (Recommended): Run until complete / **Every N tasks**: Pause for review |
+| Checkpoint Interval | 3 / 5 / 10 tasks (only if checkpoints enabled) |
 | Quality Level | **Production**: Tests+Types+Lint+Build (Recommended) / **Prototype**: Skip verifications / **Library**: All + coverage + docs |
 
 Update `.ralph/config.sh` with selections. Details: [configuration-guide.md](references/configuration-guide.md)
