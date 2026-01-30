@@ -331,7 +331,7 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 | [quality-gates.md](references/quality-gates.md) | Gate descriptions, TDD |
 | [sop-integration.md](references/sop-integration.md) | How SOP skills connect |
 | [state-files.md](references/state-files.md) | File purposes and lifecycle |
-| [memories-system.md](references/memories-system.md) | Signs vs Memories |
+| [memories-system.md](references/memories-system.md) | Memory architecture overview |
 | [backpressure.md](references/backpressure.md) | Checkpoints, circuit breakers |
 | [mode-selection.md](references/mode-selection.md) | Decision flowcharts |
 | [observability.md](references/observability.md) | Logging, metrics, debugging |

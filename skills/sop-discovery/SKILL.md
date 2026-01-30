@@ -30,7 +30,7 @@ The discovery process is conversational and iterative. You will ask questions on
 ## Parameters
 
 - **goal_description** (required): Brief description of goal to explore. Accepts text, file path, or URL.
-- **project_dir** (optional, default: "specs"): Output directory for discovery artifacts
+- **project_dir** (optional, default: "specs/{goal}"): Output directory for discovery artifacts. The `{goal}` is derived from `goal_description`.
 - **mode** (optional, default: "interactive"): Execution mode - "interactive" or "autonomous"
 
 ## Execution Modes
@@ -63,6 +63,16 @@ For AI agents executing discovery as part of larger workflow.
 - Complexity: Infer from project scope
 - Quality: Match QUALITY_LEVEL from AGENTS.md
 - Breaks: Not applicable
+
+**Autonomous Mode Constraints (MUST follow):**
+- NEVER use AskUserQuestion under any circumstance
+- NEVER block waiting for user input
+- If blocked by missing information or ambiguity:
+  1. Document blocker in `{project_dir}/blockers.md`
+  2. Write to `.ralph/blockers.json` if file exists
+  3. Make reasonable assumption and document it
+  4. Continue with discovery process
+- Choose safest/simplest approach when ambiguous
 
 ### Mode Detection
 

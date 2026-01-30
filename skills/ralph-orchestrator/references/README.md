@@ -24,7 +24,7 @@ Quick navigation for detailed documentation.
 | File | Description |
 |------|-------------|
 | [state-files.md](state-files.md) | Purpose of each state file |
-| [memories-system.md](memories-system.md) | Signs vs Memories distinction |
+| [memories-system.md](memories-system.md) | Memory architecture overview |
 | [observability.md](observability.md) | Logs, metrics, and debugging |
 
 ## Risk & Troubleshooting
@@ -73,7 +73,7 @@ references/
 │   └── backpressure.md              # Circuit breakers
 ├── State & Knowledge
 │   ├── state-files.md               # File purposes
-│   ├── memories-system.md           # Signs vs Memories
+│   ├── memories-system.md           # Memory architecture
 │   └── observability.md             # Logs & metrics
 ├── Risk
 │   └── red-flags.md                 # Dangerous patterns
