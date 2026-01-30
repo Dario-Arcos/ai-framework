@@ -1,51 +1,24 @@
 # Project: [Name]
 
-<!--
-## Overview
-
-Project configuration template for ralph-orchestrator. Defines quality level, build commands,
-validation gates, environment requirements, gotchas, and coding patterns.
-
-## Usage Constraints
-
-- You MUST set quality level because this determines which gates are enforced
-- You MUST define all validation commands because workers need to run them
-- You MUST document environment requirements because setup varies by machine
-- You SHOULD document gotchas as you discover them because this prevents repeated failures
-- You SHOULD NOT commit this template with example content because examples are placeholders
--->
-
 ## Quality Level
 
-**Level: [Prototype | Production | Library]**
+> **Source of Truth:** `.ralph/config.sh` → `QUALITY_LEVEL`
 
-| Level | Shortcuts OK | Tests Required | Polish Required |
-|-------|--------------|----------------|-----------------|
-| Prototype | Yes | No | No |
-| Production | No | Yes | Some |
-| Library | No | Yes | Yes |
-
-**Behavior by level:**
-- **Prototype**: Skip tests, skip lint, commit early and often
-- **Production**: All backpressure gates must pass, TDD mandatory
-- **Library**: All gates + documentation + edge cases + examples
+| Level | Tests | Types | Lint | Docs |
+|-------|-------|-------|------|------|
+| prototype | Skip | Skip | Skip | Skip |
+| production | Required | Required | Required | Optional |
+| library | Required | Required | Required | Required |
 
 ## Build & Run
 
 ```bash
-npm install
-npm run dev
-npm run build
+# Fill in your project's commands
 ```
 
 ## Validation
 
-**Constraints:**
-- You MUST run all gates before commit when quality level is Production or Library because this ensures code quality
-- You SHOULD run gates in order (test → typecheck → lint → build) because earlier failures are more informative
-- You MAY skip gates when quality level is Prototype because speed is prioritized
-
-**All must pass before commit:**
+**All must pass before commit (Production/Library):**
 - Tests: `npm test`
 - Typecheck: `npm run typecheck`
 - Lint: `npm run lint`
@@ -58,35 +31,21 @@ npm run build
 
 ## Gotchas
 
-**Constraints:**
-- You MUST document problems you solve because future iterations will encounter them
-- You MUST include reproduction steps because context helps diagnosis
-- You SHOULD categorize by area (Environment, Build, Testing, Runtime) because this aids search
+<!-- Document problems as you solve them. Include reproduction steps. -->
 
 ### Environment
-- **Node version matters**: Use exact version from `.nvmrc`. v18 breaks crypto module.
-- **M1/ARM issues**: Some native modules need `npm rebuild`. Try `arch -x86_64 npm install` if stuck.
+- [Your gotchas here]
 
 ### Build
-- **Import order**: CSS imports must come after component imports or styles break.
-- **Path aliases**: TypeScript paths in `tsconfig.json` need matching in `vite.config.ts`.
+- [Your gotchas here]
 
 ### Testing
-- **Mock hoisting**: Jest hoists `jest.mock()` calls. Put them at file top, not inside describe blocks.
-- **Async cleanup**: Always `await` cleanup in `afterEach` or you get "act()" warnings.
+- [Your gotchas here]
 
 ### Runtime
-- **Hydration mismatches**: Server/client date formatting differs. Use `suppressHydrationWarning` or format on client only.
-- **Memory leaks**: Event listeners in `useEffect` need cleanup. Subscriptions need unsubscribe.
-
-<!-- Add your project-specific gotchas below -->
+- [Your gotchas here]
 
 ## Patterns
-
-**Constraints:**
-- You MUST follow established patterns because consistency reduces cognitive load
-- You SHOULD document deviations because exceptions need justification
-- You SHOULD NOT create new patterns without team agreement because fragmentation hurts maintainability
 
 ### Architecture
 - [Module organization]
@@ -102,14 +61,3 @@ npm run build
 - `src/lib/*` - Shared utilities
 - `src/components/*` - UI components
 - `src/pages/*` - Page components
-
-### Imports
-- [Absolute vs relative]
-- [Barrel exports]
-
----
-
-<!--
-*Version: 1.1.0 | Updated: 2026-01-27*
-*Compliant with strands-agents SOP format (RFC 2119)*
--->

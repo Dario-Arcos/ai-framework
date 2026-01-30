@@ -248,39 +248,6 @@ detect_loop_thrashing() {
 }
 
 # ─────────────────────────────────────────────────────────────────
-# CONFIGURATION CONSISTENCY VALIDATION
-# ─────────────────────────────────────────────────────────────────
-
-# Validate that AGENTS.md and config.sh have matching QUALITY_LEVEL values
-validate_config_consistency() {
-    local agents_file="AGENTS.md"
-    local config_file=".ralph/config.sh"
-
-    if [ -f "$agents_file" ] && [ -f "$config_file" ]; then
-        # Extract QUALITY_LEVEL from AGENTS.md (format: QUALITY_LEVEL: value or **QUALITY_LEVEL**: value)
-        local agents_level=$(grep -i "quality.level" "$agents_file" | head -1 | sed 's/.*:\s*\**\([^*]*\)\**.*/\1/' | tr -d ' ' | tr '[:upper:]' '[:lower:]')
-
-        # Extract QUALITY_LEVEL from config.sh
-        local config_level=$(grep "^QUALITY_LEVEL=" "$config_file" | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]')
-
-        if [ -n "$agents_level" ] && [ -n "$config_level" ]; then
-            if [ "$agents_level" != "$config_level" ]; then
-                echo ""
-                echo -e "${YELLOW}⚠️  CONFIG MISMATCH WARNING${NC}"
-                echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo "QUALITY_LEVEL inconsistency detected:"
-                echo "  AGENTS.md:  $agents_level"
-                echo "  config.sh:  $config_level"
-                echo ""
-                echo "This may cause unexpected behavior. Consider aligning these values."
-                echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo ""
-            fi
-        fi
-    fi
-}
-
-# ─────────────────────────────────────────────────────────────────
 # GUARDRAILS LEARNING VALIDATION
 # ─────────────────────────────────────────────────────────────────
 
@@ -405,22 +372,37 @@ if [ ! -f "AGENTS.md" ]; then
     cat > AGENTS.md << 'EOF'
 # Project: [Name]
 
+## Quality Level
+
+> **Source of Truth:** `.ralph/config.sh` → `QUALITY_LEVEL`
+
+| Level | Tests | Types | Lint | Docs |
+|-------|-------|-------|------|------|
+| prototype | Skip | Skip | Skip | Skip |
+| production | Required | Required | Required | Optional |
+| library | Required | Required | Required | Required |
+
 ## Build & Run
+
 ```bash
-npm install
-npm run dev
+# Fill in your project's commands
 ```
 
 ## Validation
+
+**All must pass before commit (Production/Library):**
 - Tests: `npm test`
 - Typecheck: `npm run typecheck`
 - Lint: `npm run lint`
+- Build: `npm run build`
 
-## Operational Notes
-[Add learnings here]
+## Gotchas
 
-## Codebase Patterns
-[Add patterns here]
+<!-- Document problems as you solve them -->
+
+## Patterns
+
+<!-- Document codebase conventions -->
 EOF
 fi
 
@@ -475,9 +457,6 @@ echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
 [ -f "$CONFIG_FILE" ] && echo -e "  Config: ${BLUE}$CONFIG_FILE${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-
-# Validate configuration consistency before starting loop
-validate_config_consistency
 
 # ─────────────────────────────────────────────────────────────────
 # THE LOOP
