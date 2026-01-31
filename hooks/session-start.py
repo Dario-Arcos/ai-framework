@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """AI Framework auto-installer - Templates sync on SessionStart"""
-import os
-import sys
-import shutil
 import filecmp
+import json
+import os
+import shutil
+import sys
 from pathlib import Path
-
-
-# =============================================================================
-# UTILITIES
-# =============================================================================
 
 
 def find_plugin_root():
@@ -32,33 +28,17 @@ def find_project_dir():
     return Path(os.getcwd()).resolve()
 
 
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
-
-# WHITELIST: Files that should be synced from template/ to user project
+# Files that should be synced from template/ to user project
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
     ".claude.template/settings.json.template",
-    ".claude.template/.mcp.json.template",
     ".claude.template/statusline.sh",
-    ".claude.template/rules/",
-    ".specify.template/memory/",
-    ".specify.template/scripts/",
-    ".specify.template/templates/",
 ]
 
 # Critical framework rules that MUST be in project .gitignore
-# These prevent committing framework files to user's official repository
 CRITICAL_GITIGNORE_RULES = [
-    # Framework internals (rules, configuration)
     "/.claude/",
-    "/.specify/",
-    # Framework project files (ignored by default)
     "/CLAUDE.md",
-    # MCP server data directories
-    "/.playwright-mcp/",
-    # Hook databases (notifications, tracking)
     "/hooks/*.db",
     "/hooks/__pycache__/",
 ]
@@ -120,120 +100,13 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         pass
 
 
-def migrate_legacy_gitignore(project_dir):
-    """Migra reglas legacy de .gitignore de forma idempotente (v2.0.0)
-
-    Migración:
-        - /specs/ y /prps/ de forzadas → opcionales (user decides)
-        - Agrega sección USER ARTIFACTS con documentación
-
-    Idempotencia:
-        - Detecta si ya migró (busca marker [v2.0])
-        - Seguro ejecutar N veces sin duplicación
-        - Sin archivos marker extras
-    """
-    gitignore = project_dir / ".gitignore"
-    if not gitignore.exists():
-        return
-
-    try:
-        content = gitignore.read_text(encoding="utf-8")
-
-        # Si ya tiene sección USER ARTIFACTS → proyecto ya migrado, no tocar
-        # Esto previene duplicación en proyectos con estructura legacy diferente
-        if "# USER ARTIFACTS (version control" in content:
-            return
-
-        original_content = content
-
-        # Reglas legacy a migrar (ahora opcionales en v2.0)
-        legacy_rules = {
-            "/specs/": "User artifact - optional in v2.0",
-            "/prps/": "User artifact - optional in v2.0"
-        }
-
-        migrated = False
-        for rule, reason in legacy_rules.items():
-            # Check if rule is active using line-based matching
-            rule_active = is_rule_active_in_gitignore(content, rule)
-
-            # Patrón migrado: comentario con marker [v2.0]
-            migrated_pattern = f"# [v2.0] {reason} - see USER ARTIFACTS section\n# {rule}"
-
-            # Si regla está activa Y NO está migrada → migrar
-            if rule_active and migrated_pattern not in content:
-                # Comment out the active rule with migration marker
-                lines = content.splitlines(keepends=True)
-                new_lines = []
-                rule_found = False
-
-                for line in lines:
-                    stripped = line.strip()
-                    # Found the active rule - replace with commented version
-                    if not rule_found and stripped == rule:
-                        new_lines.append(f"# [v2.0] {reason} - see USER ARTIFACTS section\n")
-                        new_lines.append(f"# {rule}\n")
-                        rule_found = True
-                        migrated = True
-                    else:
-                        new_lines.append(line)
-
-                content = "".join(new_lines)
-
-        # Si se migró algo, agregar sección USER ARTIFACTS (si no existe)
-        if migrated and "# USER ARTIFACTS (version control" not in content:
-            user_section = """
-# ============================================================================
-# USER ARTIFACTS (version control is user's choice)
-# ============================================================================
-
-# Specs and PRPs are user-generated artifacts created by framework commands.
-# By default, they are NOT ignored (can be versioned for documentation).
-# To ignore them, uncomment these lines:
-# /specs/
-# /prps/
-"""
-            content += user_section
-
-        # Solo escribir si hubo cambios
-        if content != original_content:
-            gitignore.write_text(content, encoding="utf-8")
-
-    except (OSError, IOError):
-        # Silently fail - migration is best-effort
-        pass
-
-
 def should_sync_file(rel_path_str):
-    """Check if file should be synced to user project using WHITELIST approach
-
-    Args:
-        rel_path_str: Relative path from template/ directory (e.g., "CLAUDE.md.template")
-
-    Returns:
-        bool: True if file should be synced, False otherwise
-
-    Security:
-        - Explicit whitelist prevents accidental copying of plugin components
-        - Protects against path traversal by only allowing predefined paths
-    """
-    # Check if path matches any allowed path prefix
-    for allowed_path in ALLOWED_TEMPLATE_PATHS:
-        if rel_path_str == allowed_path or rel_path_str.startswith(allowed_path):
-            return True
-
-    return False
+    """Check if file is in whitelist."""
+    return rel_path_str in ALLOWED_TEMPLATE_PATHS
 
 
 def remove_template_suffix(path_str):
-    """
-    Remove .template suffix from path components.
-
-    Examples:
-        .claude.template/ → .claude/
-        CLAUDE.md.template → CLAUDE.md
-        .mcp.json.template → .mcp.json
-    """
+    """Remove .template suffix from path components."""
     parts = Path(path_str).parts
     new_parts = []
 
@@ -248,14 +121,7 @@ def remove_template_suffix(path_str):
 
 
 def scan_template_files(template_dir):
-    """
-    Scan template directory and return list of (template_path, target_path) tuples.
-    Uses WHITELIST approach to only sync framework essentials.
-
-    Architecture:
-        - WHITELIST ensures only approved files are copied
-        - Excludes .claude.template/agents/ and commands/ (in plugin root)
-        - Includes .mcp.json.template (opt-in: user copies and renames when needed)
+    """Scan template directory and return whitelisted files.
 
     Returns:
         List of tuples: [(template_path, target_path), ...]
@@ -270,14 +136,13 @@ def scan_template_files(template_dir):
         if item.name in [".DS_Store"]:
             continue
 
-        # Skip gitignore.template (handled separately by merge_gitignore)
+        # Skip gitignore.template (handled by ensure_gitignore_rules)
         if item.name == "gitignore.template":
             continue
 
         rel_path = item.relative_to(template_dir)
         rel_path_str = str(rel_path)
 
-        # 🔒 WHITELIST CHECK: Only sync approved paths
         if not should_sync_file(rel_path_str):
             continue
 
@@ -318,8 +183,33 @@ def sync_all_files(plugin_root, project_dir):
             )
 
 
+def consume_stdin():
+    """Consume stdin as required by hook protocol."""
+    try:
+        while True:
+            chunk = sys.stdin.read(4096)
+            if not chunk:
+                break
+    except (IOError, OSError):
+        pass
+
+
+def output_hook_response(context_msg):
+    """Output JSON response following hook protocol."""
+    response = {
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": context_msg
+        }
+    }
+    print(json.dumps(response))
+
+
 def main():
     """Install framework files on session start"""
+    # Consume stdin (required by hook protocol)
+    consume_stdin()
+
     try:
         project_dir = find_project_dir()
         plugin_root_env = os.environ.get("CLAUDE_PLUGIN_ROOT")
@@ -327,10 +217,8 @@ def main():
 
         if not plugin_root.exists():
             sys.stderr.write("ERROR: Plugin root not found\n")
+            output_hook_response("AI Framework: ✗ Plugin root not found")
             sys.exit(1)
-
-        # Migrate legacy .gitignore rules (v2.0.0 - idempotent)
-        migrate_legacy_gitignore(project_dir)
 
         # Ensure .gitignore has critical runtime rules
         ensure_gitignore_rules(plugin_root, project_dir)
@@ -338,10 +226,12 @@ def main():
         # Sync template files (smart sync: skip unchanged)
         sync_all_files(plugin_root, project_dir)
 
+        output_hook_response("AI Framework: ✓ Templates synced")
         sys.exit(0)
 
     except Exception as e:
         sys.stderr.write("ERROR: Installation failed: " + str(e) + "\n")
+        output_hook_response("AI Framework: ✗ " + str(e))
         sys.exit(1)
 
 

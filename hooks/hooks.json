@@ -2,40 +2,24 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py"
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/superpowers-loader.sh"
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
+            "timeout": 10,
+            "statusMessage": "Syncing templates..."
           }
         ]
-      }
-    ],
-    "PreToolUse": [
+      },
       {
-        "matcher": "Edit|Write|MultiEdit",
+        "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/security_guard.py"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/anti_drift.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
+            "timeout": 10,
+            "statusMessage": "Checking browser..."
           }
         ]
       }
@@ -45,27 +29,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh Stop"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh",
+            "timeout": 5
           }
         ]
       }
     ],
     "Notification": [
       {
+        "matcher": "permission_prompt|idle_prompt|auth_success|elicitation_dialog",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh Notification"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/episodic-memory-sync.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh",
+            "timeout": 5
           }
         ]
       }
