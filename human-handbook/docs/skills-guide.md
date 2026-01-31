@@ -1,486 +1,323 @@
-# Guía de Skills
+# Skills
 
-::: tip ¿Qué son las Skills?
-Capacidades especializadas que extienden Claude con conocimiento experto y workflows probados. Se activan automáticamente según el contexto o mediante invocación explícita.
+Workflows especializados que Claude activa automáticamente o que puedes invocar explícitamente.
+
+::: tip Activación
+Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo: `"Usando frontend-design: crea landing page"`.
 :::
 
 ---
 
-## Inicio Rápido
+## Todos los skills
 
-::: tip Encuentra tu Skill
-Selecciona tu situación para ver las skills recomendadas
-:::
+### Core
 
-| Situación | Skill Recomendada |
-|-----------|-------------------|
-| Idea nueva, necesito explorar | `brainstorming` |
-| Testing E2E webapp | `webapp-testing` |
-| Testing E2E mobile | `mobile-testing` |
-| Crear PR con quality gate | `pr-workflow` |
-| Crear componentes Claude Code | `claude-code-expert` |
-| Diseño frontend distintivo | `frontend-design` |
-| Humanizar texto AI-generated | `humanizer` |
-| Desarrollo autónomo multi-iteración | `ralph-orchestrator` |
+| Skill | Qué hace | Cuándo usarlo |
+|-------|----------|---------------|
+| `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots |
+| `brainstorming` | Diálogo para diseñar soluciones | Antes de codear algo nuevo |
+| `pr-workflow` | PR con code + security review | Al crear pull requests |
+| `claude-code-expert` | Genera componentes Claude Code | Crear agents, commands, hooks |
+| `frontend-design` | Diseño web distintivo | Interfaces memorables, no genéricas |
+| `humanizer` | Elimina patrones de texto AI | Docs, commits, PRs, UI text |
+| `writing-skills` | Crear skills bulletproof | Meta-skill para autores de skills |
 
----
+### Pipeline SOP (desarrollo autónomo)
 
-## Skills por Categoría
-
-| Categoría | Skills | Uso Recomendado |
-|-----------|--------|-----------------|
-| [Planning](#planning) | 1 | Explorar ideas antes de implementar |
-| [Testing](#testing) | 2 | E2E testing para webapps y mobile |
-| [Git](#git) | 1 | PR con quality gate integrado |
-| [Development Tools](#development-tools) | 1 | Crear componentes Claude Code |
-| [Design](#design) | 1 | Interfaces frontend distintivas |
-| [Writing](#writing) | 1 | Humanización de texto |
-| [Automation](#automation) | 1 | Desarrollo autónomo en loop |
+| Skill | Qué hace | Posición en el pipeline |
+|-------|----------|------------------------|
+| `ralph-orchestrator` | Orquesta todo el pipeline | **Entry point** — invoca este |
+| `sop-discovery` | Explora constraints y riesgos | 1. Exploración |
+| `sop-reverse` | Investiga sistemas existentes | 1. Exploración (alternativa) |
+| `sop-planning` | Diseña solución detallada | 2. Diseño |
+| `sop-task-generator` | Genera .code-task.md files | 3. Planificación |
+| `sop-code-assist` | Implementa con TDD | 4. Ejecución |
 
 ---
 
-## Planning
+## agent-browser
 
-### brainstorming
+CLI de browser automation. Reemplaza WebFetch/WebSearch para interacción real con páginas.
 
-::: tip Planning | Foundation
-**Cuándo**: Antes de cualquier trabajo creativo - crear features, construir componentes, agregar funcionalidad o modificar comportamiento
-**Qué hace**: Transforma ideas vagas en diseños completos mediante diálogo colaborativo. Preguntas una a la vez, exploración de alternativas, validación incremental.
-:::
-
-**Proceso**:
-
-1. **Entender la idea**
-   - Revisar estado actual del proyecto (archivos, docs, commits recientes)
-   - Preguntas una a la vez (preferir multiple choice)
-   - Foco: propósito, constraints, criterios de éxito
-
-2. **Explorar alternativas**
-   - Proponer 2-3 enfoques con trade-offs
-   - Liderar con recomendación y razonamiento
-   - Presentar opciones conversacionalmente
-
-3. **Presentar diseño**
-   - Secciones de 200-300 palabras
-   - Validar después de cada sección
-   - Cubrir: arquitectura, componentes, data flow, error handling, testing
-
-**Después del diseño**:
-- Documentar en `docs/plans/YYYY-MM-DD-<topic>-design.md`
-- Commit del documento
-- Continuar con ralph-orchestrator o Superpowers `writing-plans`
-
-**Principios clave**:
-- **Una pregunta a la vez** - No abrumar con múltiples
-- **YAGNI ruthlessly** - Eliminar features innecesarios
-- **Validación incremental** - Secciones pequeñas, validar cada una
-- **Flexibilidad** - Volver atrás cuando algo no tiene sentido
-
-**Ejemplo**:
 ```bash
+agent-browser open https://example.com
+agent-browser snapshot -i          # Lista elementos (@e1, @e2...)
+agent-browser fill @e1 "texto"
+agent-browser click @e2
+agent-browser screenshot result.png
+```
+
+::: details Todas las capacidades
+| Categoría | Comandos |
+|-----------|----------|
+| Navegación | `open`, `back`, `forward`, `reload`, `tab`, `frame` |
+| Interacción | `click`, `fill`, `type`, `select`, `upload`, `drag`, `hover` |
+| Captura | `screenshot`, `pdf`, `record start/stop` |
+| Estado | `cookies`, `storage`, `state save/load` |
+| Red | `network route`, `network requests` |
+| Debug | `--headed`, `console`, `errors`, `trace` |
+:::
+
+Se instala automáticamente. Ver [Integrations](./integrations.md#agent-browser).
+
+---
+
+## brainstorming
+
+Convierte ideas vagas en diseños completos mediante diálogo.
+
+```
 "Necesito sistema de notificaciones push"
-# → ¿Real-time o batch? (pregunta 1)
-# → ¿Qué canales? Email, SMS, in-app? (pregunta 2)
-# → Propone 3 enfoques con trade-offs
-# → Diseño en secciones, valida cada una
-# → docs/plans/2026-01-25-notifications-design.md
 ```
+
+**Flujo:**
+1. Examina el proyecto, pregunta una cosa a la vez
+2. Propone 2-3 enfoques con trade-offs
+3. Diseña en secciones de 200-300 palabras, valida cada una
+4. Genera `docs/plans/YYYY-MM-DD-<topic>-design.md`
+
+Después: continúa con `ralph-orchestrator` o Superpowers `writing-plans`.
 
 ---
 
-## Testing
+## pr-workflow
 
-### webapp-testing
+Quality gate para PRs: code review + security review + observaciones.
 
-::: tip Testing | E2E
-**Cuándo**: Testear aplicaciones web locales, verificar funcionalidad frontend, debugging UI, o capturar screenshots del browser
-**Qué hace**: Provee toolkit Playwright con server lifecycle management. Scripts helper para manejar servidores (start/stop automático)
+```
+"Crear PR a main"
+```
+
+**Flujo:**
+1. Valida branch, extrae commits, detecta formato
+2. Ejecuta en paralelo: code review, security review, observaciones
+3. Presenta findings por severidad
+4. Opciones: **Create PR** / **Auto fix** / **Cancel**
+5. Auto fix → corrige → re-review → pregunta de nuevo
+6. Crea PR con findings documentados
+
+::: details Agentes que usa
+- `code-reviewer` — lógica, arquitectura, tests
+- `security-reviewer` — SQL injection, XSS, secrets
+- `receiving-code-review` — verifica issues antes de auto-fix
 :::
 
-**Decision Tree**:
-```
-¿Es HTML estático?
-├─ Sí → Lee HTML directo para identificar selectores → Playwright script
-└─ No (webapp dinámica) → ¿Server ya corriendo?
-    ├─ No → python scripts/with_server.py --help
-    └─ Sí → Reconnaissance-then-action:
-        1. Navigate + wait for networkidle
-        2. Screenshot o inspect DOM
-        3. Identify selectors
-        4. Execute actions
-```
-
-**Helper Scripts**:
-- `scripts/with_server.py` - Maneja lifecycle de servidores (soporta múltiples)
-
-**Ejemplo**:
-```bash
-# Single server
-python scripts/with_server.py --server "npm run dev" --port 5173 -- python test.py
-
-# Multiple servers
-python scripts/with_server.py \
-  --server "cd backend && python server.py" --port 3000 \
-  --server "cd frontend && npm run dev" --port 5173 \
-  -- python test.py
-```
-
-**Best Practices**:
-- Siempre `page.wait_for_load_state('networkidle')` antes de inspeccionar DOM
-- Usar scripts como black boxes (--help primero)
-- Cerrar browser al terminar
+**Requisitos:** git, gh CLI
 
 ---
 
-### mobile-testing
+## claude-code-expert
 
-::: tip Testing | Mobile E2E
-**Cuándo**: Testing de apps móviles (React Native, Expo, Flutter, native), debugging UI en simuladores/emuladores, o generación de test suites E2E mobile
-**Qué hace**: Provee integración dual-stack con mobile-mcp (debugging interactivo) y Maestro (test suites E2E con YAML flows y AI assertions)
-:::
+Genera componentes Claude Code consultando docs oficiales primero.
 
-**Dual-Stack Approach**:
-- **mobile-mcp**: Screenshots, accessibility tree, interacción directa con simuladores/emuladores
-- **Maestro**: YAML flows declarativos, auto-healing, assertions AI (`assertWithAI`, `assertNoDefectsWithAI`)
-
-**Prerequisites**:
-```bash
-node --version    # v22+
-java --version    # 17+
-maestro --version # Latest
 ```
-
-**Decision Tree**:
-```
-¿Tipo de testing?
-├─ Debugging → mobile-mcp tools directamente
-│   1. mobile_list_available_devices
-│   2. mobile_launch_app(appId)
-│   3. mobile_take_screenshot
-│   4. mobile_list_elements_on_screen
-│
-├─ E2E Test Generation → Explorar con mobile-mcp, generar Maestro YAML
-│   1. Explorar visualmente
-│   2. Generar flows/[feature]/[scenario].yaml
-│   3. Validar: maestro test flows/
-│
-└─ Expo/React Native → Ver references/expo-react-native.md
-```
-
-**Ejemplo Maestro Flow**:
-```yaml
-appId: com.myapp
----
-- launchApp:
-    clearState: true
-- tapOn:
-    id: "login-button"
-- inputText: "user@example.com"
-- extendedWaitUntil:
-    visible:
-      id: "home-screen"
-    timeout: 10000
-```
-
-**Expo Critical**: Usar Development Builds, NO Expo Go. Usar `openLink` para deep links:
-```yaml
-- openLink: "exp+com.myapp://expo-development-client/?url=http://10.0.2.2:8081"
-```
-
-**References** (progressive disclosure):
-- `references/maestro-patterns.md` - Sintaxis YAML completa
-- `references/mobile-mcp-tools.md` - Tools de debugging
-- `references/expo-react-native.md` - Guía específica Expo/RN
-
----
-
-## Git
-
-### pr-workflow
-
-::: tip Git | Quality Gate
-**Cuándo**: Al crear PR, necesitas quality gate con code + security review y observaciones contextualizadas
-**Qué hace**: Valida cambios, dispara code-reviewer + security-reviewer en paralelo, genera observaciones (tests, API, complexity, breaking), presenta findings consolidados de 3 capas, ofrece auto fix loop, crea PR con documentación quality
-:::
-
-**Corporate Format Support:**
-```
-Pattern: type|TASK-ID|YYYYMMDD|description
-Example: feat|TRV-350|20251023|add user authentication
-```
-
-**Workflow**:
-1. **Validación**: Target branch existe, extrae commits, detecta formato
-2. **Quality Gate (3 capas en paralelo)**:
-   - Code review (lógica, arquitectura, bugs)
-   - Security review (SQL injection, secrets, XSS)
-   - Observations (tests, API, breaking, complexity)
-3. **User Decision**: Create PR / Auto fix / Cancel
-4. **Auto Fix Loop** (opcional): Subagent arregla issues → re-review (ambos) → usuario decide de nuevo
-5. **Create PR**: Protected branch detection + temp branch si necesario, genera body con findings, crea PR
-
-**User Decisions:**
-- **Create PR**: Push y crear PR con findings de code + security reviews documentados
-- **Auto fix**: Subagent arregla Critical+Important (code) + High+Medium (security) issues → re-review obligatorio de ambos
-- **Cancel**: Salir con summary actionable de issues pendientes
-
-**Ejemplo**:
-```bash
-"Crear PR a main con quality gate"
-# → Analiza commits, detecta corporate format
-# → Code review + observaciones
-# → Usuario selecciona: Auto fix
-# → Subagent arregla issues
-# → Re-review (limpio)
-# → Usuario selecciona: Create PR
-# → PR creado con URL
-```
-
----
-
-## Development Tools
-
-### claude-code-expert
-
-::: tip Dev Tools | Production
-**Cuándo**: Crear/modificar/update/fix agents, slash commands, hooks, o MCP integrations para Claude Code
-**Qué hace**: Genera componentes Claude Code production-ready con 6 quality gates automáticos (syntax, security, logic, constitutional, integration, production). WebFetch docs oficiales para syntax actual
-:::
-
-**Workflow**:
-1. **Identify Component**: Agent, slash command, hook, o MCP server
-2. **WebFetch Docs**: Official Claude Code docs para EXACT current syntax (training stale)
-3. **Analyze Patterns**: Lee project conventions
-4. **Generate**: Component con validación
-5. **6 Quality Gates**: Syntax, security, logic, constitutional, integration, production
-
-**Ejemplo**:
-```bash
 "Crea agent para optimización PostgreSQL"
-# → WebFetch Claude Code agent docs
-# → Analiza agents/ patterns
-# → Genera agent con tools, workflow, examples
-# → 6 quality gates automáticos
 ```
 
-**Output**: `.claude/agents/*.md`, `commands/*.md`, `hooks/*.py`, o `.claude/.mcp.json` update
-
-**Critical**: Training data stale, SIEMPRE WebFetch docs oficiales primero
-
----
-
-## Design
-
-### frontend-design
-
-::: tip Design | Production
-**Cuándo**: Construir componentes web, páginas, o aplicaciones que requieren diseño distintivo y memorable
-**Qué hace**: Crea interfaces frontend production-grade con dirección estética bold que evita la estética genérica "AI slop". Implementa código funcional con atención excepcional a detalles estéticos
+::: warning Training desactualizado
+Usa `agent-browser` para consultar https://code.claude.com/docs. Nunca confía en memoria.
 :::
 
-**Design Thinking** (antes de codear):
-1. **Purpose**: ¿Qué problema resuelve? ¿Quién lo usa?
-2. **Tone**: Elegir dirección extrema: brutalmente minimal, maximalist chaos, retro-futuristic, luxury/refined, editorial/magazine, brutalist/raw, art deco, etc.
-3. **Constraints**: Framework, performance, accessibility
-4. **Differentiation**: ¿Qué lo hace INOLVIDABLE?
+**Flujo:**
+1. Abre docs oficiales, navega a sección relevante
+2. Extrae syntax actual y campos requeridos
+3. Analiza patterns del proyecto
+4. Genera con 6 quality gates
 
-**Focus Areas**:
-- **Typography**: Fonts distintivas, NO genéricas (evitar Arial, Inter, Roboto). Pair display font + refined body font
-- **Color & Theme**: Paleta cohesiva con CSS variables. Colores dominantes con acentos sharp > paletas tímidas
-- **Motion**: CSS-only preferido. Staggered reveals con animation-delay > micro-interactions dispersas
-- **Spatial Composition**: Layouts inesperados, asimetría, overlap, grid-breaking, negative space generoso
-- **Backgrounds**: Gradient meshes, noise textures, geometric patterns, layered transparencies, grain overlays
-
-**NEVER use**:
-- Fonts genéricas: Inter, Roboto, Arial, system fonts
-- Color schemes cliché: purple gradients on white
-- Layouts predecibles y cookie-cutter
-- Mismo estilo entre generaciones (variar light/dark, fonts, aesthetics)
-
-**Ejemplo**:
-```bash
-"Crea landing page para startup fintech"
-# → Design Thinking: luxury/refined tone, professional audience
-# → Typography: distinctive serif headers + clean sans body
-# → Color: deep navy + gold accents (not purple gradient)
-# → Motion: staggered reveal on scroll, hover micro-interactions
-# → Output: Production-ready React/HTML with memorable aesthetic
-```
-
-**Principio**: Match implementation complexity to aesthetic vision. Maximalist = elaborate code. Minimalist = restraint + precision + careful spacing.
+**Output:** `.claude/agents/*.md`, `commands/*.md`, `hooks/*.py`
 
 ---
 
-## Writing
+## frontend-design
 
-### humanizer
+Interfaces web con dirección estética bold. Sin look genérico "AI slop".
 
-::: tip Writing | Text Humanization
-**Cuándo**: Escribir o editar prosa para humanos: docs, READMEs, commits, PRs, error messages, UI text, reportes
-**Qué hace**: Detecta y elimina 24 patrones de texto IA (Wikipedia's "Signs of AI writing") + añade personalidad y voz
+```
+"Landing page para startup fintech"
+```
+
+**Flujo obligatorio:**
+1. Research — captura 3-5 referencias de Awwwards con `agent-browser`
+2. Sintetizar — extrae DNA (colores, tipografía, spacing)
+3. Commit — define dirección estética (brutalist, luxury, editorial...)
+4. Implementar — código funcional con atención a detalles
+5. Validar — compara contra referencias
+
+::: details Principios
+- **Typography**: Fonts distintivas. Nunca Arial/Inter/Roboto.
+- **Color**: Dominantes con acentos sharp, no gradientes tímidos.
+- **Motion**: CSS-only. Staggered reveals > micro-interactions.
+- **Layout**: Asimetría, overlap, grid-breaking, negative space.
 :::
 
-**Categorías de patrones detectados**:
-- **Content**: Inflación de significancia, name-dropping, análisis superficiales con -ing, lenguaje promocional
-- **Language**: Vocabulario IA ("Additionally", "delve", "landscape"), evitar "is/are", regla de tres
-- **Style**: Abuso de em dash, negritas, emojis, Title Case en headings
-- **Communication**: Artefactos de chatbot ("I hope this helps!"), tono sicofante
-- **Filler**: Frases de relleno, hedging excesivo, conclusiones genéricas
+---
 
-**Personality and Soul** (no solo limpiar, añadir voz):
-- Tener opiniones, no solo reportar neutro
-- Variar ritmo: oraciones cortas. Luego largas que toman su tiempo.
-- Reconocer complejidad ("impressive but also unsettling")
-- Usar "I" cuando aplica
-- Dejar algo de desorden (tangentes, pensamientos a medio formar)
+## humanizer
 
-**Ejemplo**:
-```bash
-# Antes (AI-sounding)
-"The software update serves as a testament to the company's commitment
-to innovation. Moreover, it provides a seamless, intuitive, and powerful
-user experience—ensuring that users can accomplish their goals efficiently."
+Elimina 24 patrones de texto AI (Wikipedia's "Signs of AI writing").
 
-# Después (Humanized)
-"The update adds batch processing, keyboard shortcuts, and offline mode.
-Early feedback from beta testers has been positive."
-```
+| Patrón | Ejemplos |
+|--------|----------|
+| Vocabulario AI | "Additionally", "delve", "landscape", "tapestry" |
+| Inflación | "serves as a testament", "pivotal moment" |
+| Estructura | Rule of three, em dashes excesivos |
+| Tono | "Great question!", "I hope this helps!" |
 
-**Principio**: Evitar patrones malos es solo la mitad. Texto estéril es tan obvio como slop.
+::: details Ejemplo
+**Antes:**
+> The software update serves as a testament to the company's commitment to innovation.
+
+**Después:**
+> The update adds batch processing, keyboard shortcuts, and offline mode.
+:::
+
+No solo limpia — añade voz. Texto estéril es tan obvio como slop.
 
 ---
 
-## Automation
+## writing-skills
+
+Meta-skill: crear skills bulletproof con TDD aplicado a documentación.
+
+**Proceso:**
+1. **RED** — Escenarios de presión sin skill. Documenta racionalizaciones.
+2. **GREEN** — SKILL.md que contrarresta fallas. Verifica compliance.
+3. **REFACTOR** — Cierra loopholes, re-testea hasta bulletproof.
+
+::: warning Prerrequisito
+Requiere Superpowers `test-driven-development`.
+:::
+
+---
+
+## Pipeline SOP
+
+Sistema de desarrollo autónomo. Ralph orquesta estos skills en secuencia:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│sop-discovery│ ──▶ │ sop-planning │ ──▶ │sop-task-generator │ ──▶ │ sop-code-assist │
+└─────────────┘     └──────────────┘     └───────────────────┘     └─────────────────┘
+       │                   ▲
+       └───────────────────┤
+                    ┌──────┴──────┐
+                    │ sop-reverse │
+                    └─────────────┘
+```
 
 ### ralph-orchestrator
 
-::: warning Automation | Advanced
-**Cuándo**: Desarrollo autónomo multi-iteración con context rotation y state persistente
-**Qué hace**: Loop infinito donde cada iteración opera con fresh context. Estado persiste en archivos y git, no en memoria LLM. Por defecto, corre hasta que objetivo esté 100% completo.
+**Entry point.** Invoca este para desarrollo autónomo.
+
+```bash
+# Instalar
+./skills/ralph-orchestrator/scripts/install.sh
+
+# Ejecutar
+./loop.sh specs/mi-feature/
+```
+
+::: warning Requisitos
+Git repo, tests/lint/build, Bash 4+, jq, bc.
 :::
 
-**Prerequisites**:
-- Git repository existente
-- Proyecto con comandos de validación (tests, lint, build)
+**Flujo:**
+1. Detecta tipo (Forward: nuevo | Reverse: investigar)
+2. Discovery o investigation
+3. Diseño detallado
+4. Genera task files
+5. **Checkpoint**: apruebas el plan
+6. Ejecución autónoma
 
-**Instalación**:
-```bash
-# Desde tu project root (debe tener .git/)
-RALPH_SKILL="path/to/skills/ralph-orchestrator"
-cp "$RALPH_SKILL/scripts/loop.sh" .
-cp "$RALPH_SKILL/scripts/PROMPT_build.md" .
-cp "$RALPH_SKILL/scripts/PROMPT_plan.md" .
-chmod +x loop.sh
-```
-
-**Uso**:
-```bash
-./loop.sh              # Build mode (unlimited, hasta complete)
-./loop.sh 20           # Build mode, max 20 iteraciones
-./loop.sh plan         # Plan mode (unlimited, hasta complete)
-./loop.sh plan 5       # Plan mode, max 5 iteraciones
-```
-
-**Core Principles** (The Ralph Tenets):
-1. **Fresh Context Is Reliability** - Cada iteración limpia contexto
-2. **Backpressure Over Prescription** - Gates que rechazan mal trabajo
-3. **The Plan Is Disposable** - Regeneración cuesta un loop
-4. **Disk Is State, Git Is Memory** - Archivos son el mecanismo de handoff
-5. **Steer With Signals, Not Scripts** - Cuando falla, agrega Sign para próxima vez
-6. **Let Ralph Ralph** - Sit on the loop, not in it
-
-**Safety Features**:
-- Double completion verification (2 señales COMPLETE consecutivas)
-- Runtime limit configurable
-- Fresh context per iteration (INPUT-based control via truncate-context.sh)
-- Task abandonment detection (3+ intentos fallidos)
-- Loop thrashing detection (patrones oscilantes)
-
-**Exit Codes**:
-| Code | Meaning |
-|------|---------|
-| 0 | SUCCESS - Objetivo completo |
-| 1 | ERROR - Validación fallida |
-| 2 | CIRCUIT_BREAKER - 3 fallos consecutivos |
-| 3 | MAX_ITERATIONS - Límite alcanzado |
-| 130 | INTERRUPTED - Ctrl+C |
-
----
-
-## Cómo Usar Skills
-
-**Activación automática**: Claude detecta contexto y carga skill apropiada sin invocación explícita.
-
-```bash
-# Solicitud natural
-"Necesito crear un PR con review"
-# → pr-workflow se activa automáticamente
-```
-
-**Invocación manual** (opcional):
-```bash
-"Usando frontend-design: crea landing page para mi startup"
-```
-
-::: tip Precedencia
-**Skills > MCPs > Implementación directa**
-
-Siempre verifica skills disponibles antes de implementar. Si skill existe para tu task, MUST use.
+::: details Exit codes
+| Código | Significado |
+|--------|-------------|
+| 0 | Completo |
+| 1 | Error validación |
+| 2 | Circuit breaker (3 fallos) |
+| 3 | Max iterations |
+| 130 | Ctrl+C |
 :::
 
 ---
 
-## Skills Adicionales
+### sop-discovery
 
-Para workflows de desarrollo avanzados (TDD, debugging sistemático, brainstorming, plans), consulta el plugin **Superpowers**:
+Explora constraints, riesgos y prior art. Metodología Amazon agent-SOP.
 
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
+**Cuándo:** Proyecto nuevo, requirements poco claros.
 
-Ver [Integrations](./integrations.md#superpowers-plugin) para más detalles.
+**Output:** `discovery.md`
 
 ---
 
-## Solución de Problemas
+### sop-reverse
 
-::: details Skill no se activa automáticamente
+Investiga sistemas existentes y genera specs.
 
-**Causa común**: Solicitud demasiado genérica
+**Cuándo:** Codebase heredado, integrar APIs, documentar legacy.
 
-```bash
+**Output:** `investigation.md`, `specs-generated/`, `recommendations.md`
+
+---
+
+### sop-planning
+
+Transforma ideas en diseños implementables. Metodología PDD.
+
+**Fases:** Requirements → Research → Design → Implementation plan
+
+**Output:** `design/detailed-design.md`, `implementation/plan.md`
+
+---
+
+### sop-task-generator
+
+Convierte plans en `.code-task.md` files.
+
+**Output:** Un task file por paso, con acceptance criteria (Given-When-Then).
+
+---
+
+### sop-code-assist
+
+Implementa tasks con TDD: RED → GREEN → REFACTOR.
+
+**Output:** Código + tests + commits.
+
+---
+
+## Más skills
+
+- [Superpowers](./integrations.md#superpowers) — TDD, debugging, code review, worktrees
+- [skills.sh](https://skills.sh/) — Catálogo abierto con React, TypeScript, Stripe, etc.
+
+---
+
+## Troubleshooting
+
+::: details Skill no se activa
+Sé específico o menciónalo:
+```
 ❌ "Ayuda con código"
-✅ "Crea PR con quality gate a main"
-```
-
-**Solución**: Menciona skill explícitamente:
-```bash
-"Usando pr-workflow: crea PR a develop"
+✅ "Crear PR a main"
+✅ "Usando pr-workflow: crear PR"
 ```
 :::
 
-::: details Skill falta o versión antigua
-
-**Update framework**:
-
+::: details Skill desactualizado
 ```bash
-# Si instalado vía marketplace
 /plugin marketplace update ai-framework-marketplace
 /plugin update ai-framework@ai-framework-marketplace
-# Session restart
 ```
+:::
 
-**Verificar versión**:
-```bash
-cat package.json | grep version
-```
+::: details SOP no genera output
+Verifica que existe `specs/` en tu proyecto.
 :::
 
 ---
 
-::: info Metadata
-**Última actualización**: 2026-01-25
-**Skills disponibles**: 8 (Planning: 1, Testing: 2, Git: 1, Dev Tools: 1, Design: 1, Writing: 1, Automation: 1)
-**Status**: Production-Ready
+::: info Última actualización
+**Fecha**: 2026-01-31 | **Skills**: 13 total
 :::
