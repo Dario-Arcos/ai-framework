@@ -1,6 +1,39 @@
 # Integraciones
 
-Claude Code se extiende con plugins y MCPs. Esta guía cubre los que recomendamos.
+Claude Code se extiende con plugins, skills y MCPs.
+
+---
+
+## Skills nativos
+
+Incluidos en el plugin. No requieren instalación.
+
+### agent-browser
+
+CLI de [Vercel](https://github.com/AstroTechLabs/agent-browser) para browser automation. Reemplaza WebFetch/WebSearch cuando necesitas interacción real con páginas.
+
+**Capacidades:**
+- Navegación y scraping de páginas dinámicas
+- E2E testing con snapshots del DOM
+- Form filling y clicks por referencia
+- Screenshots, PDFs, video recording
+- Sesiones autenticadas con estado persistente
+- Manejo de tabs, frames, cookies, network mocking
+
+```bash
+# Workflow típico
+agent-browser open https://example.com
+agent-browser snapshot -i          # Lista elementos interactivos (@e1, @e2...)
+agent-browser fill @e1 "texto"
+agent-browser click @e2
+agent-browser screenshot result.png
+```
+
+Se instala automáticamente en la primera sesión. Para desactivar:
+
+```bash
+export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
+```
 
 ---
 
@@ -102,6 +135,14 @@ Anthropic mantiene un directorio de plugins que cambia frecuentemente.
 
 ---
 
+## Más skills
+
+[skills.sh](https://skills.sh/) es un catálogo abierto de skills para agentes AI. Tiene skills para React, TypeScript, Stripe, Kubernetes, y más.
+
+Consulta el catálogo cuando busques skills para tu stack. Muchos son compatibles con Claude Code.
+
+---
+
 ## MCPs
 
 Un MCP (Model Context Protocol) conecta Claude con servicios externos. Claude los invoca automáticamente cuando son útiles.
@@ -167,5 +208,5 @@ Reinicia Claude Code para aplicar cambios.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-01-31
+**Fecha**: 2026-01-31 | **Cambios**: Skills nativos y directorio skills.sh
 :::

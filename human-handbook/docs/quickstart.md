@@ -1,210 +1,121 @@
-# Inicio Rápido: 30 Segundos a Productivo
+# Inicio rápido
 
-::: tip Objetivo
-Instalar el framework y ejecutar tu primera feature en 5 minutos.
-:::
+Instala el framework y empieza a usarlo.
 
 ---
 
-## Instalación (30 segundos)
+## Instalación
 
-### Paso 1: Agregar el Marketplace
-
-```
+::: code-group
+```bash [Primera vez]
+# Agregar marketplace
 /plugin marketplace add Dario-Arcos/ai-framework-marketplace
-```
 
-### Paso 2: Instalar el Plugin
-
-```
+# Instalar plugin
 /plugin install ai-framework@ai-framework-marketplace
 ```
 
-### Paso 3: Actualizar Plugin (cuando sea necesario)
-
-**Actualizar el plugin (2 pasos):**
-```bash
-# 1. Sincronizar el marketplace con la versión remota
+```bash [Actualizar]
+# Sincronizar marketplace (necesario, no se hace automático)
 /plugin marketplace update ai-framework-marketplace
 
-# 2. Actualizar el plugin
+# Actualizar plugin
 /plugin update ai-framework@ai-framework-marketplace
 ```
 
-::: warning Importante
-El paso 1 es necesario porque Claude Code no sincroniza automáticamente los marketplaces de terceros. Sin este paso, `/plugin update` usará la versión cacheada localmente.
-:::
-
-**Actualización limpia** (si los pasos anteriores no funcionan):
-```bash
+```bash [Reinstalar limpio]
 /plugin marketplace remove ai-framework-marketplace
 /plugin marketplace add Dario-Arcos/ai-framework-marketplace
 /plugin install ai-framework@ai-framework-marketplace
 ```
-
-::: tip Reinicio requerido
-Después de instalar o actualizar, reinicia Claude Code para aplicar los cambios.
 :::
 
-### Paso 4: Comienza en Tu Proyecto
+Reinicia Claude Code después de instalar o actualizar.
+
+---
+
+## Inicializar proyecto
 
 ```bash
-cd /path/to/your/project
+cd /tu/proyecto
 claude
 ```
 
-::: tip Instalación Automática
-El framework se auto-instala en la primera sesión.
-:::
-
-**Listo.** 30 segundos.
-
----
-
-## Gestión de Plugins
-
-::: tip Comandos Adicionales
-Operaciones útiles después de la instalación inicial.
-:::
-
-**Deshabilitar temporalmente:**
-```bash
-/plugin disable ai-framework@ai-framework-marketplace
-```
-
-**Re-habilitar después de deshabilitar:**
-```bash
-/plugin enable ai-framework@ai-framework-marketplace
-```
-
-**Desinstalar completamente:**
-```bash
-/plugin uninstall ai-framework@ai-framework-marketplace
-```
-
-**Explorar plugins disponibles (modo interactivo):**
-```bash
-/plugin
-```
-
-::: warning Recuerda
-Reinicia Claude Code después de cualquier cambio en plugins (enable/disable/update).
-:::
-
----
-
-## Post-Instalación (2 minutos)
-
-### Inicializar Contexto del Proyecto
+En la primera sesión, ejecuta:
 
 ```bash
 /project-init
 ```
 
-Analiza tu codebase y genera reglas team-shared en `docs/claude-rules/` (tracked).
+Genera reglas en `docs/claude-rules/` (para compartir con el equipo) y las sincroniza a `.claude/rules/` (copia local).
 
-**Output esperado:**
-
-```text
-✅ Generated docs/claude-rules/ (tracked):
-   • stack.md, patterns.md, architecture.md
-
-📋 Synced to .claude/rules/ (local working copy)
-
-💡 Rules flow:
-   • docs/claude-rules/ → commit to git (team-shared)
-   • .claude/rules/ → auto-synced on session start
-```
-
-### Instalar Dependencias (Opcional)
-
+::: details Gestión de plugins
 ```bash
-/setup-dependencies
+# Deshabilitar temporalmente
+/plugin disable ai-framework@ai-framework-marketplace
+
+# Re-habilitar
+/plugin enable ai-framework@ai-framework-marketplace
+
+# Desinstalar
+/plugin uninstall ai-framework@ai-framework-marketplace
+
+# Explorar plugins disponibles
+/plugin
 ```
-
-Instala tools opcionales (notifications, formatters). Responde `S` para proceder.
-
-### Notificaciones de Escritorio (macOS)
-
-El framework envía notificaciones nativas cuando Claude necesita tu atención:
-
-**Cuándo notifica:**
-- ✅ Tarea completada
-- 🔒 Requiere tu aprobación o input
-
-**Sin dependencias externas** - usa `osascript` nativo de macOS.
-
-::: tip macOS Only
-En Linux/Windows, Claude Code UI muestra estado directamente.
-:::
-
-### Variables de Entorno (Opcional)
-
-El template incluye configuración optimizada de tokens en `settings.json`:
-
-| Variable | Valor | Propósito |
-|----------|-------|-----------|
-| `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | 64000 | Máximo de tokens de salida |
-| `MAX_THINKING_TOKENS` | 31999 | Budget de razonamiento (ultrathink) |
-| `SLASH_COMMAND_TOOL_CHAR_BUDGET` | 30000 | Budget para skills visibles |
-
-::: tip Sobrescribir configuración
-Para usar valores por defecto de Claude Code, deja el campo `"env": {}` vacío en `.claude/settings.local.json`.
+Reinicia después de cualquier cambio.
 :::
 
 ---
 
-## Primera Funcionalidad (5 minutos)
+## Usar el framework
 
-### Ruta Rapida
+Describe lo que quieres en lenguaje natural:
 
-Describe tu feature en lenguaje natural y Claude activara automaticamente los skills necesarios:
-
-```bash
-"Implementa validacion de email en el formulario de registro"
-# Claude aplica TDD automaticamente
+```
+"Implementa validación de email en el formulario de registro"
 ```
 
-### Crear PR
+Claude activa automáticamente los skills relevantes (TDD, code review, etc).
+
+Para commits y PRs:
 
 ```bash
 /git-commit "feat: add email validation"
 /git-pullrequest develop
 ```
 
-Security review automatico ejecuta antes de crear PR.
+---
+
+## Troubleshooting
+
+| Problema | Solución |
+|----------|----------|
+| Comandos no visibles | Reinicia Claude Code |
+| Hooks no ejecutan | Verifica Python 3.8+: `python3 --version` |
+| Plugin no aparece | `/plugin` y busca en el marketplace |
+| Update no funciona | Ejecuta primero `/plugin marketplace update` |
 
 ---
 
-## Solución de Problemas
+## Requisitos
 
-| Problema                 | Solución                                    |
-| ------------------------ | ------------------------------------------- |
-| **Comandos no visibles** | Reinicia Claude Code                        |
-| **Hooks no ejecutan**    | Verifica Python 3.8+: `python3 --version`   |
-| **Plugin no aparece**    | `/plugin` — debe aparecer ai-framework en el marketplace |
-| **Update no actualiza**  | Ejecuta primero `/plugin marketplace update ai-framework-marketplace` |
+- [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/installation)
+- [Git](https://git-scm.com/downloads)
+- [Python 3.8+](https://www.python.org/downloads/)
+- [GitHub CLI](https://cli.github.com/) (opcional, para comandos git)
 
 ---
 
-## Siguientes Pasos
+## Siguientes pasos
 
-**Documentación completa:**
-
-- [Commands Guide](./commands-guide.md) — Completo conjunto de comandos documentados ([ver todos](./commands-guide))
-- [Agents Guide](./agents-guide.md) — Extensa biblioteca de agentes especializados ([ver todos](./agents-guide))
-- [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
-- [Integrations](./integrations.md) — Plugins & MCPs
-
-**Requisitos:**
-
-- ✅ [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/installation) (requerido)
-- ✅ [Git](https://git-scm.com/downloads) (requerido)
-- ✅ [Python 3.8+](https://www.python.org/downloads/) (requerido)
-- ⚠️ [GitHub CLI](https://cli.github.com/) (recomendado para comandos git/github)
+- [Commands Guide](./commands-guide.md) — Comandos disponibles
+- [Agents Guide](./agents-guide.md) — Agentes especializados
+- [Skills Guide](./skills-guide.md) — Skills del framework
+- [Integrations](./integrations.md) — Plugins y MCPs externos
 
 ---
 
-::: info Última Actualización
-**Fecha**: 2025-12-20 | **Versión**: 5.0.0
+::: info Última actualización
+**Fecha**: 2026-01-31
 :::
