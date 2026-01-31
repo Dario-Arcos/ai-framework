@@ -310,6 +310,36 @@ Each task file MUST follow this exact structure:
 - Multiple blockers separated by comma
 - Used by loop to skip blocked tasks and select next available
 
+**CRITICAL: Populating Blocked-By:**
+
+You MUST convert plan.md dependencies to proper Blocked-By paths:
+
+| In plan.md | Blocked-By value |
+|------------|------------------|
+| "Dependencies: Step 01" | `step01/task-01-{first-task-name}.code-task.md` |
+| "Dependencies: Steps 01, 02" | `step01/task-01-*.code-task.md, step02/task-02-*.code-task.md` |
+| "Dependencies: None" or first step | (empty) |
+
+**Algorithm:**
+1. For each step N > 1, look for "Dependencies:" in plan.md
+2. Parse dependency step numbers (e.g., "Step 01", "Steps 04-06")
+3. For each dependency step, construct path: `stepNN/task-NN-{slug}.code-task.md`
+4. Join multiple dependencies with comma+space
+
+**Example:**
+```markdown
+## Step 03: Implement Feature X
+Dependencies: Steps 01, 02
+```
+Generates:
+```markdown
+## Blocked-By: step01/task-01-setup.code-task.md, step02/task-02-foundation.code-task.md
+```
+
+**You MUST NOT:**
+- Leave Blocked-By empty when Dependencies exist in plan.md
+- Use step numbers without the full file path
+
 **Quality Requirements:**
 - Status: Always starts as `PENDING`
 - Completed: Empty on creation, filled when done
