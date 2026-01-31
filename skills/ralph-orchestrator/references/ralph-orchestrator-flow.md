@@ -77,14 +77,33 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ---
 
+## Phase 0.75: Flow Detection
+
+**Objective**: Determine whether this is a new project (Forward) or investigation of existing artifacts (Reverse).
+
+### Question to User:
+```text
+"What type of flow do you need?"
+- Forward: Build something new (feature, improvement, project)
+- Reverse: Investigate something existing before modifying it
+```
+
+### Store as `FLOW_TYPE`:
+- `forward` → Proceed to Phase 1 (Discovery)
+- `reverse` → Proceed to Phase 1B (Reverse Investigation)
+
+---
+
 ## Phase 1: Discovery (sop-discovery)
+
+> **Applies to: FLOW_TYPE=forward**
 
 **Objective**: Document the problem before designing solutions.
 
 ### Steps:
 
 1. **Execute skill** `sop-discovery --mode={PLANNING_MODE}`
-2. **Document in** `specs/{feature}/discovery.md`:
+2. **Document in** `specs/{goal}/discovery.md`:
    - JTBD (Job To Be Done)
    - Constraints
    - Risks
@@ -96,8 +115,42 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 - `autonomous`: Generates comprehensive discovery, documents assumptions
 
 ### Validation:
-- ✓ `specs/{feature}/discovery.md` exists
+- ✓ `specs/{goal}/discovery.md` exists
 - ✓ JTBD is documented
+
+---
+
+## Phase 1B: Reverse Investigation (sop-reverse)
+
+> **Applies to: FLOW_TYPE=reverse**
+
+**Objective**: Investigate existing artifacts before planning improvements.
+
+### Steps:
+
+1. **Execute skill** `sop-reverse --mode={PLANNING_MODE} --target={artifact_path}`
+2. **Generate in** `specs/{investigation}/`:
+   - `investigation.md` - Analysis results
+   - `specs-generated/` - Discovered specifications
+
+### Mode Behavior:
+- `interactive`: Confirms artifact type, asks clarifying questions
+- `autonomous`: Auto-detects type, completes investigation, documents deferred questions
+
+### After Investigation:
+
+**Question to User (in interactive mode):**
+```text
+"Investigation complete. Continue to development?"
+- Yes, plan improvements: Proceed to Phase 2 (sop-planning)
+- No, only needed analysis: End with specs available
+```
+
+**In autonomous mode:** Continue to Phase 2 by default.
+
+### Validation:
+- ✓ `specs/{investigation}/investigation.md` exists
+- ✓ Specifications generated
 
 ---
 
@@ -108,7 +161,7 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 ### Steps:
 
 1. **Execute skill** `sop-planning --mode={PLANNING_MODE}`
-2. **Create in** `specs/{feature}/design/`:
+2. **Create in** `specs/{goal}/design/`:
    - `detailed-design.md` - Architecture
    - Technical decisions
    - Evaluated trade-offs
@@ -118,7 +171,7 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 - `autonomous`: Generates complete design in single pass, documents all decisions
 
 ### Validation:
-- ✓ `specs/{feature}/design/` directory exists
+- ✓ `specs/{goal}/design/` directory exists
 - ✓ `detailed-design.md` exists
 
 ---
@@ -130,10 +183,10 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 ### Steps:
 
 1. **Execute skill** `sop-task-generator --mode={PLANNING_MODE}`
-2. **Create** `specs/{feature}/implementation/plan.md` with steps
+2. **Create** `specs/{goal}/implementation/plan.md` with steps
 3. **Generate ONE task file for EACH step**:
    ```
-   specs/{feature}/implementation/
+   specs/{goal}/implementation/
    ├── plan.md
    ├── step01/
    │   └── task-01-description.code-task.md
@@ -164,8 +217,8 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 **Planning Mode Used:** {PLANNING_MODE}
 
 ### Artifacts Generated
-- Discovery: `specs/{feature}/discovery.md`
-- Design: `specs/{feature}/design/detailed-design.md`
+- Discovery: `specs/{goal}/discovery.md`
+- Design: `specs/{goal}/design/detailed-design.md`
 - Tasks: {N} task files
 
 ### Key Decisions Made
@@ -225,7 +278,7 @@ MAX_ITERATIONS=10
 
 ```bash
 # ALWAYS in background, ALWAYS autonomous
-Bash(command="./loop.sh specs/{feature}/", run_in_background=true)
+Bash(command="./loop.sh specs/{goal}/", run_in_background=true)
 ```
 
 ### The loop does for each iteration:
@@ -310,7 +363,7 @@ The loop emits `<promise>COMPLETE</promise>` when:
 project/
 ├── src/                    # Implemented code
 ├── tests/                  # Tests (90%+ coverage)
-├── specs/{feature}/
+├── specs/{goal}/
 │   ├── discovery.md        # Documented JTBD
 │   ├── design/
 │   │   └── detailed-design.md
@@ -345,12 +398,12 @@ project/
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 1: DISCOVERY (--mode={PLANNING_MODE})                    │
-│  └─ Create specs/{feature}/discovery.md                         │
+│  └─ Create specs/{goal}/discovery.md                         │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 2: PLANNING (--mode={PLANNING_MODE})                     │
-│  └─ Create specs/{feature}/design/detailed-design.md            │
+│  └─ Create specs/{goal}/design/detailed-design.md            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐

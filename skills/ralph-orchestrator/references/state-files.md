@@ -28,7 +28,7 @@ This reference defines the state files used by Ralph for persistent state manage
 
 The implementation plan is located at:
 ```
-specs/{feature}/implementation/plan.md
+specs/{goal}/implementation/plan.md
 ```
 
 > **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.

@@ -179,10 +179,10 @@ Action: Will generate 5 task files (one per step)
 
 **You MUST generate a task file for EVERY step in the plan:**
 
-1. Read `specs/{feature}/implementation/plan.md`
+1. Read `specs/{goal}/implementation/plan.md`
 2. Count total steps (N)
 3. For EACH step, create:
-   - Directory: `specs/{feature}/implementation/step{NN}/`
+   - Directory: `specs/{goal}/implementation/step{NN}/`
    - File: `task-{NN}-{description}.code-task.md`
 4. Verify: N task files created = N steps in plan
 

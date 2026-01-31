@@ -78,14 +78,3 @@ ralph_validate_config() {
     return 0
 }
 
-# ─────────────────────────────────────────────────────────────────
-# CONFIGURATION DISPLAY
-# ─────────────────────────────────────────────────────────────────
-
-ralph_show_config() {
-    echo -e "${BLUE}Configuration:${NC}"
-    echo "  QUALITY_LEVEL: $QUALITY_LEVEL"
-    echo "  MAX_ITERATIONS: $MAX_ITERATIONS (0=unlimited)"
-    echo "  MAX_RUNTIME: $MAX_RUNTIME (0=unlimited)"
-    echo "  CHECKPOINT_MODE: $CHECKPOINT_MODE"
-}

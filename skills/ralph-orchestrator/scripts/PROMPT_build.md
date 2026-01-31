@@ -37,7 +37,7 @@ Study these using subagents:
 - Create artifacts in `specs/{goal}/implementation/{task_name}/`
 
 > **DEPRECATED**: `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
-> All planning goes through: `specs/{feature}/implementation/plan.md`
+> All planning goes through: `specs/{goal}/implementation/plan.md`
 
 ### 0d. Study Scratchpad (Session Memory)
 

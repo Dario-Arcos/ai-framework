@@ -81,11 +81,6 @@ ralph_kill_monitor() {
     fi
 }
 
-ralph_register_monitor_pid() {
-    RALPH_MONITOR_PID="$1"
-    ralph_log_debug "Registered Monitor PID: $RALPH_MONITOR_PID"
-}
-
 # ─────────────────────────────────────────────────────────────────
 # CLEANUP ALL
 # ─────────────────────────────────────────────────────────────────

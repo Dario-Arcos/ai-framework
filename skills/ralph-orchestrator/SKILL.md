@@ -111,9 +111,9 @@ Options:
 ### Step 1: Validate Prerequisites and Detect Flow
 
 **Validate SOP Prerequisites:**
-- [ ] `specs/{feature}/discovery.md` exists → If missing: Execute `sop-discovery`
-- [ ] `specs/{feature}/design/detailed-design.md` exists → If missing: Execute `sop-planning`
-- [ ] `specs/{feature}/implementation/plan.md` + task files exist → If missing: Execute `sop-task-generator`
+- [ ] `specs/{goal}/discovery.md` exists → If missing: Execute `sop-discovery`
+- [ ] `specs/{goal}/design/detailed-design.md` exists → If missing: Execute `sop-planning`
+- [ ] `specs/{goal}/implementation/plan.md` + task files exist → If missing: Execute `sop-task-generator`
 
 **Detect Flow (Use AskUserQuestion):**
 ```text
@@ -343,6 +343,7 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 | [pressure-testing.md](references/pressure-testing.md) | Adversarial testing |
 | [troubleshooting.md](references/troubleshooting.md) | Common issues and fixes |
 | [best-practices.md](references/best-practices.md) | Recommended patterns |
+| [execution-paths.md](references/execution-paths.md) | Interactive vs autonomous execution |
 
 ---
 

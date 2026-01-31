@@ -2,7 +2,8 @@
 # Ralph Loop Monitor - Real-time observability dashboard
 #
 # Usage:
-#   ./monitor.sh              → Watch status updates
+#   ./monitor.sh              → Watch status updates (live dashboard)
+#   ./monitor.sh --status     → Show current status (one-shot)
 #   ./monitor.sh --stream     → Stream current worker output
 #   ./monitor.sh --logs       → Tail iteration logs
 #   ./monitor.sh --metrics    → Show metrics summary

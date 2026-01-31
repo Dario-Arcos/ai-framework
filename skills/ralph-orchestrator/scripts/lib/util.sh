@@ -19,15 +19,6 @@ ralph_atomic_write() {
     mv "$tmp" "$file"
 }
 
-# Write from stdin to file atomically
-ralph_atomic_write_stdin() {
-    local file="$1"
-    local tmp="${file}.tmp.$$"
-
-    cat > "$tmp"
-    mv "$tmp" "$file"
-}
-
 # ─────────────────────────────────────────────────────────────────
 # LOG ROTATION
 # ─────────────────────────────────────────────────────────────────
@@ -65,10 +56,6 @@ ralph_timestamp() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-ralph_timestamp_local() {
-    date +"%Y-%m-%d %H:%M:%S"
-}
-
 # ─────────────────────────────────────────────────────────────────
 # FILE HELPERS
 # ─────────────────────────────────────────────────────────────────
@@ -76,15 +63,4 @@ ralph_timestamp_local() {
 ralph_ensure_dir() {
     local dir="$1"
     [[ -d "$dir" ]] || mkdir -p "$dir"
-}
-
-ralph_file_age_seconds() {
-    local file="$1"
-    if [[ -f "$file" ]]; then
-        local now=$(date +%s)
-        local mtime=$(stat -f%m "$file" 2>/dev/null || stat -c%Y "$file" 2>/dev/null || echo "$now")
-        echo $((now - mtime))
-    else
-        echo "0"
-    fi
 }

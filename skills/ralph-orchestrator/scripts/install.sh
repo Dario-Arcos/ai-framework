@@ -35,10 +35,16 @@ fi
 # Files to copy
 FILES=(
     "scripts/loop.sh"
+    "scripts/monitor.sh"
     "scripts/status.sh"
     "scripts/tail-logs.sh"
     "scripts/truncate-context.sh"
     "scripts/PROMPT_build.md"
+)
+
+# Directories to copy
+DIRS=(
+    "scripts/lib"
 )
 
 # Templates to copy (source:dest)
@@ -61,6 +67,22 @@ for file in "${FILES[@]}"; do
         echo -e "  ${GREEN}✓${NC} $(basename "$file")"
     else
         echo -e "  ${YELLOW}⚠${NC} $(basename "$file") not found, skipping"
+    fi
+done
+
+# Copy directories
+echo ""
+echo "Copying directories..."
+for dir in "${DIRS[@]}"; do
+    src="$SKILL_DIR/$dir"
+    dest="$TARGET_DIR/$(basename "$dir")"
+
+    if [ -d "$src" ]; then
+        cp -r "$src" "$dest"
+        chmod +x "$dest"/*.sh 2>/dev/null || true
+        echo -e "  ${GREEN}✓${NC} $(basename "$dir")/ ($(ls -1 "$dest" | wc -l | tr -d ' ') files)"
+    else
+        echo -e "  ${YELLOW}⚠${NC} $(basename "$dir")/ not found, skipping"
     fi
 done
 
@@ -88,6 +110,7 @@ done
 
 # Make scripts executable
 chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
+chmod +x "$TARGET_DIR/monitor.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/status.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/tail-logs.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/truncate-context.sh" 2>/dev/null || true
@@ -109,5 +132,7 @@ echo "  2. Complete discovery, planning, and task generation"
 echo "  3. Run: ./loop.sh specs/{goal}/   # Start autonomous execution"
 echo ""
 echo "Utilities:"
+echo "  ./monitor.sh             # Live dashboard (run in separate terminal)"
+echo "  ./monitor.sh --stream    # Stream worker output in real-time"
 echo "  ./status.sh              # View current status"
 echo "  ./tail-logs.sh           # View last iteration output"

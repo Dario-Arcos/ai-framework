@@ -613,7 +613,7 @@ specs/user-auth/implementation/plan.md
 - Reads `.code-task.md` files for detailed task execution
 
 > **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
-> All planning goes through the SOP structure: `specs/{feature}/implementation/plan.md`
+> All planning goes through the SOP structure: `specs/{goal}/implementation/plan.md`
 
 ---
 

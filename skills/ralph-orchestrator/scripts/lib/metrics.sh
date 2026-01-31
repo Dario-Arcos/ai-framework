@@ -69,34 +69,6 @@ ralph_update_metrics() {
 }
 
 # ─────────────────────────────────────────────────────────────────
-# METRICS DISPLAY
-# ─────────────────────────────────────────────────────────────────
-
-ralph_show_metrics() {
-    local metrics_file="${RALPH_METRICS_FILE:-logs/metrics.json}"
-
-    if [[ ! -f "$metrics_file" ]]; then
-        echo "No metrics available"
-        return
-    fi
-
-    local total success failed rate
-    total=$(jq -r '.total_iterations // 0' "$metrics_file")
-    success=$(jq -r '.successful // 0' "$metrics_file")
-    failed=$(jq -r '.failed // 0' "$metrics_file")
-
-    if [[ "$total" -gt 0 ]]; then
-        rate=$(echo "scale=1; $success * 100 / $total" | bc 2>/dev/null || echo "0")
-    else
-        rate="0"
-    fi
-
-    echo -e "${BOLD}Metrics:${NC}"
-    echo "  Iterations: $total (${GREEN}$success${NC} ok, ${RED}$failed${NC} failed)"
-    echo "  Success rate: ${rate}%"
-}
-
-# ─────────────────────────────────────────────────────────────────
 # STATUS UPDATE
 # ─────────────────────────────────────────────────────────────────
 

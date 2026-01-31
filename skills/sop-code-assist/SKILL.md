@@ -394,7 +394,7 @@ See `references/tdd-workflow.md` for detailed TDD guidance.
 **Cause:** Malformed .code-task.md structure.
 
 **Solution:**
-- Verify required sections: Context, Requirements, Acceptance Criteria
+- Verify required sections: Description, Background, Technical Requirements, Acceptance Criteria
 - Check markdown formatting
 - Regenerate with sop-task-generator if needed
 

@@ -24,20 +24,6 @@ cd "$RALPH_PROJECT_DIR"
 source "${SCRIPT_DIR}/lib/init.sh"
 
 # ─────────────────────────────────────────────────────────────────
-# EXIT CODES
-# ─────────────────────────────────────────────────────────────────
-
-EXIT_SUCCESS=0
-EXIT_ERROR=1
-EXIT_CIRCUIT_BREAKER=2
-EXIT_MAX_ITERATIONS=3
-EXIT_MAX_RUNTIME=4
-EXIT_LOOP_THRASHING=6
-EXIT_TASKS_ABANDONED=7
-EXIT_CHECKPOINT_PAUSE=8
-EXIT_INTERRUPTED=130
-
-# ─────────────────────────────────────────────────────────────────
 # ARGUMENT PARSING
 # ─────────────────────────────────────────────────────────────────
 

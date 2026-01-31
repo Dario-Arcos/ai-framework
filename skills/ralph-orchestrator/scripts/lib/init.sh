@@ -15,6 +15,7 @@ RALPH_SCRIPT_DIR="$( dirname "$RALPH_LIB_DIR" )"
 RALPH_PROJECT_DIR="${RALPH_PROJECT_DIR:-$(pwd)}"
 
 # Load modules in dependency order
+source "${RALPH_LIB_DIR}/constants.sh"
 source "${RALPH_LIB_DIR}/logging.sh"
 source "${RALPH_LIB_DIR}/util.sh"
 source "${RALPH_LIB_DIR}/config.sh"
