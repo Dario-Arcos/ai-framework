@@ -16,6 +16,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 |-------|----------|---------------|
 | `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots |
 | `brainstorming` | Diálogo para diseñar soluciones | Antes de codear algo nuevo |
+| `systematic-debugging` | Debugging metódico con 4 fases | Cualquier bug, test failure, comportamiento inesperado |
 | `pr-workflow` | PR con code + security review | Al crear pull requests |
 | `claude-code-expert` | Genera componentes Claude Code | Crear agents, commands, hooks |
 | `frontend-design` | Diseño web distintivo | Interfaces memorables, no genéricas |
@@ -77,6 +78,36 @@ Convierte ideas vagas en diseños completos mediante diálogo.
 4. Genera `docs/plans/YYYY-MM-DD-<topic>-design.md`
 
 Después: continúa con `ralph-orchestrator` o Superpowers `writing-plans`.
+
+---
+
+## systematic-debugging
+
+Proceso de 4 fases para encontrar root cause antes de intentar fixes.
+
+**Ley de hierro:** NO fixes sin investigación de root cause primero.
+
+**Las 4 fases:**
+
+| Fase | Actividad | Criterio de éxito |
+|------|-----------|-------------------|
+| 1. Root Cause | Leer errores, reproducir, check changes | Entender QUÉ y POR QUÉ |
+| 2. Pattern | Encontrar ejemplos funcionales, comparar | Identificar diferencias |
+| 3. Hypothesis | Formar teoría, testear mínimamente | Confirmado o nueva hipótesis |
+| 4. Implementation | Crear test, fix, verificar | Bug resuelto, tests pasan |
+
+::: warning Red flags — STOP y vuelve a Fase 1
+- "Quick fix por ahora, investigar después"
+- "Solo intenta cambiar X y ve si funciona"
+- Proponer soluciones sin trazar data flow
+- 3+ fixes fallidos → cuestiona la arquitectura
+:::
+
+**Técnicas incluidas:**
+- `root-cause-tracing.md` — Trazar bugs hacia atrás en call stack
+- `defense-in-depth.md` — Validación en múltiples capas
+- `condition-based-waiting.md` — Reemplazar timeouts arbitrarios
+- `find-polluter.sh` — Script para encontrar test que contamina
 
 ---
 
@@ -319,5 +350,5 @@ Verifica que existe `specs/` en tu proyecto.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-01-31 | **Skills**: 13 total
+**Fecha**: 2026-01-31 | **Skills**: 14 total
 :::
