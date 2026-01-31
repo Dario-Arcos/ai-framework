@@ -1,788 +1,357 @@
 #!/bin/bash
-# Ralph Loop Orchestrator
+# Ralph Loop Orchestrator v3.3.0 (Modular)
 # Based on Ralph Wiggum technique by Geoffrey Huntley
 #
 # Usage:
 #   ./loop.sh specs/{goal}/           → Execute plan, unlimited iterations
 #   ./loop.sh specs/{goal}/ 20        → Execute plan, max 20 iterations
-#
-# Note: Planning is now handled by interactive SOP skills (sop-discovery,
-# sop-planning, sop-task-generator) before launching the loop.
+#   ./loop.sh specs/{goal}/ --monitor → Execute with tmux monitor split
 
 set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────
-# ARGUMENT PARSING
+# SCRIPT INITIALIZATION
 # ─────────────────────────────────────────────────────────────────
 
-if [ "$#" -eq 0 ]; then
-    echo "Usage:"
-    echo "  ./loop.sh specs/{goal}/           → Execute plan, unlimited iterations"
-    echo "  ./loop.sh specs/{goal}/ 20        → Execute plan, max 20 iterations"
-    echo ""
-    echo "Error: Missing specs_path argument"
-    echo ""
-    echo "The loop now only handles execution. Use these skills first:"
-    echo "  - sop-discovery: Define WHAT problem to solve"
-    echo "  - sop-planning: Create implementation plan"
-    echo "  - sop-task-generator: Generate actionable tasks"
-    exit 1
-fi
+# Save original directory before any cd operations
+RALPH_PROJECT_DIR="$(pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# First argument is the specs path
-SPECS_PATH="${1%/}"  # Remove trailing slash if present
-MAX_ITERATIONS="${2:-0}"  # Optional second argument for max iterations
+# Return to project directory
+cd "$RALPH_PROJECT_DIR"
 
-# Validate specs path exists
-if [ ! -d "$SPECS_PATH" ]; then
-    echo "Error: Specs directory not found: $SPECS_PATH"
-    exit 1
-fi
-
-# Validate plan file exists
-PLAN_FILE="$SPECS_PATH/implementation/plan.md"
-if [ ! -f "$PLAN_FILE" ]; then
-    echo "Error: Implementation plan not found: $PLAN_FILE"
-    echo ""
-    echo "Expected structure:"
-    echo "  $SPECS_PATH/"
-    echo "    └── implementation/"
-    echo "        └── plan.md"
-    exit 1
-fi
-
-# Set mode and prompt file
-MODE="build"
-PROMPT_FILE="PROMPT_build.md"
+# Load all modules
+source "${SCRIPT_DIR}/lib/init.sh"
 
 # ─────────────────────────────────────────────────────────────────
 # EXIT CODES
 # ─────────────────────────────────────────────────────────────────
 
-EXIT_SUCCESS=0             # Completed successfully with <promise>COMPLETE</promise>
-EXIT_ERROR=1               # Generic error (validation, setup failure)
-EXIT_CIRCUIT_BREAKER=2     # Max consecutive failures reached
-EXIT_MAX_ITERATIONS=3      # Iteration limit reached
-EXIT_MAX_RUNTIME=4         # Runtime limit exceeded
-EXIT_LOOP_THRASHING=6      # Detected state oscillation
-EXIT_TASKS_ABANDONED=7     # Tasks repeatedly failing
-EXIT_CHECKPOINT_PAUSE=8    # Checkpoint reached, waiting for resume
-EXIT_INTERRUPTED=130       # SIGINT received (Ctrl+C)
+EXIT_SUCCESS=0
+EXIT_ERROR=1
+EXIT_CIRCUIT_BREAKER=2
+EXIT_MAX_ITERATIONS=3
+EXIT_MAX_RUNTIME=4
+EXIT_LOOP_THRASHING=6
+EXIT_TASKS_ABANDONED=7
+EXIT_CHECKPOINT_PAUSE=8
+EXIT_INTERRUPTED=130
 
 # ─────────────────────────────────────────────────────────────────
-# SKILL_DIR (for templates) - REMOVED: variable was never used
+# ARGUMENT PARSING
 # ─────────────────────────────────────────────────────────────────
 
-# ─────────────────────────────────────────────────────────────────
-# CONFIGURATION
-# ─────────────────────────────────────────────────────────────────
+show_usage() {
+    echo "Usage:"
+    echo "  ./loop.sh specs/{goal}/           → Execute plan, unlimited iterations"
+    echo "  ./loop.sh specs/{goal}/ 20        → Execute plan, max 20 iterations"
+    echo "  ./loop.sh specs/{goal}/ --monitor → Execute with tmux monitor split"
+}
 
-# Load project configuration
-CONFIG_FILE=".ralph/config.sh"
-if [ -f "$CONFIG_FILE" ]; then
-    if source "$CONFIG_FILE" 2>/dev/null; then
-        echo -e "${BLUE:-\033[0;34m}Config loaded from $CONFIG_FILE${NC:-\033[0m}"
-    else
-        echo -e "${YELLOW:-\033[1;33m}Warning: Failed to source $CONFIG_FILE, using defaults${NC:-\033[0m}"
-    fi
+if [[ "$#" -eq 0 ]]; then
+    show_usage
+    exit 1
 fi
 
-# Defaults (only set if not already defined)
-QUALITY_LEVEL="${QUALITY_LEVEL:-production}"
-GATE_TEST="${GATE_TEST:-npm test}"
-GATE_TYPECHECK="${GATE_TYPECHECK:-npm run typecheck}"
-GATE_LINT="${GATE_LINT:-npm run lint}"
-GATE_BUILD="${GATE_BUILD:-npm run build}"
-CONFESSION_MIN_CONFIDENCE="${CONFESSION_MIN_CONFIDENCE:-80}"
-MIN_TEST_COVERAGE="${MIN_TEST_COVERAGE:-90}"
+SPECS_PATH="${1%/}"
+MAX_ITERATIONS="${2:-0}"
+WITH_MONITOR=0
 
-ITERATION=0
-CONSECUTIVE_FAILURES=0
-MAX_CONSECUTIVE_FAILURES="${MAX_CONSECUTIVE_FAILURES:-3}"  # From config or default
-MAX_RUNTIME="${MAX_RUNTIME:-0}"  # 0 = unlimited, or seconds from env
-COMPLETE_COUNT=0  # Consecutive COMPLETE signals (need 2 to confirm)
-LAST_TASK=""  # Track last completed task for abandonment detection
-TASK_ATTEMPT_COUNT=0  # Count consecutive attempts at same task
-MAX_TASK_ATTEMPTS="${MAX_TASK_ATTEMPTS:-3}"  # From config or default
-
-# Checkpoint configuration
-CHECKPOINT_MODE="${CHECKPOINT_MODE:-none}"  # none|iterations|milestones
-CHECKPOINT_INTERVAL="${CHECKPOINT_INTERVAL:-5}"  # Pause every N iterations (if mode=iterations)
-
-# Validate checkpoint interval (prevent division by zero)
-if [ "${CHECKPOINT_INTERVAL:-5}" -lt 1 ] 2>/dev/null; then
-    CHECKPOINT_INTERVAL=5
-fi
-
-# Loop thrashing detection - track recent tasks to detect oscillating patterns
-TASK_HISTORY=()  # Array of recent task names
-TASK_HISTORY_SIZE="${TASK_HISTORY_SIZE:-6}"  # From config or default
-CURRENT_BRANCH=""  # Set after git validation
-START_TIME=$(date +%s)
-
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-# Observability directories
-LOGS_DIR="logs"
-mkdir -p "$LOGS_DIR"
-
-ITERATION_LOG="$LOGS_DIR/iteration.log"
-METRICS_FILE="$LOGS_DIR/metrics.json"
-STATUS_FILE="status.json"
-
-# ─────────────────────────────────────────────────────────────────
-# SIGNAL HANDLERS
-# ─────────────────────────────────────────────────────────────────
-
-cleanup_and_exit() {
-    local exit_code="$1"
-    local exit_reason="$2"
-    local timestamp
-    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    # Update status with exit reason (using jq for proper JSON escaping)
-    jq -n \
-        --argjson iter "$ITERATION" \
-        --argjson failures "$CONSECUTIVE_FAILURES" \
-        --arg status "$exit_reason" \
-        --arg exit_reason "$exit_reason" \
-        --argjson exit_code "$exit_code" \
-        --arg mode "$MODE" \
-        --arg branch "$CURRENT_BRANCH" \
-        --arg timestamp "$timestamp" \
-        '{
-            current_iteration: $iter,
-            consecutive_failures: $failures,
-            status: $status,
-            exit_reason: $exit_reason,
-            exit_code: $exit_code,
-            mode: $mode,
-            branch: $branch,
-            timestamp: $timestamp
-        }' > "$STATUS_FILE"
-
-    echo "[$timestamp] EXIT - Reason: $exit_reason (code $exit_code)" >> "$ITERATION_LOG" 2>/dev/null || true
-    exit "$exit_code"
-}
-
-handle_sigint() {
-    echo ""
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}  INTERRUPTED (Ctrl+C)${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    cleanup_and_exit $EXIT_INTERRUPTED "interrupted"
-}
-
-trap handle_sigint SIGINT SIGTERM SIGHUP
-
-# ─────────────────────────────────────────────────────────────────
-# METRICS UPDATE
-# ─────────────────────────────────────────────────────────────────
-
-# Update metrics file
-# Args: $1 = "success" or "failure"
-update_metrics() {
-    local result_type="$1"
-
-    # Defensive: reinitialize if file invalid
-    if [ ! -f "$METRICS_FILE" ] || ! jq empty "$METRICS_FILE" 2>/dev/null; then
-        cat > "$METRICS_FILE" << 'EOF'
-{
-  "total_iterations": 0,
-  "successful": 0,
-  "failed": 0,
-  "total_duration_seconds": 0
-}
-EOF
+# Check for --monitor flag
+for arg in "$@"; do
+    if [[ "$arg" == "--monitor" ]]; then
+        WITH_MONITOR=1
+        # Remove from MAX_ITERATIONS if it was set to --monitor
+        [[ "$MAX_ITERATIONS" == "--monitor" ]] && MAX_ITERATIONS=0
     fi
-
-    local total success failed duration avg
-
-    total=$(jq '.total_iterations + 1' "$METRICS_FILE")
-    if [ "$result_type" = "success" ]; then
-        success=$(jq '.successful + 1' "$METRICS_FILE")
-        failed=$(jq '.failed' "$METRICS_FILE")
-    else
-        success=$(jq '.successful' "$METRICS_FILE")
-        failed=$(jq '.failed + 1' "$METRICS_FILE")
-    fi
-    duration=$(jq ".total_duration_seconds + $ITER_DURATION" "$METRICS_FILE")
-    avg=$(echo "scale=2; $duration / $total" | bc)
-
-    jq -n \
-        --argjson total "$total" \
-        --argjson success "$success" \
-        --argjson failed "$failed" \
-        --argjson duration "$duration" \
-        --arg avg "$avg" \
-        '{
-            total_iterations: $total,
-            successful: $success,
-            failed: $failed,
-            total_duration_seconds: $duration,
-            avg_duration_seconds: ($avg | tonumber)
-        }' > "$METRICS_FILE"
-}
-
-# ─────────────────────────────────────────────────────────────────
-# LOOP THRASHING DETECTION
-# ─────────────────────────────────────────────────────────────────
-
-# Detect oscillating patterns like A→B→A→B or A→B→C→A→B→C
-# Returns 0 if thrashing detected, 1 otherwise
-detect_loop_thrashing() {
-    local history_len=${#TASK_HISTORY[@]}
-
-    # Need at least 4 tasks to detect A→B→A→B pattern
-    if [ "$history_len" -lt 4 ]; then
-        return 1
-    fi
-
-    # Check for 2-element oscillation: A→B→A→B
-    # Compare positions: [0]===[2] && [1]===[3]
-    if [ "$history_len" -ge 4 ]; then
-        local a="${TASK_HISTORY[$((history_len - 4))]}"
-        local b="${TASK_HISTORY[$((history_len - 3))]}"
-        local c="${TASK_HISTORY[$((history_len - 2))]}"
-        local d="${TASK_HISTORY[$((history_len - 1))]}"
-
-        # Pattern: A→B→A→B (different tasks oscillating)
-        if [ "$a" = "$c" ] && [ "$b" = "$d" ] && [ "$a" != "$b" ]; then
-            return 0  # Thrashing detected
-        fi
-    fi
-
-    # Check for 3-element oscillation: A→B→C→A→B→C
-    if [ "$history_len" -ge 6 ]; then
-        local p1="${TASK_HISTORY[$((history_len - 6))]}"
-        local p2="${TASK_HISTORY[$((history_len - 5))]}"
-        local p3="${TASK_HISTORY[$((history_len - 4))]}"
-        local p4="${TASK_HISTORY[$((history_len - 3))]}"
-        local p5="${TASK_HISTORY[$((history_len - 2))]}"
-        local p6="${TASK_HISTORY[$((history_len - 1))]}"
-
-        # Pattern: A→B→C→A→B→C (3 different tasks oscillating)
-        if [ "$p1" = "$p4" ] && [ "$p2" = "$p5" ] && [ "$p3" = "$p6" ]; then
-            # Ensure they're actually different tasks (not all the same)
-            if [ "$p1" != "$p2" ] || [ "$p2" != "$p3" ]; then
-                return 0  # Thrashing detected
-            fi
-        fi
-    fi
-
-    return 1  # No thrashing
-}
-
-# ─────────────────────────────────────────────────────────────────
-# GUARDRAILS LEARNING VALIDATION
-# ─────────────────────────────────────────────────────────────────
-
-# Validate that guardrails.md has real Signs after completion
-# Per PROMPT_build.md: "An empty guardrails.md after multiple iterations is a FAILURE"
-validate_guardrails_learning() {
-    local guardrails_file="guardrails.md"
-    local iterations=$ITERATION
-
-    if [ -f "$guardrails_file" ]; then
-        # Check if only template content exists (no real signs)
-        local sign_count=$(grep -c "^### Sign:" "$guardrails_file" 2>/dev/null || echo "0")
-
-        # Subtract example signs if they still exist
-        local example_count=$(grep -c "Example Signs" "$guardrails_file" 2>/dev/null || echo "0")
-        if [ "$example_count" -gt 0 ]; then
-            # Still has examples, likely no real signs added
-            local real_signs=$((sign_count - 8))  # Assuming 8 example signs
-        else
-            local real_signs=$sign_count
-        fi
-
-        if [ "$real_signs" -lt 1 ] && [ "$iterations" -gt 2 ]; then
-            echo ""
-            echo -e "${YELLOW}⚠️  LEARNING WARNING${NC}"
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo "guardrails.md has no real Signs after $iterations iterations."
-            echo "This indicates a learning failure - gotchas were not captured."
-            echo ""
-            echo "Consider adding Signs for:"
-            echo "  - Technical gotchas encountered"
-            echo "  - Configuration issues solved"
-            echo "  - Workarounds discovered"
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        fi
-    fi
-}
-
-# ─────────────────────────────────────────────────────────────────
-# TEST COVERAGE VALIDATION
-# ─────────────────────────────────────────────────────────────────
-
-# Validate that test coverage meets minimum threshold before completion
-# Returns 0 if coverage is sufficient, 1 if below threshold
-validate_test_coverage() {
-    # Skip if coverage gate is disabled
-    if [ "${MIN_TEST_COVERAGE:-90}" -eq 0 ]; then
-        return 0
-    fi
-
-    # Only validate for code projects (check if package.json or similar exists)
-    if [ ! -f "package.json" ] && [ ! -f "pyproject.toml" ] && [ ! -f "go.mod" ] && [ ! -f "Cargo.toml" ]; then
-        echo -e "${BLUE}  Coverage gate skipped (no code project detected)${NC}"
-        return 0  # Skip for non-code projects (docs, research)
-    fi
-
-    # Try to extract coverage from last test run
-    local coverage=0
-
-    # Look for coverage in various formats
-    if [ -f "coverage/coverage-summary.json" ]; then
-        # Jest/Istanbul format
-        coverage=$(jq -r '.total.statements.pct // 0' "coverage/coverage-summary.json" 2>/dev/null || echo "0")
-    elif [ -f "coverage.json" ]; then
-        # Python coverage.py format
-        coverage=$(jq -r '.totals.percent_covered // 0' "coverage.json" 2>/dev/null || echo "0")
-    elif [ -f ".coverage.json" ]; then
-        # Alternative Python format
-        coverage=$(jq -r '.totals.percent_covered // 0' ".coverage.json" 2>/dev/null || echo "0")
-    elif [ -f "coverage/lcov-report/index.html" ]; then
-        # Try to extract from lcov HTML (POSIX-compatible, no grep -P)
-        coverage=$(sed -n 's/.*<span class="strong">\([0-9.]*\)% <\/span>.*/\1/p' "coverage/lcov-report/index.html" 2>/dev/null | head -1 || echo "0")
-    fi
-
-    # Validate coverage is numeric
-    if ! [[ "$coverage" =~ ^[0-9]*\.?[0-9]*$ ]] || [ -z "$coverage" ]; then
-        echo -e "${BLUE}  Coverage could not be parsed, skipping gate${NC}"
-        return 0
-    fi
-
-    # Convert to integer for comparison (handle decimals)
-    local coverage_int=${coverage%.*}
-    [ -z "$coverage_int" ] && coverage_int=0
-
-    if [ "$coverage_int" -lt "$MIN_TEST_COVERAGE" ]; then
-        echo ""
-        echo -e "${RED}❌ TEST COVERAGE GATE FAILED${NC}"
-        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo "Current coverage: ${coverage}%"
-        echo "Minimum required: ${MIN_TEST_COVERAGE}%"
-        echo ""
-        echo "Cannot mark project as COMPLETE until coverage meets minimum."
-        echo "Options:"
-        echo "  1. Add more tests to increase coverage"
-        echo "  2. Set MIN_TEST_COVERAGE=0 in .ralph/config.sh to disable"
-        echo "  3. Lower MIN_TEST_COVERAGE threshold in .ralph/config.sh"
-        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        return 1
-    fi
-
-    echo -e "${GREEN}✓ Test coverage: ${coverage}% (>=${MIN_TEST_COVERAGE}% required)${NC}"
-    return 0
-}
+done
 
 # ─────────────────────────────────────────────────────────────────
 # VALIDATION
 # ─────────────────────────────────────────────────────────────────
 
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    echo -e "${RED}Error: Not in a git repository${NC}"
+ralph_validate_git_repo || exit $EXIT_ERROR
+ralph_validate_specs_path "$SPECS_PATH" || exit $EXIT_ERROR
+
+RALPH_CURRENT_BRANCH=$(git branch --show-current)
+RALPH_MODE="build"
+PROMPT_FILE="${SCRIPT_DIR}/PROMPT_build.md"
+
+if [[ ! -f "$PROMPT_FILE" ]]; then
+    ralph_log_error "PROMPT_build.md not found"
     exit $EXIT_ERROR
 fi
 
-# Now safe to get branch name
-CURRENT_BRANCH=$(git branch --show-current)
+# ─────────────────────────────────────────────────────────────────
+# CONFIGURATION
+# ─────────────────────────────────────────────────────────────────
 
-if [ ! -f "$PROMPT_FILE" ]; then
-    echo -e "${RED}Error: $PROMPT_FILE not found${NC}"
-    exit $EXIT_ERROR
+ralph_load_config ".ralph/config.sh"
+
+# Global state
+RALPH_ITERATION=0
+RALPH_CONSECUTIVE_FAILURES=0
+RALPH_COMPLETE_COUNT=0
+RALPH_LAST_TASK=""
+RALPH_TASK_ATTEMPT_COUNT=0
+RALPH_START_TIME=$(date +%s)
+
+# File paths
+RALPH_LOGS_DIR="logs"
+ralph_ensure_dir "$RALPH_LOGS_DIR"
+RALPH_ITERATION_LOG="$RALPH_LOGS_DIR/iteration.log"
+RALPH_METRICS_FILE="$RALPH_LOGS_DIR/metrics.json"
+RALPH_STATUS_FILE="status.json"
+
+# Register signal handlers
+ralph_register_signals
+
+# ─────────────────────────────────────────────────────────────────
+# TMUX MONITOR INTEGRATION
+# ─────────────────────────────────────────────────────────────────
+
+launch_with_tmux_monitor() {
+    if ! command -v tmux &>/dev/null; then
+        ralph_log_error "tmux not found - required for --monitor flag"
+        echo ""
+        echo "Install with:"
+        echo "  macOS:  brew install tmux"
+        echo "  Ubuntu: sudo apt install tmux"
+        echo "  Fedora: sudo dnf install tmux"
+        echo ""
+        echo "Or run without --monitor: ./loop.sh $SPECS_PATH $MAX_ITERATIONS"
+        exit 1
+    fi
+
+    # Check if already in tmux
+    if [[ -n "${TMUX:-}" ]]; then
+        # Already in tmux, create split
+        tmux split-window -h "${SCRIPT_DIR}/monitor.sh"
+        tmux select-pane -L  # Return focus to loop
+        return 0
+    else
+        # Not in tmux, create new session with split
+        local session_name="ralph-$$"
+        tmux new-session -d -s "$session_name" "$0 $SPECS_PATH $MAX_ITERATIONS"
+        tmux split-window -h -t "$session_name" "${SCRIPT_DIR}/monitor.sh"
+        tmux select-pane -L -t "$session_name"
+        tmux attach -t "$session_name"
+        exit 0  # Parent process exits, tmux takes over
+    fi
+}
+
+if [[ $WITH_MONITOR -eq 1 ]]; then
+    launch_with_tmux_monitor
 fi
 
-if [ ! -f "AGENTS.md" ]; then
-    echo -e "${YELLOW}Creating AGENTS.md...${NC}"
-    cat > AGENTS.md << 'EOF'
+# ─────────────────────────────────────────────────────────────────
+# INITIALIZATION FILES
+# ─────────────────────────────────────────────────────────────────
+
+# Create AGENTS.md if missing
+[[ ! -f "AGENTS.md" ]] && cat > AGENTS.md << 'AGENTS_EOF'
 # Project: [Name]
 
 ## Quality Level
-
 > **Source of Truth:** `.ralph/config.sh` → `QUALITY_LEVEL`
 
-| Level | Tests | Types | Lint | Docs |
-|-------|-------|-------|------|------|
-| prototype | Skip | Skip | Skip | Skip |
-| production | Required | Required | Required | Optional |
-| library | Required | Required | Required | Required |
-
 ## Build & Run
-
 ```bash
 # Fill in your project's commands
 ```
 
-## Validation
-
-**All must pass before commit (Production/Library):**
-- Tests: `npm test`
-- Typecheck: `npm run typecheck`
-- Lint: `npm run lint`
-- Build: `npm run build`
-
 ## Gotchas
-
 <!-- Document problems as you solve them -->
+AGENTS_EOF
 
-## Patterns
+[[ ! -f "guardrails.md" ]] && echo "# Signs" > guardrails.md
+[[ ! -d "specs" ]] && mkdir specs
 
-<!-- Document codebase conventions -->
-EOF
-fi
-
-[ ! -f "guardrails.md" ] && echo "# Signs" > guardrails.md
-[ ! -d "specs" ] && mkdir specs
-# NOTE: IMPLEMENTATION_PLAN.md is DEPRECATED. Use specs/{goal}/implementation/plan.md instead.
-
-# Note: memories.md removed - decisions live in specs/design/, gotchas in guardrails.md
-
-# Create scratchpad if not exists (persists between loop restarts)
-if [ ! -f "scratchpad.md" ]; then
-    cat > scratchpad.md << EOF
+# Create scratchpad if not exists
+[[ ! -f "scratchpad.md" ]] && cat > scratchpad.md << SCRATCH_EOF
 # Scratchpad
 
 ## Current State
-
 - **Last task completed**: [none yet]
 - **Next task to do**: [see ${SPECS_PATH}/implementation/plan.md]
-- **Files modified this session**: [none yet]
 
 ## Key Decisions This Session
 
 ## Blockers & Notes
+SCRATCH_EOF
 
-EOF
-fi
-
-# Initialize metrics if not exists
-if [ ! -f "$METRICS_FILE" ]; then
-    cat > "$METRICS_FILE" << 'EOF'
-{
-  "total_iterations": 0,
-  "successful": 0,
-  "failed": 0,
-  "total_duration_seconds": 0
-}
-EOF
-fi
+# Initialize metrics
+ralph_init_metrics "$RALPH_METRICS_FILE"
 
 # ─────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────
 
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}         RALPH LOOP - EXECUTION MODE${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+ralph_log_section "RALPH LOOP - EXECUTION MODE"
 echo -e "  Specs:  ${GREEN}$SPECS_PATH${NC}"
-echo -e "  Plan:   ${YELLOW}$PLAN_FILE${NC}"
-echo -e "  Branch: ${YELLOW}$CURRENT_BRANCH${NC}"
-[ "$MAX_ITERATIONS" -gt 0 ] && echo -e "  Max:    ${RED}$MAX_ITERATIONS iterations${NC}"
-[ "$MAX_RUNTIME" -gt 0 ] && echo -e "  Limit:  ${RED}${MAX_RUNTIME}s runtime${NC}"
-[ -f "$CONFIG_FILE" ] && echo -e "  Config: ${BLUE}$CONFIG_FILE${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "  Plan:   ${YELLOW}${SPECS_PATH}/implementation/plan.md${NC}"
+echo -e "  Branch: ${YELLOW}$RALPH_CURRENT_BRANCH${NC}"
+[[ "$MAX_ITERATIONS" -gt 0 ]] && echo -e "  Max:    ${RED}$MAX_ITERATIONS iterations${NC}"
+[[ "$MAX_RUNTIME" -gt 0 ]] && echo -e "  Limit:  ${RED}${MAX_RUNTIME}s runtime${NC}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────
-# THE LOOP
+# MAIN LOOP
 # ─────────────────────────────────────────────────────────────────
 
 while true; do
     # Check iteration limit
-    if [ "$MAX_ITERATIONS" -gt 0 ] && [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
-        echo -e "${YELLOW}Max iterations reached: $MAX_ITERATIONS${NC}"
+    if [[ "$MAX_ITERATIONS" -gt 0 ]] && [[ "$RALPH_ITERATION" -ge "$MAX_ITERATIONS" ]]; then
+        ralph_log_warn "Max iterations reached: $MAX_ITERATIONS"
         break
     fi
 
     # Check runtime limit
-    if [ "$MAX_RUNTIME" -gt 0 ]; then
-        CURRENT_TIME=$(date +%s)
-        ELAPSED=$((CURRENT_TIME - START_TIME))
-        if [ "$ELAPSED" -ge "$MAX_RUNTIME" ]; then
-            echo ""
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${YELLOW}  RUNTIME LIMIT: ${ELAPSED}s >= ${MAX_RUNTIME}s${NC}"
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            cleanup_and_exit $EXIT_MAX_RUNTIME "max_runtime"
+    if [[ "$MAX_RUNTIME" -gt 0 ]]; then
+        current_time=$(date +%s)
+        elapsed=$((current_time - RALPH_START_TIME))
+        if [[ "$elapsed" -ge "$MAX_RUNTIME" ]]; then
+            ralph_log_section "RUNTIME LIMIT: ${elapsed}s >= ${MAX_RUNTIME}s"
+            ralph_cleanup_and_exit $EXIT_MAX_RUNTIME "max_runtime"
         fi
     fi
 
-    ((ITERATION++))
-    ITER_START=$(date +%s)
-    TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    ((RALPH_ITERATION++))
+    iter_start=$(date +%s)
+    timestamp=$(ralph_timestamp)
 
-    echo -e "${GREEN}[ITERATION $ITERATION]${NC} $(date +%H:%M:%S)"
-    echo "[$TIMESTAMP] ITERATION $ITERATION START" >> "$ITERATION_LOG"
+    ralph_log_iteration "$RALPH_ITERATION"
+    echo "[$timestamp] ITERATION $RALPH_ITERATION START" >> "$RALPH_ITERATION_LOG"
 
-    # Update status (using jq for proper JSON escaping)
-    jq -n \
-        --argjson iter "$ITERATION" \
-        --argjson failures "$CONSECUTIVE_FAILURES" \
-        --arg status "running" \
-        --arg mode "$MODE" \
-        --arg branch "$CURRENT_BRANCH" \
-        --arg timestamp "$TIMESTAMP" \
-        '{
-            current_iteration: $iter,
-            consecutive_failures: $failures,
-            status: $status,
-            mode: $mode,
-            branch: $branch,
-            timestamp: $timestamp
-        }' > "$STATUS_FILE"
+    # Update status
+    RALPH_CURRENT_OUTPUT="$RALPH_LOGS_DIR/iteration-${RALPH_ITERATION}-output.log"
+    ralph_update_status "running"
+
+    # Rotate logs
+    ralph_rotate_logs "$RALPH_LOGS_DIR" "$MAX_LOG_SIZE" "$MAX_ITERATION_LOGS"
+
+    # Context budget enforcement
+    [[ -x "./truncate-context.sh" ]] && (./truncate-context.sh || true)
 
     # ─────────────────────────────────────────────────────────────
-    # CONTEXT BUDGET ENFORCEMENT
+    # RUN WORKER
     # ─────────────────────────────────────────────────────────────
 
-    [ -x "./truncate-context.sh" ] && (./truncate-context.sh || true)
+    claude_exit=0
+    ralph_run_worker "$PROMPT_FILE" "$RALPH_CURRENT_OUTPUT" || claude_exit=$?
 
-    # ─────────────────────────────────────────────────────────────
-    # RUN CLAUDE
-    # ─────────────────────────────────────────────────────────────
+    iter_end=$(date +%s)
+    iter_duration=$((iter_end - iter_start))
 
-    # Capture output and exit code (|| true prevents set -e from terminating)
-    # --no-session-persistence: Ensures truly fresh context per iteration
-    #   - Prevents reading previous session files (isolation guarantee)
-    #   - Aligns with Ralph's "fresh 200K context per worker" philosophy
-    CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | claude -p \
-        --no-session-persistence \
-        --dangerously-skip-permissions \
-        --output-format=stream-json \
-        --model opus \
-        --verbose 2>&1) && CLAUDE_EXIT=0 || CLAUDE_EXIT=$?
+    if [[ $claude_exit -eq 0 ]]; then
+        RALPH_CONSECUTIVE_FAILURES=0
 
-    # Output to stdout (no file storage)
-    echo "$CLAUDE_OUTPUT"
+        # Parse output
+        task_name=$(ralph_parse_task_name "$RALPH_CURRENT_OUTPUT")
 
-    ITER_END=$(date +%s)
-    ITER_DURATION=$((ITER_END - ITER_START))
+        # TDD signal tracking
+        tdd_signals=$(ralph_parse_tdd_signals "$RALPH_CURRENT_OUTPUT")
+        read -r red_count green_count <<< "$tdd_signals"
 
-    if [ $CLAUDE_EXIT -eq 0 ]; then
-        CONSECUTIVE_FAILURES=0
-
-        # Extract task marker from Claude output (|| true prevents exit on no match)
-        TASK_NAME=$(echo "$CLAUDE_OUTPUT" | grep -o '> task_completed: .*' | sed 's/> task_completed: //' | tail -1 || true)
-        [ -z "$TASK_NAME" ] && TASK_NAME="[no marker]"
-
-        # ─────────────────────────────────────────────────────────
-        # TDD SIGNAL TRACKING
-        # ─────────────────────────────────────────────────────────
-
-        TDD_RED_COUNT=$(echo "$CLAUDE_OUTPUT" | grep -c "> tdd:red" || echo 0)
-        TDD_GREEN_COUNT=$(echo "$CLAUDE_OUTPUT" | grep -c "> tdd:green" || echo 0)
-
-        if [ "$TDD_GREEN_COUNT" -gt 0 ] && [ "$TDD_RED_COUNT" -eq 0 ]; then
-            echo -e "${YELLOW}⚠ TDD warning: GREEN signals without RED phase${NC}"
-            echo "[$TIMESTAMP] TDD_WARNING - GREEN signals ($TDD_GREEN_COUNT) without RED phase" >> "$ITERATION_LOG"
+        if [[ "$green_count" -gt 0 ]] && [[ "$red_count" -eq 0 ]]; then
+            ralph_log_warn "TDD warning: GREEN signals without RED phase"
         fi
 
-        if [ "$TDD_RED_COUNT" -gt 0 ]; then
-            echo "[$TIMESTAMP] TDD_COMPLIANCE - RED: $TDD_RED_COUNT, GREEN: $TDD_GREEN_COUNT" >> "$ITERATION_LOG"
+        # Confidence check
+        confidence=$(ralph_parse_confidence "$RALPH_CURRENT_OUTPUT")
+        if [[ "$confidence" -lt "${CONFESSION_MIN_CONFIDENCE:-80}" ]]; then
+            ralph_log_warn "Confidence $confidence% < ${CONFESSION_MIN_CONFIDENCE:-80}% threshold"
         fi
 
-        # ─────────────────────────────────────────────────────────
-        # CONFESSION CONFIDENCE PARSING
-        # ─────────────────────────────────────────────────────────
+        # Thrashing detection
+        if [[ "$task_name" != "[no marker]" ]]; then
+            ralph_add_task_to_history "$task_name"
 
-        # Extract confession confidence
-        CONFIDENCE=$(echo "$CLAUDE_OUTPUT" | grep -o '> confession:.*confidence=\[[0-9]*\]' | grep -o 'confidence=\[[0-9]*\]' | grep -o '[0-9]*' | tail -1 || echo "100")
-        [ -z "$CONFIDENCE" ] && CONFIDENCE=100
-
-        # Check confidence threshold (only in build mode)
-        if [ "$MODE" = "build" ] && [ "$CONFIDENCE" -lt "${CONFESSION_MIN_CONFIDENCE:-80}" ]; then
-            echo -e "${YELLOW}  Confidence $CONFIDENCE% < ${CONFESSION_MIN_CONFIDENCE:-80}% threshold - task NOT complete${NC}"
-            echo "[$TIMESTAMP] ITERATION $ITERATION LOW_CONFIDENCE - $CONFIDENCE%" >> "$ITERATION_LOG"
-        fi
-
-        # ─────────────────────────────────────────────────────────
-        # LOOP THRASHING DETECTION
-        # ─────────────────────────────────────────────────────────
-
-        # Add task to history (only if it's a real task marker)
-        if [ "$TASK_NAME" != "[no marker]" ]; then
-            TASK_HISTORY+=("$TASK_NAME")
-
-            # Keep history bounded
-            while [ ${#TASK_HISTORY[@]} -gt "$TASK_HISTORY_SIZE" ]; do
-                TASK_HISTORY=("${TASK_HISTORY[@]:1}")  # Remove oldest
-            done
-
-            # Check for oscillating patterns
-            if detect_loop_thrashing; then
-                echo ""
-                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo -e "${RED}  LOOP THRASHING DETECTED${NC}"
-                echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo ""
-                echo -e "${YELLOW}Task history shows oscillating pattern:${NC}"
-                echo "  ${TASK_HISTORY[*]}"
-                echo ""
-                echo -e "${YELLOW}Claude is stuck cycling between tasks without progress.${NC}"
-                echo "  - Review the implementation plan"
-                echo "  - Add a Sign to guardrails.md"
-                echo "  - Consider manual intervention"
-                cleanup_and_exit $EXIT_LOOP_THRASHING "loop_thrashing"
+            if ralph_detect_loop_thrashing; then
+                ralph_log_section "LOOP THRASHING DETECTED"
+                echo "Task history: ${RALPH_TASK_HISTORY[*]}"
+                ralph_cleanup_and_exit $EXIT_LOOP_THRASHING "loop_thrashing"
             fi
-        fi
 
-        # ─────────────────────────────────────────────────────────
-        # TASK ABANDONMENT DETECTION
-        # ─────────────────────────────────────────────────────────
-
-        # Check if same task is being attempted repeatedly
-        if [ "$TASK_NAME" != "[no marker]" ]; then
-            if [ "$TASK_NAME" = "$LAST_TASK" ]; then
-                ((TASK_ATTEMPT_COUNT++))
-                if [ "$TASK_ATTEMPT_COUNT" -ge "$MAX_TASK_ATTEMPTS" ]; then
-                    echo ""
-                    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                    echo -e "${RED}  TASK ABANDONED: \"$TASK_NAME\" attempted $TASK_ATTEMPT_COUNT times${NC}"
-                    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                    echo ""
-                    echo -e "${YELLOW}The same task keeps failing. Consider:${NC}"
-                    echo "  - Adding a Sign to guardrails.md"
-                    echo "  - Simplifying the task in the plan"
-                    echo "  - Manual intervention required"
-                    cleanup_and_exit $EXIT_TASKS_ABANDONED "tasks_abandoned"
+            # Task abandonment detection
+            if [[ "$task_name" == "$RALPH_LAST_TASK" ]]; then
+                ((RALPH_TASK_ATTEMPT_COUNT++))
+                if [[ "$RALPH_TASK_ATTEMPT_COUNT" -ge "$MAX_TASK_ATTEMPTS" ]]; then
+                    ralph_log_section "TASK ABANDONED: \"$task_name\" attempted $RALPH_TASK_ATTEMPT_COUNT times"
+                    ralph_cleanup_and_exit $EXIT_TASKS_ABANDONED "tasks_abandoned"
                 fi
             else
-                # Different task, reset counter
-                TASK_ATTEMPT_COUNT=1
+                RALPH_TASK_ATTEMPT_COUNT=1
             fi
-            LAST_TASK="$TASK_NAME"
+            RALPH_LAST_TASK="$task_name"
         fi
 
-        # ─────────────────────────────────────────────────────────
-        # CONTEXT HEALTH CHECK
-        # ─────────────────────────────────────────────────────────
+        # Session stats
+        ralph_parse_session_stats "$RALPH_CURRENT_OUTPUT"
 
-        # Extract final usage stats for logging only (NOT for context limit enforcement)
-        # Following mikeyobrien pattern: Control INPUT by construction, don't measure post-hoc
-        # The "type":"result" event contains CUMULATIVE session totals (not per-message)
-        RESULT_LINE=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1)
-        NUM_TURNS=$(echo "$RESULT_LINE" | jq -r '.num_turns // 0' 2>/dev/null || echo "0")
-        TOTAL_COST=$(echo "$RESULT_LINE" | jq -r '.total_cost_usd // 0' 2>/dev/null || echo "0")
+        ralph_log_success "Iteration $RALPH_ITERATION complete (${iter_duration}s) - $task_name"
+        echo "[$timestamp] ITERATION $RALPH_ITERATION SUCCESS - Task: \"$task_name\" - Duration: ${iter_duration}s" >> "$RALPH_ITERATION_LOG"
 
-        # Log session stats for observability (not for enforcement)
-        if [ "$NUM_TURNS" -gt 0 ]; then
-            echo -e "${BLUE}  Session: ${NUM_TURNS} turns, \$${TOTAL_COST} cost${NC}"
-        fi
-
-        # Context limit enforcement is DISABLED following mikeyobrien pattern
-        # Rationale: Input budget control via truncate-context.sh is sufficient
-        # Measuring post-hoc accumulation is unreliable (cache_read is cumulative across messages)
-
-        echo -e "${GREEN}✓ Iteration $ITERATION complete (${ITER_DURATION}s) - $TASK_NAME${NC}"
-        echo "[$TIMESTAMP] ITERATION $ITERATION SUCCESS - Task: \"$TASK_NAME\" - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
-
-        update_metrics success
+        ralph_update_metrics success "$iter_duration"
 
         # ─────────────────────────────────────────────────────────
-        # DOUBLE COMPLETION VERIFICATION
+        # COMPLETION CHECK
         # ─────────────────────────────────────────────────────────
 
-        # Check completion signal from final result
-        # "type":"result" contains the full response text
-        FINAL_RESULT=$(echo "$CLAUDE_OUTPUT" | grep '"type":"result"' | tail -1 | jq -r '.result // empty' 2>/dev/null)
-        if echo "$FINAL_RESULT" | grep -q "<promise>COMPLETE</promise>"; then
-            ((COMPLETE_COUNT++))
-            echo -e "${GREEN}  COMPLETE signal received (${COMPLETE_COUNT}/2)${NC}"
+        final_result=$(ralph_parse_final_result "$RALPH_CURRENT_OUTPUT")
 
-            # Require 2 consecutive COMPLETE signals to confirm
-            if [ "$COMPLETE_COUNT" -ge 2 ]; then
-                # Validate test coverage gate before accepting completion
-                if ! validate_test_coverage; then
-                    echo -e "${YELLOW}  COMPLETE rejected - coverage gate failed${NC}"
-                    COMPLETE_COUNT=0  # Reset counter, need to add tests
+        if ralph_check_completion_signal "$final_result"; then
+            ((RALPH_COMPLETE_COUNT++))
+            ralph_log_info "COMPLETE signal received (${RALPH_COMPLETE_COUNT}/2)"
+
+            if [[ "$RALPH_COMPLETE_COUNT" -ge 2 ]]; then
+                if ! ralph_validate_test_coverage; then
+                    ralph_log_warn "COMPLETE rejected - coverage gate failed"
+                    RALPH_COMPLETE_COUNT=0
                     continue
                 fi
 
-                echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo -e "${GREEN}  ALL TASKS COMPLETE (double-verified)${NC}"
-                echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                echo "[$TIMESTAMP] COMPLETE - Total iterations: $ITERATION (verified with $COMPLETE_COUNT confirmations)" >> "$ITERATION_LOG"
-
-                # Validate learning before exit
-                validate_guardrails_learning
-
-                # NOTE: No automatic git push - user decides when to push
-                cleanup_and_exit $EXIT_SUCCESS "complete"
+                ralph_log_section "ALL TASKS COMPLETE (double-verified)"
+                ralph_validate_guardrails_learning
+                ralph_cleanup_and_exit $EXIT_SUCCESS "complete"
             fi
         else
-            # Non-COMPLETE result resets the counter
-            if [ "$COMPLETE_COUNT" -gt 0 ]; then
-                echo -e "${YELLOW}  COMPLETE counter reset (was ${COMPLETE_COUNT})${NC}"
+            if [[ "$RALPH_COMPLETE_COUNT" -gt 0 ]]; then
+                ralph_log_warn "COMPLETE counter reset (was ${RALPH_COMPLETE_COUNT})"
             fi
-            COMPLETE_COUNT=0
+            RALPH_COMPLETE_COUNT=0
         fi
 
-        # ─────────────────────────────────────────────────────────
-        # CHECKPOINT PAUSE (iterations mode)
-        # ─────────────────────────────────────────────────────────
-
-        if [ "$CHECKPOINT_MODE" = "iterations" ] && [ $((ITERATION % CHECKPOINT_INTERVAL)) -eq 0 ]; then
-            echo ""
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${YELLOW}  CHECKPOINT: Reached after $CHECKPOINT_INTERVAL iterations${NC}"
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo ""
-            echo -e "${BLUE}Review progress and resume with:${NC}"
-            echo "  ./loop.sh $SPECS_PATH $MAX_ITERATIONS"
-            echo ""
-            cleanup_and_exit $EXIT_CHECKPOINT_PAUSE "checkpoint_pause"
+        # Checkpoint pause
+        if [[ "$CHECKPOINT_MODE" == "iterations" ]] && [[ $((RALPH_ITERATION % CHECKPOINT_INTERVAL)) -eq 0 ]]; then
+            ralph_log_section "CHECKPOINT: After $CHECKPOINT_INTERVAL iterations"
+            echo "Resume with: ./loop.sh $SPECS_PATH $MAX_ITERATIONS"
+            ralph_cleanup_and_exit $EXIT_CHECKPOINT_PAUSE "checkpoint_pause"
         fi
     else
-        ((CONSECUTIVE_FAILURES++))
-        echo -e "${RED}✗ Iteration $ITERATION failed (exit $CLAUDE_EXIT)${NC}"
-        echo "[$TIMESTAMP] ITERATION $ITERATION FAILED - Exit: $CLAUDE_EXIT - Duration: ${ITER_DURATION}s" >> "$ITERATION_LOG"
-        echo "[$(date)] Iteration $ITERATION failed (exit $CLAUDE_EXIT)" >> errors.log
+        ((RALPH_CONSECUTIVE_FAILURES++))
+        ralph_log_failure "Iteration $RALPH_ITERATION failed (exit $claude_exit)"
+        echo "[$timestamp] ITERATION $RALPH_ITERATION FAILED - Exit: $claude_exit" >> "$RALPH_ITERATION_LOG"
+        echo "[$(date)] Iteration $RALPH_ITERATION failed (exit $claude_exit)" >> errors.log
 
-        update_metrics failure
+        ralph_update_metrics failure "$iter_duration"
 
-        # ─────────────────────────────────────────────────────────
-        # CIRCUIT BREAKER
-        # ─────────────────────────────────────────────────────────
+        # Exponential backoff
+        backoff=$((2 ** RALPH_CONSECUTIVE_FAILURES))
+        [[ $backoff -gt 60 ]] && backoff=60
+        ralph_log_warn "Waiting ${backoff}s before retry (backoff)..."
+        sleep $backoff
 
-        if [ "$CONSECUTIVE_FAILURES" -ge "$MAX_CONSECUTIVE_FAILURES" ]; then
-            echo ""
-            echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${RED}  CIRCUIT BREAKER: $MAX_CONSECUTIVE_FAILURES consecutive failures${NC}"
-            echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo ""
-            echo -e "${YELLOW}Human action required:${NC}"
-            echo "  1. Check errors.log for details"
-            echo "  2. Review last Claude output above"
-            echo "  3. Fix the issue manually or adjust specs"
-            echo "  4. Run ./loop.sh again to continue"
-            echo ""
-            echo -e "${YELLOW}Common fixes:${NC}"
-            echo "  - API rate limit → wait and retry"
-            echo "  - Network issue → check connection"
-            echo "  - Stuck in loop → add Sign to guardrails.md"
-            echo "  - Wrong direction → git reset --hard && regenerate plan"
-            echo ""
-
-            cleanup_and_exit $EXIT_CIRCUIT_BREAKER "circuit_breaker"
+        # Circuit breaker
+        if [[ "$RALPH_CONSECUTIVE_FAILURES" -ge "$MAX_CONSECUTIVE_FAILURES" ]]; then
+            ralph_log_section "CIRCUIT BREAKER: $MAX_CONSECUTIVE_FAILURES consecutive failures"
+            echo "Check errors.log for details"
+            ralph_cleanup_and_exit $EXIT_CIRCUIT_BREAKER "circuit_breaker"
         fi
     fi
-
-    # NOTE: No automatic git push - user decides when to push
 
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 done
 
-END_TIME=$(date +%s)
-TOTAL_DURATION=$((END_TIME - START_TIME))
-
-echo -e "${YELLOW}Loop completed: $ITERATION iterations (${TOTAL_DURATION}s total)${NC}"
-echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] LOOP END - Iterations: $ITERATION - Duration: ${TOTAL_DURATION}s" >> "$ITERATION_LOG"
-
-cleanup_and_exit $EXIT_MAX_ITERATIONS "max_iterations"
+# Loop ended by iteration limit
+ralph_cleanup_and_exit $EXIT_MAX_ITERATIONS "max_iterations"

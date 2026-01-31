@@ -234,48 +234,43 @@ Options:
 
 ### Step 6: Configure Execution
 
-**Execution is ALWAYS autonomous via loop.sh.** The only choice is checkpoint frequency.
+**Use AskUserQuestion:**
 
 | Question | Options |
 |----------|---------|
-| Checkpoints | **None** (Recommended): Run until complete / **Every N tasks**: Pause for review |
-| Checkpoint Interval | 3 / 5 / 10 tasks (only if checkpoints enabled) |
-| Quality Level | **Production**: Tests+Types+Lint+Build (Recommended) / **Prototype**: Skip verifications / **Library**: All + coverage + docs |
+| Quality Level | **Production** (Recommended) / Prototype / Library |
+| Checkpoints | **None** (Recommended) / Every N tasks |
 
-Update `.ralph/config.sh` with selections. Details: [configuration-guide.md](references/configuration-guide.md)
+Update `.ralph/config.sh`. Details: [configuration-guide.md](references/configuration-guide.md)
 
 ---
 
 ### Step 7: Launch Execution
 
-**Prerequisites checklist:**
-- [ ] `specs/{goal}/implementation/plan.md` exists
-- [ ] `.code-task.md` files exist
-- [ ] `.ralph/config.sh` configured
-- [ ] **Plan Review Checkpoint passed (Step 5)**
+**Prerequisites:**
+- `specs/{goal}/implementation/plan.md` exists
+- `.code-task.md` files exist
+- Plan Review Checkpoint passed (Step 5)
 
-**Launch:**
-```bash
-Bash("./loop.sh specs/{goal}/", run_in_background=True)
+**Launch with Bash tool:**
+```
+Bash(command="./loop.sh specs/{goal}/", run_in_background=true)
 ```
 
-Transition to Phase 2: Monitoring mode.
+**Inform user:** "Loop iniciado. Si quieres visibilidad directa, ejecuta en otra terminal: `./monitor.sh`"
 
 ---
 
-## Phase 2: Execution Monitoring
+## Phase 2: Monitoring
 
-**Your role changes to MONITOR ONLY.**
+**Role: MONITOR ONLY.** No Write/Edit. No implement.
 
-| Allowed | Forbidden |
-|---------|-----------|
-| `TaskOutput(task_id, block=False)` | Write/Edit tools |
-| `Read("status.json")` | Bash commands that modify state |
-| `Read("logs/*")` | Task tool for implementation |
+**Tools allowed:**
+- `TaskOutput(task_id, block=false)` → output del loop
+- `Read("status.json")` → estado actual
+- `Read("logs/iteration.log")` → historial
 
-**If user asks to implement:** *"Workers have fresh 200K token context - 10x better. Want me to update the plan and restart instead?"*
-
-> Full monitoring guide: [monitoring-pattern.md](references/monitoring-pattern.md)
+**If user asks to implement:** Redirect to workers (fresh 200K context > polluted session).
 
 ---
 
@@ -361,6 +356,3 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 | `sop-reverse` | 2B | Investigation |
 | `sop-code-assist` | Workers | TDD implementation |
 
----
-
-*Version: 3.1.0 | Updated: 2026-01-29*
