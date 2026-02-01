@@ -1,350 +1,184 @@
-# Guía de Agentes Especializados
+# Agents
 
-::: tip ¿Qué son los Agentes?
-Especialistas AI que ejecutan tareas complejas con expertise en dominios específicos. Usa Task tool para invocación explícita y ejecución paralela.
-:::
+Especialistas AI para tareas complejas. Claude los invoca automáticamente o puedes especificarlos.
 
 ---
 
-| Categoría                                                             | Uso Recomendado                                 |
-| --------------------------------------------------------------------- | ----------------------------------------------- |
-| [Architecture & System Design](#architecture-system-design)           | Diseño de APIs, arquitectura de sistemas        |
-| [Code Review & Security](#code-review-security)                       | Revisión de código, seguridad, edge cases       |
-| [Database Management](#database-management)                           | Administración cloud databases                  |
-| [Documentation & Technical Writing](#documentation-technical-writing) | Documentación técnica comprehensiva             |
-| [Performance & Observability](#performance-observability)             | Optimización de rendimiento, observabilidad     |
-| [Testing & Debugging](#testing-debugging)                             | TDD, testing automatizado, debugging sistemático |
-| [User Experience & Design](#user-experience-design)                   | UX premium, design review                       |
-| [Memory & Context](#memory-context)                                   | Búsqueda de contexto persistente                |
+## Referencia rápida
+
+| Agent | Qué hace | Cuándo usarlo |
+|-------|----------|---------------|
+| `code-reviewer` | Review contra plan y standards | Después de completar un step del plan |
+| `code-simplifier` | Simplifica código reciente | Automático después de escribir código |
+| `edge-case-detector` | Detecta edge cases de producción | Antes de merge, código crítico |
+| `performance-engineer` | Optimización y observabilidad | Problemas de rendimiento, monitoring |
+| `security-reviewer` | Security review del branch | Antes de merge, PRs |
+| `systematic-debugger` | Debugging metódico 4 fases | Cualquier bug, test failure |
+| `test-automator` | Test automation moderno | Estrategia de tests, frameworks |
 
 ---
 
-## Invocación de Agentes
-
-### Métodos de Invocación
+## Invocación
 
 **Automática** (Claude decide):
-
-```bash
-"Analiza la arquitectura de este sistema backend"
+```
+"Analiza la seguridad de estos cambios"
 ```
 
-**Explícita** (usuario especifica):
-
-```bash
-"Use the backend-architect agent to design this API"
+**Explícita** (tú especificas):
+```
+"Use the security-reviewer agent"
 ```
 
-**Task Tool** (ejecución paralela):
-
-```bash
-"Launch code-reviewer and security-reviewer agents in parallel"
+**Paralela** (Task tool):
+```
+"Launch code-reviewer and security-reviewer in parallel"
 ```
 
-### Ejecución en Paralelo
+---
 
-**Patrón recomendado:**
+## Code Review & Quality
 
-```bash
-"Launch in parallel:
-- code-reviewer for code standards
-- security-reviewer for vulnerabilities
-- performance-engineer for optimization
+### code-reviewer
 
-Combine findings in single report"
-```
+Review de código completado contra el plan original y coding standards.
 
-**Beneficios:** ⚡ Tiempo reducido · 🧠 Context windows independientes · 🎯 Análisis especializado
+**Cuándo usarlo:** Después de completar un step numerado del plan.
 
-::: tip Cuándo Usar Cada Método
-**Automática:** Task estándar, confianza en orquestación Claude
-**Explícita:** Garantizar agent específico, paralelización
-**Task Tool:** Context window separado, múltiples agents independientes
-:::
+**Dimensiones de análisis:**
+- Plan alignment: ¿implementación sigue el plan?
+- Code quality: patterns, error handling, type safety
+- Architecture: SOLID, separation of concerns
+- Documentation: comments, docstrings
+
+**Output:** Issues categorizados como Critical / Important / Suggestions
 
 ---
 
-## Architecture & System Design
+### code-simplifier
 
-### `backend-architect`
+Simplifica código para claridad y mantenibilidad sin cambiar funcionalidad.
 
-::: tip API Design & Scalability
-Diseño RESTful, microservicios, esquemas BD, arquitectura escalable
-:::
+**Cuándo se activa:** Automáticamente después de escribir o modificar código.
 
-**Proceso:** Análisis → Definición endpoints → Esquema BD → Estrategia caché → Recomendaciones tech
+**Qué hace:**
+- Reduce complejidad y nesting
+- Elimina redundancia
+- Mejora nombres de variables/funciones
+- Evita nested ternaries (prefiere switch/if-else)
 
-**Salida:** API definitions, arquitectura (mermaid), esquema BD, tech stack, cuellos de botella
-
----
-
-### `cloud-architect`
-
-::: tip Multi-Cloud & IaC
-AWS/Azure/GCP, Terraform/OpenTofu/CDK, optimización FinOps
-:::
-
-**Platforms:** AWS (Well-Architected) · Azure (ARM/Bicep) · GCP · Multi-cloud networking · Edge computing
-
-**IaC:** Terraform/OpenTofu modules · CloudFormation · AWS/Azure CDK · Pulumi · GitOps (ArgoCD/Flux) · Policy as Code (OPA)
+**Principio:** Claridad sobre brevedad. Código explícito > código clever.
 
 ---
 
-## Code Review & Security
+## Security & Edge Cases
 
-### `code-reviewer`
+### security-reviewer
 
-::: tip Quality Gates Universales
-Prevención de deuda técnica, principios universales de calidad
-:::
+Security review de los cambios en el branch actual.
 
-**Dimensiones:** Code structure (<50 líneas/función, no duplicación) · Error handling (tipos específicos, cleanup) · Security (no secrets, SQL injection) · Testing (happy path + edge cases)
+**Cuándo usarlo:** Antes de crear PR, cambios en auth/payments/data.
 
-**Output:** CRITICAL (vulnerabilidades) · ⚠️ HIGH (deuda técnica) · SUGGESTIONS (optimizaciones)
+**Categorías que examina:**
+- Input validation: SQL injection, command injection, XXE
+- Auth: bypass, privilege escalation, JWT vulnerabilities
+- Secrets: hardcoded keys, weak crypto
+- Code execution: deserialization, eval injection, XSS
 
----
+**Metodología:**
+1. Repository context (patterns existentes)
+2. Comparative analysis (desviaciones)
+3. Vulnerability assessment (data flow tracing)
 
-### `architect-review`
-
-::: tip Arquitectura Maestro
-Clean Architecture, microservicios, event-driven, DDD
-:::
-
-**Patrones:** Clean/Hexagonal Architecture · Microservices · Event-driven (CQRS) · DDD (bounded contexts) · Serverless · API-first
-
-**Sistemas distribuidos:** Service mesh (Istio/Linkerd) · Event streaming (Kafka/Pulsar) · Saga/Outbox patterns · Circuit breaker
-
-**Principios:** SOLID · Repository/UnitOfWork · Factory/Strategy/Observer · Dependency Injection
+**Threshold:** Solo reporta issues con >80% confidence de exploitability.
 
 ---
 
-### `security-reviewer`
+### edge-case-detector
 
-::: danger Security Gates
-Revisión completa de seguridad antes de merge
-:::
+Detecta edge cases que causan production failures.
 
-**Vulnerabilities:** SQL/Command/XXE injection · Auth bypass · JWT vulnerabilities · Hardcoded secrets · RCE via deserialization · XSS · PII exposure
+**Cuándo usarlo:** Antes de merge, código que maneja money/state/data crítica.
 
-**Metodología:** Repository context → Comparative analysis → Vulnerability assessment
+**Categorías:**
 
-**Severity:** **HIGH** (RCE, data breach) · **MEDIUM** (condiciones específicas) · **LOW** (defense-in-depth)
+| Tipo | Ejemplos |
+|------|----------|
+| Boundary | off-by-one, division by zero, null handling |
+| Concurrency | race conditions, deadlocks, TOCTOU |
+| Integration | unbounded retry, missing timeout, connection leak |
+| Silent failure | swallowed exception, ignored return value |
 
----
-
-### `config-security-expert`
-
-::: danger Production Safety
-Prevención de outages por configuración incorrecta
-:::
-
-**Archivos críticos:** docker-compose.yml, Dockerfile, .env, terraform, k8s manifests, database configs
-
-**Detección magic numbers:** Value decreased? → Capacity reduction risk · Increased >50%? → Resource overload risk
-
-**Preguntas obligatorias:** ¿Por qué este valor? · ¿Testeado bajo carga? · ¿Dentro de rangos recomendados? · ¿Plan de rollback?
+**Threshold:** Solo reporta issues con confidence ≥0.8.
 
 ---
 
-### `edge-case-detector`
+## Debugging & Performance
 
-::: warning Edge Cases Production
-Silent failures, data corruption, boundary conditions
-:::
+### systematic-debugger
 
-**Categorías:** Boundary (off-by-one, division by zero, null handling) · Concurrency (race conditions, deadlocks) · Integration (timeouts, API unavailability) · Failure recovery (state consistency)
+Debugging metódico usando el skill `systematic-debugging`.
 
-**Framework de análisis:** ¿Valores mín/máx? · ¿Datos empty/null? · ¿Múltiples threads simultáneos? · ¿Servicios externos unavailable? · ¿Estado consistente después de failures?
+**Cuándo usarlo:** Cualquier bug, test failure, comportamiento inesperado.
 
----
+**Las 4 fases:**
+1. **Root Cause** — Antes de intentar cualquier fix
+2. **Pattern** — Encontrar ejemplos funcionales, comparar
+3. **Hypothesis** — Formar teoría, testear mínimamente
+4. **Implementation** — Crear test, fix, verificar
 
-## Database Management
-
-### `database-admin`
-
-::: tip Cloud DB Administration
-AWS/Azure/GCP databases, automation, reliability engineering
-:::
-
-**Cloud:** AWS (RDS/Aurora/DynamoDB) · Azure (SQL DB/Cosmos DB) · GCP (Cloud SQL/Spanner) · Multi-cloud replication
-
-**Technologies:** Relational (PostgreSQL/MySQL) · NoSQL (MongoDB/Cassandra/Redis) · NewSQL (CockroachDB/Spanner) · Time-series (InfluxDB/TimescaleDB) · Graph (Neo4j/Neptune)
-
-**IaC:** Terraform/CloudFormation · Schema management (Flyway/Liquibase) · Backup automation · GitOps for databases
+**Regla de hierro:** NO fixes sin investigación de root cause primero.
 
 ---
 
-## Performance & Observability
+### performance-engineer
 
-### `performance-engineer`
+Optimización de rendimiento y observabilidad.
 
-::: tip Performance Optimization
-Modern observability, application optimization, scalable systems
-:::
+**Cuándo usarlo:** Performance issues, setup monitoring, optimización.
 
-**Observability:** OpenTelemetry · DataDog/New Relic/Dynatrace · Prometheus/Grafana · RUM (Core Web Vitals) · Synthetic monitoring
-
-**Profiling:** CPU (flame graphs) · Memory (heap, GC) · I/O (disk, network, DB) · Language-specific (JVM/Python/Node/Go) · Container profiling
-
-**Load Testing:** k6 · JMeter · Gatling · Locust · Stress testing · Performance regression testing · Chaos engineering
+**Capacidades:**
+- **Observability:** OpenTelemetry, DataDog, Prometheus/Grafana, RUM
+- **Profiling:** CPU (flame graphs), memory (heap, GC), I/O, language-specific
+- **Load testing:** k6, JMeter, Gatling, stress testing
+- **Core Web Vitals:** LCP, FID, CLS optimization
 
 ---
 
-### `observability-engineer`
+## Testing
 
-::: tip Production Monitoring
-Production-ready monitoring, logging, tracing, SLI/SLO management
-:::
+### test-automator
 
-**Metrics:** Prometheus/PromQL · Grafana dashboards · InfluxDB · DataDog · CloudWatch · High-cardinality metrics
+Test automation con frameworks modernos y AI-powered testing.
 
-**Tracing:** Jaeger · Zipkin · AWS X-Ray · OpenTelemetry · Service mesh observability · Performance bottlenecks
+**Cuándo usarlo:** Definir estrategia de tests, implementar test suites.
 
-**Logging:** ELK Stack · Fluentd/Fluent Bit · Splunk · Loki/Grafana · Log parsing · Centralized logging
+**Frameworks que domina:**
+- JS/TS: Jest, Vitest, Playwright, Cypress
+- Python: pytest, Robot Framework
+- Java: JUnit 5, TestNG, Cucumber
+- Mobile: Appium, Detox
 
----
-
-## Testing & Debugging
-
-### `test-automator`
-
-::: tip Test Automation Master
-Modern frameworks, self-healing tests, quality engineering
-:::
-
-**Frameworks:** Jest/Vitest/Playwright/Cypress (JS/TS) · pytest/Robot (Python) · JUnit/TestNG (Java) · NUnit/xUnit (C#) · Appium (mobile)
-
-**AI-Powered:** Applitools/Percy (visual) · Test case generation · Self-healing selectors · Risk-based prioritization · Synthetic data · Failure prediction
-
-**Strategy:** Test pyramid (70% unit, 20% integration, 10% E2E) · Contract testing (Pact) · API testing (REST Assured) · Performance (k6/JMeter) · Security (OWASP ZAP)
-
-**CI/CD:** Quality gates · Parallel execution · Test reporting (Allure/ReportPortal) · Deployment testing (canary/feature flags)
+**Estrategias:**
+- Test pyramid: 70% unit, 20% integration, 10% E2E
+- Contract testing: Pact
+- Visual testing: Applitools, Percy
+- Self-healing tests: automatic selector updates
 
 ---
 
-### `playwright-test-generator`
+## Combinaciones efectivas
 
-::: tip Autonomous E2E Tests
-AI-powered Playwright test generation via visual exploration
-:::
-
-**Mission:** Generate production-ready E2E tests through autonomous visual exploration usando MCP tools
-
-**Input:** TARGET (URL o file path)
-**Output:** `tests/` + HTML report + `results.json`
-
-**Phases:** Environment detection → Visual discovery (screenshots + accessibility) → Test generation (atomic files, modern patterns) → Reality-test validation (≥90% success, max 5 iterations) → Honest reporting
-
-**Discovery:** Screenshot (visual prominence) + Snapshot (roles, labels) → Identify interactive elements → Discover flows (primary CTAs, forms, navigation, errors) → Progressive exploration
+| Escenario | Agents |
+|-----------|--------|
+| Pre-merge review | `code-reviewer` + `security-reviewer` + `edge-case-detector` |
+| Bug investigation | `systematic-debugger` |
+| Performance issue | `performance-engineer` |
+| Test strategy | `test-automator` |
+| Code cleanup | `code-simplifier` (automático) |
 
 ---
 
-### `mobile-test-generator`
-
-::: tip Autonomous Mobile E2E Tests
-AI-powered mobile test generation via mobile-mcp visual exploration + Maestro YAML flows
-:::
-
-**Mission:** Generate production-ready mobile E2E tests through autonomous visual exploration of iOS/Android apps
-
-**Stack:** React Native · Expo · Flutter · Native iOS/Android
-
-**Input:** `APP_ID` (bundle identifier) o descripción de app
-**Output:** `flows/` (Maestro YAML) + execution report
-
-**Phases:**
-1. **Environment Detection**: List devices, identify platform, detect app type
-2. **Visual Discovery**: mobile_launch_app → mobile_take_screenshot → mobile_list_elements_on_screen → navigate → repeat
-3. **Generate Maestro Flows**: YAML files estructurados en `flows/[feature]/[scenario].yaml`
-4. **Validation Loop**: `maestro test flows/` hasta ≥90% pass rate (max 5 iterations)
-5. **Reporting**: `.claude/reviews/mobile-test-report.md`
-
-**First Step**: Load `mobile-testing` skill para referencias detalladas
-
-**Expo Critical**: Usar Development Builds, NO Expo Go:
-```yaml
-- openLink: "exp+com.myapp://expo-development-client/?url=http://10.0.2.2:8081"
-```
-
-**Key References** (via skill):
-- `references/maestro-patterns.md` - YAML syntax oficial
-- `references/mobile-mcp-tools.md` - Tools de debugging
-- `references/expo-react-native.md` - Guía específica Expo/RN
-
----
-
-### `systematic-debugger`
-
-::: tip Systematic Debugging
-Methodical bug identification, root cause analysis, coordinated delegation
-:::
-
-**Workflow:** Problem analysis (clarification, codebase investigation, trace execution) → Root cause (15+ hypotheses, multiple angles) → Strategic planning (rank theories, identify sub-agents) → Coordinated delegation (brief agents, monitor, validate)
-
-**Delegation Framework:**
-
-| Bug Category    | Primary Sub-Agent     | Secondary Support         |
-| --------------- | --------------------- | ------------------------- |
-| Backend Logic   | backend-developer     | database-expert           |
-| API Issues      | api-architect         | rails-api-developer       |
-| Database Issues | database-expert       | rails-activerecord-expert |
-| Performance     | performance-optimizer | code-reviewer             |
-| Security        | security-reviewer     | config-security-expert    |
-
----
-
-## User Experience & Design
-
-### `design-iterator`
-
-::: tip Iterative Design Refinement
-Refinamiento sistemático y progresivo de componentes web mediante análisis visual e iteraciones
-:::
-
-**Metodología:** Para cada iteración: Screenshot (solo elemento target) → Análisis (3-5 mejoras) → Implementar → Documentar → Repetir
-
-**Visual Hierarchy:** Headline sizing/weight · Color contrast · Whitespace · Section separation
-
-**Modern Patterns:** Gradient backgrounds · Micro-interactions/hover states · Badge/tag styling · Icon treatments · Border radius consistency
-
-**Typography:** Font pairing · Line height/letter spacing · Text color variations · Italic emphasis
-
-**Layout:** Hero card patterns · Asymmetric grids · Alternating visual rhythm · Responsive breakpoints
-
-**Polish:** Shadow depth/color · Animated elements · Social proof · Trust indicators
-
-**Competitor Research:** Stripe (gradients, premium) · Linear (dark, minimal) · Vercel (typography-forward) · Notion (friendly, illustrations)
-
-**Uso:** Invocar con número de iteraciones (default: 10). Ideal cuando 1-2 cambios simples no resuelven el problema de diseño
-
----
-
-## Consejos de Uso
-
-::: tip Selección Rápida
-**Simple:** Agentes generales (backend-architect, cloud-architect)
-**Complex:** Múltiples especialistas + quality reviewers
-**Production-Critical:** SIEMPRE security + performance + observability
-:::
-
-### Combinaciones Poderosas
-
-| Combinación                                    | Resultado                        |
-| ---------------------------------------------- | -------------------------------- |
-| `backend-architect` + `database-admin`         | Scalable architecture            |
-| `code-reviewer` + `security-reviewer`          | Quality + Security gates         |
-| `test-automator` + `playwright-test-generator` | Complete web testing automation  |
-
-### Flujo Óptimo
-
-**Diseño** → Architecture/design agents
-**Implementación** → Development agents
-**Quality** → Review agents (code, security, edge-case)
-**Testing** → Test automation agents
-**Observability** → Performance/observability agents
-
----
-
-::: info Última Actualización
-**Fecha**: 2026-01-11
+::: info Última actualización
+**Fecha**: 2026-01-31 | **Agents**: 7 total
 :::
