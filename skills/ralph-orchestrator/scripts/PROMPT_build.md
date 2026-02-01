@@ -23,10 +23,22 @@ The loop loads `.ralph/config.sh` automatically. Key settings:
 
 Check `.ralph/config.sh` if unsure about project quality requirements.
 
-### 0c. Study State Files
+### 0c. Bootstrap AGENTS.md (First Iteration Only)
+
+**If `@AGENTS.md` contains `[Name]` or `[detect`:** Use Opus subagents to populate it.
+
+**Subagent task:** Read `specs/*/discovery.md` and `specs/*/design/*.md`, then update AGENTS.md with:
+- Project name
+- Build/test/lint commands (from specs or detected from package.json/Cargo.toml/etc.)
+- Runtime and key dependencies
+- Critical constraints that affect implementation
+
+**Output format:** Concise, scannable by AI. No verbose explanations. Max 30 lines.
+
+### 0d. Study State Files
 
 Study these using subagents:
-1. `@AGENTS.md` - Operational guide
+1. `@AGENTS.md` - Operational guide (now populated)
 2. Task sources:
    - `specs/*/implementation/plan.md` - Implementation plan with task checklist
    - `specs/*/implementation/step*/task-*.code-task.md` - SOP-generated task files (if exist)
@@ -36,10 +48,7 @@ Study these using subagents:
 - If `.code-task.md` files exist, follow TDD workflow: Explore → Plan → Code → Commit
 - Create artifacts in `specs/{goal}/implementation/{task_name}/`
 
-> **DEPRECATED**: `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
-> All planning goes through: `specs/{goal}/implementation/plan.md`
-
-### 0d. Study Scratchpad (Session Memory)
+### 0e. Study Scratchpad (Session Memory)
 
 ```
 @scratchpad.md
@@ -53,7 +62,7 @@ Fast context recovery from previous iteration:
 
 **If scratchpad doesn't exist**: First iteration, proceed normally.
 
-### 0e. Study Specs
+### 0f. Study Specs
 
 Study `specs/*` with up to 500 parallel Opus subagents.
 

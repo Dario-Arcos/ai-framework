@@ -134,21 +134,12 @@ fi
 # INITIALIZATION FILES
 # ─────────────────────────────────────────────────────────────────
 
-# Create AGENTS.md if missing
-[[ ! -f "AGENTS.md" ]] && cat > AGENTS.md << 'AGENTS_EOF'
-# Project: [Name]
-
-## Quality Level
-> **Source of Truth:** `.ralph/config.sh` → `QUALITY_LEVEL`
-
-## Build & Run
-```bash
-# Fill in your project's commands
-```
-
-## Gotchas
-<!-- Document problems as you solve them -->
-AGENTS_EOF
+# Verify AGENTS.md exists (created by install.sh)
+if [[ ! -f "AGENTS.md" ]]; then
+    ralph_log_error "AGENTS.md not found. Run install.sh first:"
+    ralph_log_error "  ./skills/ralph-orchestrator/scripts/install.sh $(pwd)"
+    exit $EXIT_ERROR
+fi
 
 [[ ! -f "guardrails.md" ]] && echo "# Signs" > guardrails.md
 [[ ! -d "specs" ]] && mkdir specs

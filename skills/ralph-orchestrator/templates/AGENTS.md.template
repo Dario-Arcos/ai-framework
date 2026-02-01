@@ -1,63 +1,19 @@
 # Project: [Name]
 
-## Quality Level
-
-> **Source of Truth:** `.ralph/config.sh` → `QUALITY_LEVEL`
-
-| Level | Tests | Types | Lint | Docs |
-|-------|-------|-------|------|------|
-| prototype | Skip | Skip | Skip | Skip |
-| production | Required | Required | Required | Optional |
-| library | Required | Required | Required | Required |
-
-## Build & Run
+## Commands
 
 ```bash
-# Fill in your project's commands
+# [detect from specs or package.json/Cargo.toml/etc.]
 ```
-
-## Validation
-
-**All must pass before commit (Production/Library):**
-- Tests: `npm test`
-- Typecheck: `npm run typecheck`
-- Lint: `npm run lint`
-- Build: `npm run build`
 
 ## Environment
 
-- Node.js 18+
-- [Other dependencies]
+[detect runtime and key dependencies]
+
+## Constraints
+
+[extract from specs/discovery.md]
 
 ## Gotchas
 
-<!-- Document problems as you solve them. Include reproduction steps. -->
-
-### Environment
-- [Your gotchas here]
-
-### Build
-- [Your gotchas here]
-
-### Testing
-- [Your gotchas here]
-
-### Runtime
-- [Your gotchas here]
-
-## Patterns
-
-### Architecture
-- [Module organization]
-- [State management]
-- [Error handling]
-
-### Naming
-- Files: kebab-case
-- Functions: camelCase
-- Constants: UPPER_SNAKE_CASE
-
-### Code Organization
-- `src/lib/*` - Shared utilities
-- `src/components/*` - UI components
-- `src/pages/*` - Page components
+<!-- Populated during execution -->
