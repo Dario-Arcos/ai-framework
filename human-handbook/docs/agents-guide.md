@@ -14,7 +14,6 @@ Especialistas AI para tareas complejas. Claude los invoca automáticamente o pue
 | `performance-engineer` | Optimización y observabilidad | Problemas de rendimiento, monitoring |
 | `security-reviewer` | Security review del branch | Antes de merge, PRs |
 | `systematic-debugger` | Debugging metódico 4 fases | Cualquier bug, test failure |
-| `test-automator` | Test automation moderno | Estrategia de tests, frameworks |
 
 ---
 
@@ -145,28 +144,6 @@ Optimización de rendimiento y observabilidad.
 
 ---
 
-## Testing
-
-### test-automator
-
-Test automation con frameworks modernos y AI-powered testing.
-
-**Cuándo usarlo:** Definir estrategia de tests, implementar test suites.
-
-**Frameworks que domina:**
-- JS/TS: Jest, Vitest, Playwright, Cypress
-- Python: pytest, Robot Framework
-- Java: JUnit 5, TestNG, Cucumber
-- Mobile: Appium, Detox
-
-**Estrategias:**
-- Test pyramid: 70% unit, 20% integration, 10% E2E
-- Contract testing: Pact
-- Visual testing: Applitools, Percy
-- Self-healing tests: automatic selector updates
-
----
-
 ## Combinaciones efectivas
 
 | Escenario | Agents |
@@ -174,11 +151,10 @@ Test automation con frameworks modernos y AI-powered testing.
 | Pre-merge review | `code-reviewer` + `security-reviewer` + `edge-case-detector` |
 | Bug investigation | `systematic-debugger` |
 | Performance issue | `performance-engineer` |
-| Test strategy | `test-automator` |
 | Code cleanup | `code-simplifier` (automático) |
 
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-01-31 | **Agents**: 7 total
+**Fecha**: 2026-01-31 | **Agents**: 6 total
 :::
