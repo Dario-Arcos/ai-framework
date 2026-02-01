@@ -101,6 +101,14 @@ MAX_RUNTIME=0                 # Max seconds per loop session (0 = unlimited)
 # MAX_RUNTIME=3600            # Example: 1 hour limit
 
 # ─────────────────────────────────────────────────────────────────
+# MEMORIES SYSTEM
+# ─────────────────────────────────────────────────────────────────
+# Structured memories in guardrails.md (fixes, decisions, patterns)
+
+MEMORIES_ENABLED=true         # Enable structured memory format
+MEMORIES_BUDGET=2000          # Max tokens to inject (~8000 chars)
+
+# ─────────────────────────────────────────────────────────────────
 # Version: 1.1.0 | Updated: 2026-01-27
 # Compliant with strands-agents SOP format (RFC 2119)
 # ─────────────────────────────────────────────────────────────────

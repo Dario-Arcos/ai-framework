@@ -215,25 +215,36 @@ Using a subagent, add to `@AGENTS.md` if you learned:
 
 Keep it brief. Operational only - no status updates.
 
-### 4c. Add Sign (MANDATORY if ANY error occurred)
+### 4c. Add Memory (MANDATORY if learned something)
 
 **BEFORE COMMIT CHECKLIST:**
-- [ ] Did any test fail during this iteration? → Add Sign
-- [ ] Did any command fail? → Add Sign
-- [ ] Did you have to retry something? → Add Sign
-- [ ] Did you discover a gotcha? → Add Sign
+- [ ] Did any test/command fail? → Add `fix` memory
+- [ ] Did you make an architectural choice? → Add `decision` memory
+- [ ] Did you discover a codebase convention? → Add `pattern` memory
 
-**If ANY box is checked, you MUST add a Sign:**
-
-Using a subagent, add to `@guardrails.md`:
+**If ANY box is checked, add to `@guardrails.md`:**
 
 ```markdown
-### Sign: [Problem description]
-- **Trigger**: [Condition that causes this]
-- **Instruction**: [Action to prevent it]
+## Fixes
+
+### fix-{timestamp}-{hex}
+> [What failed and how to fix it]
+<!-- tags: testing, build | created: YYYY-MM-DD -->
+
+## Decisions
+
+### decision-{timestamp}-{hex}
+> [What you chose and why]
+<!-- tags: architecture | created: YYYY-MM-DD -->
+
+## Patterns
+
+### pattern-{timestamp}-{hex}
+> [Convention discovered in codebase]
+<!-- tags: api, structure | created: YYYY-MM-DD -->
 ```
 
-**An empty guardrails.md after multiple iterations is a FAILURE.**
+**Use descriptive tags for future filtering. An empty guardrails.md after multiple iterations is a FAILURE.**
 
 ### 4d. Update Scratchpad
 

@@ -1,6 +1,6 @@
 # Memory Architecture
 
-> **Status**: The original `memories.md` system has been replaced with a distributed memory architecture. This document explains the current approach.
+> **Status**: Ralph uses a distributed memory architecture with structured format in guardrails.md.
 
 ## Overview
 
@@ -11,72 +11,96 @@ Ralph uses a **distributed memory architecture** where different types of learni
 | Component | Scope | Lifetime | Purpose |
 |-----------|-------|----------|---------|
 | `scratchpad.md` | Iteration | Session | Current state, progress, blockers |
-| `guardrails.md` | Loop | Session | Signs (error lessons, gotchas) |
+| `guardrails.md` | Loop | Session | Fixes, decisions, patterns (structured) |
 | `specs/design/` | Feature | Permanent | Architectural decisions |
 | `AGENTS.md` | Project | Permanent | Build commands, patterns, conventions |
 | Git history | All | Permanent | Complete audit trail |
+
+## Structured Guardrails (New Format)
+
+Guardrails now supports typed memory sections:
+
+```markdown
+# Guardrails
+
+## Fixes
+### fix-1737372000-a1b2
+> npm test fails: run npm build first
+<!-- tags: build, test | created: 2024-01-20 -->
+
+## Decisions
+### decision-1737372100-b2c3
+> Chose TailwindCSS over styled-components for bundle size
+<!-- tags: css, performance | created: 2024-01-20 -->
+
+## Patterns
+### pattern-1737372200-c3d4
+> All API handlers return { success: boolean, data?: T }
+<!-- tags: api, types | created: 2024-01-20 -->
+```
+
+### Memory ID Format
+
+```
+{type}-{unix_timestamp}-{4_hex_chars}
+```
+
+### Memory Types
+
+| Type | Section | Use For |
+|------|---------|---------|
+| `fix` | `## Fixes` | Solutions to recurring problems |
+| `decision` | `## Decisions` | Architectural choices with rationale |
+| `pattern` | `## Patterns` | Codebase conventions discovered |
+
+## Configuration
+
+In `.ralph/config.sh`:
+
+```bash
+MEMORIES_ENABLED=true   # Enable structured memory format
+MEMORIES_BUDGET=2000    # Max tokens to inject (~8000 chars)
+```
+
+## Truncation Behavior
+
+The `truncate-context.sh` script respects memory block boundaries:
+- Never cuts mid-memory (waits for `-->` marker)
+- Adds `<!-- truncated: budget exceeded -->` when truncating
+- Preserves parseability of remaining memories
+
+## Backwards Compatibility
+
+Format detection is automatic:
+
+| Format | Detection | Behavior |
+|--------|-----------|----------|
+| `structured` | Contains `## Fixes`, `## Decisions`, or `## Patterns` | Uses new parsing |
+| `legacy` | Contains `### Sign:` | Uses legacy Sign format |
+
+Legacy Signs format continues to work without modification.
 
 ## Decision Tree: Where to Store Learnings
 
 ```
 What kind of learning?
 │
-├── Error/Gotcha encountered this session?
-│   └── → guardrails.md (Sign format)
+├── Error/Gotcha encountered?
+│   └── → guardrails.md ## Fixes
+│
+├── Architectural choice made?
+│   └── → guardrails.md ## Decisions (session)
+│   └── → specs/design/ (permanent)
+│
+├── Convention/pattern discovered?
+│   └── → guardrails.md ## Patterns
 │
 ├── Progress/State for next iteration?
 │   └── → scratchpad.md
 │
-├── Architectural decision for this feature?
-│   └── → specs/{goal}/design/
-│
-├── Project-wide pattern or convention?
-│   └── → AGENTS.md (Patterns section)
-│
-└── Permanent record for future reference?
-    └── → Git commit message
+└── Permanent project-wide pattern?
+    └── → AGENTS.md
 ```
-
-## Signs (guardrails.md)
-
-Signs capture **session-scoped gotchas** that prevent repeated errors within a loop session.
-
-**Format:**
-```markdown
-### Sign: [Problem Name]
-- **Trigger**: [When this applies]
-- **Instruction**: [What to do]
-```
-
-**Example:**
-```markdown
-### Sign: ESM Import Syntax
-- **Trigger**: "Cannot use import statement outside a module"
-- **Instruction**: Check package.json has "type": "module"
-```
-
-## Architectural Decisions (specs/design/)
-
-Permanent decisions about **why** something was designed a certain way live in the specs directory.
-
-**Location:** `specs/{goal}/design/decisions.md` or inline in `detailed-design.md`
-
-**Format:** ADR (Architecture Decision Record) style
-- Context: What prompted the decision
-- Decision: What was decided
-- Consequences: Trade-offs accepted
-
-## Historical Note
-
-The original `memories.md` system used a single file with three sections:
-- Patterns: Now in `AGENTS.md`
-- Decisions: Now in `specs/design/`
-- Fixes: Now in `guardrails.md` as Signs
-
-This was simplified because:
-1. SOP skills already generate `specs/design/` artifacts
-2. Signs provide more actionable format than generic "fixes"
-3. Distributed storage matches how information is consumed
 
 ## Related
 
@@ -85,5 +109,5 @@ This was simplified because:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-01-30*
-*Replaces deprecated memories.md system*
+*Version: 3.0.0 | Updated: 2026-01-31*
+*Structured memories with typed sections*

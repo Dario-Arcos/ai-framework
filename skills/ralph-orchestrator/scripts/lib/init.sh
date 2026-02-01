@@ -24,5 +24,6 @@ source "${RALPH_LIB_DIR}/signals.sh"
 source "${RALPH_LIB_DIR}/metrics.sh"
 source "${RALPH_LIB_DIR}/validation.sh"
 source "${RALPH_LIB_DIR}/worker.sh"
+source "${RALPH_LIB_DIR}/memories.sh"
 
 ralph_log_debug "All modules loaded from ${RALPH_LIB_DIR}"

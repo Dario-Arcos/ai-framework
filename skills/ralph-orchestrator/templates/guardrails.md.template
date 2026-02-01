@@ -1,37 +1,23 @@
-# Signs
+# Guardrails
 
 <!--
-Signs capture learnings across iterations. Read FIRST every time.
-An empty guardrails.md after multiple iterations = nothing learned.
+Structured memories that persist across iterations. Read FIRST every time.
+Format: ID, content, metadata (tags, date).
 
-**Signs vs Architectural Decisions**:
-- Sign (here): "I hit this error" → session-scoped gotcha
-- Decision (specs/design/): "We chose X because..." → permanent record
-
-Rule: Gotcha → Sign. Decision → specs/design/.
+**Section Guide**:
+- Fixes: Solutions to errors encountered
+- Decisions: Architectural choices (with rationale)
+- Patterns: Codebase conventions discovered
 -->
 
-## Example Signs (Replace with your own)
+## Fixes
 
-### Sign: Test Framework Requires jsdom
-- **Trigger**: Writing React component tests
-- **Instruction**: Use `testEnvironment: 'jsdom'` in jest.config.js, not 'node'
+<!-- Solutions to recurring problems -->
 
-### Sign: ESM vs CommonJS Import
-- **Trigger**: "Cannot use import statement outside a module" error
-- **Instruction**: Check package.json `"type": "module"`. Use `.mjs` extension or configure tsconfig.
+## Decisions
 
-### Sign: Git Hook Did Not Commit
-- **Trigger**: Pre-commit hook fails
-- **Instruction**: The commit did NOT happen. Stage again and commit fresh.
+<!-- Architectural choices and rationale -->
 
----
+## Patterns
 
-## Your Signs (Add here as you learn)
-
-<!--
-### Sign: [Problem/Learning]
-- **Trigger**: [When this applies]
-- **Instruction**: [What to do]
--->
-
+<!-- Codebase conventions discovered -->
