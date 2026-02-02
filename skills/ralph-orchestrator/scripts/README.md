@@ -5,49 +5,37 @@
 ```bash
 # From skill directory
 ./install.sh /path/to/your/project
-
-# Or copy files manually
-cp loop.sh status.sh tail-logs.sh PROMPT_build.md /path/to/project/
 ```
 
 ## Main Loop
 
 ```bash
-./loop.sh specs/{goal}/      # Execute plan, unlimited iterations
-./loop.sh specs/{goal}/ 20   # Execute plan, max 20 iterations
+./loop.sh specs/{goal}/           # Execute plan, unlimited iterations
+./loop.sh specs/{goal}/ 20        # Execute plan, max 20 iterations
+./loop.sh specs/{goal}/ --monitor # Execute with tmux split dashboard
 ```
 
-## Observability Utilities
+## Observability
 
-### View Status & Metrics
-
-```bash
-./status.sh
-```
-
-Shows:
-- Current status (running/complete/circuit_breaker)
-- Iteration count and mode
-- Metrics (success rate, durations)
-- Recent activity log
-
-### View Iteration Log
+### Live Dashboard
 
 ```bash
-./tail-logs.sh        # Follow iteration log in real-time
+./monitor.sh              # Continuous refresh dashboard
+./monitor.sh --stream     # Stream worker output in real-time
+./monitor.sh --status     # One-shot status view
+./monitor.sh --logs       # Tail iteration log
 ```
 
 ## Generated Artifacts
 
-Ralph generates the following for observability:
-
 ```
 logs/
-  iteration.log      # Timestamped events
-  metrics.json       # Aggregated statistics
+  iteration.log           # Timestamped events
+  metrics.json            # Aggregated statistics
+  iteration-{N}-output.log # Raw Claude output per iteration
 
-status.json          # Current loop state
-errors.log           # Failed iteration details
+status.json               # Current loop state
+errors.log                # Failed iteration details
 ```
 
 ## Example Outputs
@@ -75,21 +63,10 @@ errors.log           # Failed iteration details
 }
 ```
 
-### logs/iteration.log
-```
-[2026-01-21T18:15:00Z] ITERATION 1 START
-[2026-01-21T18:17:30Z] ITERATION 1 SUCCESS - Duration: 150s
-[2026-01-21T18:17:31Z] ITERATION 2 START
-[2026-01-21T18:19:45Z] ITERATION 2 SUCCESS - Duration: 134s
-[2026-01-21T18:19:46Z] ITERATION 3 START
-[2026-01-21T18:21:50Z] ITERATION 3 FAILED - Exit: 1 - Duration: 124s
-```
-
 ## Dependencies
 
-Required commands:
 - `claude` - Claude Code CLI
 - `git` - Version control
 - `jq` - JSON processing
 - `bc` - Arithmetic calculations
-- `bash` 4+ - Shell (macOS default is 3.x, upgrade recommended)
+- `bash` 4+ - Shell

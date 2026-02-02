@@ -36,8 +36,6 @@ fi
 FILES=(
     "scripts/loop.sh"
     "scripts/monitor.sh"
-    "scripts/status.sh"
-    "scripts/tail-logs.sh"
     "scripts/truncate-context.sh"
     "scripts/PROMPT_build.md"
 )
@@ -111,8 +109,6 @@ done
 # Make scripts executable
 chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/monitor.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/status.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/tail-logs.sh" 2>/dev/null || true
 chmod +x "$TARGET_DIR/truncate-context.sh" 2>/dev/null || true
 
 # Create directories
@@ -134,5 +130,5 @@ echo ""
 echo "Utilities:"
 echo "  ./monitor.sh             # Live dashboard (run in separate terminal)"
 echo "  ./monitor.sh --stream    # Stream worker output in real-time"
-echo "  ./status.sh              # View current status"
-echo "  ./tail-logs.sh           # View last iteration output"
+echo "  ./monitor.sh --status    # View current status (one-shot)"
+echo "  ./monitor.sh --logs      # View iteration logs"

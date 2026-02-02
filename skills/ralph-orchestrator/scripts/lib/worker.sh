@@ -12,9 +12,6 @@ _RALPH_WORKER_LOADED=1
 # Filter to extract streaming text from assistant messages
 RALPH_JQ_STREAM_FILTER='select(.type == "assistant").message.content[]? | select(.type == "text").text // empty | gsub("\n"; "\r\n") | . + "\r\n"'
 
-# Filter to extract final result
-RALPH_JQ_RESULT_FILTER='select(.type == "result").result // empty'
-
 # ─────────────────────────────────────────────────────────────────
 # WORKER EXECUTION
 # ─────────────────────────────────────────────────────────────────
