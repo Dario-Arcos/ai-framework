@@ -125,20 +125,15 @@ ralph_validate_guardrails_learning() {
     local iterations="${RALPH_ITERATION:-0}"
 
     if [[ -f "$guardrails_file" ]] && [[ "$iterations" -gt 2 ]]; then
-        local sign_count
-        sign_count=$(grep -c "^### Sign:" "$guardrails_file" 2>/dev/null || echo "0")
+        # Count both legacy format (### Sign:) and new format (### fix-|decision-|pattern-)
+        local legacy_count new_count total_count
+        legacy_count=$(grep -c "^### Sign:" "$guardrails_file" 2>/dev/null || echo "0")
+        new_count=$(grep -c "^### \(fix\|decision\|pattern\)-" "$guardrails_file" 2>/dev/null || echo "0")
+        total_count=$((legacy_count + new_count))
 
-        local example_count
-        example_count=$(grep -c "Example Signs" "$guardrails_file" 2>/dev/null || echo "0")
-
-        local real_signs=$sign_count
-        if [[ "$example_count" -gt 0 ]]; then
-            real_signs=$((sign_count - 8))  # Assuming 8 example signs
-        fi
-
-        if [[ "$real_signs" -lt 1 ]]; then
+        if [[ "$total_count" -lt 1 ]]; then
             ralph_log_warn "LEARNING WARNING"
-            echo "  guardrails.md has no real Signs after $iterations iterations."
+            echo "  guardrails.md has no memories after $iterations iterations."
         fi
     fi
 }
