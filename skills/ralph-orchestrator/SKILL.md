@@ -58,9 +58,10 @@ This skill orchestrates other SOP skills and produces:
 2. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
 3. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
 4. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
-5. **Step 5**: Plan Review Checkpoint (mandatory before execution)
-6. **Step 6**: Configure execution (quality level, optional checkpoints)
-7. **Step 7**: Launch `./loop.sh specs/{goal}/` (ALWAYS autonomous)
+5. **Step 5**: Generate AGENTS.md (bootstrap worker context)
+6. **Step 6**: Plan Review Checkpoint (mandatory before execution)
+7. **Step 7**: Configure execution (quality level, optional checkpoints)
+8. **Step 8**: Launch `./loop.sh specs/{goal}/` (ALWAYS autonomous)
 
 > Full diagram: [ralph-orchestrator-flow.md](references/ralph-orchestrator-flow.md)
 
@@ -186,7 +187,27 @@ Output: `plan.md` + `.code-task.md` files → Continue to Step 5.
 
 ---
 
-### Step 5: Plan Review Checkpoint
+### Step 5: Generate AGENTS.md
+
+Populate `templates/AGENTS.md.template` with operational context for workers.
+
+**Sources:**
+- `specs/{goal}/discovery.md` → Constraints, risks, environment
+- `specs/{goal}/design/detailed-design.md` → Architecture patterns
+- Manifest files (package.json, Cargo.toml, etc.) → Commands
+- `.ralph/config.sh` → Quality requirements
+
+#### Mode: Interactive
+Present draft, ask for approval/edits via AskUserQuestion.
+
+#### Mode: Autonomous
+Use Explore subagent to extract from sources. Generate without blocking.
+
+**Output:** `AGENTS.md` in project root → Continue to Step 6.
+
+---
+
+### Step 6: Plan Review Checkpoint
 
 **MANDATORY before execution, regardless of planning mode.**
 
@@ -200,6 +221,7 @@ Output: `plan.md` + `.code-task.md` files → Continue to Step 5.
 - Discovery: `specs/{goal}/discovery.md`
 - Design: `specs/{goal}/design/detailed-design.md`
 - Tasks: {N} task files in `specs/{goal}/implementation/`
+- Worker Context: `AGENTS.md` (project root)
 
 ### Key Decisions Made
 1. [Decision 1 from design document]
@@ -232,7 +254,7 @@ Options:
 
 ---
 
-### Step 6: Configure Execution
+### Step 7: Configure Execution
 
 **Use AskUserQuestion:**
 
@@ -245,12 +267,13 @@ Update `.ralph/config.sh`. Details: [configuration-guide.md](references/configur
 
 ---
 
-### Step 7: Launch Execution
+### Step 8: Launch Execution
 
 **Prerequisites:**
 - `specs/{goal}/implementation/plan.md` exists
 - `.code-task.md` files exist
-- Plan Review Checkpoint passed (Step 5)
+- `AGENTS.md` exists in project root (Step 5)
+- Plan Review Checkpoint passed (Step 6)
 
 **Launch with Bash tool:**
 ```

@@ -58,7 +58,7 @@ When invoked from ralph-orchestrator, emit these markers:
 **Note:** Brackets `[]` are LITERAL.
 
 ### State Files
-- **At startup:** Read `guardrails.md` if exists for lessons learned
+- **At startup:** Read `guardrails.md` for lessons, `AGENTS.md` for operational context
 - **At completion:** Add memories to `guardrails.md` (orchestrator handles `scratchpad.md`)
 
 **Guardrails format** (use appropriate section: Fixes, Decisions, or Patterns):
@@ -75,8 +75,9 @@ Use `QUALITY_LEVEL` and `GATE_*` from `.ralph/config.sh` if defined.
 
 ### 1. Setup
 - Create `{documentation_dir}/logs/` for build outputs
-- Read `guardrails.md` and `CODEASSIST.md` if they exist
+- Read `guardrails.md`, `AGENTS.md`, and `CODEASSIST.md` if they exist
 - Read `.code-task.md` for requirements and acceptance criteria
+- `AGENTS.md` contains: build commands, constraints, quality requirements
 
 ### 2. Explore Phase
 - Analyze requirements from `.code-task.md`

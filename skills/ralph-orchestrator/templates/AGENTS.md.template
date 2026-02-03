@@ -1,19 +1,18 @@
 # Project: [Name]
 
 ## Commands
-
 ```bash
-# [detect from specs or package.json/Cargo.toml/etc.]
+# [detect from manifest + specs]
 ```
 
 ## Environment
-
-[detect runtime and key dependencies]
+[runtime, key dependencies]
 
 ## Constraints
+[from specs/discovery.md]
 
-[extract from specs/discovery.md]
+## Quality
+[from .ralph/config.sh: QUALITY_LEVEL, MIN_TEST_COVERAGE]
 
 ## Gotchas
-
 <!-- Populated during execution -->

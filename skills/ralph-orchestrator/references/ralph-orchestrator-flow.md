@@ -206,7 +206,27 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ---
 
-## Phase 3.5: Plan Review Checkpoint
+## Phase 4: Generate AGENTS.md
+
+**Objective**: Bootstrap operational context for workers.
+
+**Sources:**
+- `specs/{goal}/discovery.md` → Constraints, environment
+- `specs/{goal}/design/detailed-design.md` → Architecture patterns
+- Manifest files → Commands
+- `.ralph/config.sh` → Quality requirements
+
+**Template:** `templates/AGENTS.md.template`
+
+**Mode:**
+- `interactive`: Present draft, ask for approval
+- `autonomous`: Generate without blocking
+
+**Validation:** `AGENTS.md` exists with commands populated.
+
+---
+
+## Phase 5: Plan Review Checkpoint (MANDATORY)
 
 **Objective**: User approval before execution (MANDATORY regardless of planning mode).
 
@@ -242,7 +262,7 @@ Ralph-orchestrator executes complex projects by dividing work into SOP (Standard
 
 ---
 
-## Phase 4: Configuration
+## Phase 6: Configuration
 
 **Objective**: Prepare the loop for execution.
 
@@ -268,7 +288,7 @@ MAX_ITERATIONS=10
 
 ---
 
-## Phase 5: Loop Execution
+## Phase 7: Loop Execution
 
 **Objective**: Implement tasks autonomously.
 
@@ -302,7 +322,7 @@ Ralph does NOT measure context percentages post-hoc. The 40-60% effectiveness ob
 
 ---
 
-## Phase 6: Pre-Complete Validations
+## Phase 8: Pre-Complete Validations
 
 Before accepting `<promise>COMPLETE</promise>`:
 
@@ -326,7 +346,7 @@ if AGENTS.md.QUALITY_LEVEL != config.sh.QUALITY_LEVEL:
 
 ---
 
-## Phase 7: Monitoring
+## Phase 9: Monitoring
 
 ### How to monitor (non-blocking):
 
@@ -347,7 +367,7 @@ Read(file_path="logs/current.log")
 
 ---
 
-## Phase 8: Completeness
+## Phase 10: Completeness
 
 ### Completeness signal:
 
@@ -398,12 +418,12 @@ project/
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 1: DISCOVERY (--mode={PLANNING_MODE})                    │
-│  └─ Create specs/{goal}/discovery.md                         │
+│  └─ Create specs/{goal}/discovery.md                            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  PHASE 2: PLANNING (--mode={PLANNING_MODE})                     │
-│  └─ Create specs/{goal}/design/detailed-design.md            │
+│  └─ Create specs/{goal}/design/detailed-design.md               │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -412,22 +432,27 @@ project/
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 3.5: PLAN REVIEW CHECKPOINT (MANDATORY)                  │
+│  PHASE 4: GENERATE AGENTS.MD                                    │
+│  └─ Bootstrap worker context (commands, constraints, quality)   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 5: PLAN REVIEW CHECKPOINT (MANDATORY)                    │
 │  ├─ Present summary of all artifacts                            │
 │  ├─ Show key decisions made                                     │
 │  └─ User approves / reviews / redoes                            │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 4: CONFIGURATION                                         │
+│  PHASE 6: CONFIGURATION                                         │
 │  └─ Configure .ralph/config.sh (quality, optional checkpoints)  │
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 5: AUTONOMOUS LOOP                                       │
+│  PHASE 7: AUTONOMOUS LOOP                                       │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  For each iteration:                                     │   │
-│  │  1. Read scratchpad + guardrails                         │   │
+│  │  1. Read AGENTS.md + scratchpad + guardrails             │   │
 │  │  2. Execute task                                         │   │
 │  │  3. Validate gates                                       │   │
 │  │  4. Update state                                         │   │
@@ -436,7 +461,7 @@ project/
 └───────────────────────────┬─────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 6: VALIDATIONS                                           │
+│  PHASE 8: VALIDATIONS                                           │
 │  ├─ Coverage >= 90%?                                            │
 │  ├─ Guardrails not empty?                                       │
 │  └─ Config consistent?                                          │
@@ -472,5 +497,5 @@ project/
 
 ---
 
-*Generated: 2026-01-29*
-*Version: 3.1.0 - Added planning mode selection and mandatory review checkpoint*
+*Generated: 2026-02-02*
+*Version: 4.0.0 - Added Phase 4 (AGENTS.md generation), renumbered all phases to integers*

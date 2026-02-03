@@ -21,14 +21,13 @@ Check `.ralph/config.sh` for:
 - **CONFESSION_MIN_CONFIDENCE**: Minimum confidence to mark task complete (default: 80)
 - **GATE_***: Custom validation commands
 
-### 0c. Bootstrap AGENTS.md (First Iteration Only)
+### 0c. Verify AGENTS.md
 
-**If `@AGENTS.md` contains `[Name]` or `[detect`:** Use Opus subagents to populate it with:
-- Project name, build/test/lint commands
-- Runtime and key dependencies
-- Critical constraints
+```
+@AGENTS.md
+```
 
-**Max 30 lines. Operational only.**
+**AGENTS.md is generated during planning (Step 5).** Contains project context, build commands, constraints. If missing, exit with error—planning phase incomplete.
 
 ### 0d. Study State Files
 
