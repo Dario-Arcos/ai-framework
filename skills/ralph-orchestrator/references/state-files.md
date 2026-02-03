@@ -36,22 +36,22 @@ specs/{goal}/implementation/plan.md
 
 ---
 
-## Signs System (guardrails.md)
+## Memories System (guardrails.md)
 
 **Constraints:**
-- You MUST add Signs when errors occur because this prevents repeat failures
-- You MUST read Signs at iteration start because accumulated knowledge guides behavior
-- You MUST use standard Sign format because workers parse structure
+- You MUST add memories when errors occur because this prevents repeat failures
+- You MUST read guardrails at iteration start because accumulated knowledge guides behavior
+- You MUST use standard memory format because workers parse structure
 
-When errors occur, add to guardrails.md:
+When errors occur, add to guardrails.md (in appropriate section: Fixes, Decisions, or Patterns):
 
 ```markdown
-### Sign: [Problem]
-- **Trigger**: [When this happens]
-- **Instruction**: [What to do instead]
+### fix-{timestamp}-{hex}
+> [What failed and how to fix it]
+<!-- tags: testing, build | created: YYYY-MM-DD -->
 ```
 
-Every iteration reads Signs FIRST - Compounding intelligence.
+Every iteration reads guardrails FIRST - Compounding intelligence.
 
 ---
 

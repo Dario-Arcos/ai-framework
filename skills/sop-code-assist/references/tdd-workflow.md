@@ -31,7 +31,7 @@ graph LR
 - Write the test BEFORE any implementation code
 - Run the test and verify it FAILS
 - Verify it fails for the EXPECTED reason (not syntax error, import error, etc.)
-- Document the expected failure reason in progress.md
+- Document the expected failure reason in guardrails.md
 
 **Critical Rule:** If the test PASSES immediately, the test is WRONG. Fix the test, not the code.
 
@@ -173,7 +173,7 @@ Complete the criterion when ALL mapped tests pass.
 
 ## Documenting TDD Cycles
 
-In progress.md, document each cycle:
+In guardrails.md, document each cycle:
 
 ```markdown
 ### Cycle 3: Invalid Email Detection

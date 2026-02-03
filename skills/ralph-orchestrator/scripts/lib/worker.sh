@@ -38,7 +38,6 @@ ralph_run_worker() {
     (
         set +e
         cat "$prompt_file" | claude -p \
-            --no-session-persistence \
             --dangerously-skip-permissions \
             --output-format=stream-json \
             --model opus \

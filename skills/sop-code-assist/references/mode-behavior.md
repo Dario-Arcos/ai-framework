@@ -29,15 +29,15 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 | Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Parameter confirmation | Ask user to confirm | Log and proceed |
-| Directory creation | Notify user | Log in progress.md |
+| Directory creation | Notify user | Log in commit message |
 | Instruction file selection | Present list, ask which to include | Auto-include CODEASSIST.md + core files |
-| Missing CODEASSIST.md | Offer to create template | Note in context.md |
+| Missing CODEASSIST.md | Offer to create template | Note in guardrails.md |
 
 ### Explore Phase
 
 | Action | Interactive | Autonomous |
 |--------|-------------|------|
-| Requirements analysis | Discuss with user, ask clarifying questions | Document analysis in context.md |
+| Requirements analysis | Discuss with user, ask clarifying questions | Document analysis in guardrails.md |
 | Pattern research | Share findings, ask if sufficient | Select most relevant patterns |
 | Ambiguous requirements | Ask user to clarify | Make reasonable assumption, document it |
 | Multiple valid approaches | Present options with pros/cons | Select best approach, document rationale |
@@ -68,7 +68,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 |--------|-------------|------|
 | Test results | Present full results | Log summary |
 | Build results | Present output | Log success/failure |
-| Coverage report | Discuss if below target | Note in progress.md |
+| Coverage report | Discuss if below target | Note in commit message |
 | Checklist review | Walk through with user | Verify programmatically |
 
 ### Commit Phase
@@ -115,7 +115,7 @@ Should I continue?"
 ### Autonomous Mode Logging
 
 ```markdown
-## Decision Logging in progress.md
+## Decision Logging in commit message
 
 ### Decision: Validation Approach
 - **Timestamp:** 2026-01-28T10:30:00
@@ -281,5 +281,5 @@ Projects can override default mode behavior in CODEASSIST.md:
 | **Pace** | User-controlled | Self-paced |
 | **Decisions** | User makes or approves | Agent makes and documents |
 | **Errors** | Discuss with user | Attempt to resolve, escalate if stuck |
-| **Progress** | Verbal updates | Written in progress.md |
+| **Progress** | Verbal updates | Written in commit message |
 | **Best For** | Learning, uncertainty, high risk | Batch processing, routine, time-sensitive |

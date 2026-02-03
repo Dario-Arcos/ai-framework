@@ -1,0 +1,38 @@
+# Blockers
+
+> This file documents blockers encountered during autonomous execution.
+> The orchestrator reads this file to determine recovery actions.
+
+## Active Blockers
+
+<!--
+Add blockers using this format:
+
+### Blocker: {short_description}
+- **Timestamp:** {ISO 8601 timestamp}
+- **Type:** missing_dependency | test_failure | environment_issue | ambiguity | other
+- **Task:** {task name or path}
+- **Details:** {Full description of what blocked progress}
+- **Attempted Resolution:** {What was tried before giving up}
+- **Suggested Action:** {How the orchestrator or user can resolve this}
+
+Example:
+
+### Blocker: Missing test framework configuration
+- **Timestamp:** 2026-02-02T10:30:00Z
+- **Type:** environment_issue
+- **Task:** task-01-jwt-auth
+- **Details:** Jest is not configured in the project. Running `npm test` returns "no test specified".
+- **Attempted Resolution:** Checked package.json for test scripts, looked for jest.config.js
+- **Suggested Action:** Run `npm install --save-dev jest` and add test script to package.json
+-->
+
+## Resolved Blockers
+
+<!--
+Move resolved blockers here with resolution notes:
+
+### [RESOLVED] Blocker: {description}
+- **Resolved:** {timestamp}
+- **Resolution:** {How it was fixed}
+-->

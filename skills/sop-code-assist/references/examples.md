@@ -21,11 +21,11 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 **Artifacts Created:**
 ```text
 specs/{goal}/implementation/{task_name}/
-├── context.md      # Navbar structure, auth patterns, dependencies
-├── plan.md         # Test scenarios for button behavior
-├── progress.md     # TDD cycles, refactoring notes
+├── blockers.md     # Only if blocked (autonomous mode)
 └── logs/           # Build outputs
 ```
+
+**Primary outputs:** Code + tests in repo_root, commit with descriptive message, markers for orchestrator.
 
 ---
 
@@ -89,11 +89,11 @@ mode="autonomous"
 
 **Autonomous Flow:**
 - No user prompts during execution
-- All decisions documented in progress.md
+- All decisions documented in guardrails.md
 - Errors trigger pause and documentation, not user interaction
 - Summary provided at completion
 
-**Decision Log Entry (progress.md):**
+**Decision Log Entry (guardrails.md):**
 ```markdown
 ### Decision: Test Framework Selection
 - **Timestamp:** 2026-01-28T14:30:00

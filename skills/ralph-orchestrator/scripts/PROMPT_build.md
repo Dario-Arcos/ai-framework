@@ -12,333 +12,164 @@ You are a fresh AI instance. Previous work lives in files, not your memory.
 @guardrails.md
 ```
 
-Follow ALL Signs. They contain lessons from previous iterations.
+Follow ALL Signs/memories. They contain lessons from previous iterations.
 
 ### 0b. Load Configuration
 
-The loop loads `.ralph/config.sh` automatically. Key settings:
+Check `.ralph/config.sh` for:
 - **QUALITY_LEVEL**: prototype | production | library
 - **CONFESSION_MIN_CONFIDENCE**: Minimum confidence to mark task complete (default: 80)
 - **GATE_***: Custom validation commands
 
-Check `.ralph/config.sh` if unsure about project quality requirements.
-
 ### 0c. Bootstrap AGENTS.md (First Iteration Only)
 
-**If `@AGENTS.md` contains `[Name]` or `[detect`:** Use Opus subagents to populate it.
-
-**Subagent task:** Read `specs/*/discovery.md` and `specs/*/design/*.md`, then update AGENTS.md with:
-- Project name
-- Build/test/lint commands (from specs or detected from package.json/Cargo.toml/etc.)
+**If `@AGENTS.md` contains `[Name]` or `[detect`:** Use Opus subagents to populate it with:
+- Project name, build/test/lint commands
 - Runtime and key dependencies
-- Critical constraints that affect implementation
+- Critical constraints
 
-**Output format:** Concise, scannable by AI. No verbose explanations. Max 30 lines.
+**Max 30 lines. Operational only.**
 
 ### 0d. Study State Files
 
-Study these using subagents:
-1. `@AGENTS.md` - Operational guide (now populated)
-2. Task sources:
-   - `specs/*/implementation/plan.md` - Implementation plan with task checklist
-   - `specs/*/implementation/step*/task-*.code-task.md` - SOP-generated task files (if exist)
+Using subagents, read:
+1. `@AGENTS.md` - Operational guide
+2. `@scratchpad.md` - Session memory (last task, next task, blockers)
+3. `specs/*/implementation/plan.md` - Task checklist
+4. `specs/*/implementation/step*/task-*.code-task.md` - Task files (if exist)
 
-**Task Selection:**
-- Read the implementation plan from specs
-- If `.code-task.md` files exist, follow TDD workflow: Explore → Plan → Code → Commit
-- Create artifacts in `specs/{goal}/implementation/{task_name}/`
+### 0e. Check Blockers
 
-### 0e. Study Scratchpad (Session Memory)
+If `specs/{goal}/implementation/{task}/blockers.md` exists with **Active Blockers**:
+1. Attempt resolution if within your capability
+2. If resolved → move to Resolved Blockers section, continue
+3. If unresolved → add Sign to guardrails, skip task, select next available
 
-```
-@scratchpad.md
-```
-
-Fast context recovery from previous iteration:
-- What task was just completed
-- Key decisions already made
-- Files already modified
-- Blockers identified
-
-**If scratchpad doesn't exist**: First iteration, proceed normally.
-
-### 0f. Study Specs
-
-Study `specs/*` with up to 500 parallel Opus subagents.
+**Blockers indicate previous iteration couldn't complete. Don't repeat the same failure.**
 
 ---
 
 ## Phase 1: Task Selection
 
-### 1a. Select Most Important Task
-
-**Task Selection from SOP Structure:**
 1. Read `specs/{goal}/implementation/plan.md` for task checklist
-2. If `.code-task.md` files exist in `specs/*/implementation/step*/`:
-   - List all `task-*.code-task.md` files
-   - Filter those WITHOUT `## Status: COMPLETED` header
+2. If `.code-task.md` files exist:
+   - Filter those WITHOUT `## Status: COMPLETED`
    - Filter those WITHOUT `## Blocked-By:` pointing to incomplete tasks
-   - Order by step (step01 before step02) and task number
-   - Select first available (not completed, not blocked) task
+   - Order by step and task number
+   - Select first available task
 3. If no `.code-task.md` files, use checklist in `plan.md` directly
 
-**Note:** Tasks are selected in sequential order. If a task is blocked, mark it with `## Blocked-By: stepXX/task-XX` and Claude will skip to the next available task.
-
-### 1b. Search Before Implementing
-
-**Don't assume not implemented.** Search using Opus subagents:
-
-```bash
-grep -r "relatedFunction" src/
-ls src/lib/
-```
-
-If found: use existing. If not found: implement.
+**Search before implementing:** Check if functionality already exists.
 
 ---
 
 ## Phase 2: Implementation
 
-### 2a. Test-Driven Development (MANDATORY)
+**Use the `/sop-code-assist` skill in autonomous mode:**
 
-**TDD is NOT optional. Follow this EXACT sequence:**
-
-1. **RED**: Write test that describes expected behavior → Run test → MUST FAIL
-2. **GREEN**: Write MINIMAL code to pass test → Run test → MUST PASS
-3. **REFACTOR**: Clean up while keeping tests green
-
-**Verification Required:**
-```bash
-# Show test failing FIRST (RED)
-npm test -- --testNamePattern="your test"
-# Expected: FAIL
-
-# Then show test passing (GREEN)
-npm test -- --testNamePattern="your test"
-# Expected: PASS
+```
+/sop-code-assist task_description="{selected_task_path}" mode="autonomous"
 ```
 
-**If test passes on first run → Your test is WRONG. Fix the test.**
+The skill handles:
+- **Explore**: Analyze requirements, research patterns
+- **Plan**: Design test strategy
+- **Code**: TDD cycle (RED → GREEN → REFACTOR)
+- **Commit**: Conventional commit
 
-**Emit TDD signals for tracking:**
-- `> tdd:red {test_name}` — After writing test, before implementation
-- `> tdd:green {test_name}` — After minimal code passes
+The skill emits required markers:
+- `> tdd:red {test_name}` / `> tdd:green {test_name}`
+- `> confession: objective=[...], met=[...], confidence=[...], evidence=[...]`
+- `> task_completed: [Task name]`
 
-Example:
-```
-> tdd:red test_user_authentication
-[write test code]
-[run test - verify it fails]
-> tdd:green test_user_authentication
-[write minimal implementation]
-[run test - verify it passes]
-```
-
-Missing signals appear in metrics as TDD compliance warnings.
-
-> **Note**: TDD signals (`tdd:red`, `tdd:green`) are currently logged for metrics tracking but NOT enforced. The loop will not block commits if signals are missing. This may change in future versions.
-
-### 2b. Implementation Rules
-
-- Follow patterns in `@AGENTS.md`
-- Prefer `src/lib/*` for shared code
-- **If functionality is missing then it's your job to add it as per specs**
-- Complete means complete. No placeholders, no TODOs
-
-### 2c. Subagent Limits
-
-- Study specs/code: up to 500 parallel Opus subagents
-- Build/tests: only 1 subagent
-- Complex reasoning: Opus subagent
+**If skill unavailable:** Follow TDD manually:
+1. Write test → Run → MUST FAIL (RED)
+2. Write minimal code → Run → MUST PASS (GREEN)
+3. Refactor while keeping green
 
 ---
 
-## Phase 3: Validation (Backpressure)
+## Phase 3: Validation
 
-**Load project configuration:**
+**Quality gates (production/library only):**
+
+| Level | Behavior |
+|-------|----------|
+| prototype | Skip all gates |
+| production | All gates must pass |
+| library | Gates + coverage + docs |
+
 ```bash
-source .ralph/config.sh 2>/dev/null || true
-```
-
-**Quality level behavior:**
-
-| Level | Backpressure |
-|-------|--------------|
-| prototype | Skip all gates, commit freely |
-| production | All configured gates must pass |
-| library | All gates + coverage + documentation |
-
-**Run configured gates (production/library only):**
-```bash
-# Skip if QUALITY_LEVEL=prototype
-[ "${QUALITY_LEVEL:-production}" = "prototype" ] && echo "Prototype mode: skipping gates" && continue
-
-# Execute gates (variables from .ralph/config.sh)
 [ -n "${GATE_TEST:-}" ] && eval "$GATE_TEST"
 [ -n "${GATE_TYPECHECK:-}" ] && eval "$GATE_TYPECHECK"
 [ -n "${GATE_LINT:-}" ] && eval "$GATE_LINT"
 [ -n "${GATE_BUILD:-}" ] && eval "$GATE_BUILD"
 ```
 
-**If any gate fails:**
-1. Fix the issue
-2. Re-run failed gate
-3. Do NOT commit until all gates pass
-
-**Gate defaults (if config missing):**
-- GATE_TEST="npm test"
-- GATE_TYPECHECK="npm run typecheck"
-- GATE_LINT="npm run lint"
-- GATE_BUILD="npm run build"
+**If any gate fails:** Fix and re-run. Do NOT commit until all pass.
 
 ---
 
-## Phase 4: Update State BEFORE Commit
+## Phase 4: Update State
 
-### 4a. Update Implementation Plan
+### 4a. Update Task Status
 
 **For .code-task.md files:**
-- Add `## Status: COMPLETED` and `## Completed: YYYY-MM-DD` at the file header
+- Add `## Status: COMPLETED` and `## Completed: YYYY-MM-DD`
 
-**For plan.md checklist:**
-Using a subagent, edit `specs/{goal}/implementation/plan.md`:
-- Mark completed task: `[ ]` → `[x]`
-- Add new tasks if discovered
-- Remove completed items when plan becomes large
+**For plan.md:** Mark `[ ]` → `[x]`
 
-### 4b. Update AGENTS.md (If Learned Something)
+### 4b. Update AGENTS.md
 
-Using a subagent, add to `@AGENTS.md` if you learned:
-- Correct commands to run
-- Project quirks
-- Build gotchas
+If you learned commands, quirks, or gotchas → add to `@AGENTS.md`. Keep brief.
 
-Keep it brief. Operational only - no status updates.
+### 4c. Add Memory to Guardrails
 
-### 4c. Add Memory (MANDATORY if learned something)
-
-**BEFORE COMMIT CHECKLIST:**
-- [ ] Did any test/command fail? → Add `fix` memory
-- [ ] Did you make an architectural choice? → Add `decision` memory
-- [ ] Did you discover a codebase convention? → Add `pattern` memory
-
-**If ANY box is checked, add to `@guardrails.md`:**
+If you learned something, add to `@guardrails.md`:
 
 ```markdown
-## Fixes
-
 ### fix-{timestamp}-{hex}
 > [What failed and how to fix it]
 <!-- tags: testing, build | created: YYYY-MM-DD -->
-
-## Decisions
-
-### decision-{timestamp}-{hex}
-> [What you chose and why]
-<!-- tags: architecture | created: YYYY-MM-DD -->
-
-## Patterns
-
-### pattern-{timestamp}-{hex}
-> [Convention discovered in codebase]
-<!-- tags: api, structure | created: YYYY-MM-DD -->
 ```
-
-**Use descriptive tags for future filtering. An empty guardrails.md after multiple iterations is a FAILURE.**
 
 ### 4d. Update Scratchpad
 
-Using a subagent, update `@scratchpad.md`:
-- **Last task completed**: What you just finished
-- **Next task to do**: What's next in `specs/{goal}/implementation/plan.md`
-- **Files modified this session**: Add files you touched
-- **Key decisions**: Any decisions made that next iteration should know
-- **Blockers**: Any issues discovered
+Update `@scratchpad.md` with:
+- Last task completed
+- Next task to do
+- Files modified
+- Key decisions
+- Blockers
 
-This helps the next iteration start faster.
+### 4e. Verify Confession Output
 
-### 4e. Output Confession (MANDATORY - Expanded)
+**Verify the skill emitted these markers** (do NOT emit duplicates):
 
-**Before committing, produce a ConfessionReport:**
-
-```
-## Confession
-
-### Objectives Assessment
-- **Objective**: [task from specs/{goal}/implementation/plan.md]
-  - **Met?**: Yes/No
-  - **Evidence**: [file:line or test output]
-
-### Uncertainties & Conflicts
-- [Any unclear requirements encountered]
-- [Spec conflicts discovered]
-- [Assumptions made]
-
-### Shortcuts Taken
-- [Any technical debt introduced]
-- [Features deferred]
-- [Edge cases skipped]
-
-### Single Easiest Issue to Verify
-- [One command that proves completion]
-
-### Confidence (0-100): [integer]
-```
-
-**Confidence thresholds:**
-
-| Range | Meaning | Action |
-|-------|---------|--------|
-| 0-49 | Task failed, major rework needed | Do NOT mark complete |
-| 50-79 | Task incomplete, minor work remains | Do NOT mark complete |
-| 80-100 | Task complete, ready to commit | Mark complete, commit |
-
-**CRITICAL: If Confidence < ${CONFESSION_MIN_CONFIDENCE:-80}:**
-1. Do NOT mark task as complete in the implementation plan
-2. Add a Sign to guardrails.md explaining the blocker
-3. Update scratchpad.md with what's left to do
-4. Exit normally - simply end your response. The loop will detect this via exit code 0 and continue with the next iteration.
-
-**Output markers (MANDATORY for loop.sh parsing):**
 ```
 > confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
-> task_completed: [Task name from implementation plan]
+> task_completed: [Task name from plan]
 ```
 
-> **Note**: The brackets `[]` are LITERAL - include them in your output exactly as shown. Example: `objective=[Add auth]` not `objective=Add auth`.
+**Note:** Brackets `[]` are LITERAL. If skill was unavailable (fallback TDD), emit markers yourself.
 
-**Example:**
-```
-## Confession
-
-### Objectives Assessment
-- **Objective**: Add user authentication
-  - **Met?**: Yes
-  - **Evidence**: src/auth.ts:1-150, npm test shows 15/15 pass
-
-### Uncertainties & Conflicts
-- None
-
-### Shortcuts Taken
-- Skipped password reset flow (added to plan as separate task)
-
-### Single Easiest Issue to Verify
-- Run: `curl -X POST localhost:3000/login -d '{"email":"test@test.com"}' | jq .token`
-
-### Confidence (0-100): 92
-
-> confession: objective=[Add user authentication], met=[Yes], confidence=[92], evidence=[tests 15/15]
-> task_completed: Task 5: Add user authentication
-```
+**Confidence thresholds:**
+| Range | Action |
+|-------|--------|
+| 0-79 | Do NOT mark complete, add blocker to guardrails |
+| 80-100 | Mark complete, proceed to commit |
 
 ---
 
-## Phase 5: Commit
+## Phase 5: Commit (if needed)
 
+**If skill completed successfully:** Skip—skill already committed.
+
+**If skill unavailable or fallback TDD used:**
 ```bash
 git add -A
 git commit -m "feat: [description]"
-# NOTE: Do NOT push - user decides when to push after reviewing changes
+# Do NOT push
 ```
 
 ---
@@ -351,86 +182,27 @@ If ALL tasks in `specs/{goal}/implementation/plan.md` are complete:
 <promise>COMPLETE</promise>
 ```
 
-**Note:** The loop requires TWO consecutive COMPLETE signals for termination. This prevents premature exit from spurious single signals. If you emit COMPLETE and the loop continues, it's verifying your claim.
+**Note:** Loop requires TWO consecutive COMPLETE signals.
 
 If tasks remain: exit normally. Loop continues with fresh context.
 
 ---
 
-## GUARDRAILS
+## Safety Rules
 
-### 99999. Capture the why
-
-In documentation, capture the why - tests and implementation importance.
-
-### 999999. Single sources of truth
-
-No migrations or adapters. If tests unrelated to your work fail, resolve them.
-
-### 9999999. Git tagging
-
-When no build or test errors, create git tag. Start at 0.0.0, increment patch.
-
-### 99999999. Debug logging
-
-Add extra logging if required to debug issues.
-
-### 999999999. Keep plan current
-
-Using a subagent, keep `specs/{goal}/implementation/plan.md` current with learnings. Update after finishing.
-
-### 9999999999. Update AGENTS.md
-
-Using a subagent, update `@AGENTS.md` when you learn correct commands. Keep brief.
-
-### 99999999999. Resolve or document bugs
-
-For any bugs noticed, resolve them or document in `specs/{goal}/implementation/plan.md` using a subagent.
-
-### 999999999999. Implement completely
-
-No placeholders. No stubs. Complete implementation only.
-
-### 9999999999999. Clean completed items
-
-Periodically clean completed items from `specs/{goal}/implementation/plan.md` using a subagent.
-
-### 99999999999999. Fix spec inconsistencies
-
-If you find inconsistencies in specs/*, use an Opus subagent to update them.
-
-### 999999999999999. AGENTS.md operational only
-
-Keep `@AGENTS.md` operational only. Status updates and progress notes belong in `specs/{goal}/implementation/plan.md`. Bloated AGENTS.md pollutes every future loop's context.
-
----
-
-## Gutter Detection
-
-**You're stuck if:**
-- Same command fails 3 times
-- Same file modified 5+ times
-- No progress after 30 minutes
-
-**Recovery:** Add Sign to guardrails.md → Exit → Next iteration tries different approach.
-
----
-
-## Fresh Context Philosophy
-
-Each iteration gets fresh 200K context. Complete ONE atomic task, then exit with `<promise>COMPLETE</promise>`.
-
-The 40-60% "sweet spot" emerges naturally from well-designed atomic tasks - do not measure or enforce it. Focus on task atomicity, not context percentages.
-
-**Key principle**: Control is INPUT-based (truncate files before iteration), not OUTPUT-based (measure and exit).
+- **Gutter detection:** Same command fails 3x or file modified 5x → Add Sign, exit
+- **No placeholders:** Complete implementation only
+- **AGENTS.md operational only:** No status updates, no bloat
+- **Fresh context:** Complete ONE atomic task, then exit
 
 ---
 
 ## Exit
 
 After ONE task:
-1. All gates passed ✅
+1. Gates passed ✅
 2. State files updated ✅
 3. Committed ✅
+4. Markers emitted ✅
 
 → Exit. Loop continues with fresh context.

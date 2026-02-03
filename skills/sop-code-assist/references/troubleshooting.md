@@ -43,7 +43,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Cause:** Type errors, missing imports, incompatible changes
 
-**Fix:** Check progress.md for last known good state, fix incrementally
+**Fix:** Check guardrails.md for last known good state, fix incrementally
 
 **Common Build Failures:**
 
@@ -95,7 +95,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Fix:** Re-run explore phase, use CODEASSIST.md for guidance
 
-**What context.md MUST contain:**
+**What .code-task.md MUST contain:**
 - [ ] Project structure overview
 - [ ] Relevant existing patterns
 - [ ] Dependencies and their versions
@@ -129,7 +129,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Cause:** Cannot resolve issue without user input
 
-**Fix:** Check progress.md for documented challenge, provide guidance
+**Fix:** Check guardrails.md for documented challenge, provide guidance
 
 **Escalation Triggers:**
 - 3 failed attempts at same issue
@@ -158,7 +158,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ## Progress.md not tracking changes
 
-**Symptom:** progress.md empty or outdated
+**Symptom:** guardrails.md empty or outdated
 
 **Cause:** Autonomous mode not logging, or file write failed
 

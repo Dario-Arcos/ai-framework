@@ -31,7 +31,7 @@ description: Use when building features requiring planning + autonomous executio
 |-----------|-------------|
 | Simple single-file change | Direct implementation |
 | Only debugging | `systematic-debugging` skill |
-| Only code review | `requesting-code-review` skill |
+| Only code review | `code-reviewer` agent or `pr-workflow` skill |
 | Research only, no implementation | `sop-reverse` alone |
 
 ---

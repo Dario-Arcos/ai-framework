@@ -258,7 +258,7 @@ Output: specs/user-auth/design/detailed-design.md
 **Constraints:**
 - You MUST implement tests BEFORE implementation code because TDD ensures testability
 - You MUST NOT place code in documentation directories because separation of concerns matters
-- You SHOULD use auto mode for batch processing because it reduces interruptions
+- You SHOULD use autonomous mode for batch processing because it reduces interruptions
 - You SHOULD use interactive mode for learning because it provides educational context
 
 **Purpose**: Execute code tasks using TDD workflow (Explore → Plan → Code → Commit)
@@ -273,13 +273,12 @@ Output: specs/user-auth/design/detailed-design.md
 - Artifacts in `specs/{goal}/implementation/{task_name}/`
 
 **Artifacts created**:
-- `context.md` - Requirements, patterns, dependencies
-- `plan.md` - Test strategy, implementation approach
-- `progress.md` - TDD cycles, decisions, commit info
+- `blockers.md` - Blockers encountered (autonomous mode, if blocked)
+- `logs/` - Build outputs
 
 **Modes**:
 - **interactive**: User confirmation at each step (learning, uncertain requirements)
-- **auto**: Autonomous execution (batch processing, ralph-orchestrator integration)
+- **autonomous**: Autonomous execution (batch processing, ralph-orchestrator integration)
 
 **Duration**: 10-60 minutes per task (varies by complexity)
 
@@ -289,7 +288,7 @@ Output: specs/user-auth/design/detailed-design.md
 /sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
 
 # Auto mode for batch execution
-/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="auto"
+/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="autonomous"
 ```
 
 **TDD Workflow**:

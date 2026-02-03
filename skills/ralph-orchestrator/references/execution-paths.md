@@ -43,9 +43,7 @@ Ralph-orchestrator supports two execution paths for implementing tasks. This ref
 **Artifacts created:**
 ```
 specs/{goal}/implementation/{task_name}/
-├── context.md      # Requirements, patterns, dependencies
-├── plan.md         # Test strategy, implementation approach
-├── progress.md     # TDD cycles, decisions, blockers
+├── blockers.md     # Blockers (autonomous mode only, if blocked)
 └── logs/           # Build outputs
 ```
 
@@ -128,7 +126,7 @@ When blocked:
 
 ```text
 When blocked:
-1. Document blocker in progress.md or blockers.md:
+1. Document blocker in blockers.md:
    - Timestamp (ISO 8601)
    - Type (missing_dependency, test_failure, environment_issue)
    - Full details
@@ -149,8 +147,8 @@ Both paths use the same state files, but update frequency differs:
 | File | Interactive | Autonomous |
 |------|-------------|------------|
 | `scratchpad.md` | Updated on significant progress | Updated every iteration |
-| `guardrails.md` | Updated on errors | Updated on errors (Signs) |
-| `progress.md` | TDD cycles, blockers | TDD cycles, blockers |
+| `guardrails.md` | Updated on errors | Updated on errors |
+| `blockers.md` | N/A | Created when blocked |
 | `plan.md` | Task completion | Task completion |
 | `.code-task.md` | Status header added | Status header added |
 
@@ -227,9 +225,9 @@ echo $?  # After loop.sh exits
 - Check if mode is correctly set to "interactive"
 
 **For autonomous path:**
-- Review progress.md for documented blockers
 - Check blockers.md in spec directory
 - Review scratchpad.md for blocker notes
+- Check guardrails.md for decision history
 
 ### State Inconsistency
 
