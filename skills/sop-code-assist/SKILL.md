@@ -1,163 +1,183 @@
 ---
 name: sop-code-assist
-description: Use when implementing code tasks with TDD methodology, executing .code-task.md files from ralph-orchestrator, or when structured requirements are ready for test-driven implementation.
+version: 2.1.0
+description: TDD implementation of code tasks following Explore → Plan → Code → Commit workflow. Use when executing .code-task.md files from ralph-orchestrator or when structured requirements are ready.
 ---
 
 # Code Assist
 
-## Overview
-
-This SOP guides implementation of code tasks using test-driven development, following an **Explore → Plan → Code → Commit** workflow. It balances automation with user collaboration while adhering to existing patterns and prioritizing readability and extensibility.
+TDD implementation of code tasks. Balances automation with user collaboration while adhering to existing patterns.
 
 ## Parameters
 
-- **task_description** (required): Task to be implemented (file path, direct text, or URL)
-- **additional_context** (optional): Supplementary information
-- **documentation_dir** (optional, default: `specs/{goal}/implementation/{task_name}`): Directory for planning docs
+- **task_description** (required): Task to implement - file path, text, or URL
+- **mode** (optional, default: `interactive`): `interactive` or `autonomous`
 - **repo_root** (optional, default: cwd): Repository root path
-- **task_name** (optional): Short descriptive name (auto-generated if not provided)
-- **mode** (optional, default: `interactive`): Execution mode - `interactive` or `autonomous`
+- **documentation_dir** (optional, default: `specs/{goal}/implementation/{task_name}`)
+- **task_name** (optional, auto-generated): Short descriptive name
 
 **Constraints:**
-- You MUST ask for all parameters upfront in a single prompt because this ensures efficient workflow
+- You MUST request all required parameters upfront in a single prompt
 
 ## Mode Behavior
 
-### Interactive Mode
+<mode_interactive>
 - Present proposed actions for confirmation
 - Explain pros/cons when multiple approaches exist
-- Review artifacts and solicit feedback before moving forward
 - Ask clarifying questions about ambiguous requirements
+- Use AskUserQuestion for user input
+</mode_interactive>
 
-### Autonomous Mode
-- Execute autonomously without user confirmation
-- Document decisions in commit messages and `guardrails.md`
-- Select most appropriate approach when alternatives exist
-- Provide comprehensive summary at completion
-- NEVER use AskUserQuestion
-- If blocked: document in `blockers.md`, exit cleanly
-
-See `references/mode-behavior.md` for detailed guidance.
-
-## Ralph Integration (Autonomous Mode)
-
-When invoked from ralph-orchestrator, emit these markers:
-
-### TDD Signals
-```
-> tdd:red {test_name}
-> tdd:green {test_name}
-```
-
-### Confession Output (at completion)
-```
-> confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
-> task_completed: [Task name from plan]
-```
-
-**Note:** Brackets `[]` are LITERAL.
-
-### State Files
-- **At startup:** Read `guardrails.md` for lessons, `AGENTS.md` for operational context
-- **At completion:** Add memories to `guardrails.md` (orchestrator handles `scratchpad.md`)
-
-**Guardrails format** (use appropriate section: Fixes, Decisions, or Patterns):
-```markdown
-### fix-{timestamp}-{hex}
-> [What failed and how to fix it]
-<!-- tags: testing, build | created: YYYY-MM-DD -->
-```
-
-### Quality Gates
-Use `QUALITY_LEVEL` and `GATE_*` from `.ralph/config.sh` if defined.
+<mode_autonomous>
+- Execute without user confirmation
+- Document decisions in guardrails.md
+- If blocked: document in blockers.md, exit cleanly
+- You MUST NOT use AskUserQuestion
+</mode_autonomous>
 
 ## Steps
 
 ### 1. Setup
-- Create `{documentation_dir}/logs/` for build outputs
-- Read `guardrails.md`, `AGENTS.md`, and `CODEASSIST.md` if they exist
-- Read `.code-task.md` for requirements and acceptance criteria
-- `AGENTS.md` contains: build commands, constraints, quality requirements
 
-### 2. Explore Phase
-- Analyze requirements from `.code-task.md`
-- Research existing patterns in the repository
+Read context and prepare environment.
+
+- Create `{documentation_dir}/logs/` for build outputs
+- Read `guardrails.md` for lessons learned
+- Read `AGENTS.md` for build commands and constraints
+- Read `.code-task.md` for requirements and acceptance criteria
+
+**Constraints:**
+- You MUST read AGENTS.md before any implementation
+- You MUST read guardrails.md to avoid repeating past mistakes
+
+### 2. Explore
+
+Analyze requirements and research patterns.
+
+- Analyze acceptance criteria from `.code-task.md`
+- Research existing patterns in repository
 - Identify test strategy
 
-### 3. Plan Phase
-- Design tests covering all acceptance criteria
-- Tests must be designed to initially fail (RED phase)
+**Constraints:**
+- You MUST understand existing patterns before introducing new ones
+- You MUST identify edge cases during exploration
 
-### 4. Code Phase
-- Implement tests BEFORE implementation code
-- Follow strict TDD: **RED → GREEN → REFACTOR**
-- Emit `> tdd:red` / `> tdd:green` signals in autonomous mode
+### 3. Plan
+
+Design tests covering all acceptance criteria.
+
+- Design test cases for each acceptance criterion
+- Plan test structure (unit, integration, e2e as appropriate)
+
+**Constraints:**
+- Tests MUST be designed to initially fail (RED phase)
+- You MUST cover both happy path and edge cases
+
+### 4. Code
+
+Implement using strict TDD: RED → GREEN → REFACTOR.
+
+- Write tests BEFORE implementation code
+- Run tests → verify failure (RED)
+- Implement minimal code to pass
+- Run tests → verify success (GREEN)
+- Refactor for clarity
 - Validate: all tests pass, build succeeds
 
-See `references/tdd-workflow.md` for detailed guidance.
+**Constraints:**
+- Tests MUST fail initially; if they pass, fix the test
+- Implementation MUST be in `repo_root`, not `documentation_dir`
+- You MUST run quality validation after tests pass
 
-### 5. Commit Phase
-- Verify all tasks complete, tests passing, build succeeding
-- Follow Conventional Commits specification
-- `git add` relevant files, `git commit`
-- Emit confession markers in autonomous mode
-- **MUST NOT** push to remote
+<quality_validation>
+1. Invoke `code-simplifier` on modified artifacts
+2. Invoke `code-reviewer` to validate against requirements
+3. Address Critical/Important issues before Commit
+</quality_validation>
 
-## Key Constraints
+<autonomous_signals>
+> tdd:red {test_name}
+> tdd:green {test_name}
+</autonomous_signals>
 
-- Tests MUST be implemented before any implementation code
-- Code implementations MUST be in `repo_root`, not `documentation_dir`
-- Tests MUST fail initially before implementation
-- Build and test verification required before commits
-- **MUST NOT** push to remote repositories
+### 5. Commit
 
-## Critical Separation of Concerns
+Finalize and commit changes.
 
-This skill handles **implementation only**. The orchestrator handles lifecycle:
+- Verify all tests passing, build succeeding
+- `git add` relevant files
+- `git commit` with Conventional Commits format
+- Emit confession markers (autonomous mode)
 
-| Responsibility | Owner |
-|----------------|-------|
-| Task selection | ralph-orchestrator (PROMPT_build) |
-| TDD implementation | **sop-code-assist** |
-| Confession markers | **sop-code-assist** |
-| `<promise>COMPLETE</promise>` signal | ralph-orchestrator (PROMPT_build) |
-| Quality gates | ralph-orchestrator (PROMPT_build) |
-| State file updates | Both (skill updates guardrails.md, orchestrator updates plan.md) |
+**Constraints:**
+- You MUST NOT push to remote
+- You MUST verify build before commit
 
-**Never emit** `<promise>COMPLETE</promise>` from this skill—that's the orchestrator's job after all tasks are done.
+<autonomous_signals>
+> confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
+> task_completed: [Task name from plan]
+</autonomous_signals>
 
-## Desired Outcome
+Brackets `[]` are LITERAL in markers.
 
-Upon successful completion:
-1. **Tests written and passing** - All acceptance criteria covered
-2. **Implementation complete** - Minimal code to pass tests
-3. **Code committed** - Conventional commit with descriptive message
-4. **Markers emitted** (autonomous mode) - `> confession:` and `> task_completed:` for orchestrator parsing
+## Ralph Integration
+
+When invoked from ralph-orchestrator in autonomous mode:
+
+<at_startup>
+- Read `guardrails.md` for lessons
+- Read `AGENTS.md` for operational context
+- Use `QUALITY_LEVEL` and `GATE_*` from `.ralph/config.sh` if defined
+</at_startup>
+
+<at_completion>
+- Add memories to `guardrails.md` (orchestrator handles `scratchpad.md`)
+- Emit confession and task_completed markers
+</at_completion>
+
+<guardrails_format>
+### fix-{timestamp}-{hex}
+> [What failed and how to fix it]
+<!-- tags: testing, build | created: YYYY-MM-DD -->
+</guardrails_format>
+
+## Separation of Concerns
+
+**sop-code-assist owns:**
+- TDD implementation
+- Confession markers
+- guardrails.md updates
+
+**ralph-orchestrator owns:**
+- Task selection
+- `<promise>COMPLETE</promise>` signal
+- Quality gates execution
+- plan.md updates
+
+You MUST NOT emit `<promise>COMPLETE</promise>` — that's the orchestrator's job.
 
 ## Output
 
-```
-{documentation_dir}/
-├── blockers.md     # Blockers (autonomous mode only, if blocked)
-└── logs/           # Build outputs
-```
+Primary: Code and tests in `repo_root`, commit with descriptive message.
 
-**Primary outputs:** Code and tests in `repo_root`, commit with descriptive message.
+Secondary (in `{documentation_dir}/`):
+- `blockers.md` - If blocked (autonomous mode)
+- `logs/` - Build outputs
 
-## Related Skills
+## Quality Agents
 
-- **sop-task-generator** - Creates `.code-task.md` files
-- **sop-planning** - Creates detailed designs
-- **ralph-orchestrator** - Invokes this skill in autonomous mode
+**code-simplifier**: Invoke after tests pass. Reduces complexity, removes redundancy. Applies to code, configs, docs, plans.
+
+**code-reviewer**: Invoke before commit. Validates against requirements. Applies to code, designs, plans, any deliverable.
+
+## Related
+
+- **sop-task-generator**: Creates `.code-task.md` inputs
+- **sop-planning**: Creates detailed designs
+- **ralph-orchestrator**: Invokes this skill in autonomous mode
 
 ## References
 
-| File | Content |
-|------|---------|
-| [mode-behavior.md](references/mode-behavior.md) | Interactive vs autonomous behavior |
-| [tdd-workflow.md](references/tdd-workflow.md) | Detailed TDD guidance |
-| [troubleshooting.md](references/troubleshooting.md) | Common issues |
-
----
-
-*Version: 2.0.0 | Updated: 2026-02-02*
+- `references/mode-behavior.md` - Interactive vs autonomous
+- `references/tdd-workflow.md` - Detailed TDD guidance
+- `references/troubleshooting.md` - Common issues
