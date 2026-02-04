@@ -1,5 +1,8 @@
 # Project: [Name]
 
+## Knowledge
+Prefer retrieval-led reasoning. Read `.claude/rules/` for framework patterns.
+
 ## Commands
 ```bash
 # [detect from manifest + specs]
