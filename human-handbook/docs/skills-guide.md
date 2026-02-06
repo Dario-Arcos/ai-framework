@@ -14,14 +14,15 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 | Skill | Qué hace | Cuándo usarlo |
 |-------|----------|---------------|
-| `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots |
+| `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots, mobile/iOS |
 | `brainstorming` | Diálogo para diseñar soluciones | Antes de codear algo nuevo |
 | `systematic-debugging` | Debugging metódico con 4 fases | Cualquier bug, test failure, comportamiento inesperado |
 | `pr-workflow` | PR con code + security review | Al crear pull requests |
 | `claude-code-expert` | Genera componentes Claude Code | Crear agents, commands, hooks |
 | `frontend-design` | Diseño web distintivo | Interfaces memorables, no genéricas |
 | `humanizer` | Elimina patrones de texto AI | Docs, commits, PRs, UI text |
-| `writing-skills` | Crear skills bulletproof | Meta-skill para autores de skills |
+| `skill-creator` | Crear skills nuevas | Cuando necesites extender capabilities |
+| `context-engineering` | Optimizar prompts y CLAUDE.md | System prompts, agent architecture |
 
 ### Pipeline SOP (desarrollo autónomo)
 
@@ -56,6 +57,7 @@ agent-browser screenshot result.png
 | Captura | `screenshot`, `pdf`, `record start/stop` |
 | Estado | `cookies`, `storage`, `state save/load` |
 | Red | `network route`, `network requests` |
+| iOS/Mobile | `-p ios`, `tap`, `swipe`, `device list` |
 | Debug | `--headed`, `console`, `errors`, `trace` |
 :::
 
@@ -206,18 +208,56 @@ No solo limpia — añade voz. Texto estéril es tan obvio como slop.
 
 ---
 
-## writing-skills
+## skill-creator
 
-Meta-skill: crear skills bulletproof con TDD aplicado a documentación.
+Guía para crear skills efectivas. Basado en el [skill-creator de Anthropic](https://github.com/anthropics/skills/tree/main/skills/skill-creator).
 
-**Proceso:**
-1. **RED** — Escenarios de presión sin skill. Documenta racionalizaciones.
-2. **GREEN** — SKILL.md que contrarresta fallas. Verifica compliance.
-3. **REFACTOR** — Cierra loopholes, re-testea hasta bulletproof.
+```bash
+# Inicializar un skill nuevo
+python skills/skill-creator/scripts/init_skill.py my-skill --path skills/
 
-::: warning Prerrequisito
-Requiere Superpowers `test-driven-development`.
+# Validar estructura
+python skills/skill-creator/scripts/quick_validate.py skills/my-skill/
+
+# Empaquetar para distribución
+python skills/skill-creator/scripts/package_skill.py skills/my-skill/
+```
+
+**Principios clave:**
+- **Conciso**: El context window es recurso compartido. Solo añade lo que Claude no sabe.
+- **Progressive Disclosure**: Metadata siempre → SKILL.md al activar → references bajo demanda.
+- **Grados de libertad**: Bridge estrecho = guardrails estrictos. Campo abierto = instrucciones flexibles.
+
+::: details Anatomía de un skill
+```
+skill-name/
+├── SKILL.md           # Frontmatter (name, description) + instrucciones
+├── scripts/           # Código ejecutable (Python/Bash)
+├── references/        # Docs cargadas bajo demanda
+└── assets/            # Archivos para output (templates, imágenes)
+```
 :::
+
+---
+
+## context-engineering
+
+Optimiza system prompts, CLAUDE.md, AGENTS.md y arquitecturas de agentes.
+
+```
+"Mi agente no usa las tools disponibles"
+"Optimiza este CLAUDE.md para mejor activación"
+```
+
+**Cuándo usarlo:**
+- Agentes que underperform pese a instrucciones correctas
+- Diseño de system prompts o AGENTS.md
+- Optimización de token efficiency en context windows
+- Pérdida de coherencia en tareas largas
+
+**Basado en:**
+- [Vercel AGENTS.md Primitives](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals)
+- [Anthropic Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
 
 ---
 
@@ -350,5 +390,5 @@ Verifica que existe `specs/` en tu proyecto.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-01-31 | **Skills**: 14 total
+**Fecha**: 2026-02-06 | **Skills**: 14 total (8 core + 6 pipeline SOP)
 :::

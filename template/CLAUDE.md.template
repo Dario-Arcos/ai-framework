@@ -28,7 +28,7 @@ Commands (/command):
 
 Skills (specialized workflows):
 - ralph-orchestrator → sop-{discovery,planning,code-assist,reverse,task-generator}
-- humanizer: Remove AI patterns | writing-skills: TDD for skills | frontend-design: Production UI
+- humanizer: Remove AI patterns | skill-creator: Create new skills | frontend-design: Production UI
 - systematic-debugging: Find root cause | claude-code-expert: Verify CC APIs | pr-workflow: PR validation
 - agent-browser: Browser automation (research, E2E, scraping, mobile/iOS testing)
 - context-engineering: System prompts, AGENTS.md, agent architecture optimization
