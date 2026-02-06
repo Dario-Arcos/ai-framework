@@ -1,5 +1,6 @@
 ---
 name: edge-case-detector
+memory: user
 description: |
   Production-critical edge case detector for silent failures, data corruption, and boundary violations.
   <example>

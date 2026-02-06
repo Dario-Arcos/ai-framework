@@ -1,5 +1,6 @@
 ---
 name: systematic-debugger
+memory: user
 description: Specialized agent for systematic bug identification and root cause analysis using methodical debugging approach. Delegates implementation to sub-agents while providing comprehensive problem diagnosis and solution coordination.
 ---
 

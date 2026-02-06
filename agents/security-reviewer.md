@@ -1,5 +1,6 @@
 ---
 name: security-reviewer
+memory: user
 description: Complete a security review of the pending changes on the current branch
 ---
 
