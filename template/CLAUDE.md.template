@@ -38,6 +38,7 @@ Skills (specialized workflows):
 - NEVER `git push` without explicit user authorization
 - ALWAYS use AskUserQuestion for user input (not plain text)
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
+- NEVER claim a task is complete without observable evidence (test output, command result, behavioral verification). "It should work" is not evidence.
 </constraints>
 
 <communication>

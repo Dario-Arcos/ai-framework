@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""SessionStart hook - Checks agent-browser and installs if missing."""
+"""SessionStart hook - Checks agent-browser and installs if missing.
+
+Supports both npm and Homebrew installations. Prefers brew on macOS.
+"""
 import json
 import os
 import re
@@ -11,6 +14,7 @@ from pathlib import Path
 
 SUBPROCESS_TIMEOUT = 5
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+")
+SKILL_MARKER = Path("skills") / "agent-browser" / "SKILL.md"
 
 
 def find_project_root():
@@ -41,13 +45,65 @@ def get_installed_version():
     return None
 
 
+def find_skill_source():
+    """Find agent-browser skill source directory. Works with npm and brew.
+
+    Strategy 1: Resolve binary symlinks, walk up looking for skills/ (npm)
+    Strategy 2: From resolved binary parent, check lib/node_modules/ (brew)
+    Strategy 3: Fallback to npm root -g (npm without symlinks)
+    """
+    bin_path = shutil.which("agent-browser")
+    if not bin_path:
+        return None
+
+    resolved = Path(bin_path).resolve()
+
+    # Strategy 1: Walk up from resolved binary (works for npm global)
+    # npm layout: .../node_modules/agent-browser/bin/<binary>
+    # Walking up 2 levels reaches the package root with skills/
+    for parent in list(resolved.parents)[:6]:
+        skill = parent / SKILL_MARKER
+        if skill.exists():
+            return skill.parent
+
+    # Strategy 2: Check sibling lib/node_modules structure (works for brew)
+    # brew layout: .../libexec/bin/<binary>
+    # Package root: .../libexec/lib/node_modules/agent-browser/
+    for parent in list(resolved.parents)[:6]:
+        skill = parent / "lib" / "node_modules" / "agent-browser" / SKILL_MARKER
+        if skill.exists():
+            return skill.parent
+
+    # Strategy 3: Fallback to npm root -g
+    try:
+        result = subprocess.run(
+            ["npm", "root", "-g"],
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT
+        )
+        if result.returncode == 0:
+            skill = Path(result.stdout.strip()) / "agent-browser" / SKILL_MARKER
+            if skill.exists():
+                return skill.parent
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    return None
+
+
 def install_background():
-    """Install agent-browser in background with log file for traceability."""
+    """Install agent-browser in background. Prefers brew on macOS, npm otherwise."""
+    if sys.platform == "darwin" and shutil.which("brew"):
+        cmd = "brew install agent-browser && agent-browser install"
+    else:
+        cmd = "npm install -g agent-browser && agent-browser install"
+
     try:
         log_file = Path(tempfile.gettempdir()) / "agent-browser-install.log"
         with open(log_file, "w", encoding="utf-8") as log:
             subprocess.Popen(
-                ["sh", "-c", "npm install -g agent-browser && agent-browser install"],
+                ["sh", "-c", cmd],
                 stdout=log,
                 stderr=log,
                 start_new_session=True,
@@ -76,32 +132,25 @@ def ensure_skill_synced(cli_version):
         except OSError:
             pass
 
-    # Find source in npm global
+    # Find source (works with npm and brew)
+    source_dir = find_skill_source()
+    if not source_dir:
+        return False, "source not found"
+
     try:
-        result = subprocess.run(
-            ["npm", "root", "-g"],
-            capture_output=True,
-            text=True,
-            timeout=SUBPROCESS_TIMEOUT
-        )
-        if result.returncode != 0:
-            return False, "npm root failed"
-
-        source_dir = Path(result.stdout.strip()) / "agent-browser" / "skills" / "agent-browser"
-        if not source_dir.exists():
-            return False, "source not found"
-
-        # Copy skill directory (atomic overwrite, no race condition)
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(source_dir, dest_dir, dirs_exist_ok=True)
 
-        # Write version
+        # Validate copy: SKILL.md must exist and not be empty
+        if not skill_file.exists() or skill_file.stat().st_size == 0:
+            return False, "copy verification failed"
+
         if cli_version:
             version_file.write_text(cli_version, encoding="utf-8")
 
         return True, "copied"
 
-    except (subprocess.TimeoutExpired, OSError, shutil.Error) as e:
+    except (OSError, shutil.Error) as e:
         return False, str(type(e).__name__)
 
 
