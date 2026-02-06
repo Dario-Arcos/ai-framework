@@ -1,8 +1,11 @@
 #!/bin/bash
 # Claude Code Native Notifications (macOS only)
-# Handles Stop and Notification events with sound alerts
+# Sound: afplay (guaranteed, zero config)
+# Visual: osascript (best-effort, depends on Script Editor permissions)
 
 set -u
+
+SOUNDS_DIR="/System/Library/Sounds"
 
 # macOS only - exit silently on other platforms
 [[ "$(uname -s)" != "Darwin" ]] && exit 0
@@ -20,18 +23,16 @@ if [[ -z "$INPUT" ]]; then
   exit 0
 fi
 
-# Parse all JSON fields in a single Python invocation (efficient + secure)
-# Uses json.dumps for safe output, avoiding code injection
+# Parse JSON fields via Python (secure, no injection risk)
 read -r EVENT NOTIFICATION_TYPE CWD TITLE MESSAGE STOP_HOOK_ACTIVE < <(
   printf '%s' "$INPUT" | python3 -c '
-import sys
-import json
+import sys, json
 
-def safe_output(value):
-    """Output value with null byte separator, handling None gracefully."""
+def sanitize(value):
+    """Sanitize value for tab-delimited output."""
     if value is None:
         return ""
-    return str(value).replace("\n", " ").replace("\r", "")
+    return str(value).replace("\t", " ").replace("\n", " ").replace("\r", "")
 
 try:
     data = json.load(sys.stdin)
@@ -43,18 +44,15 @@ try:
         data.get("message", ""),
         str(data.get("stop_hook_active", False)).lower()
     ]
-    print("\t".join(safe_output(f) for f in fields))
-except (json.JSONDecodeError, ValueError, TypeError):
-    print("Unknown\t\t\t\t\tfalse")
+    print("\t".join(sanitize(f) for f in fields))
 except Exception:
     print("Unknown\t\t\t\t\tfalse")
 ' 2>/dev/null
 ) || {
-  # Python failed entirely - exit gracefully
   exit 0
 }
 
-# Get project name from cwd (with safe fallback)
+# Project name from cwd
 PROJECT="Claude Code"
 if [[ -n "$CWD" ]]; then
   PROJECT=$(basename "$CWD" 2>/dev/null) || PROJECT="Claude Code"
@@ -65,65 +63,57 @@ if [[ "$EVENT" == "Stop" && "$STOP_HOOK_ACTIVE" == "true" ]]; then
   exit 0
 fi
 
-# Default sound
-SOUND="Glass"
-
-# Configure notification based on event type
+# Select sound and content by event type
+# Sounds chosen for friendliness: subtle enough to help, not to annoy
+SOUND="Tink"
 case "$EVENT" in
   Stop)
     TITLE="$PROJECT"
     MESSAGE="Tarea completada"
-    SOUND="Glass"
+    SOUND="Tink"     # Delicate tap: "I'm done"
     ;;
-
   Notification)
-    # Use provided title/message with fallbacks
     TITLE="${TITLE:-$PROJECT}"
     MESSAGE="${MESSAGE:-Notificacion}"
-
-    # Select sound based on notification urgency
     case "$NOTIFICATION_TYPE" in
-      permission_prompt|elicitation_dialog)
-        SOUND="Sosumi"  # Attention required
-        ;;
-      idle_prompt)
-        SOUND="Ping"    # Gentle reminder
-        ;;
-      auth_success)
-        SOUND="Glass"   # Success
-        ;;
-      *)
-        SOUND="Ping"
-        ;;
+      permission_prompt|elicitation_dialog) SOUND="Funk" ;; # Muted note: "come back"
+      idle_prompt)                          SOUND="Purr" ;; # Softest: gentle nudge
+      auth_success)                         SOUND="Pop"  ;; # Quick bubble: confirmation
+      *)                                    SOUND="Tink" ;;
     esac
     ;;
-
   *)
     exit 0
     ;;
 esac
 
-# Validate content exists
+# Validate content
 if [[ -z "$TITLE" || -z "$MESSAGE" ]]; then
   exit 0
 fi
 
-# Truncate to reasonable lengths for notification display
+# Truncate for display
 TITLE="${TITLE:0:50}"
 MESSAGE="${MESSAGE:0:200}"
 
-# Escape for AppleScript (order matters: backslash first, then quotes)
+# --- SOUND: afplay (guaranteed, bypasses Notification Center) ---
+SOUND_FILE="$SOUNDS_DIR/$SOUND.aiff"
+if [[ -f "$SOUND_FILE" ]]; then
+  afplay "$SOUND_FILE" &
+  disown
+fi
+
+# --- VISUAL: osascript (best-effort, works if Script Editor has permissions) ---
 escape_applescript() {
   local str="$1"
-  str="${str//\\/\\\\}"    # Escape backslashes first
-  str="${str//\"/\\\"}"    # Escape double quotes
+  str="${str//\\/\\\\}"
+  str="${str//\"/\\\"}"
   printf '%s' "$str"
 }
 
 TITLE_ESCAPED=$(escape_applescript "$TITLE")
 MESSAGE_ESCAPED=$(escape_applescript "$MESSAGE")
-
-# Send native macOS notification with sound
-osascript -e "display notification \"$MESSAGE_ESCAPED\" with title \"$TITLE_ESCAPED\" sound name \"$SOUND\"" 2>/dev/null || true
+osascript -e "display notification \"$MESSAGE_ESCAPED\" with title \"$TITLE_ESCAPED\"" 2>/dev/null &
+disown
 
 exit 0

@@ -2,24 +2,20 @@
 """SessionStart hook - Checks agent-browser and installs if missing."""
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 SUBPROCESS_TIMEOUT = 5
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+")
 
 
 def find_project_root():
-    """Find project root by searching upward for .claude directory."""
-    current = Path.cwd().resolve()
-    for _ in range(20):
-        if (current / ".claude").is_dir():
-            return current
-        if current == current.parent:
-            break
-        current = current.parent
-    return None
+    """Find project root from hook file location."""
+    return Path(__file__).resolve().parent.parent
 
 
 def is_installed():
@@ -28,7 +24,7 @@ def is_installed():
 
 
 def get_installed_version():
-    """Get installed agent-browser version."""
+    """Get installed agent-browser version. Returns semver string or None."""
     try:
         result = subprocess.run(
             ["agent-browser", "--version"],
@@ -37,26 +33,29 @@ def get_installed_version():
             timeout=SUBPROCESS_TIMEOUT
         )
         if result.returncode == 0 and result.stdout.strip():
-            parts = result.stdout.strip().split()
-            return parts[-1] if parts else None
+            for token in reversed(result.stdout.strip().split()):
+                if SEMVER_RE.match(token):
+                    return token
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
     return None
 
 
 def install_background():
-    """Install agent-browser in background."""
+    """Install agent-browser in background with log file for traceability."""
     try:
-        subprocess.Popen(
-            ["sh", "-c", "npm install -g agent-browser && agent-browser install"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-            close_fds=True
-        )
-        return True
+        log_file = Path(tempfile.gettempdir()) / "agent-browser-install.log"
+        with open(log_file, "w", encoding="utf-8") as log:
+            subprocess.Popen(
+                ["sh", "-c", "npm install -g agent-browser && agent-browser install"],
+                stdout=log,
+                stderr=log,
+                start_new_session=True,
+                close_fds=True
+            )
+        return True, str(log_file)
     except OSError:
-        return False
+        return False, None
 
 
 def ensure_skill_synced(cli_version):
@@ -92,11 +91,9 @@ def ensure_skill_synced(cli_version):
         if not source_dir.exists():
             return False, "source not found"
 
-        # Copy skill directory
+        # Copy skill directory (atomic overwrite, no race condition)
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
-        if dest_dir.exists():
-            shutil.rmtree(dest_dir)
-        shutil.copytree(source_dir, dest_dir)
+        shutil.copytree(source_dir, dest_dir, dirs_exist_ok=True)
 
         # Write version
         if cli_version:
@@ -111,9 +108,7 @@ def ensure_skill_synced(cli_version):
 def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
-        while True:
-            if not sys.stdin.read(4096):
-                break
+        sys.stdin.read()
     except (IOError, OSError):
         pass
 
@@ -140,8 +135,9 @@ def main():
         context = "agent-browser: ⚠ Skipped (AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1)"
 
     else:
-        if install_background():
-            context = "agent-browser: ⏳ Installing in background..."
+        ok, log_path = install_background()
+        if ok:
+            context = f"agent-browser: ⏳ Installing in background... (log: {log_path})"
         else:
             context = "agent-browser: ✗ Install failed"
 

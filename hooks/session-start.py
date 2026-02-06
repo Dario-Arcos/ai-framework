@@ -92,6 +92,9 @@ def ensure_gitignore_rules(plugin_root, project_dir):
 
         if missing_rules:
             with open(project_gitignore, "a", encoding="utf-8") as f:
+                # Ensure blank line separator even if file lacks trailing newline
+                if content and not content.endswith("\n"):
+                    f.write("\n")
                 f.write("\n# AI Framework runtime files (auto-added)\n")
                 for rule in missing_rules:
                     f.write(rule + "\n")
@@ -112,8 +115,7 @@ def remove_template_suffix(path_str):
 
     for part in parts:
         if part.endswith(".template"):
-            # Remove .template suffix
-            new_parts.append(part[:-9])  # len(".template") = 9
+            new_parts.append(part.removesuffix(".template"))
         else:
             new_parts.append(part)
 
@@ -171,7 +173,7 @@ def sync_all_files(plugin_root, project_dir):
         try:
             dst.parent.mkdir(parents=True, exist_ok=True)
 
-            # Skip if identical (preserves user modifications)
+            # Skip if identical (template unchanged = no overwrite)
             if dst.exists() and filecmp.cmp(src, dst, shallow=False):
                 continue
 
@@ -186,10 +188,7 @@ def sync_all_files(plugin_root, project_dir):
 def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
-        while True:
-            chunk = sys.stdin.read(4096)
-            if not chunk:
-                break
+        sys.stdin.read()
     except (IOError, OSError):
         pass
 
