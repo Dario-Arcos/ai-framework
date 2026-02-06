@@ -32,6 +32,7 @@ Skills (specialized workflows):
 - systematic-debugging: Find root cause | claude-code-expert: Verify CC APIs | pr-workflow: PR validation
 - agent-browser: Browser automation (research, E2E, scraping, mobile/iOS testing)
 - context-engineering: System prompts, AGENTS.md, agent architecture optimization
+- test-driven-development: RED→GREEN→REFACTOR with gate functions | verification-before-completion: Evidence before claims
 </capability_index>
 
 <constraints>

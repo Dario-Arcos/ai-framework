@@ -1,6 +1,6 @@
 ---
 name: sop-code-assist
-version: 2.1.0
+version: 2.2.0
 description: TDD implementation of code tasks following Explore → Plan → Code → Commit workflow. Use when executing .code-task.md files from ralph-orchestrator or when structured requirements are ready.
 ---
 
@@ -58,9 +58,23 @@ Analyze requirements and research patterns.
 - Research existing patterns in repository
 - Identify test strategy
 
+<bug_fix_detection>
+**IF** the task describes a defect (bug report, regression, unexpected behavior, error reproduction):
+
+1. Invoke the systematic-debugging skill's Phases 1-3 BEFORE proceeding to Plan
+2. Phase 1: Root Cause Investigation — reproduce, trace data flow, gather evidence
+3. Phase 2: Pattern Analysis — find working examples, identify differences
+4. Phase 3: Hypothesis — form and test a single hypothesis minimally
+
+The root cause you identify becomes the specification for your first RED test in Step 4.
+
+**You MUST NOT** design tests for a bug you haven't diagnosed. Symptom-based tests pass for the wrong reasons.
+</bug_fix_detection>
+
 **Constraints:**
 - You MUST understand existing patterns before introducing new ones
 - You MUST identify edge cases during exploration
+- You MUST complete root cause investigation before planning tests for bug fixes
 
 ### 3. Plan
 
@@ -75,19 +89,29 @@ Design tests covering all acceptance criteria.
 
 ### 4. Code
 
-Implement using strict TDD: RED → GREEN → REFACTOR.
+Implement using the test-driven-development skill.
 
-- Write tests BEFORE implementation code
-- Run tests → verify failure (RED)
-- Implement minimal code to pass
-- Run tests → verify success (GREEN)
-- Refactor for clarity
-- Validate: all tests pass, build succeeds
+- Follow the test-driven-development skill for the full RED → GREEN → REFACTOR cycle
+- Follow its Iron Law: no production code without a failing test first
+- Follow its Gate Functions at each phase transition
+- After all tests pass, run quality validation
+
+<failure_escalation>
+**IF** during TDD you hit unexpected failures (wrong RED reason, stuck at GREEN after 2 attempts, build breaks for unknown cause):
+
+1. STOP the TDD cycle
+2. Invoke the systematic-debugging skill — treat the failure as a bug
+3. Find root cause before retrying
+4. Return to TDD with understanding, not with hope
+
+**You MUST NOT** retry the same approach more than twice without diagnosing why it fails. Thrashing wastes iterations and triggers the circuit breaker.
+</failure_escalation>
 
 **Constraints:**
-- Tests MUST fail initially; if they pass, fix the test
 - Implementation MUST be in `repo_root`, not `documentation_dir`
+- You MUST follow the test-driven-development skill's complete process
 - You MUST run quality validation after tests pass
+- You MUST escalate to systematic-debugging after 2 unexpected failures
 
 <quality_validation>
 1. Invoke `code-simplifier` on modified artifacts
@@ -104,14 +128,16 @@ Implement using strict TDD: RED → GREEN → REFACTOR.
 
 Finalize and commit changes.
 
-- Verify all tests passing, build succeeding
+- Invoke the verification-before-completion skill's 5-step gate
+- Every claim ("tests pass", "build succeeds") requires fresh evidence
 - `git add` relevant files
 - `git commit` with Conventional Commits format
 - Emit confession markers (autonomous mode)
 
 **Constraints:**
 - You MUST NOT push to remote
-- You MUST verify build before commit
+- You MUST complete the verification-before-completion gate before commit
+- Evidence format: `[Claim]: \`[command]\` → [output]`
 
 <autonomous_signals>
 > confession: objective=[task name], met=[Yes/No], confidence=[N], evidence=[proof]
@@ -179,5 +205,8 @@ Secondary (in `{documentation_dir}/`):
 ## References
 
 - `references/mode-behavior.md` - Interactive vs autonomous
-- `references/tdd-workflow.md` - Detailed TDD guidance
 - `references/troubleshooting.md` - Common issues
+- `references/examples.md` - Usage examples
+- test-driven-development skill - Full TDD workflow (Step 4)
+- verification-before-completion skill - Completion verification (Step 5)
+- systematic-debugging skill - Root cause investigation (Step 2 bug fixes, Step 4 failure escalation)
