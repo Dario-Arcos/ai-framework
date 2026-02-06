@@ -16,5 +16,11 @@
     "workflow-automation",
     "claude-code",
     "flat-structure"
-  ]
+  ],
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
 }
