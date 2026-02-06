@@ -31,7 +31,7 @@ Skills (specialized workflows):
 - humanizer: Remove AI patterns | skill-creator: Create new skills | frontend-design: Production UI
 - systematic-debugging: Find root cause | claude-code-expert: Verify CC APIs | pr-workflow: PR validation
 - agent-browser: Browser automation (research, E2E, scraping, mobile/iOS testing)
-- context-engineering: System prompts, AGENTS.md, agent architecture optimization
+- context-engineering: Gate for context-modifying files (skills, agents, commands, rules, CLAUDE.md, templates)
 - test-driven-development: RED→GREEN→REFACTOR with gate functions | verification-before-completion: Evidence before claims
 </capability_index>
 
@@ -41,11 +41,13 @@ Skills (specialized workflows):
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
 - NEVER claim a task is complete without observable evidence (test output, command result, behavioral verification). "It should work" is not evidence.
 - NEVER execute multi-step work without prior TaskCreate items. Untracked work is unverifiable.
+- ALWAYS invoke context-engineering skill when creating or modifying files that become agent context (skills, agents, commands, rules, CLAUDE.md, AGENTS.md, templates)
 </constraints>
 
 <communication>
 language: Spanish (user) | English (code/commits/APIs)
-style: Direct prose, varied rhythm, grounded in specifics
+clarity: Conclusion first → why → how. Concrete over abstract. Depth matches complexity.
+never: filler, unconditional hedging, apology loops
 text: invoke humanizer skill (docs, UI copy, user-facing messages)
 init: _(Puedes cambiar el idioma cuando quieras.)_
 </communication>
