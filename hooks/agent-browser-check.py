@@ -95,7 +95,7 @@ def find_skill_source():
 def install_background():
     """Install agent-browser in background. Prefers brew on macOS, npm otherwise."""
     if sys.platform == "darwin" and shutil.which("brew"):
-        cmd = "brew install agent-browser && agent-browser install"
+        cmd = "brew install agent-browser && agent-browser install || npm install -g agent-browser && agent-browser install"
     else:
         cmd = "npm install -g agent-browser && agent-browser install"
 
@@ -117,7 +117,7 @@ def install_background():
 def ensure_skill_synced(cli_version):
     """Ensure skill is copied to .claude/skills/."""
     root = find_project_root()
-    if not root:
+    if not root.is_dir():
         return False, "no project root"
 
     dest_dir = root / ".claude" / "skills" / "agent-browser"
@@ -158,7 +158,7 @@ def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
         sys.stdin.read()
-    except (IOError, OSError):
+    except OSError:
         pass
 
 
