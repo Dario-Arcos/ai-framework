@@ -24,7 +24,7 @@ Your training data is 6+ months stale. Claude Code APIs change frequently. **Nev
 
 ### Step 1: Investigate Official Documentation
 
-**Use agent-browser to research the official docs:**
+**Invoke agent-browser to research the official docs:**
 
 ```bash
 agent-browser open https://code.claude.com/docs/en/overview
