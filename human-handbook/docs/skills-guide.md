@@ -17,7 +17,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots, mobile/iOS |
 | `brainstorming` | Diálogo para diseñar soluciones | Antes de codear algo nuevo |
 | `systematic-debugging` | Debugging metódico con 4 fases | Cualquier bug, test failure, comportamiento inesperado |
-| `pr-workflow` | PR con code + security review | Al crear pull requests |
+| `pull-request` | PR con code + security review | Al crear pull requests |
 | `claude-code-expert` | Genera componentes Claude Code | Crear agents, commands, hooks |
 | `frontend-design` | Diseño web distintivo | Interfaces memorables, no genéricas |
 | `humanizer` | Elimina patrones de texto AI | Docs, commits, PRs, UI text |
@@ -113,7 +113,7 @@ Proceso de 4 fases para encontrar root cause antes de intentar fixes.
 
 ---
 
-## pr-workflow
+## pull-request
 
 Quality gate para PRs: code review + security review + observaciones.
 
@@ -372,7 +372,7 @@ Sé específico o menciónalo:
 ```
 ❌ "Ayuda con código"
 ✅ "Crear PR a main"
-✅ "Usando pr-workflow: crear PR"
+✅ "Usando pull-request: crear PR"
 ```
 :::
 

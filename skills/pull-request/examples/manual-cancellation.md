@@ -94,7 +94,7 @@ Commits:
 ## Next Steps
 
 Fix the issues above, then re-run:
-/git-pullrequest main
+/pull-request main
 ```
 
 ---
@@ -129,5 +129,5 @@ Fix commit created: fix: address pre-PR review findings
 ## Next Steps
 
 Review the fix commit, address remaining issues manually, then re-run:
-/git-pullrequest main
+/pull-request main
 ```

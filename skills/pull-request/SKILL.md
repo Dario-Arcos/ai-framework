@@ -1,5 +1,5 @@
 ---
-name: pr-workflow
+name: pull-request
 description: Use when creating a PR, preparing code for review, or ready to merge feature work into a target branch
 ---
 
@@ -8,6 +8,8 @@ description: Use when creating a PR, preparing code for review, or ready to merg
 Create PRs with integrated quality gate. Human always decides.
 
 **Input:** Target branch from `$ARGUMENTS` (e.g., "main").
+
+If `$ARGUMENTS` is empty, use AskUserQuestion: "¿A qué rama destino quieres dirigir el Pull Request?" with options from `git branch -r | grep -v HEAD | sed 's/origin\///' | head -5`.
 
 **Examples:** See `examples/` for complete flow scenarios:
 - `success-no-findings.md` - Clean code review, direct to PR
@@ -221,7 +223,7 @@ Options:
   - label: "Auto fix"
     description: "Fix Critical+Important (code) and High+Medium (security) issues, then re-review. Minor issues not auto-fixed."
   - label: "Cancel"
-    description: "Exit. Fix manually and re-run /git-pullrequest {target_branch}"
+    description: "Exit. Fix manually and re-run /pull-request {target_branch}"
 ```
 
 - **"Create PR"** → Phase 3
@@ -514,7 +516,7 @@ Quality Gate: {attention_count} addressed, {ok_count} OK
 
 | Scenario | Response |
 |----------|----------|
-| No target branch | `❌ Usage: /git-pullrequest main` |
+| No target branch | `❌ Usage: /pull-request main` |
 | No remote configured | `❌ No remote 'origin' configured. Run: git remote add origin <url>` |
 | Target not found | `❌ origin/{target} not found. Run: git fetch origin` |
 | No commits | `❌ No commits between {current} and {target}` |

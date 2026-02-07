@@ -168,7 +168,7 @@ The delegating agent is responsible for verifying the subagent's claims.
   ```
   > confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof from 5-step gate]
   ```
-- **pr-workflow** — PR readiness requires all claims verified with fresh evidence
+- **pull-request** — PR readiness requires all claims verified with fresh evidence
 
 ## Related
 

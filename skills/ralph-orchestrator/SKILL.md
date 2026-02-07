@@ -31,7 +31,7 @@ description: Use when building features requiring planning + autonomous executio
 |-----------|-------------|
 | Simple single-file change | Direct implementation |
 | Only debugging | `systematic-debugging` skill |
-| Only code review | `code-reviewer` agent or `pr-workflow` skill |
+| Only code review | `code-reviewer` agent or `pull-request` skill |
 | Research only, no implementation | `sop-reverse` alone |
 
 ---
@@ -54,9 +54,10 @@ This skill orchestrates other SOP skills and produces:
 
 ## The Complete Flow
 
-1. **Step 0**: Choose planning mode (Interactive/Autonomous)
-2. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
-3. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
+1. **State Detection**: Scan specs/, detect phase, offer resume or new
+2. **Step 0**: Choose planning mode (Interactive/Autonomous)
+3. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
+4. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
 4. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 5. **Step 5**: Generate AGENTS.md (bootstrap worker context)
 6. **Step 6**: Plan Review Checkpoint (mandatory before execution)
@@ -78,6 +79,32 @@ This skill orchestrates other SOP skills and produces:
 **You MUST** verify loop.sh exists before planning. **You MUST NOT** proceed if infrastructure is missing.
 
 > Error handling: [troubleshooting.md](references/troubleshooting.md)
+
+---
+
+### State Detection
+
+Scan `specs/` for existing goals. For each (or `$ARGUMENTS` if provided), check artifacts:
+
+| Artifact | Detected Phase |
+|----------|----------------|
+| All `*.code-task.md` with `Status: COMPLETED` | COMPLETE |
+| Any `*.code-task.md` with `Status: PENDING` | code-assist (Step 8) |
+| `implementation/plan.md` without task files | task-generator (Step 4) |
+| `design/detailed-design.md` | planning (Step 3) |
+| `discovery.md` | discovery-complete (Step 3) |
+| `investigation.md` + `specs-generated/` | reverse-complete (Step 3) |
+| Nothing | NEW |
+
+**Use AskUserQuestion** to confirm:
+
+- If resumable: "Resume [goal] from [phase]" as recommended option
+- If new: "Forward (build new)" or "Reverse (investigate existing)"
+- If multiple goals: let user choose which goal
+
+Surface `blockers.md` content if exists.
+
+After confirmation, skip directly to the detected phase. If NEW, continue to Step 0.
 
 ---
 

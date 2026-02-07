@@ -8,10 +8,7 @@ Slash commands para el ciclo de desarrollo. Cada uno resuelve un problema espec�
 
 | Command | Qué hace |
 |---------|----------|
-| `/brainstorm` | Diseño conversacional antes de codear |
-| `/ralph` | Pipeline autónomo con detección de estado |
 | `/git-commit` | Commits semánticos con agrupación |
-| `/git-pullrequest` | PR con code + security review |
 | `/git-cleanup` | Limpieza post-merge |
 | `/worktree-create` | Worktree aislado para trabajo paralelo |
 | `/worktree-cleanup` | Eliminar worktrees |
@@ -19,54 +16,6 @@ Slash commands para el ciclo de desarrollo. Cada uno resuelve un problema espec�
 | `/changelog` | Actualizar CHANGELOG desde diff real |
 | `/release` | Bump versión + tag + GitHub release |
 | `/project-init` | Generar reglas de proyecto |
-
----
-
-## Design & Planning
-
-### /brainstorm
-
-Diálogo estructurado para diseñar antes de implementar. Examina el proyecto, hace preguntas una a la vez, propone enfoques con trade-offs.
-
-```bash
-/brainstorm
-```
-
-Genera: `docs/plans/YYYY-MM-DD-<topic>-design.md`
-
-::: tip Cuándo usarlo
-Antes de cualquier feature nueva. Evita el error de saltar directo al código sin entender el problema.
-:::
-
----
-
-### /ralph
-
-Pipeline de desarrollo autónomo. Detecta en qué fase está el proyecto y retoma desde ahí.
-
-```bash
-/ralph                    # Auto-detecta estado
-/ralph specs/mi-feature   # Goal específico
-```
-
-**Fases del pipeline:**
-
-```
-discovery → planning → task-generator → code-assist
-```
-
-El command escanea `specs/` buscando artifacts (discovery.md, plan.md, .code-task.md files) y determina la fase actual. Confirma con AskUserQuestion antes de ejecutar.
-
-::: details Detección de estado
-| Artifact encontrado | Fase |
-|---------------------|------|
-| Todos los `.code-task.md` con `Status: COMPLETED` | COMPLETE |
-| Algún `.code-task.md` con `Status: PENDING` | code-assist |
-| `implementation/plan.md` sin task files | task-generator |
-| `design/detailed-design.md` | planning |
-| `discovery.md` | discovery-complete |
-| Nada | NEW |
-:::
 
 ---
 
@@ -94,25 +43,6 @@ Commits semánticos con agrupación automática por tipo de archivo.
 **Agrupación automática:** Si modificas archivos de 2+ categorías (config + código, docs + tests), crea commits separados por tipo.
 
 ---
-
-### /git-pullrequest
-
-PR con quality gate: code review + security review + observaciones.
-
-```bash
-/git-pullrequest main
-```
-
-**Proceso:**
-
-1. Valida branch, extrae commits
-2. Review paralelo (code + security)
-3. Presenta findings por severidad
-4. Opciones: **Create PR** / **Auto fix** / **Cancel**
-
-::: info Las observaciones no son bloqueantes
-Son hechos con contexto. Tú decides si crear PR con issues documentados o arreglar primero.
-:::
 
 ---
 
@@ -289,9 +219,9 @@ Indexa automáticamente tus sesiones. Busca por conceptos (semántica) o texto e
 
 | Escenario | Comandos |
 |-----------|----------|
-| **Feature nueva** | `/brainstorm` → implementar → `/git-commit` → `/git-pullrequest` |
-| **Bug fix urgente** | `/worktree-create` → fix → `/git-commit` → `/git-pullrequest` |
-| **Desarrollo autónomo** | `/ralph` (orquesta todo el pipeline) |
+| **Feature nueva** | `/brainstorming` → implementar → `/git-commit` → `/pull-request` |
+| **Bug fix urgente** | `/worktree-create` → fix → `/git-commit` → `/pull-request` |
+| **Desarrollo autónomo** | `/ralph-orchestrator` (orquesta todo el pipeline) |
 | **Post-merge** | `/git-cleanup` |
 | **Release** | `/changelog` → `/release` |
 

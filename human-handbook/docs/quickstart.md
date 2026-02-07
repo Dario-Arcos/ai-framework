@@ -82,7 +82,7 @@ Para commits y PRs:
 
 ```bash
 /git-commit "feat: add email validation"
-/git-pullrequest develop
+/pull-request develop
 ```
 
 ---

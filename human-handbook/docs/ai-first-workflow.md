@@ -154,7 +154,7 @@ Agrupa cambios automáticamente por tipo. Soporta formato corporativo `tipo|TASK
 ### Pull Request
 
 ```bash
-/git-pullrequest main
+/pull-request main
 ```
 
 Quality gate integrado:
@@ -244,7 +244,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 "Implementa validación de email en el formulario"
 # Claude implementa directamente con tests
 /git-commit "feat: add email validation"
-/git-pullrequest main
+/pull-request main
 ```
 
 ### Size M (≤250 LOC)
@@ -253,14 +253,14 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 ```bash
 "Necesito autenticación OAuth"
 # → brainstorming → writing-plans → executing-plans
-/git-pullrequest main
+/pull-request main
 ```
 
 **Con Ralph Loop:**
 ```bash
 ./loop.sh plan    # Genera plan
 ./loop.sh         # Ejecuta hasta completar
-/git-pullrequest main
+/pull-request main
 ```
 
 ### Size L/XL (>250 LOC)
@@ -270,7 +270,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 ./loop.sh plan              # Plan detallado
 ./loop.sh                   # Ejecución autónoma con fresh context
 # Ralph hace commits incrementales
-/git-pullrequest main       # PR final con todo el trabajo
+/pull-request main       # PR final con todo el trabajo
 ```
 
 ### Hotfix
@@ -280,7 +280,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 /understand "área del bug"
 # Fix directo
 /git-commit "fix: race condition in checkout"
-/git-pullrequest main
+/pull-request main
 /worktree-cleanup hotfix-race
 ```
 
@@ -292,7 +292,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 | Comando | Qué hace |
 |---------|----------|
 | `/git-commit` | Commit semántico con agrupación |
-| `/git-pullrequest` | PR con quality gate (code + security) |
+| `/pull-request` | PR con quality gate (code + security) |
 | `/git-cleanup` | Post-merge cleanup |
 | `/worktree-create` | Workspace aislado |
 | `/worktree-cleanup` | Elimina worktrees |
@@ -305,7 +305,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 |-------|-----|
 | `brainstorming` | Explorar ideas antes de implementar |
 | `ralph-orchestrator` | Desarrollo autónomo multi-iteración |
-| `pr-workflow` | PR con quality gate integrado |
+| `pull-request` | PR con quality gate integrado |
 | `webapp-testing` | E2E testing con Playwright |
 | `mobile-testing` | E2E mobile con mobile-mcp + Maestro |
 | `claude-code-expert` | Crear componentes Claude Code |
