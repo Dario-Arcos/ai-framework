@@ -20,7 +20,7 @@ QUALITY_LEVEL="production"  # Default
 | Level | Behavior |
 |-------|----------|
 | `prototype` | Skip all gates, commit freely |
-| `production` | TDD mandatory, all gates must pass |
+| `production` | SDD mandatory, all gates must pass |
 | `library` | Full coverage + docs + edge cases |
 
 ---

@@ -1,12 +1,12 @@
 ---
 name: sop-code-assist
-version: 2.2.0
-description: TDD implementation of code tasks following Explore → Plan → Code → Commit workflow. Use when executing .code-task.md files from ralph-orchestrator or when structured requirements are ready.
+version: 3.0.0
+description: Scenario-driven implementation of code tasks following Explore → Plan → Code → Commit workflow. Use when executing .code-task.md files from ralph-orchestrator or when structured requirements are ready.
 ---
 
 # Code Assist
 
-TDD implementation of code tasks. Balances automation with user collaboration while adhering to existing patterns.
+Scenario-driven implementation of code tasks. Balances automation with user collaboration while adhering to existing patterns.
 
 ## Parameters
 
@@ -56,7 +56,7 @@ Analyze requirements and research patterns.
 
 - Analyze acceptance criteria from `.code-task.md`
 - Research existing patterns in repository
-- Identify test strategy
+- Identify scenario strategy
 
 <bug_fix_detection>
 **IF** the task describes a defect (bug report, regression, unexpected behavior, error reproduction):
@@ -66,50 +66,50 @@ Analyze requirements and research patterns.
 3. Phase 2: Pattern Analysis — find working examples, identify differences
 4. Phase 3: Hypothesis — form and test a single hypothesis minimally
 
-The root cause you identify becomes the specification for your first RED test in Step 4.
+The root cause you identify becomes the specification for your first scenario in Step 4.
 
-**You MUST NOT** design tests for a bug you haven't diagnosed. Symptom-based tests pass for the wrong reasons.
+**You MUST NOT** design scenarios for a bug you haven't diagnosed. Symptom-based tests pass for the wrong reasons.
 </bug_fix_detection>
 
 **Constraints:**
 - You MUST understand existing patterns before introducing new ones
 - You MUST identify edge cases during exploration
-- You MUST complete root cause investigation before planning tests for bug fixes
+- You MUST complete root cause investigation before planning scenarios for bug fixes
 
 ### 3. Plan
 
-Design tests covering all acceptance criteria.
+Design scenarios covering all acceptance criteria.
 
-- Design test cases for each acceptance criterion
+- Design scenarios for each acceptance criterion
 - Plan test structure (unit, integration, e2e as appropriate)
 
 **Constraints:**
-- Tests MUST be designed to initially fail (RED phase)
+- Scenarios MUST define observable behavior before code exists (SCENARIO phase)
 - You MUST cover both happy path and edge cases
 
 ### 4. Code
 
-Implement using the test-driven-development skill.
+Implement using the scenario-driven-development skill.
 
-- Follow the test-driven-development skill for the full RED → GREEN → REFACTOR cycle
-- Follow its Iron Law: no production code without a failing test first
+- Follow the scenario-driven-development skill for the full SCENARIO → SATISFY → REFACTOR cycle
+- Follow its Iron Law: no production code without a defined scenario first
 - Follow its Gate Functions at each phase transition
 - After all tests pass, run quality validation
 
 <failure_escalation>
-**IF** during TDD you hit unexpected failures (wrong RED reason, stuck at GREEN after 2 attempts, build breaks for unknown cause):
+**IF** during SDD you hit unexpected failures (scenario unclear, stuck at SATISFY after 2 attempts, build breaks for unknown cause):
 
-1. STOP the TDD cycle
+1. STOP the SDD cycle
 2. Invoke the systematic-debugging skill — treat the failure as a bug
 3. Find root cause before retrying
-4. Return to TDD with understanding, not with hope
+4. Return to SDD with understanding, not with hope
 
 **You MUST NOT** retry the same approach more than twice without diagnosing why it fails. Thrashing wastes iterations and triggers the circuit breaker.
 </failure_escalation>
 
 **Constraints:**
 - Implementation MUST be in `repo_root`, not `documentation_dir`
-- You MUST follow the test-driven-development skill's complete process
+- You MUST follow the scenario-driven-development skill's complete process
 - You MUST run quality validation after tests pass
 - You MUST escalate to systematic-debugging after 2 unexpected failures
 
@@ -120,8 +120,8 @@ Implement using the test-driven-development skill.
 </quality_validation>
 
 <autonomous_signals>
-> tdd:red {test_name}
-> tdd:green {test_name}
+> sdd:scenario {scenario_name}
+> sdd:satisfy {scenario_name}
 </autonomous_signals>
 
 ### 5. Commit
@@ -170,7 +170,7 @@ When invoked from ralph-orchestrator in autonomous mode:
 ## Separation of Concerns
 
 **sop-code-assist owns:**
-- TDD implementation
+- Scenario-driven implementation
 - Confession markers
 - guardrails.md updates
 
@@ -207,6 +207,6 @@ Secondary (in `{documentation_dir}/`):
 - `references/mode-behavior.md` - Interactive vs autonomous
 - `references/troubleshooting.md` - Common issues
 - `references/examples.md` - Usage examples
-- test-driven-development skill - Full TDD workflow (Step 4)
+- scenario-driven-development skill - Full SDD workflow (Step 4)
 - verification-before-completion skill - Completion verification (Step 5)
 - systematic-debugging skill - Root cause investigation (Step 2 bug fixes, Step 4 failure escalation)

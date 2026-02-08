@@ -41,7 +41,7 @@ export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
 
 ### Superpowers
 
-Skills profesionales: TDD, debugging sistemático, code review, worktrees. Mantenido por [obra](https://github.com/obra/superpowers).
+Skills profesionales: SDD, debugging sistemático, code review, worktrees. Mantenido por [obra](https://github.com/obra/superpowers).
 
 ::: code-group
 ```bash [Instalación]
@@ -59,7 +59,7 @@ Skills profesionales: TDD, debugging sistemático, code review, worktrees. Mante
 :::
 
 ::: details Skills incluidos
-- `test-driven-development` — TDD workflow completo
+- `scenario-driven-development` — SDD workflow completo
 - `systematic-debugging` — Debugging metódico
 - `verification-before-completion` — Verificación antes de entregar
 - `writing-plans`, `executing-plans` — Planificación estructurada

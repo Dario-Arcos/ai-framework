@@ -295,7 +295,7 @@ Create `{project_dir}/implementation/plan.md`:
 - Builds on previous steps only
 - Includes acceptance criteria
 - Complexity estimate (S/M/L/XL)
-- TDD approach: Write test -> See fail -> Implement -> Refactor
+- SDD approach: Define scenario -> Write code -> Satisfy -> Refactor
 
 **Phases**:
 1. Foundation (data models, core abstractions)

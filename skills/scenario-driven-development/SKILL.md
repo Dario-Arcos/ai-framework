@@ -1,138 +1,169 @@
 ---
-name: test-driven-development
-version: 1.0.0
-description: RED-GREEN-REFACTOR with gate functions at every phase transition. Use for all implementation work.
+name: scenario-driven-development
+version: 2.0.0
+description: SCENARIO→SATISFY→REFACTOR with convergence gates. Scenarios define expected behavior as end-to-end user stories; satisfaction replaces boolean pass/fail with probabilistic convergence. Use for all implementation work.
 ---
 
-# Test-Driven Development
+# Scenario-Driven Development
 
 ## Overview
 
-Tests written after code confirm what you built. Tests written before code define what you should build.
+Code written without scenarios confirms what you built. Scenarios defined before code define what should satisfy the user.
 
-**Core principle:** Write the test first, watch it fail, write the minimum code to pass, refactor. Every time. No exceptions.
+**Core principle:** Define the scenario first as an end-to-end user story, converge until behavior satisfies intent, refactor. Every time. No exceptions.
 
-**Violating the letter of this process is violating the spirit of TDD.**
+**This methodology is NOT Test-Driven Development.** TDD optimizes for assertion-passing; SDD optimizes for user satisfaction. Tests are tools within SDD, not the primary driver.
 
 ## The Iron Law
 
 ```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+NO PRODUCTION CODE WITHOUT A DEFINED SCENARIO FIRST
 ```
 
-If you write production code without a failing test, delete it. Write the test first.
+A scenario is an end-to-end description of observable behavior from the user's perspective. Not an assertion. Not a unit test. A user story with concrete, verifiable expectations.
 
-If a test passes immediately, delete your production code. Your test is wrong or your code was already there.
+If you write production code without a defined scenario, delete it. Define the scenario first.
+
+## Key Concepts
+
+### Scenario ≠ Test
+
+| | Scenario | Test |
+|---|---|---|
+| **Lives** | In the spec or external to codebase | In the codebase |
+| **Written as** | User story with observable behavior | Code assertion |
+| **Evaluates** | "Does this satisfy the user?" | "Does this pass?" |
+| **Vulnerable to** | Nothing (external holdout) | Reward hacking (agent rewrites test to match code) |
+| **Judges** | LLM + execution + human intuition | Boolean assertion |
+| **Example** | "4 friends split $100 + 20% tip → each pays $30" | `assert split(100,20,4) == 30.0` |
+
+Tests are implementation details of scenarios. A scenario may be validated by one test, many tests, LLM-as-judge, behavioral verification, or a combination.
+
+### Satisfaction ≠ Pass/Fail
+
+Traditional: "All tests pass" → Done (boolean)
+SDD: "Of all observed trajectories through all scenarios, what fraction satisfies the user?" → Convergence (probabilistic)
+
+Satisfaction considers:
+- Does the behavior serve the user's actual intent?
+- Would this work across many realistic uses, not just the tested ones?
+- Are error messages genuinely helpful, not just present?
+- Is the rounding fair, not just technically correct?
+- Would a human reviewing this say "yes, this is right"?
+
+### Code as Opaque Weights
+
+Code is treated analogously to ML model weights: internal structure is opaque. Correctness is inferred exclusively from externally observable behavior. You never validate by reading source code — you validate by observing what the code does.
 
 ## When to Use
 
-**Always.** TDD applies to all implementation:
+**Always.** SDD applies to all implementation:
 - New features
 - Bug fixes
-- Refactoring (existing tests cover, then modify)
+- Refactoring (existing scenarios still satisfied, then modify)
 - API changes
 - Configuration changes that affect behavior
 
 **Exceptions (discuss with your human partner first):**
 - Pure UI layout with no logic
 - One-line config changes with no behavioral impact
-- Exploratory spikes (but spike code gets deleted, then rebuilt with TDD)
+- Exploratory spikes (but spike code gets deleted, then rebuilt with SDD)
 
-## Red-Green-Refactor
+## Scenario→Satisfy→Refactor
 
 ```mermaid
 graph LR
-    A[Write Test] --> B{Test Fails?}
-    B -->|Yes — RED| C[Write Minimal Code]
-    B -->|No| D[DELETE production code<br/>Fix the test]
-    D --> A
-    C --> E{Test Passes?}
-    E -->|Yes — GREEN| F[Refactor]
-    E -->|No| C
-    F --> G{Tests Still Pass?}
-    G -->|Yes| H[Next Test]
-    G -->|No| I[Undo Refactor]
-    I --> F
-    H --> A
+    A[Define Scenario] --> B[Write Code]
+    B --> C{Behavior Satisfies?}
+    C -->|No| B
+    C -->|Yes| D[Refactor]
+    D --> E{Still Satisfied?}
+    E -->|Yes| F[Next Scenario]
+    E -->|No| G[Undo Refactor]
+    G --> D
+    F --> A
 ```
 
-### RED — Write a Failing Test
+### SCENARIO — Define Observable Behavior
 
-Write one test. Run it. Watch it fail.
+Articulate one end-to-end user story before writing any code.
 
 **You MUST:**
-1. Write the test BEFORE any production code
-2. Run the test
-3. Verify it fails
-4. Verify it fails for the RIGHT reason
+1. Write the scenario BEFORE any production code
+2. Express it as observable behavior from the user's perspective
+3. Include concrete values (inputs and expected outputs)
+4. Consider what would genuinely satisfy the user, not just what passes
 
-**Gate Function — Verify RED:**
+**Convergence Gate — Verify SCENARIO:**
 ```
-□ Test exists and is syntactically valid
-□ Test was executed (not just written)
-□ Test FAILED (red output observed)
-□ Failure reason matches expectation (not import error, not syntax error)
+□ Scenario is defined as a user story with observable behavior
+□ Scenario uses concrete values (not abstract placeholders)
+□ Scenario describes EXTERNAL behavior (not internal implementation)
+□ Scenario resists reward hacking (can't be trivially satisfied by `return True`)
+□ Scenario considers user satisfaction, not just technical correctness
 ```
 
-If ANY gate fails, you cannot proceed to GREEN.
+If ANY gate fails, you cannot proceed to SATISFY.
 
 <Good>
-- Test fails with "function not defined" — expected for new function
-- Test fails with "expected 5, got undefined" — expected for unimplemented logic
-- Test fails with "expected error to be thrown" — expected for missing validation
+- "A group of 4 friends splits a $100 bill with 20% tip — each person pays $30.00"
+- "A solo diner with a $47.50 bill and 18% tip pays $56.05 total"
+- "Splitting among 0 people tells the user 'At least one person required'"
+- "When 3 people split $115 total, each pays $38.34 (rounded up so nobody underpays)"
 </Good>
 
 <Bad>
-- Test fails with "SyntaxError" — fix your test, this is not a valid RED
-- Test fails with "ModuleNotFoundError" — fix imports, this is not a valid RED
-- Test passes immediately — delete production code, fix your test
-- Test was not executed — you skipped the gate
+- "Test that split_bill returns correct values" — too vague, no concrete behavior
+- "assert split_bill(100, 20, 4) == 30.0" — this is an assertion, not a scenario
+- "The function should work correctly" — no observable behavior defined
+- "Error handling works" — what does the user experience?
 </Bad>
 
-### GREEN — Write Minimal Code to Pass
+### SATISFY — Converge Until Behavior Satisfies Intent
 
-Write the LEAST amount of code that makes the test pass. Nothing more.
+Write code and iterate until the scenario's observable behavior genuinely satisfies the user's intent.
 
 **You MUST:**
-1. Write ONLY enough code to pass the current failing test
-2. Not anticipate future tests
-3. Not optimize
-4. Run the test and verify it passes
+1. Write code that addresses the scenario's observable behavior
+2. Validate through execution (run tests, scripts, or behavioral checks)
+3. Ask: "Would this genuinely satisfy a user?" — not just "Does this pass?"
+4. Consider edge cases that the scenario implies but doesn't explicitly state
+5. Handle floating-point, rounding, and display concerns proactively
 
-**Gate Function — Verify GREEN:**
+**Convergence Gate — Verify SATISFY:**
 ```
-□ Production code was written AFTER the failing test
-□ Code is minimal (no extra functionality)
-□ Test was re-executed (not assumed to pass)
-□ Test PASSED (green output observed)
-□ All previous tests still pass
+□ Code was written AFTER the scenario was defined
+□ Behavior was validated through execution (not just reading code)
+□ Validation output was observed (not assumed)
+□ All previous scenarios remain satisfied
+□ User would find this behavior genuinely satisfactory (not just technically passing)
 ```
 
 If ANY gate fails, you cannot proceed to REFACTOR.
 
 <Good>
-- Hardcoding a return value when only one test case exists
-- Using the simplest possible algorithm
-- Skipping error handling until a test demands it
-- Returning early with a constant if that's all the test requires
+- Running the test and observing the scenario's expected values match
+- Noticing that tip_amount=8.549999999999999 doesn't satisfy "pays $8.55" and fixing proactively
+- Adding `round()` because a user expects clean dollar amounts, even if no test demands it
+- Considering "what if they tip 200%?" because generous tippers exist
 </Good>
 
 <Bad>
-- Implementing the "full" solution in one step
-- Adding error handling no test requires yet
-- Optimizing before you have a passing test
-- Writing code for the next test case
+- Writing `return True` to pass an assertion — reward hacking
+- Writing code that passes the test but produces 8.549999999999999 for a monetary value
+- Ignoring floating-point because "the test passes with these specific values"
+- Implementing only the happy path when the scenario implies error handling
 </Bad>
 
-### REFACTOR — Clean Up, Keep Green
+### REFACTOR — Improve Without Changing Observable Behavior
 
-Improve the code without changing behavior. Tests must stay green throughout.
+Improve the code without changing any scenario's observable behavior. All scenarios must remain satisfied throughout.
 
 **You MUST:**
-1. Run tests BEFORE refactoring (establish baseline)
+1. Run validation BEFORE refactoring (establish baseline)
 2. Make one small change at a time
-3. Run tests AFTER each change
-4. If any test fails, undo the last change immediately
+3. Run validation AFTER each change
+4. If any scenario breaks, undo the last change immediately
 
 **Refactoring targets:**
 - Remove duplication (DRY)
@@ -140,171 +171,210 @@ Improve the code without changing behavior. Tests must stay green throughout.
 - Simplify conditionals (readability)
 - Extract methods (single responsibility)
 - Align with codebase conventions
+- Add type annotations for clarity
 
 **You MUST NOT:**
-- Add new functionality (that requires a new RED)
+- Add new functionality (that requires a new SCENARIO)
 - Change external behavior
-- Skip running tests between changes
+- Skip validation between changes
 
 ### Repeat
 
-Pick the next test case. Return to RED.
+Define the next scenario. Return to SCENARIO.
 
-## Good Tests
+## Good Scenarios
 
 | Quality | Good | Bad |
 |---------|------|-----|
-| **Tests behavior** | `test_deposit_increases_balance` | `test_deposit_calls_setter` |
-| **One assertion concept** | Assert balance changed | Assert balance changed AND log written AND event fired |
-| **Independent** | Each test creates its own data | Tests share state, order matters |
-| **Readable** | Arrange-Act-Assert clearly separated | 50 lines of setup, assertion buried |
-| **Fast** | Runs in milliseconds | Hits network, database, filesystem |
-| **Deterministic** | Same result every run | Fails on Tuesdays, passes on retry |
-| **Tests edge cases** | Empty input, null, boundary values | Only happy path |
+| **Describes user experience** | "User deposits $100, balance shows $100" | "deposit calls setter with 100" |
+| **Concrete values** | "$47.50 bill, 18% tip, 1 person → $56.05" | "bill with tip split among people" |
+| **End-to-end** | "Submit form → see confirmation page" | "validator returns true" |
+| **Resistant to gaming** | "Nobody underpays when splitting" | "assert per_person > 0" |
+| **Considers satisfaction** | "Error message tells user WHAT went wrong" | "raises ValueError" |
+| **Independent** | Each scenario has its own context | Scenarios share state |
+| **Covers edges** | "Empty cart → 'Add items first'" | Only happy path |
 
-## Why Order Matters
+## Why Scenarios Before Code
 
-**Why not write tests after?**
+**Why not write scenarios after?**
 
-1. **Tests after code test your implementation, not your requirements.** You unconsciously write tests that match what you built, not what you should have built.
+1. **Scenarios after code describe what you built, not what should satisfy.** You unconsciously write scenarios that match your implementation, missing what the user actually needs.
 
-2. **Tests after code miss edge cases.** When you write the test first, you think about what SHOULD happen. After code, you think about what DOES happen.
+2. **Scenarios after code miss semantic edge cases.** When you define the scenario first, you think about what the user EXPERIENCES. After code, you think about what the code DOES.
 
-3. **Tests after code become a chore.** "I'll write them later" becomes "I'll write them never." Tests first are a design tool; tests after are a tax.
+3. **Scenarios before code prevent reward hacking.** The agent can't rewrite a pre-defined scenario to match broken code. The scenario is the holdout set.
 
-4. **Tests after code don't drive design.** TDD forces simple interfaces because you experience the API as a consumer first. Tests after code accept whatever interface emerged.
+4. **Scenarios before code drive holistic design.** SDD forces you to think about the complete user experience (rounding, error messages, display) before the first line of code.
+
+## Scenarios and Tests: The Relationship
+
+Scenarios are specifications. Tests are one mechanism for validating them.
+
+```
+Scenario: "4 friends split $100 + 20% tip → each pays $30.00"
+    ↓ validated by
+Test: def test_group_split():
+         result = split_bill(100.0, 20.0, 4)
+         assert result["per_person"] == 30.0
+    ↓ but satisfaction goes beyond
+Plus: floating-point correctness, round(), display, what if 3 people?
+```
+
+Tests implement scenarios. But satisfaction goes beyond what tests check:
+- A test might pass while the code produces 8.549999999999999 for a monetary value
+- A test might pass with `return True` (reward hacking)
+- A test might check the happy path but miss edge cases the scenario implies
+
+**The scenario is the authority. The test is a tool.**
 
 ## Common Rationalizations
 
 | Rationalization | Reality |
 |----------------|---------|
-| "I'll write the test right after" | You won't. And if you do, it'll confirm your code, not challenge it. |
-| "This is too simple to test" | Simple code has edge cases. Simple tests are fast to write. |
-| "I need to see the shape first" | That's a spike. Delete the spike, then TDD. |
-| "Tests slow me down" | Tests slow you down NOW. Bugs slow you down MORE later. |
-| "The framework makes TDD hard" | Test the logic, not the framework. Extract testable units. |
-| "I'm just refactoring" | Refactoring requires existing tests. If none exist, write them first. |
-| "It's just a config change" | If it changes behavior, it needs a test. If it doesn't, why change it? |
-| "I know this works" | You know it works NOW. Tests prove it works TOMORROW. |
-| "The test would be trivial" | Trivial tests catch trivial bugs. Trivial bugs cause outages. |
-| "I need to prototype first" | Prototype ≠ production. Delete prototype, TDD the real thing. |
-| "Mocking is too complex here" | Complex mocking = complex coupling. Simplify the design first. |
+| "I'll define the scenario after coding" | You'll describe what you built, not what satisfies. |
+| "This is too simple for a scenario" | Simple features have edge cases. Simple scenarios are fast to write. |
+| "I need to see the shape first" | That's a spike. Delete the spike, then SDD. |
+| "Scenarios slow me down" | Scenarios save time by preventing semantic bugs that tests miss. |
+| "The framework makes scenarios hard" | Scenario = user story. If you can't describe what the user experiences, you don't understand the feature. |
+| "I'm just refactoring" | Refactoring requires existing scenarios. If none exist, define them first. |
+| "I know this satisfies" | You know NOW. Scenarios prove it satisfies TOMORROW. |
+| "The assertion would be trivial" | Trivial assertions miss semantic bugs (floating-point, rounding, display). |
+| "I need to prototype first" | Prototype ≠ production. Delete prototype, SDD the real thing. |
 
 ## Red Flags — STOP and Start Over
 
 If you catch yourself:
-- Writing production code without a failing test
-- Writing multiple tests before any production code
-- Making a test pass by changing the test instead of writing code
-- Writing "just a little more" code beyond what the test requires
-- Skipping the test run ("I know it passes")
-- Writing tests that test mock behavior instead of real behavior
-- Feeling the test is "too hard to write" (design smell — simplify the interface)
+- Writing production code without a defined scenario
+- Defining scenarios that describe implementation instead of user experience
+- Satisfying a scenario by gaming the assertion instead of implementing real behavior
+- Writing "just a little more" code beyond what the scenario requires
+- Skipping validation ("I know it satisfies")
+- Defining scenarios so narrow they can't catch semantic bugs
 - Rationalizing why THIS case is an exception
+- Ignoring floating-point, rounding, or display concerns in monetary/numeric scenarios
 
-**ALL mean: Delete. Start over with TDD.**
+**ALL mean: Delete. Start over with SDD.**
 
 ## Your Human Partner's Signals
 
 **Watch for these redirections:**
-- "Did you run the test?" — You skipped the gate function
-- "Why did you write that code?" — You wrote code without a failing test
-- "That's not minimal" — Your GREEN phase has too much code
-- "Test first" — You're implementing before testing
+- "Does this satisfy the user?" — You're optimizing for assertion-passing, not satisfaction
+- "What's the scenario?" — You wrote code without defining the user story
+- "That's not minimal" — Your SATISFY phase has too much code
+- "Scenario first" — You're implementing before defining behavior
 - "Delete it" — Your spike should not become production code
-- "What does the test say?" — You're debugging by reading code instead of running tests
+- "Would a user accept that?" — Your code passes tests but produces unsatisfying behavior
 
-**When you see these:** STOP. Return to RED.
+**When you see these:** STOP. Return to SCENARIO.
 
 ## Example: Bug Fix
 
 **Bug:** `calculate_discount(100, 0.5)` returns `150` instead of `50`.
 
-**RED:**
+**SCENARIO:**
+"A customer buys a $100 item with 50% discount — they pay $50."
+
+**SATISFY:**
 ```python
-def test_calculate_discount_applies_percentage():
+def test_customer_gets_half_price():
     result = calculate_discount(100, 0.5)
-    assert result == 50  # 50% discount on 100
+    assert result == 50  # Customer pays $50 for 50% discount
 ```
 Run → FAILS: `AssertionError: 150 != 50`
-Gate: Failure is for the right reason (wrong calculation, not import error). ✓
+Gate: Behavior doesn't satisfy scenario (customer would pay $150 instead of $50). ✓
 
-**GREEN:**
 ```python
-def calculate_discount(price, percentage):
-    return price * (1 - percentage)  # Was: price * (1 + percentage)
+def calculate_discount(price, discount_rate):
+    return price * (1 - discount_rate)  # Was: price * (1 + discount_rate)
 ```
 Run → PASSES ✓
-Gate: Minimal fix, only changed the operator. ✓
+Gate: Customer now pays $50 for 50% discount — satisfies intent. ✓
 
 **REFACTOR:**
 ```python
-def calculate_discount(price, discount_rate):
+def calculate_discount(price: float, discount_rate: float) -> float:
     """Apply discount rate to price. Rate is 0-1 where 0.5 = 50% off."""
-    return price * (1 - discount_rate)
+    return round(price * (1 - discount_rate), 2)
 ```
 Run → PASSES ✓
-Gate: Renamed parameter for clarity, added docstring, behavior unchanged. ✓
+Gate: Added type hints, docstring, and round() for monetary precision — behavior unchanged but more robust for real use. ✓
+
+## Example: New Feature
+
+**Feature:** Split a restaurant bill among friends.
+
+**SCENARIO 1:** "4 friends split a $100 bill with 20% tip — each pays $30.00"
+**SCENARIO 2:** "Solo diner with $47.50 bill and 18% tip pays $56.05"
+**SCENARIO 3:** "3 people split $115 total — each pays $38.34 (rounded up, nobody underpays)"
+**SCENARIO 4:** "Splitting among 0 people → 'At least one person required'"
+
+**SATISFY (iterating through scenarios):**
+1. Define SCENARIO 1 as test → write minimal split_bill → passes
+2. Define SCENARIO 2 as test → requires tip rounding for monetary precision → add `round()` → passes
+3. Define SCENARIO 3 as test → requires ceiling for "nobody underpays" → add `math.ceil` → passes
+4. Define SCENARIO 4 as test → requires validation → add ValueError → passes
+
+**Notice:** Scenario 2 naturally drove the `round()` addition because "pays $56.05" is a statement about what the user sees, not what the assertion checks. A test-first approach might have missed this because `assert tip == 8.549999999999999` would never be written.
 
 ## Verification Checklist
 
 Before claiming implementation is complete:
 
 ```
-□ Every production function has at least one test
-□ Every test was written BEFORE its corresponding production code
-□ Every test was observed to FAIL before production code was written
-□ Every test was observed to PASS after production code was written
-□ All tests pass in a single run (no order dependency)
-□ No test tests mock behavior instead of real behavior
-□ Edge cases are covered (null, empty, boundary, error)
-□ Refactoring was done with tests green throughout
+□ Every production function is covered by at least one scenario
+□ Every scenario was defined BEFORE its corresponding production code
+□ Every scenario was validated through execution (not assumed)
+□ All scenarios satisfy simultaneously (no order dependency)
+□ Satisfaction goes beyond assertion-passing (floating-point, display, UX considered)
+□ Edge cases from scenarios are covered (null, empty, boundary, error)
+□ Refactoring was done with all scenarios satisfied throughout
+□ No scenario can be trivially satisfied by reward hacking
 ```
 
 ## When Stuck
 
 | Problem | Solution |
 |---------|----------|
-| Can't figure out what test to write | Reread the requirement. What's the simplest behavior you need? |
-| Test is too complex to write | Interface is too complex. Simplify the design. |
+| Can't figure out what scenario to define | Reread the requirement. What's the simplest thing a user would experience? |
+| Scenario is too complex | Break into smaller user stories. One behavior per scenario. |
 | Too many things to mock | Too much coupling. Extract and inject dependencies. |
-| Test passes immediately | Your production code already handles this. Write a different test or delete redundant code. |
-| Can't make test pass without big change | You skipped steps. Write a simpler test that requires less code. |
-| Tests are slow | Move logic to unit-testable functions. Integration tests for boundaries only. |
-| Not sure if RED failure is "right" | Right = tests your logic. Wrong = infrastructure error (imports, syntax, config). |
+| Scenario satisfied immediately | Your code already handles this. Define a different scenario or verify it's genuinely satisfying. |
+| Can't satisfy without big change | You skipped steps. Define a simpler scenario that requires less code. |
+| Validation is slow | Move logic to unit-level scenarios. Integration scenarios for boundaries only. |
+| Not sure if behavior satisfies | Ask: "Would the user accept this?" If unsure, define the scenario more concretely. |
 
 ## Debugging Integration
 
 When a bug is found:
 
-1. **Write a failing test** that reproduces the bug (RED)
-2. **Fix the bug** with minimal code change (GREEN)
+1. **Define a scenario** that describes the broken user experience (SCENARIO)
+2. **Fix the bug** until the scenario is satisfied (SATISFY)
 3. **Refactor** if needed (REFACTOR)
-4. The failing test becomes a regression test permanently
+4. The scenario's test becomes a regression guard permanently
 
-Never fix a bug without first writing a test that fails because of that bug.
+Never fix a bug without first defining a scenario that describes what the user should experience.
 
-For complex bugs, invoke the systematic-debugging skill first to find root cause, then return here for the TDD fix cycle.
+For complex bugs, invoke the systematic-debugging skill first to find root cause, then return here for the SDD fix cycle.
 
 ## Quality Integration
 
-After all tests pass and refactoring is complete:
+After all scenarios are satisfied and refactoring is complete:
 
 1. **Invoke `code-reviewer`** — validates against requirements, checks for bugs, security issues
 2. **Invoke `code-simplifier`** — reduces complexity, removes redundancy while preserving function
 
 Address Critical/Important issues from review before claiming completion.
 
-## Testing Anti-Patterns
+## Validation Anti-Patterns
 
-See `references/testing-anti-patterns.md` for detailed coverage of:
-- Mock behavior testing (testing what mocks do, not what code does)
-- Test-only methods in production code
-- Incomplete mocks that hide real failures
+See `references/validation-anti-patterns.md` for detailed coverage of:
+- Reward hacking (satisfying assertions without real behavior)
+- Mock-only validation (testing what mocks do, not what code does)
+- Narrow assertions that miss semantic bugs
 - Structural and process anti-patterns
 
 ## Related
 
 - **sop-code-assist** — Orchestrates the full implementation workflow; invokes this skill at Step 4
-- **verification-before-completion** — Evidence-based completion gate; use before claiming done
-- **systematic-debugging** — Root cause analysis; invoke when bugs are complex before TDD fix cycle
+- **verification-before-completion** — Satisfaction-based completion gate; use before claiming done
+- **systematic-debugging** — Root cause analysis; invoke when bugs are complex before SDD fix cycle

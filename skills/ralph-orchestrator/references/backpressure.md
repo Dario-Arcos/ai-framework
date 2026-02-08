@@ -189,7 +189,7 @@ Define expectations in AGENTS.md:
 ### Behavior by Level
 
 - **Prototype** - Fast iteration, skip backpressure gates
-- **Production** - TDD mandatory, all gates must pass
+- **Production** - SDD mandatory, all gates must pass
 - **Library** - Full coverage, documentation, edge cases
 
 **Set in:** `AGENTS.md` -> Quality Level section

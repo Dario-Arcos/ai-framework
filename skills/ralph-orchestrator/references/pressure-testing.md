@@ -504,7 +504,7 @@ Found:
 
 Ralph-loop quality gates:
 - GATE_TEST: Validates implementations don't break existing functionality
-- TDD workflow: Write test → implement → pass test
+- SDD workflow: Write scenario → implement → satisfy scenario
 - Circuit breaker: Exits after N consecutive failures
 
 Without tests:

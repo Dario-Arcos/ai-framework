@@ -55,15 +55,15 @@ Técnicas con resultados medidos:
 - Multi-approach analysis: **+57.7% calidad** (ATLAS study, 2024)
 :::
 
-::: info Test-Driven Development (Kent Beck)
-Red-green-refactor enforcement:
+::: info Scenario-Driven Development (inspired by StrongDM Software Factory)
+Scenario-satisfy-refactor enforcement:
 - **40-80% reducción** en bugs (Microsoft Research, 2008)
-- Prevención de regresiones mediante test-first
+- Prevención de regresiones mediante scenario-first
 :::
 
 ::: info Constitutional AI (Anthropic, 2022)
 Principios como enforcement automático:
-- Constraints no negociables (complexity budgets, TDD, reuse-first)
+- Constraints no negociables (complexity budgets, SDD, reuse-first)
 - Separation of powers (Product, Design, Engineering, Security)
 - Audit trail para decisiones arquitectónicas
 :::
@@ -77,7 +77,7 @@ El framework aplica enforcement en tres capas:
 ::: details Constitutional Layer
 **Invariantes aplicadas automáticamente:**
 - Value/complexity ≥2x (beneficio debe justificar costo)
-- TDD mandatory (tests antes de código)
+- SDD mandatory (scenarios antes de código)
 - Complexity budgets (S≤80, M≤250, L≤600 líneas netas)
 :::
 
@@ -113,7 +113,7 @@ Production: Token expiration no validada → security breach  // [!code error]
 
 ```plaintext [Con Framework]
 Request: "Implementa JWT auth"
-TDD gate: Test escrito antes de implementación  // [!code highlight]
+SDD gate: Scenario definido antes de implementación  // [!code highlight]
 Security review: Detecta falta de token expiration → blocker  // [!code highlight]
 Constitutional check: +120 líneas (Size M, dentro de budget)  // [!code highlight]
 Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
@@ -122,7 +122,7 @@ Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 :::
 
 **Prevención verificada:**
-- Tests ausentes (TDD blocker)
+- Scenarios ausentes (SDD blocker)
 - Vulnerabilidades básicas (security review pre-merge)
 - Over-engineering (complexity budget)
 - Arquitectura inconsistente (agent orchestration)
@@ -143,7 +143,7 @@ Developer → "Objetivo: Sistema de autenticación"
 Framework + Claude:
   ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)  // [!code highlight]
   ├─ Multi-approach ROI (beneficio vs complejidad)  // [!code highlight]
-  ├─ Implementación TDD (tests → código)  // [!code highlight]
+  ├─ Implementación SDD (scenarios → código)  // [!code highlight]
   ├─ Quality gates (security + code review + constitutional)  // [!code highlight]
   └─ Despliegue (PR auto-creado, reviews aprobados)  // [!code highlight]
 
@@ -175,7 +175,7 @@ Idea → Claude genera → Developer corrige → Deploy (quizás)
 ```plaintext [AI Framework]
 Idea → Diseño estructurado (minutos)  // [!code highlight]
      → Plan de implementación (minutos)  // [!code highlight]
-     → Ejecución con TDD (horas)  // [!code highlight]
+     → Ejecución con SDD (horas)  // [!code highlight]
      → Dual review → /pullrequest → Despliegue  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]
@@ -188,7 +188,7 @@ Idea → Diseño estructurado (minutos)  // [!code highlight]
 
 | Aspecto       | Sin Framework | Con Framework              |
 | ------------- | ------------- | -------------------------- |
-| Tests         | A veces       | Siempre (TDD enforced)     |
+| Tests         | A veces       | Siempre (SDD enforced)     |
 | Seguridad     | Ad-hoc        | Automática (scanning)      |
 | Escalabilidad | Se degrada    | Se mantiene (patterns)     |
 | Compliance    | Manual        | Automático (budgets)       |

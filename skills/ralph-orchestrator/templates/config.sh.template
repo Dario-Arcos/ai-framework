@@ -13,7 +13,7 @@
 # QUALITY LEVEL
 # ─────────────────────────────────────────────────────────────────
 # prototype: Skip tests, fast iteration, commit freely
-# production: TDD mandatory, all gates must pass (DEFAULT)
+# production: SDD mandatory, all gates must pass (DEFAULT)
 # library: Full coverage + docs + edge cases + examples
 
 QUALITY_LEVEL="production"

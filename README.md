@@ -14,7 +14,7 @@ Without structure, Claude Code's power gets wasted: code that "works" but fails 
 
 **This framework transforms AI from assistant to autonomous engineer:**
 
-- **Research-backed governance** — Anthropic context engineering, DeepMind LLM optimization, TDD enforcement
+- **Research-backed governance** — Anthropic context engineering, DeepMind LLM optimization, SDD enforcement
 - **Constitutional compliance** — Value/complexity ≥2x, complexity budgets (S≤80|M≤250|L≤600 Δ LOC), enforced automatically
 - **Production-ready output** — Tests from day 1, vulnerability scanning, coherent architecture
 - **Orchestrated execution** — Specialized agents, workflow commands, lifecycle hooks, proven patterns working in concert
@@ -121,7 +121,7 @@ Framework enforces **5 non-negotiable principles**:
 | --------------------- | ---------------------------------------------------- |
 | **AI-First**          | Everything executable by AI with human oversight     |
 | **Value/Complexity**  | ROI ≥ 2x implementation complexity                   |
-| **Test-First**        | TDD mandatory (Red-Green-Refactor)                   |
+| **Scenario-First**    | SDD mandatory (Scenario-Satisfy-Refactor)            |
 | **Complexity Budget** | S≤80LOC \| M≤250LOC \| L≤600LOC (net change)         |
 | **Reuse First**       | Library-first, avoid abstractions <30% justification |
 

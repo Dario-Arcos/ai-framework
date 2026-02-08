@@ -68,7 +68,7 @@ specs/{goal}/implementation/{task_name}/
 1. Read guardrails.md (Signs from previous iterations)
 2. Read scratchpad.md (session state)
 3. Select next incomplete task from plan.md
-4. Implement with TDD (RED → GREEN → REFACTOR)
+4. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
 5. Run quality gates
 6. Update state files
 7. Emit confession + task_completed signals
@@ -90,8 +90,8 @@ Direct tool output and AskUserQuestion. No special signals needed.
 |--------|---------|--------|
 | `> confession:` | Task completion status | `> confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof]` |
 | `> task_completed:` | Mark task done | `> task_completed: [Task name from plan.md]` |
-| `> tdd:red` | TDD tracking | `> tdd:red {test_name}` |
-| `> tdd:green` | TDD tracking | `> tdd:green {test_name}` |
+| `> sdd:scenario` | SDD tracking | `> sdd:scenario {test_name}` |
+| `> sdd:satisfy` | SDD tracking | `> sdd:satisfy {test_name}` |
 | `<promise>COMPLETE</promise>` | All tasks done | Requires TWO consecutive signals for termination |
 
 **Exit codes** (from loop.sh):

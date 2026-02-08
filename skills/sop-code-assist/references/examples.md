@@ -14,8 +14,8 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 **Flow:**
 1. **Setup**: Creates `specs/logout-button/implementation/logout-button/`
 2. **Explore**: Analyzes navbar component, existing auth patterns
-3. **Plan**: Designs test strategy (button renders, click logs out, redirect works)
-4. **Code**: RED -> GREEN -> REFACTOR cycle
+3. **Plan**: Designs scenario strategy (button renders, click logs out, redirect works)
+4. **Code**: SCENARIO -> SATISFY -> REFACTOR cycle
 5. **Commit**: `feat(auth): add logout button to navbar`
 
 **Artifacts Created:**
@@ -40,7 +40,7 @@ specs/{goal}/implementation/{task_name}/
 1. **Setup**: Reads task file context section, creates planning directory
 2. **Explore**: Follows task's Context section for codebase analysis
 3. **Plan**: Uses task's Implementation Guidance, creates test plan
-4. **Code**: Implements per Specification section with TDD
+4. **Code**: Implements per Specification section with SDD
 5. **Commit**: Conventional commit, marks task as COMPLETED
 
 **Key Difference:** The .code-task.md file provides structured requirements, reducing the exploration phase and enabling autonomous mode execution.
@@ -62,8 +62,8 @@ specs/{goal}/implementation/{task_name}/
    > - What should happen for empty input - return false or raise an error?
    > - Are there specific edge cases you want to handle (unicode, plus addressing)?"
 
-2. **Test Strategy Approval:**
-   > "Here's my proposed test strategy:
+2. **Scenario Strategy Approval:**
+   > "Here's my proposed scenario strategy:
    > - 5 unit tests for valid email formats
    > - 4 unit tests for invalid formats
    > - 2 edge case tests (unicode, plus addressing)
@@ -116,8 +116,8 @@ mode="autonomous"
 1. **Setup**: Creates documentation structure
 2. **Explore**: Identifies API client patterns
 3. **Plan**: Designs cache invalidation strategy
-4. **Code (RED)**: Test fails as expected
-5. **Code (GREEN)**: Implementation fails - missing dependency
+4. **Code (SCENARIO)**: Test fails as expected
+5. **Code (SATISFY)**: Implementation fails - missing dependency
 
 **Error Handling (Interactive):**
 > "The build failed with:

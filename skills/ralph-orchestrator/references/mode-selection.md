@@ -71,7 +71,7 @@ graph TD
 | **Files** | ≤ 2 | ≥ 3 |
 | **Duration** | < 30 min | > 1 hour |
 | **Context** | < 50K tokens | > 100K tokens |
-| **Tests** | None or simple | TDD required |
+| **Scenarios** | None or simple | SDD required |
 | **Overnight** | No | Possible |
 | **Quality gates** | Not needed | Critical |
 
@@ -172,7 +172,7 @@ graph LR
 ```
 ✓ Add authentication system with JWT
   - Multiple files (controllers, middleware, tests)
-  - TDD approach required
+  - SDD approach required
   - Clear acceptance criteria
   - 3-8 hours estimated
 

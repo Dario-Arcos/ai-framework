@@ -68,14 +68,14 @@ ralph_parse_task_name() {
     grep -o '> task_completed: .*' "$output_file" 2>/dev/null | sed 's/> task_completed: //' | tail -1 || echo "[no marker]"
 }
 
-ralph_parse_tdd_signals() {
+ralph_parse_sdd_signals() {
     local output_file="$1"
-    local red_count green_count
+    local scenario_count satisfy_count
 
-    red_count=$(grep -c "> tdd:red" "$output_file" 2>/dev/null || echo 0)
-    green_count=$(grep -c "> tdd:green" "$output_file" 2>/dev/null || echo 0)
+    scenario_count=$(grep -c "> sdd:scenario" "$output_file" 2>/dev/null || echo 0)
+    satisfy_count=$(grep -c "> sdd:satisfy" "$output_file" 2>/dev/null || echo 0)
 
-    echo "$red_count $green_count"
+    echo "$scenario_count $satisfy_count"
 }
 
 ralph_parse_confidence() {

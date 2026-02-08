@@ -76,7 +76,7 @@ Describe lo que quieres en lenguaje natural:
 "Implementa validación de email en el formulario de registro"
 ```
 
-Claude activa automáticamente los skills relevantes (TDD, code review, etc).
+Claude activa automáticamente los skills relevantes (SDD, code review, etc).
 
 Para commits y PRs:
 

@@ -8,7 +8,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ### When to Use Interactive Mode
 
-- **Learning:** User wants to understand the TDD process
+- **Learning:** User wants to understand the SDD process
 - **Uncertain Requirements:** Details may need clarification
 - **High Risk:** Changes affect critical systems
 - **New Domain:** Unfamiliar technology or patterns
@@ -46,7 +46,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 | Action | Interactive | Autonomous |
 |--------|-------------|------|
-| Test strategy | Present strategy for approval | Document strategy and proceed |
+| Scenario strategy | Present strategy for approval | Document strategy and proceed |
 | Test coverage | Discuss with user | Apply project defaults or 80% |
 | Implementation sequence | Ask for preferences | Use standard sequencing |
 | Risk identification | Discuss mitigations with user | Document risks and mitigations |
@@ -56,7 +56,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 | Action | Interactive | Autonomous |
 |--------|-------------|------|
 | Before each test | Explain what will be tested | Proceed directly |
-| Test failure (RED) | Confirm failure is expected | Log and continue if expected |
+| Test failure (SCENARIO) | Confirm failure is expected | Log and continue if expected |
 | Unexpected failure | Discuss with user | Attempt to resolve, document if stuck |
 | Implementation approach | Present options | Select most appropriate |
 | Refactoring decisions | Ask for approval | Apply standard refactoring patterns |
@@ -86,7 +86,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 
 ```markdown
 ## Asking for Confirmation
-"I've completed the test strategy. Here's the summary:
+"I've completed the scenario strategy. Here's the summary:
 - 5 unit tests covering core validation
 - 2 integration tests for API interaction
 - 3 edge case tests

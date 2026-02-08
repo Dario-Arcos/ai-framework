@@ -381,7 +381,7 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 | [monitoring-pattern.md](references/monitoring-pattern.md) | Dashboard, log reading, status |
 | [supervision-modes.md](references/supervision-modes.md) | Autonomous vs Checkpoint modes |
 | [configuration-guide.md](references/configuration-guide.md) | All config options |
-| [quality-gates.md](references/quality-gates.md) | Gate descriptions, TDD |
+| [quality-gates.md](references/quality-gates.md) | Gate descriptions, SDD |
 | [sop-integration.md](references/sop-integration.md) | How SOP skills connect |
 | [state-files.md](references/state-files.md) | File purposes and lifecycle |
 | [memories-system.md](references/memories-system.md) | Memory architecture overview |
@@ -405,5 +405,5 @@ Loop requires **TWO consecutive** `<promise>COMPLETE</promise>` signals before t
 | `sop-planning` | 3 | Research, design |
 | `sop-task-generator` | 4 | Task files |
 | `sop-reverse` | 2B | Investigation |
-| `sop-code-assist` | Workers | TDD implementation |
+| `sop-code-assist` | Workers | SDD implementation |
 

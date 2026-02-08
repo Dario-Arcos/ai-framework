@@ -45,7 +45,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `sop-reverse` | Investiga sistemas existentes | 1. Exploración (alternativa) |
 | `sop-planning` | Diseña solución detallada | 2. Diseño |
 | `sop-task-generator` | Genera .code-task.md files | 3. Planificación |
-| `sop-code-assist` | Implementa con TDD | 4. Ejecución |
+| `sop-code-assist` | Implementa con SDD | 4. Ejecución |
 
 ---
 
@@ -513,7 +513,7 @@ Convierte plans en `.code-task.md` files.
 
 ### sop-code-assist
 
-Implementa tasks con TDD: RED → GREEN → REFACTOR.
+Implementa tasks con SDD: SCENARIO → SATISFY → REFACTOR.
 
 **Output:** Código + tests + commits.
 
@@ -550,7 +550,7 @@ Indexa automáticamente tus sesiones. Busca por conceptos (semántica) o texto e
 
 ## Más skills
 
-- [Superpowers](./integrations.md#superpowers) — TDD, debugging, code review, worktrees
+- [Superpowers](./integrations.md#superpowers) — SDD, debugging, code review, worktrees
 - [skills.sh](https://skills.sh/) — Catálogo abierto con React, TypeScript, Stripe, etc.
 
 ---

@@ -73,18 +73,18 @@ If `specs/{goal}/implementation/{task}/blockers.md` exists with **Active Blocker
 The skill handles:
 - **Explore**: Analyze requirements, research patterns
 - **Plan**: Design test strategy
-- **Code**: TDD cycle (RED → GREEN → REFACTOR)
+- **Code**: SDD cycle (SCENARIO → SATISFY → REFACTOR)
 - **Commit**: Conventional commit
 
 The skill emits required markers:
-- `> tdd:red {test_name}` / `> tdd:green {test_name}`
+- `> sdd:scenario {scenario_name}` / `> sdd:satisfy {scenario_name}`
 - `> confession: objective=[...], met=[...], confidence=[...], evidence=[...]`
 - `> task_completed: [Task name]`
 
-**If skill unavailable:** Follow TDD manually:
-1. Write test → Run → MUST FAIL (RED)
-2. Write minimal code → Run → MUST PASS (GREEN)
-3. Refactor while keeping green
+**If skill unavailable:** Follow SDD manually:
+1. Write scenario → Run → MUST FAIL (SCENARIO)
+2. Write minimal code → Run → MUST PASS (SATISFY)
+3. Refactor while keeping satisfied
 
 ---
 
@@ -150,7 +150,7 @@ Update `@scratchpad.md` with:
 > task_completed: [Task name from plan]
 ```
 
-**Note:** Brackets `[]` are LITERAL. If skill was unavailable (fallback TDD), emit markers yourself.
+**Note:** Brackets `[]` are LITERAL. If skill was unavailable (fallback SDD), emit markers yourself.
 
 **Confidence thresholds:**
 | Range | Action |
@@ -164,7 +164,7 @@ Update `@scratchpad.md` with:
 
 **If skill completed successfully:** Skip—skill already committed.
 
-**If skill unavailable or fallback TDD used:**
+**If skill unavailable or fallback SDD used:**
 ```bash
 git add -A
 git commit -m "feat: [description]"

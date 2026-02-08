@@ -91,22 +91,22 @@ If any gate fails, worker must fix before proceeding.
 
 ---
 
-## TDD Gate Enforcement
+## SDD Gate Enforcement
 
 **Constraints:**
-- You MUST write tests before implementation in production/library mode because TDD ensures testable design
-- You MUST see test fail first (red) because passing tests prove nothing without failure
-- You MUST implement minimal code to pass (green) because over-implementation adds unnecessary complexity
-- You MUST refactor while green because refactoring on red risks breaking functionality
-- You MUST NOT skip TDD steps because gates reject work that bypasses the cycle
+- You MUST write scenarios before implementation in production/library mode because SDD ensures testable design
+- You MUST see scenario fail first (scenario) because passing scenarios prove nothing without failure
+- You MUST implement minimal code to satisfy (satisfy) because over-implementation adds unnecessary complexity
+- You MUST refactor while satisfied because refactoring on unsatisfied risks breaking functionality
+- You MUST NOT skip SDD steps because gates reject work that bypasses the cycle
 
-**TDD Cycle:**
-1. Test must exist before implementation
-2. Test must fail first (red)
-3. Implementation makes test pass (green)
-4. Refactor while green
+**SDD Cycle:**
+1. Scenario must be defined first
+2. Scenario must fail first (scenario)
+3. Implementation satisfies the scenario (satisfy)
+4. Refactor while satisfied
 
-Workers that skip TDD have their work rejected by gates.
+Workers that skip SDD have their work rejected by gates.
 
 ---
 

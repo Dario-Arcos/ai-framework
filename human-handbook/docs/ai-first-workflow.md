@@ -19,8 +19,8 @@ flowchart TB
     subgraph EXT["SUPERPOWERS (Plugin)"]
         direction TB
         WP[writing-plans] --> EP[executing-plans]
-        EP --> TDD[test-driven-development]
-        TDD --> FB[finishing-branch]
+        EP --> SDD[scenario-driven-development]
+        SDD --> FB[finishing-branch]
     end
 
     BR -.->|"continuar con"| EXT
@@ -111,7 +111,7 @@ Plugin externo con workflows de desarrollo estructurados.
 |-------|-------------|
 | `writing-plans` | Diseño aprobado, necesitas plan ejecutable |
 | `executing-plans` | Plan existe, ejecución en batches con review |
-| `test-driven-development` | Implementar cualquier código (RED→GREEN→REFACTOR) |
+| `scenario-driven-development` | Implementar cualquier código (SCENARIO→SATISFY→REFACTOR) |
 | `systematic-debugging` | Bug o comportamiento inesperado |
 | `verification-before-completion` | Antes de declarar "done" |
 | `finishing-a-development-branch` | Tasks completos, decidir integración |
@@ -313,7 +313,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 |-------|-----|
 | `writing-plans` | Plan ejecutable detallado |
 | `executing-plans` | Ejecución en batches con review |
-| `test-driven-development` | RED → GREEN → REFACTOR |
+| `scenario-driven-development` | SCENARIO → SATISFY → REFACTOR |
 | `systematic-debugging` | 4 fases: root cause primero |
 | `verification-before-completion` | Evidencia antes de claims |
 | `finishing-a-development-branch` | Tests → opciones → integración |

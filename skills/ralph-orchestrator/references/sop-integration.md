@@ -256,12 +256,12 @@ Output: specs/user-auth/design/detailed-design.md
 ### 5. sop-code-assist
 
 **Constraints:**
-- You MUST implement tests BEFORE implementation code because TDD ensures testability
+- You MUST implement scenarios BEFORE implementation code because SDD ensures testability
 - You MUST NOT place code in documentation directories because separation of concerns matters
 - You SHOULD use autonomous mode for batch processing because it reduces interruptions
 - You SHOULD use interactive mode for learning because it provides educational context
 
-**Purpose**: Execute code tasks using TDD workflow (Explore → Plan → Code → Commit)
+**Purpose**: Execute code tasks using SDD workflow (Explore → Plan → Code → Commit)
 
 **When invoked**: After sop-task-generator creates .code-task.md files
 
@@ -291,12 +291,12 @@ Output: specs/user-auth/design/detailed-design.md
 /sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="autonomous"
 ```
 
-**TDD Workflow**:
+**SDD Workflow**:
 ```
 1. Setup: Create artifacts, discover project context
 2. Explore: Analyze requirements, research patterns
 3. Plan: Design test strategy, plan implementation
-4. Code: RED → GREEN → REFACTOR cycle
+4. Code: SCENARIO → SATISFY → REFACTOR cycle
 5. Commit: Conventional commit with all changes
 ```
 
@@ -735,7 +735,7 @@ Typical cost breakdown for medium-sized feature:
 - Manual implementation: ~8 hours developer time
 - Ralph-loop: ~1 hour human time + ~3 hours autonomous
 - Cost: $2.90 vs $400+ developer cost
-- Quality: TDD enforced, all gates passed
+- Quality: SDD enforced, all gates passed
 
 ---
 

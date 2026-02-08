@@ -29,7 +29,7 @@ Ignore: src/generated/*, *.test.ts
 
 **Constraints:**
 - You MUST select ONE uncovered function per iteration because batch processing loses focus
-- You MUST apply TDD (test must fail first) because this validates test correctness
+- You MUST apply SDD (scenario must be defined first) because this validates scenario correctness
 - You MUST verify coverage increases because stagnant coverage indicates stuck loop
 
 ```markdown
@@ -38,7 +38,7 @@ Run: npm run coverage -- --reporter=json
 Parse coverage report, select ONE uncovered function.
 
 ## Phase 2: Write Test
-TDD still applies: test must fail first, then pass.
+SDD still applies: scenario must fail first, then pass.
 
 ## Phase 3: Validate
 Coverage must increase. If not -> Sign + exit.

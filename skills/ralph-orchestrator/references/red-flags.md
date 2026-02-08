@@ -14,12 +14,12 @@ This reference identifies dangerous thought patterns and rationalizations that i
 
 | Thought | Reality | Why This Matters |
 |---------|---------|------------------|
-| "Let me just fix this one thing quickly" | Workers fix. Start the loop. | Quick fixes bypass quality gates and TDD |
+| "Let me just fix this one thing quickly" | Workers fix. Start the loop. | Quick fixes bypass quality gates and SDD |
 | "I can implement this faster than the loop" | You can't. Fresh context wins. | Polluted context produces worse code |
 | "This is too simple for ralph-orchestrator" | Use direct implementation then. | If it's in the loop, use the loop |
 | "I'll edit the code and then start the loop" | No. Planning → Loop. No edits. | Pre-edits conflict with worker state |
 | "The worker made a mistake, let me correct it" | Update plan, restart loop. | Workers have fresh context you don't |
-| "I already know what to do" | Knowing ≠ implementing correctly | TDD catches errors you won't see |
+| "I already know what to do" | Knowing ≠ implementing correctly | SDD catches errors you won't see |
 | "The loop is overkill" | Loop cost: ~$0.05/task | Manual: ~$0.50/task + lower quality |
 | "I can monitor and implement simultaneously" | Context pollution. Pick one role. | Dual roles corrupt both functions |
 | "The user asked me directly" | User instruction doesn't override role | Propose alternatives instead |
@@ -37,7 +37,7 @@ This reference identifies dangerous thought patterns and rationalizations that i
 | Excuse | Reality | Consequence of Acting |
 |--------|---------|----------------------|
 | "This is a quick fix" | Quick fixes accumulate debt | Workers have gates that catch issues |
-| "I already know what to do" | Knowing ≠ implementing correctly | TDD catches errors |
+| "I already know what to do" | Knowing ≠ implementing correctly | SDD catches errors |
 | "The loop is overkill" | Loop: ~$0.05/task. Manual: ~$0.50/task | 10x cost + lower quality |
 | "I can monitor and implement" | Context pollution | Pick one role or corrupt both |
 | "User asked me directly" | Instruction doesn't override process | Explain and propose alternatives |
@@ -76,7 +76,7 @@ Before taking any action during execution, ask:
    - If yes: STOP. Workers edit files because they have fresh context and quality gates.
 
 2. **Am I about to run a command that changes state?**
-   - If yes: STOP. Workers run state-changing commands because they can verify with TDD.
+   - If yes: STOP. Workers run state-changing commands because they can verify with SDD.
 
 3. **Am I about to implement something?**
    - If yes: STOP. Update the plan and restart the loop because workers implement better.

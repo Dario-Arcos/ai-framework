@@ -226,12 +226,12 @@ while true; do
         # Parse output
         task_name=$(ralph_parse_task_name "$RALPH_CURRENT_OUTPUT")
 
-        # TDD signal tracking
-        tdd_signals=$(ralph_parse_tdd_signals "$RALPH_CURRENT_OUTPUT")
-        read -r red_count green_count <<< "$tdd_signals"
+        # SDD signal tracking
+        sdd_signals=$(ralph_parse_sdd_signals "$RALPH_CURRENT_OUTPUT")
+        read -r scenario_count satisfy_count <<< "$sdd_signals"
 
-        if [[ "$green_count" -gt 0 ]] && [[ "$red_count" -eq 0 ]]; then
-            ralph_log_warn "TDD warning: GREEN signals without RED phase"
+        if [[ "$satisfy_count" -gt 0 ]] && [[ "$scenario_count" -eq 0 ]]; then
+            ralph_log_warn "SDD warning: SATISFY signals without SCENARIO phase"
         fi
 
         # Confidence check

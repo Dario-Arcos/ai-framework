@@ -6,7 +6,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ---
 
-## Test fails after GREEN phase
+## Test fails after SATISFY phase
 
 **Symptom:** Tests passed, but after refactoring they fail
 
@@ -71,7 +71,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ---
 
-## Tests pass immediately (no RED phase)
+## Tests pass immediately (no SCENARIO phase)
 
 **Symptom:** New test passes without implementation
 
@@ -165,7 +165,7 @@ This reference covers common issues encountered during sop-code-assist execution
 **Fix:** Verify write permissions, manually update if needed
 
 **Progress.md MUST track:**
-- Each TDD cycle (RED, GREEN, REFACTOR)
+- Each SDD cycle (SCENARIO, SATISFY, REFACTOR)
 - Decisions made and rationale
 - Challenges encountered
 - Current checklist status

@@ -571,7 +571,7 @@ User: 1
 Claude: ¿Nivel de calidad?
 
 1. **Prototype** - Saltar gates, iteración rápida (para exploración)
-2. **Production** - TDD mandatory, todos los gates deben pasar (recomendado)
+2. **Production** - SDD mandatory, todos los gates deben pasar (recomendado)
 3. **Library** - Coverage completo + docs + edge cases (para código público)
 
 Responde con el número.
@@ -588,7 +588,7 @@ User: 2
 ```
 Claude: Configuración completa:
 - Modo: 100% AFK
-- Calidad: Production (TDD mandatory)
+- Calidad: Production (SDD mandatory)
 - Specs: specs/library-api/
 - Plan: 18 tareas
 
@@ -654,7 +654,7 @@ Completed:
   ✓ TASK-003: JWT authentication middleware
 
 Working:
-  ⏳ TASK-004: Register endpoint (TDD - red phase)
+  ⏳ TASK-004: Register endpoint (SDD - scenario phase)
 ═══════════════════════════════════════════════
 ```
 
@@ -792,7 +792,7 @@ Total: 32 files, ~1,350 LOC, 65 tests passing, 0 failures
 1. **ONE question at a time** - Discovery and planning were conversational, not overwhelming
 2. **Clear separation** - Planning (Interactive) vs Execution (Autonomous)
 3. **Fresh context per task** - Each of 18 tasks executed with clean context
-4. **Backpressure gates** - All commits had passing tests (TDD enforced)
+4. **Backpressure gates** - All commits had passing tests (SDD enforced)
 5. **Quality consistency** - Task 1 and Task 18 same quality (no context rot)
 
 ### Planning Quality Impact
@@ -867,7 +867,7 @@ Total: 32 files, ~1,350 LOC, 65 tests passing, 0 failures
 1. **Trust the process** - Planning felt long, but saved hours in execution
 2. **One question at a time** - User never felt overwhelmed
 3. **Monitor, don't implement** - Workers did better job with fresh context
-4. **Gates work** - TDD mandatory = 0 bugs in final code
+4. **Gates work** - SDD mandatory = 0 bugs in final code
 
 ### For Users
 
@@ -890,7 +890,7 @@ npm test
 
 # Create pull request
 git push origin feature/library-api
-gh pr create --title "feat: Library API" --body "Implements 18 tasks with TDD"
+gh pr create --title "feat: Library API" --body "Implements 18 tasks with SDD"
 
 # Or continue building
 /ralph-orchestrator  # Add more features using same process

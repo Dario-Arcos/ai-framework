@@ -17,7 +17,7 @@ Quick navigation for detailed documentation.
 |------|-------------|
 | [monitoring-pattern.md](monitoring-pattern.md) | How to monitor execution loops |
 | [supervision-modes.md](supervision-modes.md) | Autonomous / Checkpoint modes |
-| [quality-gates.md](quality-gates.md) | TDD and quality gate requirements |
+| [quality-gates.md](quality-gates.md) | SDD and quality gate requirements |
 | [backpressure.md](backpressure.md) | Circuit breakers and rate limiting |
 
 ## State & Knowledge
@@ -71,7 +71,7 @@ references/
 ├── Execution
 │   ├── monitoring-pattern.md        # Loop monitoring
 │   ├── supervision-modes.md         # Autonomous/Checkpoint
-│   ├── quality-gates.md             # TDD gates
+│   ├── quality-gates.md             # SDD gates
 │   └── backpressure.md              # Circuit breakers
 ├── State & Knowledge
 │   ├── state-files.md               # File purposes
