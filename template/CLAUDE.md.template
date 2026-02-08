@@ -29,30 +29,28 @@ Agents (auto-delegated on context match):
 - systematic-debugger: bug or unexpected behavior → 4-phase root cause before any fix attempt
 - performance-engineer: performance bottleneck or scalability design → profiling, observability, load testing, optimization
 
-Commands (/command):
-- /project-init: new or changed project → generates stack.md, patterns.md, architecture.md, testing.md
-- /git-commit: ready to commit → auto file classification, smart grouping, corporate format support
-- /changelog: document changes → truth-based from git diff, not commit narrative
-- /deep-research: complex investigation → multi-pass browser research, tiered sources, confidence ratings
-- /release: publish version → semver from CHANGELOG sections + GitHub release
-- /git-cleanup: after PR merged → delete feature branch, sync with base
-- /worktree-create: need parallel workstream → worktree in sibling dir + branch + IDE
-- /worktree-cleanup: done with worktrees → ownership validation, discovery mode, safe deletion
-
 Skills (loaded via Skill tool when context matches):
+- brainstorming: user describes what to build, add, or change → collaborative design exploration + validated design doc
 - ralph-orchestrator: building a feature end-to-end or autonomous dev → stateful orchestration with resume, dual-mode planning, autonomous execution, safety nets
   - sop-discovery: starting new feature or project → extract intent, constraints, risks, prior art
   - sop-planning: after discovery or with idea to plan → detailed design (requirements, research, architecture, plan)
   - sop-task-generator: plan or feature description provided → structured .code-task.md files with dependencies
   - sop-code-assist: task file ready → TDD implementation + debug escalation
   - sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
-- brainstorming: user describes what to build, add, or change → collaborative design exploration + validated design doc
 - systematic-debugging: bug, test failure, or unexpected behavior → root cause diagnosis before any fix attempt
+- project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
+- git-commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
+- changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
+- release: ready to release → semver from CHANGELOG analysis, version bump, tag, GitHub release
+- pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
+- git-cleanup: after PR merged → switch to base, delete feature branch, sync with remote
+- worktree-create: parallel work requested → worktree in sibling dir + consistent naming + branch + IDE
+- worktree-cleanup: worktree no longer needed → ownership validation, discovery mode, safe deletion
+- deep-research: investigation or research requested → multi-pass browser research, tiered sources, confidence ratings
 - frontend-design: building or styling any UI (web, mobile, posters) → distinctive production code with reference-validated design
 - humanizer: writing or editing prose (docs, messages, UI copy, articles) → remove AI writing patterns, inject natural voice
 - claude-code-expert: question about Claude Code (features, APIs, skills, hooks, MCP) → verified answer from official docs
 - skill-creator: creating or updating a skill → guided lifecycle from concept through packaging
-- pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
 - agent-browser: ANY web interaction → browser automation (research, E2E, scraping, navigation, mobile testing)
 </capability_index>
 
@@ -60,8 +58,8 @@ Skills (loaded via Skill tool when context matches):
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
 - NEVER claim a task is complete without observable evidence (test output, command result, behavioral verification). "It should work" is not evidence.
-- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → work → TaskUpdate(completed) → TaskList(next)
-- NEVER edit context files without FIRST loading context-engineering skill. Context files: skills/*, agents/*, commands/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
+- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → subagent(run_in_background) → TaskUpdate(completed) → TaskList(next)
+- NEVER edit context files without FIRST loading context-engineering skill. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
 - ALWAYS accuracy over speed. Read fully, verify assumptions before modifying.
 - ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
 - ALWAYS when blocked: research via agent-browser before retrying or escalating
@@ -83,6 +81,6 @@ study: restate goal ≤3 bullets, identify constraints, assess complexity
        when relationships between components are non-obvious → ASCII diagram to map before proceeding
 propose: 3 approaches for non-trivial work (mark recommended)
 plan: decompose into TaskCreate per step with dependencies
-implement: subagents (run_in_background) for independent work
+implement: parallel subagents where dependencies allow
 validate: code-reviewer → code-simplifier → docs status
 </workflow>
