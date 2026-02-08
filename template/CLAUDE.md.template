@@ -12,57 +12,57 @@ ALWAYS demand empirical evidence over logical inference. Verify, don't deduce.
 NEVER rely on pre-training for external APIs, frameworks, or library behavior.
 - Context7 MCP → API docs, signatures, framework patterns
 - Read, Grep, Glob → project code, conventions, existing patterns
-- agent-browser skill → current versions, changelogs, anything not in Context7
+- ai-framework:agent-browser skill → current versions, changelogs, anything not in Context7
 Pre-training is stale. Verify first.
 </retrieval_led_reasoning>
 
 <capability_index>
 GATES (mandatory, zero-decision):
-- scenario-driven-development: ALL implementation → SCENARIO→SATISFY→REFACTOR with convergence gates
-- verification-before-completion: ALL completion claims → demonstrated satisfaction (not boolean pass/fail) before asserting done
-- context-engineering: BEFORE proposing or making changes to context files → Skill tool('context-engineering')
+- ai-framework:scenario-driven-development: ALL implementation → SCENARIO→SATISFY→REFACTOR with convergence gates
+- ai-framework:verification-before-completion: ALL completion claims → demonstrated satisfaction (not boolean pass/fail) before asserting done
+- ai-framework:context-engineering: BEFORE proposing or making changes to context files → Skill tool('ai-framework:context-engineering')
 
 Agents (auto-delegated on context match):
-- code-reviewer: after implementation step → validates against plan + quality (SECURITY→BUG→RELIABILITY→PERF)
-- code-simplifier: after code written → reduces complexity preserving function (proactive)
-- edge-case-detector: after code implementation → boundary violations, concurrency, resource leaks, silent failures
-- security-reviewer: branch changes for review → exploitable vulnerabilities in diff
-- systematic-debugger: bug or unexpected behavior → 4-phase root cause before any fix attempt
-- performance-engineer: performance bottleneck or scalability design → profiling, observability, load testing, optimization
+- ai-framework:code-reviewer: after implementation step → validates against plan + quality (SECURITY→BUG→RELIABILITY→PERF)
+- ai-framework:code-simplifier: after code written → reduces complexity preserving function (proactive)
+- ai-framework:edge-case-detector: after code implementation → boundary violations, concurrency, resource leaks, silent failures
+- ai-framework:security-reviewer: branch changes for review → exploitable vulnerabilities in diff
+- ai-framework:systematic-debugger: bug or unexpected behavior → 4-phase root cause before any fix attempt
+- ai-framework:performance-engineer: performance bottleneck or scalability design → profiling, observability, load testing, optimization
 
 Skills (loaded via Skill tool when context matches):
-- brainstorming: user describes what to build, add, or change → collaborative design exploration + validated design doc
-- ralph-orchestrator: building a feature end-to-end or autonomous dev → stateful orchestration with resume, dual-mode planning, autonomous execution, safety nets
-  - sop-discovery: starting new feature or project → extract intent, constraints, risks, prior art
-  - sop-planning: after discovery or with idea to plan → detailed design (requirements, research, architecture, plan)
-  - sop-task-generator: plan or feature description provided → structured .code-task.md files with dependencies
-  - sop-code-assist: task file ready → scenario-driven implementation + debug escalation
-  - sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
-- systematic-debugging: bug, scenario failure, or unexpected behavior → root cause diagnosis before any fix attempt
-- project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
-- commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
-- changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
-- pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
-- branch-cleanup: after PR merged → switch to base, delete feature branch, sync with remote
-- worktree-create: parallel work requested → worktree in sibling dir + consistent naming + branch + IDE
-- worktree-cleanup: worktree no longer needed → ownership validation, discovery mode, safe deletion
-- deep-research: investigation or research requested → multi-pass browser research, tiered sources, confidence ratings
-- frontend-design: building or styling any UI (web, mobile, posters) → distinctive production code with reference-validated design
-- humanizer: writing or editing prose (docs, messages, UI copy, articles) → remove AI writing patterns, inject natural voice
-- claude-code-expert: question about Claude Code (features, APIs, skills, hooks, MCP) → verified answer from official docs
-- skill-creator: creating or updating a skill → guided lifecycle from concept through packaging
-- agent-browser: ANY web interaction → browser automation (research, E2E, scraping, navigation, mobile testing)
+- ai-framework:brainstorming: user describes what to build, add, or change → collaborative design exploration + validated design doc
+- ai-framework:ralph-orchestrator: building a feature end-to-end or autonomous dev → stateful orchestration with resume, dual-mode planning, autonomous execution, safety nets
+  - ai-framework:sop-discovery: starting new feature or project → extract intent, constraints, risks, prior art
+  - ai-framework:sop-planning: after discovery or with idea to plan → detailed design (requirements, research, architecture, plan)
+  - ai-framework:sop-task-generator: plan or feature description provided → structured .code-task.md files with dependencies
+  - ai-framework:sop-code-assist: task file ready → scenario-driven implementation + debug escalation
+  - ai-framework:sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
+- ai-framework:systematic-debugging: bug, scenario failure, or unexpected behavior → root cause diagnosis before any fix attempt
+- ai-framework:project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
+- ai-framework:commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
+- ai-framework:changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
+- ai-framework:pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
+- ai-framework:branch-cleanup: after PR merged → switch to base, delete feature branch, sync with remote
+- ai-framework:worktree-create: parallel work requested → worktree in sibling dir + consistent naming + branch + IDE
+- ai-framework:worktree-cleanup: worktree no longer needed → ownership validation, discovery mode, safe deletion
+- ai-framework:deep-research: investigation or research requested → multi-pass browser research, tiered sources, confidence ratings
+- ai-framework:frontend-design: building or styling any UI (web, mobile, posters) → distinctive production code with reference-validated design
+- ai-framework:humanizer: writing or editing prose (docs, messages, UI copy, articles) → remove AI writing patterns, inject natural voice
+- ai-framework:claude-code-expert: question about Claude Code (features, APIs, skills, hooks, MCP) → verified answer from official docs
+- ai-framework:skill-creator: creating or updating a skill → guided lifecycle from concept through packaging
+- ai-framework:agent-browser: ANY web interaction → browser automation (research, E2E, scraping, navigation, mobile testing)
 </capability_index>
 
 <constraints>
 - NEVER `git push` without explicit user authorization
-- NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
+- NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through ai-framework:agent-browser skill
 - NEVER claim a task is complete OR accept an intermediate decision as valid without observable evidence (execution output, scenario satisfaction, behavioral verification). "It should work" / "It makes sense" ≠ evidence; "I executed X and observed Y" = evidence.
 - NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → Task tool(run_in_background: true) → TaskUpdate(completed) → TaskList(next). Inline execution exhausts context; subagents get clean 200k each.
-- NEVER propose or make changes to context files without FIRST invoking Skill tool('context-engineering'). Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Context changes propagate to all sessions; framework prevents attention degradation.
+- NEVER propose or make changes to context files without FIRST invoking Skill tool('ai-framework:context-engineering'). Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Context changes propagate to all sessions; framework prevents attention degradation.
 - ALWAYS accuracy over speed. Read fully, verify assumptions before modifying.
 - ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
-- ALWAYS when blocked: research via agent-browser before retrying or escalating
+- ALWAYS when blocked: research via ai-framework:agent-browser before retrying or escalating
 - NEVER add decorative or redundant comments (banners, separators, restating what code does). Only comment to explain non-obvious WHY.
 - NEVER advance to next workflow phase without completing current phase's defined output
 </constraints>
@@ -71,7 +71,7 @@ Skills (loaded via Skill tool when context matches):
 language: Spanish (user interaction) | English (code/commits/APIs)
 clarity: Conclusion first → why → how. Concrete over abstract. Depth matches complexity.
 never: filler, unconditional hedging, apology loops
-text: invoke humanizer skill (docs, UI copy, user-facing messages)
+text: invoke ai-framework:humanizer skill (docs, UI copy, user-facing messages)
 </communication>
 
 <workflow>
@@ -81,5 +81,5 @@ study: restate goal ≤3 bullets, identify constraints, assess complexity
 propose: 3 approaches for non-trivial work (mark recommended)
 plan: decompose into TaskCreate per step with dependencies
 implement: Task tool(run_in_background) per task, parallel where dependencies allow
-validate: code-reviewer → code-simplifier → docs status
+validate: ai-framework:code-reviewer → ai-framework:code-simplifier → docs status
 </workflow>
