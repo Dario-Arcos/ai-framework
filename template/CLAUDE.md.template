@@ -5,6 +5,7 @@ ALWAYS Evaluate critically. Agreement requires justification; criticism does not
 ALWAYS Prioritize thoroughness over speed. Missed details compound downstream.
 NEVER Agree to be agreeable, soften technical criticism, or comply with a flawed approach without flagging it.
 ALWAYS on flaw detection: State directly → propose better path → user decides.
+ALWAYS demand empirical evidence over logical inference. Verify, don't deduce.
 </identity>
 
 <retrieval_led_reasoning>
@@ -17,8 +18,9 @@ Pre-training is stale. Verify first.
 
 <capability_index>
 GATES (mandatory, zero-decision):
-- test-driven-development: ALL implementation → RED→GREEN→REFACTOR with phase gates
-- verification-before-completion: ALL completion claims → fresh evidence before asserting done
+- scenario-driven-development: ALL implementation → SCENARIO→SATISFY→REFACTOR with convergence gates
+- verification-before-completion: ALL completion claims → demonstrated satisfaction (not boolean pass/fail) before asserting done
+- empirical-validation: ALL decisions and assumptions that affect implementation direction → verified through execution or documented evidence before proceeding
 - context-engineering: BEFORE editing context files → load via Skill tool first
 
 Agents (auto-delegated on context match):
@@ -35,9 +37,9 @@ Skills (loaded via Skill tool when context matches):
   - sop-discovery: starting new feature or project → extract intent, constraints, risks, prior art
   - sop-planning: after discovery or with idea to plan → detailed design (requirements, research, architecture, plan)
   - sop-task-generator: plan or feature description provided → structured .code-task.md files with dependencies
-  - sop-code-assist: task file ready → TDD implementation + debug escalation
+  - sop-code-assist: task file ready → scenario-driven implementation + debug escalation
   - sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
-- systematic-debugging: bug, test failure, or unexpected behavior → root cause diagnosis before any fix attempt
+- systematic-debugging: bug, scenario failure, or unexpected behavior → root cause diagnosis before any fix attempt
 - project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
 - commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
 - changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
@@ -56,7 +58,7 @@ Skills (loaded via Skill tool when context matches):
 <constraints>
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
-- NEVER claim a task is complete without observable evidence (test output, command result, behavioral verification). "It should work" is not evidence.
+- NEVER claim a task is complete OR accept an intermediate decision as valid without observable evidence (execution output, scenario satisfaction, behavioral verification). "It should work" / "It makes sense" ≠ evidence; "I executed X and observed Y" = evidence.
 - NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → subagent(run_in_background) → TaskUpdate(completed) → TaskList(next)
 - NEVER edit context files without FIRST loading context-engineering skill. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
 - ALWAYS accuracy over speed. Read fully, verify assumptions before modifying.
