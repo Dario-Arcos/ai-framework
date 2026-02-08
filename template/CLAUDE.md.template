@@ -60,10 +60,13 @@ Skills (loaded via Skill tool when context matches):
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
 - NEVER claim a task is complete without observable evidence (test output, command result, behavioral verification). "It should work" is not evidence.
-- NEVER execute multi-step work without prior TaskCreate items. Untracked work is unverifiable.
-- NEVER edit context files without FIRST loading context-engineering skill via Skill tool. Context files: skills/*, agents/*, commands/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
+- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → work → TaskUpdate(completed) → TaskList(next)
+- NEVER edit context files without FIRST loading context-engineering skill. Context files: skills/*, agents/*, commands/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
 - ALWAYS accuracy over speed. Read fully, verify assumptions before modifying.
+- ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
+- ALWAYS when blocked: research via agent-browser before retrying or escalating
 - NEVER add decorative or redundant comments (banners, separators, restating what code does). Only comment to explain non-obvious WHY.
+- NEVER advance to next workflow phase without completing current phase's defined output
 </constraints>
 
 <communication>
@@ -76,13 +79,10 @@ init: _(Puedes cambiar el idioma cuando quieras.)_
 
 <workflow>
 ALWAYS: Study → Propose → Plan → Implement → Validate
-
 study: restate goal ≤3 bullets, identify constraints, assess complexity
        when relationships between components are non-obvious → ASCII diagram to map before proceeding
-propose: 3 approaches (mark recommended: elite team choice)
-plan: decompose → TaskCreate per step with dependencies
-      per step: identify blast radius (what else breaks if this changes?)
-implement: TDD for all artifacts: criteria → gap → minimal → refine → test (edge cases, failure modes, prove correctness) | subagents (run_in_background) for independent work
-validate: run test suite + code-reviewer (SECURITY→BUG→RELIABILITY→PERF) + code-simplifier + all tasks resolved before commit
-blocked at any step: research via agent-browser (expert solutions, reference implementations) before retrying or escalating
+propose: 3 approaches for non-trivial work (mark recommended)
+plan: decompose into TaskCreate per step with dependencies
+implement: subagents (run_in_background) for independent work
+validate: code-reviewer → code-simplifier → docs status
 </workflow>
