@@ -94,8 +94,8 @@ your-project/
 
 **Plugin components** (via Claude Code):
 - **Specialized agents** — Architecture, Security, Testing, DevOps, and more
-- **Workflow commands** — SDD cycle, Git/GitHub automation, Project utilities
-- **Proven patterns (Skills)** — On-demand context engineering patterns
+- **Workflow skills** — Git/GitHub automation, project utilities, development workflows
+- **Proven patterns** — On-demand context engineering patterns
 - **Lifecycle hooks** — Session, tool, and prompt lifecycle automation
 - **MCP servers** — Optional integrations (opt-in)
 
@@ -134,7 +134,7 @@ Full governance: [constitution.md](https://github.com/Dario-Arcos/ai-framework/b
 **[Full Documentation →](https://dario-arcos.github.io/ai-framework/)**
 
 - [Quickstart](https://dario-arcos.github.io/ai-framework/docs/quickstart) — 15 minutes to productive
-- [Commands Guide](https://dario-arcos.github.io/ai-framework/docs/commands-guide) — Slash commands reference
+- [Skills Guide](https://dario-arcos.github.io/ai-framework/docs/skills-guide) — Skills and workflows reference
 - [Agents Guide](https://dario-arcos.github.io/ai-framework/docs/agents-guide) — Specialized agents catalog
 - [Integrations](https://dario-arcos.github.io/ai-framework/docs/integrations) — Plugins & MCPs to extend capabilities
 

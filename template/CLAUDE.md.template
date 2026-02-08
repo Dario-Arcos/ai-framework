@@ -39,11 +39,10 @@ Skills (loaded via Skill tool when context matches):
   - sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
 - systematic-debugging: bug, test failure, or unexpected behavior → root cause diagnosis before any fix attempt
 - project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
-- git-commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
+- commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
 - changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
-- release: ready to release → semver from CHANGELOG analysis, version bump, tag, GitHub release
 - pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
-- git-cleanup: after PR merged → switch to base, delete feature branch, sync with remote
+- branch-cleanup: after PR merged → switch to base, delete feature branch, sync with remote
 - worktree-create: parallel work requested → worktree in sibling dir + consistent naming + branch + IDE
 - worktree-cleanup: worktree no longer needed → ownership validation, discovery mode, safe deletion
 - deep-research: investigation or research requested → multi-pass browser research, tiered sources, confidence ratings

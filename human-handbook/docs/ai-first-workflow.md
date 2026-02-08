@@ -141,12 +141,12 @@ Plugin externo con workflows de desarrollo estructurados.
 
 ## Git Flow
 
-Comandos nativos del framework para gestión de código.
+Skills del framework para gestión de código.
 
 ### Commit
 
 ```bash
-/git-commit "feat: add email validation"
+/commit "feat: add email validation"
 ```
 
 Agrupa cambios automáticamente por tipo. Soporta formato corporativo `tipo|TASK-ID|YYYYMMDD|desc`.
@@ -167,7 +167,7 @@ Opciones: **Create PR** | **Auto fix** | **Cancel**
 ### Cleanup
 
 ```bash
-/git-cleanup
+/branch-cleanup
 ```
 
 Post-merge: elimina branch local, sincroniza con remote.
@@ -243,7 +243,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 ```bash
 "Implementa validación de email en el formulario"
 # Claude implementa directamente con tests
-/git-commit "feat: add email validation"
+/commit "feat: add email validation"
 /pull-request main
 ```
 
@@ -279,7 +279,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 /worktree-create "hotfix-race" main
 /understand "área del bug"
 # Fix directo
-/git-commit "fix: race condition in checkout"
+/commit "fix: race condition in checkout"
 /pull-request main
 /worktree-cleanup hotfix-race
 ```
@@ -288,29 +288,24 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 
 ## Referencia Rápida
 
-::: details Comandos del Framework
-| Comando | Qué hace |
-|---------|----------|
-| `/git-commit` | Commit semántico con agrupación |
-| `/pull-request` | PR con quality gate (code + security) |
-| `/git-cleanup` | Post-merge cleanup |
-| `/worktree-create` | Workspace aislado |
-| `/worktree-cleanup` | Elimina worktrees |
-| `/project-init` | Genera rules de equipo |
-| `/understand` | Analiza codebase |
-:::
-
 ::: details Skills del Framework
 | Skill | Uso |
 |-------|-----|
 | `brainstorming` | Explorar ideas antes de implementar |
 | `ralph-orchestrator` | Desarrollo autónomo multi-iteración |
+| `systematic-debugging` | Root cause antes de fix |
 | `pull-request` | PR con quality gate integrado |
-| `webapp-testing` | E2E testing con Playwright |
-| `mobile-testing` | E2E mobile con mobile-mcp + Maestro |
-| `claude-code-expert` | Crear componentes Claude Code |
+| `commit` | Commit semántico con agrupación |
+| `changelog` | CHANGELOG truth-based desde diff |
+| `branch-cleanup` | Post-merge cleanup |
+| `worktree-create` | Workspace aislado |
+| `worktree-cleanup` | Elimina worktrees |
+| `project-init` | Genera rules de equipo |
+| `deep-research` | Investigación multi-fuente |
 | `frontend-design` | Interfaces distintivas (anti-AI slop) |
 | `humanizer` | Eliminar patrones de texto IA |
+| `claude-code-expert` | Docs oficiales Claude Code |
+| `agent-browser` | Browser automation |
 :::
 
 ::: details Skills de Superpowers (Plugin)
@@ -333,7 +328,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 |-----------|-------------|
 | Feature grande (L/XL) | Ralph Loop |
 | Feature mediana con diseño | Superpowers (brainstorming → plans) |
-| Fix rápido | Directo + `/git-commit` |
+| Fix rápido | Directo + `/commit` |
 | Desarrollo overnight/AFK | Ralph Loop |
 | Pair programming con Claude | Superpowers skills |
 | CI/CD automation | Ralph Loop |
@@ -351,7 +346,7 @@ Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima 
 
 ---
 
-**Relacionados**: [Comandos](./commands-guide.md) · [Skills](./skills-guide.md) · [Agentes](./agents-guide.md) · [Integrations](./integrations.md)
+**Relacionados**: [Skills](./skills-guide.md) · [Agentes](./agents-guide.md) · [Integrations](./integrations.md)
 
 ::: info Última Actualización
 **Fecha**: 2026-01-25 | **Versión**: 5.2.0

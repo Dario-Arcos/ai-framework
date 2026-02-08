@@ -54,9 +54,8 @@ export default withMermaid(defineConfig({
         text: "Tools",
         collapsed: false,
         items: [
-          { text: "Comandos", link: "/docs/commands-guide" },
-          { text: "Agentes", link: "/docs/agents-guide" },
           { text: "Skills", link: "/docs/skills-guide" },
+          { text: "Agentes", link: "/docs/agents-guide" },
           { text: "Integrations", link: "/docs/integrations" },
         ],
       },

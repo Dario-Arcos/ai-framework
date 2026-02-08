@@ -81,7 +81,7 @@ Claude activa automáticamente los skills relevantes (TDD, code review, etc).
 Para commits y PRs:
 
 ```bash
-/git-commit "feat: add email validation"
+/commit "feat: add email validation"
 /pull-request develop
 ```
 
@@ -109,7 +109,7 @@ Para commits y PRs:
 
 ## Siguientes pasos
 
-- [Commands Guide](./commands-guide.md) — Comandos disponibles
+- [Skills Guide](./skills-guide.md) — Todos los skills del framework
 - [Agents Guide](./agents-guide.md) — Agentes especializados
 - [Skills Guide](./skills-guide.md) — Skills del framework
 - [Integrations](./integrations.md) — Plugins y MCPs externos

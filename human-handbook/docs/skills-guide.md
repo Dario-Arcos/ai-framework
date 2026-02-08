@@ -14,15 +14,27 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 | Skill | Qué hace | Cuándo usarlo |
 |-------|----------|---------------|
-| `agent-browser` | Browser automation con Playwright | Scraping, e2e web, forms, screenshots, mobile/iOS |
-| `brainstorming` | Diálogo para diseñar soluciones | Antes de codear algo nuevo |
-| `systematic-debugging` | Debugging metódico con 4 fases | Cualquier bug, test failure, comportamiento inesperado |
-| `pull-request` | PR con code + security review | Al crear pull requests |
-| `claude-code-expert` | Genera componentes Claude Code | Crear agents, commands, hooks |
-| `frontend-design` | Diseño web distintivo | Interfaces memorables, no genéricas |
-| `humanizer` | Elimina patrones de texto AI | Docs, commits, PRs, UI text |
-| `skill-creator` | Crear skills nuevas | Cuando necesites extender capabilities |
+| `brainstorming` | Diálogo para diseñar soluciones | Usuario describe qué construir, añadir o cambiar |
+| `systematic-debugging` | Debugging metódico con 4 fases | Bug, test failure, comportamiento inesperado |
+| `pull-request` | PR con quality gate integrado | Listo para crear pull request |
+| `frontend-design` | Diseño UI distintivo | Construir o estilizar UI (web, mobile, posters) |
+| `humanizer` | Elimina patrones de texto AI | Escribir o editar prosa (docs, UI copy, mensajes) |
+| `claude-code-expert` | Investiga docs oficiales Claude Code | Pregunta sobre features, APIs, skills, hooks, MCP |
+| `skill-creator` | Crear skills nuevas | Creando o actualizando un skill |
 | `context-engineering` | Optimizar prompts y CLAUDE.md | System prompts, agent architecture |
+| `agent-browser` | Browser automation con Playwright | Cualquier interacción web (research, E2E, scraping) |
+
+### Git & Workflow
+
+| Skill | Qué hace | Cuándo usarlo |
+|-------|----------|---------------|
+| `commit` | Commits semánticos con agrupación | Listo para commitear |
+| `changelog` | Actualiza CHANGELOG desde diff real | Documentar cambios |
+| `branch-cleanup` | Limpieza post-merge | Después de mergear PR |
+| `worktree-create` | Worktree aislado en sibling dir | Necesitas workstream paralelo |
+| `worktree-cleanup` | Eliminar worktrees con validación | Terminar con worktrees |
+| `project-init` | Genera rules de equipo | Proyecto nuevo o cambiado |
+| `deep-research` | Investigación multi-fuente verificada | Investigación compleja |
 
 ### Pipeline SOP (desarrollo autónomo)
 
@@ -157,7 +169,7 @@ Usa `agent-browser` para consultar https://code.claude.com/docs. Nunca confía e
 3. Analiza patterns del proyecto
 4. Genera con 6 quality gates
 
-**Output:** `.claude/agents/*.md`, `commands/*.md`, `hooks/*.py`
+**Output:** `.claude/agents/*.md`, `skills/*/SKILL.md`, `hooks/*.py`
 
 ---
 
@@ -261,6 +273,155 @@ Optimiza system prompts, CLAUDE.md, AGENTS.md y arquitecturas de agentes.
 
 ---
 
+## commit
+
+Commits semánticos con agrupación automática por tipo de archivo.
+
+::: code-group
+```bash [Convencional]
+/commit "feat(auth): add OAuth2 support"
+```
+
+```bash [Corporativo]
+/commit "TRV-345 implementar autenticación"
+# Output: feat|TRV-345|20260131|implementar autenticación
+```
+
+```bash [Tipo explícito]
+/commit "refactor: TRV-345 mejorar módulo auth"
+```
+:::
+
+**Agrupación automática:** Si modificas archivos de 2+ categorías (config + código, docs + tests), crea commits separados por tipo.
+
+---
+
+## changelog
+
+Actualiza CHANGELOG.md basándose en el **diff real**, no en commits.
+
+```bash
+/changelog "desde última versión"
+/changelog "desde v2.0.0"
+```
+
+**Por qué diff y no commits:**
+
+```
+Commits:                    Diff real:
+1. feat: add caching        Solo existe: logging.py
+2. fix: caching bug
+3. revert: remove caching   El caching NO EXISTE.
+4. feat: add logging        Documentarlo sería mentir.
+```
+
+El changelog documenta qué existe, no qué se intentó.
+
+---
+
+## branch-cleanup
+
+Limpieza después de merge: elimina feature branch, sincroniza con base.
+
+```bash
+/branch-cleanup        # Auto-detecta base (main/master/develop)
+/branch-cleanup main   # Base explícita
+```
+
+GitHub elimina la branch remota al mergear. Este skill limpia la local.
+
+---
+
+## worktree-create
+
+Crea worktree en directorio sibling con rama nueva.
+
+```bash
+/worktree-create "implementar autenticacion OAuth" main
+# Crea: ../worktree-implementar-autenticacion-oauth
+```
+
+::: tip Branch vs Worktree
+**Branch:** Desarrollo lineal, una feature a la vez.
+**Worktree:** Múltiples features en paralelo, cada una en directorio aislado.
+:::
+
+::: warning Después de crear
+El IDE se abre automáticamente, pero debes iniciar nueva sesión Claude en esa ventana. Si no, Claude sigue trabajando en el directorio anterior.
+:::
+
+---
+
+## worktree-cleanup
+
+Elimina worktrees con validación de ownership.
+
+```bash
+/worktree-cleanup              # Discovery: lista disponibles
+/worktree-cleanup worktree-1   # Eliminar específico
+```
+
+**Restricciones:**
+- Solo elimina worktrees que te pertenecen
+- No toca branches protegidas (main, develop, staging)
+- Requiere working tree limpio
+
+---
+
+## project-init
+
+Genera reglas de proyecto compartibles con el equipo.
+
+```bash
+/project-init
+```
+
+**Arquitectura dual:**
+
+```
+docs/claude-rules/    ← TRACKED (source of truth)
+├── stack.md
+├── patterns.md
+├── architecture.md
+└── testing.md
+        ↓ session-start hook (auto-sync)
+.claude/rules/        ← IGNORED (working copy)
+```
+
+Las reglas viven en `docs/claude-rules/` para versionarlas y reviewarlas en PRs. El hook de session-start las sincroniza a `.claude/rules/` automáticamente.
+
+::: info Para nuevos miembros
+Si el proyecto ya tiene `docs/claude-rules/`, no necesitas ejecutar `/project-init`. El hook sincroniza automáticamente.
+:::
+
+---
+
+## deep-research
+
+Investigación multi-fuente con verificación y confidence ratings.
+
+```bash
+/deep-research "análisis competitivo sector fintech"
+```
+
+**Metodología:**
+- 3-5 pases iterativos de búsqueda
+- Mínimo 3 fuentes independientes por claim
+- Confidence rating (High/Medium/Low/Uncertain)
+- Cada afirmación citada con URL y fecha
+
+::: details Jerarquía de fuentes
+| Tier | Ejemplos |
+|------|----------|
+| **1 (Primary)** | .gov, SEC, peer-reviewed, World Bank |
+| **2 (Industry)** | McKinsey, Gartner, Bloomberg, FT |
+| **3 (Corroborative)** | WSJ, The Economist, industry bodies |
+:::
+
+Usa `agent-browser` para navegación real, no cached data.
+
+---
+
 ## Pipeline SOP
 
 Sistema de desarrollo autónomo. Ralph orquesta estos skills en secuencia:
@@ -358,6 +519,35 @@ Implementa tasks con TDD: RED → GREEN → REFACTOR.
 
 ---
 
+## Workflows típicos
+
+| Escenario | Skills |
+|-----------|--------|
+| **Feature nueva** | `/brainstorming` → implementar → `/commit` → `/pull-request` |
+| **Bug fix urgente** | `/worktree-create` → fix → `/commit` → `/pull-request` |
+| **Desarrollo autónomo** | `/ralph-orchestrator` (orquesta todo el pipeline) |
+| **Post-merge** | `/branch-cleanup` |
+
+---
+
+## Plugins externos
+
+::: warning Requiere instalación
+Estos skills no están incluidos por defecto.
+:::
+
+### /episodic-memory:search-conversations
+
+Busca en conversaciones pasadas de Claude Code.
+
+```bash
+/plugin install episodic-memory@superpowers-marketplace
+```
+
+Indexa automáticamente tus sesiones. Busca por conceptos (semántica) o texto exacto.
+
+---
+
 ## Más skills
 
 - [Superpowers](./integrations.md#superpowers) — TDD, debugging, code review, worktrees
@@ -390,5 +580,5 @@ Verifica que existe `specs/` en tu proyecto.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-06 | **Skills**: 14 total (8 core + 6 pipeline SOP)
+**Fecha**: 2026-02-07 | **Skills**: 21 total (9 core + 7 git/workflow + 5 pipeline SOP)
 :::

@@ -13,10 +13,10 @@ Your training data is 6+ months stale. Claude Code APIs change frequently. **Nev
 
 ## When to Use
 
-- Creating/modifying sub-agents, slash commands, hooks, or MCP integrations
+- Creating/modifying sub-agents, skills, hooks, or MCP integrations
 - Questions about Claude Code features (skills, hooks, MCPs, SDK)
 - Fixing bugs in Claude Code plugin components
-- User mentions: "create agent", "add command", "new hook", "integrate MCP"
+- User mentions: "create agent", "add skill", "new hook", "integrate MCP"
 
 ---
 
@@ -36,10 +36,9 @@ Navigate to the relevant section based on the question:
 | Topic | Navigate to |
 |-------|-------------|
 | Sub-agents | Agents & Agentic Coding |
-| Slash commands | Commands |
+| Skills | Skills |
 | Hooks | Hooks |
 | MCP servers | MCP Servers |
-| Skills | Skills |
 | SDK | Claude Code SDK |
 | Settings | Settings & Configuration |
 

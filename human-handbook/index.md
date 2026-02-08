@@ -17,9 +17,9 @@ features:
       src: /icons/terminal.svg
       width: 48
       height: 48
-    title: Commands
-    details: Completo conjunto de comandos slash para workflows completos (PRP, SDD, Git/GitHub)
-    link: /docs/commands-guide
+    title: Skills
+    details: Workflows especializados invocables con slash para desarrollo, git, research y más
+    link: /docs/skills-guide
 
   - icon:
       src: /icons/rocket.svg

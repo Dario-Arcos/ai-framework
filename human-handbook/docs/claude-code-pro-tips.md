@@ -349,7 +349,7 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 
 **Cuándo usar:** Primera opción siempre. Cargan solo cuando necesitas, descargan después.
 
-[Ver todos →](./commands-guide#skills)
+[Ver todos →](./skills-guide)
 
 ---
 
@@ -473,7 +473,7 @@ Claude Code integra con GitHub CLI:
 1. "Analiza PR #210"     → Claude usa gh para datos
 2. Claude presenta evaluación crítica
 3. "Corrige X e Y"       → Aplica solo fixes confirmados
-4. Claude commitea con /git-commit
+4. Claude commitea con /commit
 ```
 
 ---
@@ -560,7 +560,7 @@ Tareas complejas: planifica con extended thinking, revisa, luego ejecuta
 **Framework:**
 
 - [AI-First Workflow](./ai-first-workflow) — Workflows completos
-- [Commands Guide](./commands-guide) — Comandos especializados
+- [Skills Guide](./skills-guide) — Skills especializados
 - [Agents Guide](./agents-guide) — Agentes especializados por dominio
 
 **Docs oficiales:**
