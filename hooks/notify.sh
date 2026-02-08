@@ -24,15 +24,15 @@ if [[ -z "$INPUT" ]]; then
 fi
 
 # Parse JSON fields via Python (secure, no injection risk)
-read -r EVENT NOTIFICATION_TYPE CWD TITLE MESSAGE STOP_HOOK_ACTIVE < <(
+IFS='|' read -r EVENT NOTIFICATION_TYPE CWD TITLE MESSAGE STOP_HOOK_ACTIVE < <(
   printf '%s' "$INPUT" | python3 -c '
 import sys, json
 
 def sanitize(value):
-    """Sanitize value for tab-delimited output."""
+    """Sanitize value for pipe-delimited output."""
     if value is None:
         return ""
-    return str(value).replace("\t", " ").replace("\n", " ").replace("\r", "")
+    return str(value).replace("|", " ").replace("\n", " ").replace("\r", " ")
 
 try:
     data = json.load(sys.stdin)
@@ -44,9 +44,9 @@ try:
         data.get("message", ""),
         str(data.get("stop_hook_active", False)).lower()
     ]
-    print("\t".join(sanitize(f) for f in fields))
+    print("|".join(sanitize(f) for f in fields))
 except Exception:
-    print("Unknown\t\t\t\t\tfalse")
+    print("Unknown|||||false")
 ' 2>/dev/null
 ) || {
   exit 0

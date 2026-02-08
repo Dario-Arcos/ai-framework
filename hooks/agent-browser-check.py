@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""SessionStart hook - Checks agent-browser and installs if missing.
+"""SessionStart hook - Checks agent-browser CLI and syncs skill if missing.
 
-Supports both npm and Homebrew installations. Prefers brew on macOS.
+Ensures CLI is installed and skill is available at user level (~/.claude/skills/)
+via `npx skills` (Vercel's open skill ecosystem). Skill at user level is loaded
+automatically by Claude Code in all projects — no per-project copy needed.
 """
 import json
 import os
@@ -14,12 +16,17 @@ from pathlib import Path
 
 SUBPROCESS_TIMEOUT = 5
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+")
-SKILL_MARKER = Path("skills") / "agent-browser" / "SKILL.md"
 
+CLAUDE_HOME = Path(
+    os.environ.get("CLAUDE_CONFIG_DIR", "").strip()
+    or Path.home() / ".claude"
+)
+SKILL_FILE = CLAUDE_HOME / "skills" / "agent-browser" / "SKILL.md"
 
-def find_project_root():
-    """Find project root from hook file location."""
-    return Path(__file__).resolve().parent.parent
+SKILL_ADD_CMD = (
+    "npx -y skills add --global --yes vercel-labs/agent-browser"
+    " -s agent-browser -a claude-code"
+)
 
 
 def is_installed():
@@ -34,7 +41,7 @@ def get_installed_version():
             ["agent-browser", "--version"],
             capture_output=True,
             text=True,
-            timeout=SUBPROCESS_TIMEOUT
+            timeout=SUBPROCESS_TIMEOUT,
         )
         if result.returncode == 0 and result.stdout.strip():
             for token in reversed(result.stdout.strip().split()):
@@ -45,113 +52,45 @@ def get_installed_version():
     return None
 
 
-def find_skill_source():
-    """Find agent-browser skill source directory. Works with npm and brew.
-
-    Strategy 1: Resolve binary symlinks, walk up looking for skills/ (npm)
-    Strategy 2: From resolved binary parent, check lib/node_modules/ (brew)
-    Strategy 3: Fallback to npm root -g (npm without symlinks)
-    """
-    bin_path = shutil.which("agent-browser")
-    if not bin_path:
-        return None
-
-    resolved = Path(bin_path).resolve()
-
-    # Strategy 1: Walk up from resolved binary (works for npm global)
-    # npm layout: .../node_modules/agent-browser/bin/<binary>
-    # Walking up 2 levels reaches the package root with skills/
-    for parent in list(resolved.parents)[:6]:
-        skill = parent / SKILL_MARKER
-        if skill.exists():
-            return skill.parent
-
-    # Strategy 2: Check sibling lib/node_modules structure (works for brew)
-    # brew layout: .../libexec/bin/<binary>
-    # Package root: .../libexec/lib/node_modules/agent-browser/
-    for parent in list(resolved.parents)[:6]:
-        skill = parent / "lib" / "node_modules" / "agent-browser" / SKILL_MARKER
-        if skill.exists():
-            return skill.parent
-
-    # Strategy 3: Fallback to npm root -g
+def is_skill_present():
+    """Check if agent-browser skill exists at user level (~/.claude/skills/)."""
     try:
-        result = subprocess.run(
-            ["npm", "root", "-g"],
-            capture_output=True,
-            text=True,
-            timeout=SUBPROCESS_TIMEOUT
-        )
-        if result.returncode == 0:
-            skill = Path(result.stdout.strip()) / "agent-browser" / SKILL_MARKER
-            if skill.exists():
-                return skill.parent
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        pass
-
-    return None
+        return SKILL_FILE.exists() and SKILL_FILE.stat().st_size > 0
+    except OSError:
+        return False
 
 
-def install_background():
-    """Install agent-browser in background. Prefers brew on macOS, npm otherwise."""
-    if sys.platform == "darwin" and shutil.which("brew"):
-        cmd = "brew install agent-browser && agent-browser install || npm install -g agent-browser && agent-browser install"
-    else:
-        cmd = "npm install -g agent-browser && agent-browser install"
-
+def run_background(cmd, log_name):
+    """Run a shell command in background. Returns (started, log_path)."""
     try:
-        log_file = Path(tempfile.gettempdir()) / "agent-browser-install.log"
+        log_file = Path(tempfile.gettempdir()) / log_name
         with open(log_file, "w", encoding="utf-8") as log:
             subprocess.Popen(
                 ["sh", "-c", cmd],
                 stdout=log,
                 stderr=log,
                 start_new_session=True,
-                close_fds=True
+                close_fds=True,
             )
         return True, str(log_file)
     except OSError:
         return False, None
 
 
-def ensure_skill_synced(cli_version):
-    """Ensure skill is copied to .claude/skills/."""
-    root = find_project_root()
-    if not root.is_dir():
-        return False, "no project root"
+def sync_skill_background():
+    """Sync agent-browser skill to ~/.claude/skills/ via npx skills."""
+    return run_background(SKILL_ADD_CMD, "agent-browser-skill-sync.log")
 
-    dest_dir = root / ".claude" / "skills" / "agent-browser"
-    version_file = dest_dir / ".version"
-    skill_file = dest_dir / "SKILL.md"
 
-    # Check if already synced
-    if skill_file.exists():
-        try:
-            if version_file.read_text(encoding="utf-8").strip() == cli_version:
-                return True, "synced"
-        except OSError:
-            pass
+def install_background():
+    """Install CLI + browsers + skill in background."""
+    if sys.platform == "darwin" and shutil.which("brew"):
+        install_cli = "(brew install agent-browser || npm install -g agent-browser)"
+    else:
+        install_cli = "npm install -g agent-browser"
 
-    # Find source (works with npm and brew)
-    source_dir = find_skill_source()
-    if not source_dir:
-        return False, "source not found"
-
-    try:
-        dest_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source_dir, dest_dir, dirs_exist_ok=True)
-
-        # Validate copy: SKILL.md must exist and not be empty
-        if not skill_file.exists() or skill_file.stat().st_size == 0:
-            return False, "copy verification failed"
-
-        if cli_version:
-            version_file.write_text(cli_version, encoding="utf-8")
-
-        return True, "copied"
-
-    except (OSError, shutil.Error) as e:
-        return False, str(type(e).__name__)
+    cmd = f"{install_cli} && agent-browser install && {SKILL_ADD_CMD}"
+    return run_background(cmd, "agent-browser-install.log")
 
 
 def consume_stdin():
@@ -172,13 +111,13 @@ def main():
 
     if is_installed():
         version = get_installed_version()
-        skill_ok, skill_msg = ensure_skill_synced(version)
         v = f"v{version}" if version else ""
 
-        if skill_ok:
+        if is_skill_present():
             context = f"agent-browser: ✓ {v}. Use agent-browser skill for web tasks."
         else:
-            context = f"agent-browser: ✓ CLI {v}, ⚠ skill: {skill_msg}"
+            sync_skill_background()
+            context = f"agent-browser: ✓ CLI {v}, ⏳ syncing skill..."
 
     elif skip_install:
         context = "agent-browser: ⚠ Skipped (AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1)"
@@ -186,14 +125,16 @@ def main():
     else:
         ok, log_path = install_background()
         if ok:
-            context = f"agent-browser: ⏳ Installing in background... (log: {log_path})"
+            context = (
+                f"agent-browser: ⏳ Installing in background... (log: {log_path})"
+            )
         else:
             context = "agent-browser: ✗ Install failed"
 
     print(json.dumps({
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
-            "additionalContext": context
+            "additionalContext": context,
         }
     }))
 
