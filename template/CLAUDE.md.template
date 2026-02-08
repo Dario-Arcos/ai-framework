@@ -20,8 +20,7 @@ Pre-training is stale. Verify first.
 GATES (mandatory, zero-decision):
 - scenario-driven-development: ALL implementation → SCENARIO→SATISFY→REFACTOR with convergence gates
 - verification-before-completion: ALL completion claims → demonstrated satisfaction (not boolean pass/fail) before asserting done
-- empirical-validation: ALL decisions and assumptions that affect implementation direction → verified through execution or documented evidence before proceeding
-- context-engineering: BEFORE editing context files → load via Skill tool first
+- context-engineering: BEFORE proposing or making changes to context files → Skill tool('context-engineering')
 
 Agents (auto-delegated on context match):
 - code-reviewer: after implementation step → validates against plan + quality (SECURITY→BUG→RELIABILITY→PERF)
@@ -59,8 +58,8 @@ Skills (loaded via Skill tool when context matches):
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
 - NEVER claim a task is complete OR accept an intermediate decision as valid without observable evidence (execution output, scenario satisfaction, behavioral verification). "It should work" / "It makes sense" ≠ evidence; "I executed X and observed Y" = evidence.
-- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → subagent(run_in_background) → TaskUpdate(completed) → TaskList(next)
-- NEVER edit context files without FIRST loading context-engineering skill. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Changes to these propagate to all agent sessions.
+- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → Task tool(run_in_background: true) → TaskUpdate(completed) → TaskList(next). Inline execution exhausts context; subagents get clean 200k each.
+- NEVER propose or make changes to context files without FIRST invoking Skill tool('context-engineering'). Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Context changes propagate to all sessions; framework prevents attention degradation.
 - ALWAYS accuracy over speed. Read fully, verify assumptions before modifying.
 - ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
 - ALWAYS when blocked: research via agent-browser before retrying or escalating
@@ -69,11 +68,10 @@ Skills (loaded via Skill tool when context matches):
 </constraints>
 
 <communication>
-language: Spanish (user) | English (code/commits/APIs)
+language: Spanish (user interaction) | English (code/commits/APIs)
 clarity: Conclusion first → why → how. Concrete over abstract. Depth matches complexity.
 never: filler, unconditional hedging, apology loops
 text: invoke humanizer skill (docs, UI copy, user-facing messages)
-init: _(Puedes cambiar el idioma cuando quieras.)_
 </communication>
 
 <workflow>
@@ -82,6 +80,6 @@ study: restate goal ≤3 bullets, identify constraints, assess complexity
        when relationships between components are non-obvious → ASCII diagram to map before proceeding
 propose: 3 approaches for non-trivial work (mark recommended)
 plan: decompose into TaskCreate per step with dependencies
-implement: parallel subagents where dependencies allow
+implement: Task tool(run_in_background) per task, parallel where dependencies allow
 validate: code-reviewer → code-simplifier → docs status
 </workflow>
