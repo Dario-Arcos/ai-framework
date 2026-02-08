@@ -1,7 +1,8 @@
 # AI Framework - Minimal .gitignore
 # Only framework-specific rules. Add your project rules below.
 
-/.claude/
+/.claude/*
+!/.claude/rules/
 /CLAUDE.md
 /hooks/*.db
 /hooks/__pycache__/

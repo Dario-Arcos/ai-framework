@@ -36,8 +36,10 @@ ALLOWED_TEMPLATE_PATHS = [
 ]
 
 # Critical framework rules that MUST be in project .gitignore
+# /.claude/* ignores internals while !/.claude/rules/ tracks project memory
 CRITICAL_GITIGNORE_RULES = [
-    "/.claude/",
+    "/.claude/*",
+    "!/.claude/rules/",
     "/CLAUDE.md",
     "/hooks/*.db",
     "/hooks/__pycache__/",
@@ -60,17 +62,35 @@ def is_rule_active_in_gitignore(content, rule):
     return False
 
 
+def migrate_claude_gitignore(content):
+    """Migrate old /.claude/ rule to /.claude/* pattern.
+
+    Old pattern (/.claude/) ignores the entire directory and prevents negation.
+    New pattern (/.claude/*) ignores contents but allows !/.claude/rules/ to track rules.
+    """
+    lines = content.splitlines(keepends=True)
+    migrated = False
+    result = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "/.claude/":
+            result.append(line.replace("/.claude/", "/.claude/*"))
+            migrated = True
+        else:
+            result.append(line)
+    return "".join(result), migrated
+
+
 def ensure_gitignore_rules(plugin_root, project_dir):
     """Ensure critical framework rules are in project .gitignore
 
     Strategy:
         1. If no .gitignore: copy template
-        2. If .gitignore exists: append minimal critical rules if missing
+        2. If .gitignore exists: migrate old patterns, then append missing rules
     """
     template_gitignore = plugin_root / "template" / "gitignore.template"
     project_gitignore = project_dir / ".gitignore"
 
-    # Copy template if project has no .gitignore
     if not project_gitignore.exists():
         if template_gitignore.exists():
             try:
@@ -79,12 +99,16 @@ def ensure_gitignore_rules(plugin_root, project_dir):
                 pass
         return
 
-    # Append critical rules if missing
     try:
         with open(project_gitignore, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Line-based matching to avoid false positives (commented rules, substrings)
+        # Migrate /.claude/ → /.claude/* so negation patterns work
+        content, migrated = migrate_claude_gitignore(content)
+        if migrated:
+            with open(project_gitignore, "w", encoding="utf-8") as f:
+                f.write(content)
+
         missing_rules = [
             rule for rule in CRITICAL_GITIGNORE_RULES
             if not is_rule_active_in_gitignore(content, rule)
@@ -92,7 +116,6 @@ def ensure_gitignore_rules(plugin_root, project_dir):
 
         if missing_rules:
             with open(project_gitignore, "a", encoding="utf-8") as f:
-                # Ensure blank line separator even if file lacks trailing newline
                 if content and not content.endswith("\n"):
                     f.write("\n")
                 f.write("\n# AI Framework runtime files (auto-added)\n")

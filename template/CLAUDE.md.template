@@ -39,7 +39,7 @@ Skills (loaded via Skill tool when context matches):
   - ai-framework:sop-code-assist: task file ready → scenario-driven implementation + debug escalation
   - ai-framework:sop-reverse: investigating existing artifact (code, API, process) → investigation + specs + recommendations
 - ai-framework:systematic-debugging: bug, scenario failure, or unexpected behavior → root cause diagnosis before any fix attempt
-- ai-framework:project-init: new project or stack changed → analyzes codebase, creates .claude/rules/ project memory (auto-loaded alongside CLAUDE.md)
+- ai-framework:project-init: new project or stack changed → auto-extracts project context, architecture, stack, conventions into .claude/rules/
 - ai-framework:commit: ready to commit → semantic commits with auto-grouping by file type, conventional + corporate format
 - ai-framework:changelog: updating CHANGELOG → truth-based from git diff (not commits), semantic grouping, Keep a Changelog
 - ai-framework:pull-request: ready for PR → quality gate (code + security + observations) + auto-fix + PR creation
