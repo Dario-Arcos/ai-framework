@@ -1,6 +1,8 @@
-# AI-First Workflow
+# Workflow AI-first
 
-De idea a código en producción. El framework orquesta cada fase con skills especializados y quality gates automáticos.
+Este es el pipeline completo de desarrollo con AI Framework: de idea a código en producción en 5 fases, cada una con skills dedicados y quality gates automáticos.
+
+> **Antes de empezar**: lee [Inicio rápido](./quickstart.md) para instalar el framework.
 
 ---
 
@@ -18,12 +20,12 @@ De idea a código en producción. El framework orquesta cada fase con skills esp
 
 <details class="details custom-block">
 <summary>⚙️ 3. IMPLEMENT — SCENARIO → SATISFY → REFACTOR</summary>
-<p>La metodología central. Cada feature se define primero como escenario (holdout externo), se implementa hasta que el behavior converge (satisfaction, no boolean), y se refactoriza preservando behavior. Código = pesos opacos; correctness se infiere solo de behavior observable. <a href="#implement">Ver detalle →</a></p>
+<p>La metodología central. Cada feature se define primero como escenario observable, se implementa hasta que el behavior converge (satisfaction, no boolean), y se refactoriza preservando behavior. <a href="#implement">Ver detalle →</a></p>
 </details>
 
 <details class="details custom-block">
 <summary>🔍 4. QUALITY — 6 agents automáticos + verification gate</summary>
-<p>Seis agentes se activan solos según contexto: code-reviewer (SDD compliance, behavioral satisfaction, reward hacking), security-reviewer, edge-case-detector, code-simplifier, performance-engineer, systematic-debugger. Verification gate de 6 pasos antes de declarar cualquier tarea completa. <a href="#quality">Ver detalle →</a></p>
+<p>Seis agentes se activan solos según contexto: code-reviewer, security-reviewer, edge-case-detector, code-simplifier, performance-engineer, systematic-debugger. Verification gate de 6 pasos antes de declarar cualquier tarea completa. <a href="#quality">Ver detalle →</a></p>
 </details>
 
 <details class="details custom-block">
@@ -31,7 +33,7 @@ De idea a código en producción. El framework orquesta cada fase con skills esp
 <p>Commits semánticos con agrupación automática por tipo de archivo. Pull request con quality gate integrado (code review + security review en paralelo). Post-merge cleanup automático. <a href="#deliver">Ver detalle →</a></p>
 </details>
 
-Cada fase tiene un skill dedicado. Claude los activa automáticamente o puedes invocarlos explícitamente.
+Cada fase tiene un skill dedicado. Claude los activa automáticamente o puedes invocarlos tú.
 
 ---
 
@@ -218,6 +220,8 @@ Seis agentes especializados se activan automáticamente según contexto. No nece
 | `performance-engineer` | Queries, algorithmic complexity, I/O | Problemas de rendimiento |
 | `systematic-debugger` | Root cause 4 fases | Bug o test failure |
 
+Ver descripción detallada de cada agente en [Agentes](./agents-guide.md).
+
 ### Verification Gate <Badge type="danger" text="obligatorio" />
 
 Antes de declarar cualquier tarea completa, `verification-before-completion` ejecuta un gate de 6 pasos:
@@ -353,99 +357,17 @@ Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface 
 
 ## Herramientas de soporte {#tools}
 
-### Project Init
+Además del pipeline principal, el framework incluye herramientas para tareas específicas: `/project-init` para configurar reglas de proyecto, `/deep-research` para investigación multi-fuente, `agent-browser` para interacción web, y `/worktree-create` para trabajo paralelo.
 
-Configura las reglas del proyecto para que Claude entienda tu codebase desde la primera sesión.
-
-```bash
-/project-init
-```
-
-Genera 4 archivos en `.claude/rules/`:
-
-| Archivo | Contenido |
-|---------|-----------|
-| `project.md` | Propósito, paradigmas, dominio |
-| `architecture.md` | Capas, boundaries, data flow |
-| `stack.md` | Runtime, dependencias, scripts |
-| `conventions.md` | Naming, errors, imports |
-
-::: details Arquitectura dual
-
-```mermaid
-flowchart TB
-  subgraph GIT["📁 docs/claude-rules/ — TRACKED"]
-    G1[stack.md]
-    G2[patterns.md]
-    G3[architecture.md]
-    G4[testing.md]
-  end
-
-  subgraph LOCAL["📂 .claude/rules/ — IGNORED"]
-    L1[stack.md]
-    L2[patterns.md]
-    L3[architecture.md]
-    L4[testing.md]
-  end
-
-  GIT -->|"session-start hook\n(auto-sync cada sesión)"| LOCAL
-```
-
-Las reglas viven en `docs/claude-rules/` para versionarlas en PRs. El hook de session-start las sincroniza automáticamente.
-:::
-
-### Deep Research
-
-Investigación multi-fuente con verificación y confidence ratings.
-
-```bash
-/deep-research "análisis competitivo sector fintech"
-```
-
-3-5 pases iterativos, mínimo 3 fuentes independientes por claim, cada afirmación citada con URL.
-
-### Agent Browser
-
-Gateway único para cualquier interacción web. Reemplaza WebFetch/WebSearch.
-
-```bash
-agent-browser open https://example.com
-agent-browser snapshot -i                         # [!code focus]
-# Output: @e1 [input "email"], @e2 [button "Submit"]
-agent-browser fill @e1 "user@test.com"
-agent-browser click @e2
-agent-browser screenshot result.png
-```
-
-Se instala automáticamente con el plugin. Ver [Quickstart](./quickstart.md#post-install) para detalles de primera instalación.
-
-### Worktrees
-
-Trabajo paralelo sin perder el WIP de tu branch actual.
-
-```bash
-/worktree-create "feature-name" main    # Crea directorio aislado
-/worktree-cleanup                       # Lista o elimina worktrees
-```
-
-::: warning Después de crear un worktree
-El IDE se abre automáticamente, pero debes iniciar nueva sesión de Claude en esa ventana. Si no, Claude sigue trabajando en el directorio anterior.
-:::
+Ver detalles completos en [Skills](./skills-guide.md).
 
 ---
 
-## Superpowers <Badge type="warning" text="opcional" /> {#superpowers}
+## Plugins complementarios {#plugins}
 
-Plugin externo con skills complementarios: `writing-plans`, `executing-plans`, `finishing-a-development-branch`, entre otros.
+El framework se integra con plugins externos como Superpowers (skills para SDD, debugging, code review) y Episodic Memory (búsqueda semántica de conversaciones pasadas).
 
-Útil como acelerador cuando prefieres un workflow con batches y checkpoints explícitos en lugar del pipeline SOP del framework.
-
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
-
-Ver detalles en [Integrations](./integrations.md#superpowers).
+Ver instalación y detalles en [Integraciones](./integrations.md).
 
 ---
 
@@ -467,7 +389,11 @@ Ver detalles en [Integrations](./integrations.md#superpowers).
 
 ---
 
+**Siguiente paso**: [Pro tips](./claude-code-pro-tips.md)
+
 **Relacionados**: [Skills](./skills-guide.md) · [Agents](./agents-guide.md) · [Integrations](./integrations.md) · [Quickstart](./quickstart.md)
+
+---
 
 ::: info Última actualización
 **Fecha**: 2026-02-08

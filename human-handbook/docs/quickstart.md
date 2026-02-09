@@ -1,6 +1,8 @@
 # Inicio rápido
 
-Instala el framework y empieza a usarlo.
+Esta guía te lleva de cero a usar AI Framework en tu proyecto: instalar el plugin, configurar tu entorno y ejecutar tu primer comando.
+
+> **Antes de empezar**: lee [Por qué AI Framework](./why-ai-framework.md) para entender qué hace el framework.
 
 ---
 
@@ -86,7 +88,7 @@ Claude Code necesita unos segundos para registrar los hooks del plugin en su con
 
 ## Compatibilidad de plataformas {#platforms}
 
-El framework está diseñado para **macOS** como plataforma principal. Funciona en Linux y Windows con limitaciones.
+La plataforma principal es **macOS**. En Linux y Windows funciona con limitaciones.
 
 ### Hooks por plataforma
 
@@ -220,6 +222,8 @@ cat /tmp/agent-browser-update.log
 - [Skills Guide](./skills-guide.md) — Los 21 skills del framework
 - [Agents Guide](./agents-guide.md) — 6 agentes especializados
 - [Integrations](./integrations.md) — Plugins, MCPs y herramientas externas
+
+**Siguiente paso**: [Workflow AI-first](./ai-first-workflow.md)
 
 ---
 

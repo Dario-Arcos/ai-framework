@@ -1,6 +1,8 @@
 # Skills
 
-Workflows especializados que Claude activa automáticamente o que puedes invocar explícitamente.
+Los skills son workflows especializados que Claude carga automáticamente por contexto o que puedes invocar de forma explícita. Cada skill encapsula un proceso completo (debugging, commits, PRs, diseño UI) con sus propias fases, validaciones y outputs.
+
+> **Antes de empezar**: lee [Workflow AI-first](./ai-first-workflow.md) para entender cómo los skills se integran en el pipeline de desarrollo.
 
 ::: tip Activación
 Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo: `"Usando frontend-design: crea landing page"`.
@@ -12,8 +14,8 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 ### Core
 
-| Skill | Qué hace | Cuándo usarlo |
-|-------|----------|---------------|
+| Skill | Qué hace | Cuándo se activa |
+|-------|----------|------------------|
 | `brainstorming` | Diálogo para diseñar soluciones | Usuario describe qué construir, añadir o cambiar |
 | `systematic-debugging` | Debugging metódico con 4 fases | Bug, test failure, comportamiento inesperado |
 | `pull-request` | PR con quality gate integrado | Listo para crear pull request |
@@ -26,8 +28,8 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 ### Git & Workflow
 
-| Skill | Qué hace | Cuándo usarlo |
-|-------|----------|---------------|
+| Skill | Qué hace | Cuándo se activa |
+|-------|----------|------------------|
 | `commit` | Commits semánticos con agrupación | Listo para commitear |
 | `changelog` | Actualiza CHANGELOG desde diff real | Documentar cambios |
 | `branch-cleanup` | Limpieza post-merge | Después de mergear PR |
@@ -38,14 +40,14 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 ### Pipeline SOP (desarrollo autónomo)
 
-| Skill | Qué hace | Posición en el pipeline |
-|-------|----------|------------------------|
+| Skill | Qué hace | Cuándo se activa |
+|-------|----------|------------------|
 | `ralph-orchestrator` | Orquesta todo el pipeline | **Entry point** — invoca este |
-| `sop-discovery` | Explora constraints y riesgos | 1. Exploración |
-| `sop-reverse` | Investiga sistemas existentes | 1. Exploración (alternativa) |
-| `sop-planning` | Diseña solución detallada | 2. Diseño |
-| `sop-task-generator` | Genera .code-task.md files | 3. Planificación |
-| `sop-code-assist` | Implementa con SDD | 4. Ejecución |
+| `sop-discovery` | Explora constraints y riesgos | Fase 1: exploración |
+| `sop-reverse` | Investiga sistemas existentes | Fase 1: exploración (alternativa) |
+| `sop-planning` | Diseña solución detallada | Fase 2: diseño |
+| `sop-task-generator` | Genera .code-task.md files | Fase 3: planificación |
+| `sop-code-assist` | Implementa con SDD | Fase 4: ejecución |
 
 ---
 
@@ -73,7 +75,7 @@ agent-browser screenshot result.png
 | Debug | `--headed`, `console`, `errors`, `trace` |
 :::
 
-Se instala automáticamente. Ver [Integrations](./integrations.md#agent-browser).
+Se instala automáticamente. Ver [Integraciones](./integrations.md#agent-browser).
 
 ---
 
@@ -175,7 +177,7 @@ Usa `agent-browser` para consultar https://code.claude.com/docs. Nunca confía e
 
 ## frontend-design
 
-Interfaces web con dirección estética bold. Sin look genérico "AI slop".
+Interfaces web con dirección estética bold. Sin look genérico.
 
 ```
 "Landing page para startup fintech"
@@ -530,28 +532,9 @@ Implementa tasks con SDD: SCENARIO → SATISFY → REFACTOR.
 
 ---
 
-## Plugins externos
-
-::: warning Requiere instalación
-Estos skills no están incluidos por defecto.
-:::
-
-### /episodic-memory:search-conversations
-
-Busca en conversaciones pasadas de Claude Code.
-
-```bash
-/plugin install episodic-memory@superpowers-marketplace
-```
-
-Indexa automáticamente tus sesiones. Busca por conceptos (semántica) o texto exacto.
-
----
-
 ## Más skills
 
-- [Superpowers](./integrations.md#superpowers) — SDD, debugging, code review, worktrees
-- [skills.sh](https://skills.sh/) — Catálogo abierto con React, TypeScript, Stripe, etc.
+Para plugins externos (Episodic Memory, Superpowers) y catálogos de terceros (skills.sh), ver [Integraciones](./integrations.md).
 
 ---
 
@@ -579,6 +562,10 @@ Verifica que existe `specs/` en tu proyecto.
 
 ---
 
+**Siguiente paso**: [Agentes](./agents-guide.md)
+
+---
+
 ::: info Última actualización
-**Fecha**: 2026-02-07 | **Skills**: 21 total (9 core + 7 git/workflow + 5 pipeline SOP)
+**Fecha**: 2026-02-08
 :::

@@ -1,14 +1,12 @@
-# Por Qué Existe AI Framework
+# Por qué AI Framework
 
-::: tip Esencia
-Claude Code te da acceso a IA de clase mundial. Este framework estructura esas capacidades en un sistema de ingeniería predecible.
-:::
+AI Framework es un plugin para Claude Code que convierte prompts sueltos en un proceso de ingeniería con quality gates automáticos, validación de seguridad y desarrollo guiado por scenarios. Esta página explica qué problema resuelve y cómo lo hace.
 
 ---
 
-## El Problema
+## El problema
 
-El desarrollo con LLM sin estructura presenta patrones repetidos de degradación:
+Usar un LLM sin estructura produce patrones predecibles de degradación:
 
 ### Iteración sin arquitectura
 
@@ -36,11 +34,11 @@ Proyectos que funcionan en desarrollo pero fallan en producción.
 
 ---
 
-## La Solución
+## La solución
 
-AI Framework implementa gobernanza basada en investigación validada:
+AI Framework aplica gobernanza basada en investigación validada:
 
-### Fundamentos Científicos
+### Fundamentos
 
 ::: info Context Engineering (Anthropic, 2025)
 Optimización de context windows:
@@ -51,20 +49,20 @@ Optimización de context windows:
 
 ::: info LLM Optimization (DeepMind OPRO, 2023)
 Técnicas con resultados medidos:
-- Framing sistemático: **+46.2 puntos** accuracy (benchmark GSM8K)
-- Multi-approach analysis: **+57.7% calidad** (ATLAS study, 2024)
+- Framing sistemático: **+46.2 puntos** accuracy en el benchmark GSM8K
+- Multi-approach analysis: **+57.7% calidad** según el estudio ATLAS (2024)
 :::
 
-::: info Scenario-Driven Development (inspired by StrongDM Software Factory)
-Scenario-satisfy-refactor enforcement:
-- **40-80% reducción** en bugs (Microsoft Research, 2008)
+::: info Scenario-Driven Development (basado en StrongDM Software Factory)
+Ciclo scenario-satisfy-refactor:
+- **40-80% reducción** en bugs según Microsoft Research (2008, estudio sobre TDD/BDD)
 - Prevención de regresiones mediante scenario-first
 :::
 
 ::: info Constitutional AI (Anthropic, 2022)
 Principios como enforcement automático:
 - Constraints no negociables (complexity budgets, SDD, reuse-first)
-- Separation of powers (Product, Design, Engineering, Security)
+- Separación de responsabilidades (Product, Design, Engineering, Security)
 - Audit trail para decisiones arquitectónicas
 :::
 
@@ -96,7 +94,7 @@ El framework aplica enforcement en tres capas:
 - Audit trail completo
 :::
 
-**Diferencia clave**: Enforcement automático, no sugerencias opcionales.
+La diferencia con otros enfoques: el framework aplica estas reglas automáticamente, no las sugiere.
 
 ---
 
@@ -121,7 +119,7 @@ Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 
 :::
 
-**Prevención verificada:**
+Qué se previene con este flujo:
 - Scenarios ausentes (SDD blocker)
 - Vulnerabilidades básicas (security review pre-merge)
 - Over-engineering (complexity budget)
@@ -129,7 +127,7 @@ Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
 
 ---
 
-## Transformación: Asistente → Ingeniero
+## Transformación: Asistente a ingeniero
 
 ::: code-group
 
@@ -153,12 +151,12 @@ Framework + Claude:
 :::
 
 ::: tip Resultado
-Developer liberado de micro-gestión.
+El developer deja de micro-gestionar y se enfoca en decisiones de producto y arquitectura.
 :::
 
 ---
 
-## De Idea a Producción
+## De idea a producción
 
 ::: code-group
 
@@ -179,7 +177,7 @@ Idea → Diseño estructurado (minutos)  // [!code highlight]
      → Dual review → /pullrequest → Despliegue  // [!code highlight]
 
 [Guiado por humanos, ejecutado por IA]
-[Tests desde dia 1 · Horas-dias, production-ready]
+[Tests desde día 1 · Horas-días, production-ready]
 ```
 
 :::
@@ -195,16 +193,16 @@ Idea → Diseño estructurado (minutos)  // [!code highlight]
 
 ---
 
-## Conclusión
+## En resumen
 
-**Claude Code es el motor. AI Framework son los rieles.**
+Claude Code tiene capacidades potentes, pero sin estructura produce resultados inconsistentes. AI Framework agrega esa estructura: quality gates que bloquean código sin tests, security reviews que detectan vulnerabilidades antes del merge, y complexity budgets que frenan el over-engineering.
 
-Sin rieles: Motor potente → dirección aleatoria → desperdicio de energía
+Tú decides qué construir. El framework se encarga de que el resultado sea production-ready.
 
-Con rieles: Motor potente → dirección precisa → **máximo aprovechamiento**
+**Siguiente paso**: [Inicio rápido](./quickstart.md)
 
-**Este framework no es opcional. Es indispensable.**
+---
 
-**Claude Code te da las herramientas. AI Framework te da el sistema.**
-
-[Empezar →](/docs/quickstart)
+::: info Última actualización
+**Fecha**: 2026-02-08
+:::

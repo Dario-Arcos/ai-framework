@@ -1,8 +1,6 @@
-# Historial de Cambios
+# Changelog
 
-::: tip Keep a Changelog
-Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y [Versionado Semántico](https://semver.org/lang/es/).
-:::
+Registro de cambios del framework, organizado por versión siguiendo [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y [versionado semántico](https://semver.org/lang/es/).
 
 ---
 
@@ -306,7 +304,6 @@ Todos los cambios importantes siguiendo [Keep a Changelog](https://keepachangelo
 :::
 
 ---
-
-::: info Última Actualización
-**Fecha**: 2026-01-07 | **Versión**: 5.1.2 | **Formato**: Keep a Changelog
+::: info Última actualización
+**Fecha**: 2026-02-08
 :::

@@ -42,28 +42,28 @@ export default withMermaid(defineConfig({
 
     sidebar: [
       {
-        text: "Guides",
+        text: "Guías",
         collapsed: false,
         items: [
-          { text: "Inicio Rápido", link: "/docs/quickstart" },
-          { text: "AI-First Workflow", link: "/docs/ai-first-workflow" },
-          { text: "Pro Tips", link: "/docs/claude-code-pro-tips" },
+          { text: "Por qué AI Framework", link: "/docs/why-ai-framework" },
+          { text: "Inicio rápido", link: "/docs/quickstart" },
+          { text: "Workflow AI-first", link: "/docs/ai-first-workflow" },
+          { text: "Pro tips", link: "/docs/claude-code-pro-tips" },
         ],
       },
       {
-        text: "Tools",
+        text: "Herramientas",
         collapsed: false,
         items: [
           { text: "Skills", link: "/docs/skills-guide" },
           { text: "Agentes", link: "/docs/agents-guide" },
-          { text: "Integrations", link: "/docs/integrations" },
+          { text: "Integraciones", link: "/docs/integrations" },
         ],
       },
       {
-        text: "Project",
+        text: "Proyecto",
         collapsed: false,
         items: [
-          { text: "Por Qué AI Framework", link: "/docs/why-ai-framework" },
           { text: "Changelog", link: "/docs/changelog" },
         ],
       },

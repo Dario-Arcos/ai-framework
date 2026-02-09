@@ -1,19 +1,21 @@
-# Agents
+# Agentes
 
-Especialistas AI para tareas complejas. Claude los invoca automáticamente o puedes especificarlos.
+Los agentes son módulos especializados que Claude activa automáticamente cuando detecta contexto relevante. A diferencia de los skills (que tú invocas), los agentes se ejecutan solos al identificar condiciones que los requieren: un code review después de implementar, un análisis de seguridad antes de un merge, o debugging cuando algo falla.
+
+> **Antes de empezar**: lee [Skills](./skills-guide.md) para entender la diferencia entre skills (workflows manuales) y agentes (automáticos).
 
 ---
 
 ## Referencia rápida
 
-| Agent | Qué hace | Cuándo usarlo |
-|-------|----------|---------------|
+| Agent | Qué hace | Cuándo se activa |
+|-------|----------|------------------|
 | `code-reviewer` | Review contra plan y standards | Después de completar un step del plan |
 | `code-simplifier` | Simplifica código reciente | Automático después de escribir código |
 | `edge-case-detector` | Detecta edge cases de producción | Antes de merge, código crítico |
 | `performance-engineer` | Optimización y observabilidad | Problemas de rendimiento, monitoring |
 | `security-reviewer` | Security review del branch | Antes de merge, PRs |
-| `systematic-debugger` | Debugging metódico 4 fases | Cualquier bug, test failure |
+| `systematic-debugger` | Debugging metódico en 4 fases | Cualquier bug, test failure |
 
 ---
 
@@ -26,26 +28,28 @@ Especialistas AI para tareas complejas. Claude los invoca automáticamente o pue
 
 **Explícita** (tú especificas):
 ```
+# Invocación explícita en inglés (Claude lo entiende mejor así)
 "Use the security-reviewer agent"
 ```
 
 **Paralela** (Task tool):
 ```
+# Invocación explícita en inglés (Claude lo entiende mejor así)
 "Launch code-reviewer and security-reviewer in parallel"
 ```
 
 ---
 
-## Code Review & Quality
+## Revisión de código
 
 ### code-reviewer
 
-Review de código completado contra el plan original y coding standards.
+Review del código completado contra el plan original y coding standards.
 
-**Cuándo usarlo:** Después de completar un step numerado del plan.
+**Cuándo se activa:** Después de completar un step numerado del plan.
 
 **Dimensiones de análisis:**
-- Plan alignment: ¿implementación sigue el plan?
+- Plan alignment: ¿la implementación sigue el plan?
 - Code quality: patterns, error handling, type safety
 - Architecture: SOLID, separation of concerns
 - Documentation: comments, docstrings
@@ -56,7 +60,7 @@ Review de código completado contra el plan original y coding standards.
 
 ### code-simplifier
 
-Simplifica código para claridad y mantenibilidad sin cambiar funcionalidad.
+Simplifica código para mejorar legibilidad y mantenibilidad sin cambiar funcionalidad.
 
 **Cuándo se activa:** Automáticamente después de escribir o modificar código.
 
@@ -66,17 +70,17 @@ Simplifica código para claridad y mantenibilidad sin cambiar funcionalidad.
 - Mejora nombres de variables/funciones
 - Evita nested ternaries (prefiere switch/if-else)
 
-**Principio:** Claridad sobre brevedad. Código explícito > código clever.
+Prioriza código explícito sobre código clever.
 
 ---
 
-## Security & Edge Cases
+## Seguridad y edge cases
 
 ### security-reviewer
 
 Security review de los cambios en el branch actual.
 
-**Cuándo usarlo:** Antes de crear PR, cambios en auth/payments/data.
+**Cuándo se activa:** Antes de crear PR, cambios en auth/payments/data.
 
 **Categorías que examina:**
 - Input validation: SQL injection, command injection, XXE
@@ -97,7 +101,7 @@ Security review de los cambios en el branch actual.
 
 Detecta edge cases que causan production failures.
 
-**Cuándo usarlo:** Antes de merge, código que maneja money/state/data crítica.
+**Cuándo se activa:** Antes de merge, código que maneja money/state/data crítica.
 
 **Categorías:**
 
@@ -112,13 +116,13 @@ Detecta edge cases que causan production failures.
 
 ---
 
-## Debugging & Performance
+## Debugging y rendimiento
 
 ### systematic-debugger
 
 Debugging metódico usando el skill `systematic-debugging`.
 
-**Cuándo usarlo:** Cualquier bug, test failure, comportamiento inesperado.
+**Cuándo se activa:** Cualquier bug, test failure, comportamiento inesperado.
 
 **Las 4 fases:**
 1. **Root Cause** — Antes de intentar cualquier fix
@@ -134,7 +138,7 @@ Debugging metódico usando el skill `systematic-debugging`.
 
 Optimización de rendimiento y observabilidad.
 
-**Cuándo usarlo:** Performance issues, setup monitoring, optimización.
+**Cuándo se activa:** Performance issues, setup monitoring, optimización.
 
 **Capacidades:**
 - **Observability:** OpenTelemetry, DataDog, Prometheus/Grafana, RUM
@@ -153,8 +157,10 @@ Optimización de rendimiento y observabilidad.
 | Performance issue | `performance-engineer` |
 | Code cleanup | `code-simplifier` (automático) |
 
+**Siguiente paso**: [Integraciones](./integrations.md)
+
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-01-31 | **Agents**: 6 total
+**Fecha**: 2026-02-08
 :::

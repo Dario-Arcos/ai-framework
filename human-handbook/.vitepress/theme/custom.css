@@ -158,34 +158,56 @@ html {
   color: var(--royal-blue);
 }
 
-/* ===== HERO TITLE - SLATE GRAPHITE GRADIENT (Sober but visible) ===== */
+/* ===== HERO TITLE - SCANLINE DITHERING + GRADIENT ===== */
 .VPHero .name,
 .VPHero .text {
-  background: linear-gradient(120deg, #0F172A 0%, #475569 40%, #64748B 70%, var(--vp-c-brand-1) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  position: relative;
   font-weight: 800;
   letter-spacing: -0.5px;
-  animation: gradient-shift 8s ease infinite;
-  background-size: 200% 200%;
-  will-change: background-position; /* Performance optimization for infinite animation */
-}
-
-/* Subtle gradient animation for premium feel */
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* Dark mode hero - lighter slate gradient for visibility */
-.dark .VPHero .name,
-.dark .VPHero .text {
-  background: linear-gradient(120deg, #94A3B8 0%, #CBD5E1 40%, #E2E8F0 70%, var(--vp-c-brand-1) 100%);
+  /* Composite gradient + scanlines in single background */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.05) 4px
+    ),
+    linear-gradient(120deg, #0F172A 0%, #475569 40%, #64748B 70%, var(--vp-c-brand-1) 100%);
+  background-size: 100% 100%, 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-size: 200% 200%;
+  /* Performance: only animate second background layer (gradient) */
+  animation: gradient-shift 8s ease infinite;
+  will-change: background-position;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Animate only the gradient layer, not scanlines */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%, 0% 50%; }
+  50% { background-position: 100% 50%, 100% 50%; }
+}
+
+/* Dark mode - lighter gradient + subtle white scanlines */
+.dark .VPHero .name,
+.dark .VPHero .text {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.04) 2px,
+      rgba(255, 255, 255, 0.04) 4px
+    ),
+    linear-gradient(120deg, #94A3B8 0%, #CBD5E1 40%, #E2E8F0 70%, var(--vp-c-brand-1) 100%);
+  background-size: 100% 100%, 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   animation: gradient-shift 8s ease infinite;
 }
 
@@ -399,6 +421,41 @@ textarea:focus-visible {
   border-bottom-color: var(--lavender-blue);
 }
 
+/* ===== HERO CASCADE — mask reveal + per-word reveal ===== */
+.VPHero .text.hero-text-reveal {
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  animation: hero-mask-sweep 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards,
+             gradient-shift 8s ease infinite;
+}
+
+@keyframes hero-mask-sweep {
+  to {
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
+  }
+}
+
+.hero-word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(3px);
+  transform: translateY(6px);
+  animation: hero-word-in 0.45s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes hero-word-in {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -408,9 +465,21 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 
-  /* Disable hero gradient animation for reduced motion */
   .VPHero .name,
   .VPHero .text {
     animation: none;
+  }
+
+  .VPHero .text.hero-text-reveal {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    animation: gradient-shift 8s ease infinite !important;
+  }
+
+  .hero-word {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
   }
 }
