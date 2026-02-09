@@ -1,12 +1,12 @@
-# Claude Code Pro-Tips
+# Pro tips
 
-::: tip ¿Para Qué Esta Guía?
-Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con Claude Code en desarrollo real.
-:::
+Atajos, modos y patrones para trabajar con Claude Code de forma fluida en desarrollo real.
+
+> **Antes de empezar**: lee [Workflow AI-first](./ai-first-workflow.md) para entender el pipeline de desarrollo.
 
 ---
 
-## Referencia Rápida
+## Referencia rápida
 
 | Acción                    | Comando/Atajo              |
 | ------------------------- | -------------------------- |
@@ -23,7 +23,7 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 
 ---
 
-## Control de Razonamiento Extendido
+## Control de razonamiento extendido
 
 **Cómo activar:**
 - **Toggle**: `Option+T` (macOS) / `Alt+T` (Windows/Linux)
@@ -31,7 +31,7 @@ Shortcuts, thinking modes, y patterns que funcionan para fluir naturalmente con 
 - **Límite de tokens**: Variable de entorno `MAX_THINKING_TOKENS`
 
 ::: warning Importante
-Frases como `thinking`, `think hard`, `ultrathink` **NO asignan tokens de razonamiento**. Son interpretadas como texto normal del prompt. Usa el toggle `Option+T`/`Alt+T` para activar extended thinking.
+Frases como `thinking`, `think hard`, `ultrathink` **NO asignan tokens de razonamiento**. Son texto normal del prompt. Usa el toggle `Option+T`/`Alt+T` para activar extended thinking.
 :::
 
 **Cuándo usar extended thinking:**
@@ -43,13 +43,9 @@ Frases como `thinking`, `think hard`, `ultrathink` **NO asignan tokens de razona
 | Refactoring complejo             | Con extended thinking  |
 | Análisis de dependencias         | Con extended thinking  |
 
-::: tip Pattern Efectivo
-Activa extended thinking antes de tareas complejas. Claude usará tokens adicionales para razonamiento profundo.
-:::
-
 ---
 
-## Referencias Rápidas con @
+## Referencias rápidas con @
 
 ```bash
 @src/utils/auth.js revisa esta implementación
@@ -57,13 +53,13 @@ Activa extended thinking antes de tareas complejas. Claude usará tokens adicion
 compara @src/old-auth.js con @src/new-auth.js
 ```
 
-**Beneficios:** Inmediato (no espera) · Preciso (archivo/dir exacto) · Eficiente con scope de git
+**Ventajas:** Inmediato (no espera) · Preciso (archivo/dir exacto) · Eficiente con scope de git
 
 ---
 
-## Ejecución Eficiente
+## Ejecución eficiente
 
-### Bash Mode (`!` prefix)
+### Bash mode (`!` prefix)
 
 Ejecuta comandos shell directamente **sin interpretación de Claude**, ahorrando tokens:
 
@@ -73,10 +69,8 @@ Ejecuta comandos shell directamente **sin interpretación de Claude**, ahorrando
 ! ls -la src/
 ```
 
-**Comportamiento:**
-
-- Comando ejecuta inmediatamente en shell
-- Output se añade al contexto de conversación
+- El comando se ejecuta inmediatamente en shell
+- El output se añade al contexto de conversación
 - No requiere aprobación de Claude
 - Soporta `Ctrl+B` para background
 
@@ -86,7 +80,7 @@ Ejecuta comandos shell directamente **sin interpretación de Claude**, ahorrando
 
 ---
 
-### Background Commands (`Ctrl+B`)
+### Background commands (`Ctrl+B`)
 
 Mueve comandos en ejecución al background mientras Claude sigue trabajando:
 
@@ -95,16 +89,12 @@ npm run dev        # Enter para ejecutar
 Ctrl+B             # Push to background
 ```
 
-**Comportamiento:**
-
-- Proceso continúa ejecutándose independientemente
+- El proceso continúa ejecutándose independientemente
 - Claude puede seguir respondiendo prompts
 - Output buffereado, recuperable con `/tasks`
 - Auto-cleanup al cerrar Claude Code
 
 **Ideal para:** Dev servers, build processes, test suites, logs en tiempo real.
-
-**Comandos de gestión:**
 
 | Acción        | Atajo/Comando         |
 | ------------- | --------------------- |
@@ -114,7 +104,7 @@ Ctrl+B             # Push to background
 
 ---
 
-### Background Web Tasks (`&` prefix)
+### Background web tasks (`&` prefix)
 
 Envía tareas a **Claude Code en la web** prefijando con `&`:
 
@@ -123,19 +113,12 @@ Envía tareas a **Claude Code en la web** prefijando con `&`:
 & Implementa feature X completa con tests y documentación
 ```
 
-**Comportamiento:**
-
-- Tarea se ejecuta en infraestructura cloud de Anthropic
-- Terminal queda libre para otras tareas
+- La tarea se ejecuta en infraestructura cloud de Anthropic
+- Tu terminal queda libre para otras tareas
 - Monitoreable desde [claude.ai/code](https://claude.ai/code) o Claude iOS
 - Notificación cuando termina
 
-**Casos de uso:**
-
-- **Tareas largas**: Refactorings masivos, migraciones
-- **Paralelo**: Múltiples features en branches diferentes
-- **Móvil**: Iniciar tarea, monitorear desde el teléfono
-- **Async**: Dejar corriendo mientras haces otras cosas
+**Casos de uso:** Refactorings masivos, múltiples features en paralelo, iniciar tarea y monitorear desde el teléfono.
 
 ::: warning Requisito
 Requiere cuenta Claude con acceso a Claude Code Web. La tarea se ejecuta en tu repositorio conectado.
@@ -143,7 +126,7 @@ Requiere cuenta Claude con acceso a Claude Code Web. La tarea se ejecuta en tu r
 
 ---
 
-## Navegación Temporal (/rewind)
+## Navegación temporal (/rewind)
 
 Claude Code guarda checkpoints antes de cada edición.
 
@@ -152,8 +135,6 @@ Claude Code guarda checkpoints antes de cada edición.
 - **Conversation only**: Retrocede mensaje, mantiene código
 - **Code only**: Revierte archivos, mantiene conversación
 - **Both**: Reset completo a checkpoint
-
-**Casos de uso:**
 
 ```bash
 # Explorar alternativa
@@ -172,13 +153,11 @@ No trackea bash commands · Solo sesión actual · No reemplaza git
 
 ---
 
-## Gestión de Conversaciones
+## Gestión de conversaciones
 
-### La Regla de las 3 Correcciones
+### La regla de las 3 correcciones
 
-**El problema:** Corregir repetidamente al LLM crea ciclo negativo. Cada corrección añade ruido al contexto.
-
-**La regla:**
+Corregir repetidamente al LLM crea un ciclo negativo. Cada corrección añade ruido al contexto.
 
 ```
 Intento 1: Incorrecto → Corregir
@@ -188,17 +167,17 @@ Intento 3: Incorrecto → STOP
 
 **En intento 3:**
 
-1. Usa `/rewind` si error fue reciente
+1. Usa `/rewind` si el error fue reciente
 2. Inicia nueva conversación con contexto claro
-3. Reformula el problema - instrucción pudo ser ambigua
+3. Reformula el problema (la instrucción pudo ser ambigua)
 
-**Por qué funciona:** Fresh start elimina ruido acumulado. Claude procesa request sin bias de intentos fallidos.
+Un fresh start elimina ruido acumulado. Claude procesa el request sin bias de intentos fallidos.
 
 ---
 
-### Anti-Pattern: "Maldecir" al LLM
+### Anti-pattern: expresar frustración
 
-❌ **No hagas:**
+**No hagas:**
 
 ```
 "No, eso está mal"
@@ -206,7 +185,7 @@ Intento 3: Incorrecto → STOP
 "¿Por qué no entiendes?"
 ```
 
-✅ **Haz:**
+**Haz:**
 
 ```
 ESC ESC → Both
@@ -214,23 +193,22 @@ ESC ESC → Both
 "Necesito implementar X. Contexto: Y. Restricciones: Z."
 ```
 
-**Por qué:** Frustración en mensajes solo añade tokens que confunden el context.
+La frustración en mensajes solo añade tokens que contaminan el contexto.
 
 ---
 
-### Cuándo Empezar de Nuevo
+### Cuándo empezar de nuevo
 
 **Indicadores:**
 
 - 3+ correcciones sin progreso
-- LLM repite mismo error
-- Respuestas confusas/inconsistentes
+- Claude repite el mismo error
+- Respuestas confusas o inconsistentes
 - Cambio significativo de dirección
 
 **Template para nueva conversación:**
 
 ```
-
 Contexto:
 - [información relevante]
 - [restricciones conocidas]
@@ -244,7 +222,7 @@ Enfoque esperado:
 
 ---
 
-## Control de Permisos & Plan Mode
+## Control de permisos y plan mode
 
 **4 modos disponibles:**
 
@@ -257,21 +235,16 @@ Enfoque esperado:
 
 **Cambiar modo:** `Shift+Tab` cicla entre modos
 
-**Plan Mode Workflow:**
+**Plan mode workflow:**
 
 1. **Activar**: `Shift+Tab` hasta ver `⏸ plan mode on`
 2. **Planificar**: Claude presenta plan sin ejecutar
-3. **Revisar**: Analizas plan propuesto
-4. **Aprobar/Rechazar**: Si apruebas → cambio a bypass permissions
+3. **Revisar**: Analizas el plan propuesto
+4. **Aprobar**: Si apruebas, cambia a bypass permissions
 5. **Ejecutar**: Cambios se aplican sin interrupciones
 
-::: tip Workflow Recomendado
-Plan Mode + Bypass Permissions = Review seguro antes + ejecución fluida después
-:::
-
-::: tip Recomendación: Plan Mode para Features Complejas
-
-Ideal para: refactorings grandes, integraciones externas, cambios arquitectónicos.
+::: tip Plan mode para features complejas
+Ideal para refactorings grandes, integraciones externas y cambios arquitectónicos. Plan mode + bypass permissions = review seguro antes, ejecución fluida después.
 :::
 
 **Configuración persistente en `.claude/settings.local.json`:**
@@ -286,12 +259,12 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 }
 ```
 
-**Casos de uso:**
+**Modos recomendados por contexto:**
 
-| Contexto          | Modo Recomendado             |
+| Contexto          | Modo recomendado             |
 | ----------------- | ---------------------------- |
-| Desarrollo Local  | `acceptEdits`                |
-| Cambios Complejos | `plan` → `bypassPermissions` |
+| Desarrollo local  | `acceptEdits`                |
+| Cambios complejos | `plan` → `bypassPermissions` |
 | Exploración       | `plan`                       |
 | CI/CD             | `bypassPermissions`          |
 | Producción        | `default`                    |
@@ -302,18 +275,14 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 
 ---
 
-## Framework Customization
+## Personalización del framework
 
-**Framework provides defaults. You control overrides.**
-
-### Settings (v2.0+)
+### Settings
 
 | Archivo | Propósito | Precedencia |
 |---------|-----------|-------------|
 | `.claude/settings.json` | Framework defaults (auto-synced) | Base |
-| `.claude/settings.local.json` | Personal overrides (never touched) | **Máxima** |
-
-**Precedence:** `settings.local.json` > `settings.json`
+| `.claude/settings.local.json` | Overrides personales (nunca se sobrescriben) | **Máxima** |
 
 **Ejemplo `.claude/settings.local.json`:**
 
@@ -327,90 +296,51 @@ Ideal para: refactorings grandes, integraciones externas, cambios arquitectónic
 }
 ```
 
-### Skills (v2.0+)
+### Skills
 
-**¿Qué son?** Context engineering patterns que se cargan on-demand. Zero overhead permanente.
+El framework incluye 21+ skills especializados. Se cargan bajo demanda, sin consumir contexto permanente.
 
-**Ventaja clave:** No consumen contexto hasta que los invocas explícitamente.
+**Invocación explícita con `/`:**
 
-**Invocar:**
+El sistema automático de invocación detecta contexto e intenta invocar el skill adecuado, pero no siempre acierta. Para certeza absoluta, escribe `/nombre-del-skill` en cualquier parte de tu prompt:
 
 ```bash
-"Use the skill-creator skill to help me build a new skill"
+# Invocación directa — siempre funciona
+/commit
+/brainstorming quiero explorar ideas para un sistema de cache
+analiza este módulo y después /pull-request
+
+# Combinable con texto natural
+refactoriza el auth y cuando termines /commit
 ```
 
-**Skills disponibles:**
-
-| Skill | Propósito |
-|-------|-----------|
-| `algorithmic-art` | Generative art con p5.js + seeded randomness |
-| `claude-code-expert` | Build/modify agents, commands, hooks |
-| `skill-creator` | Create new skills (guided workflow) |
-
-**Cuándo usar:** Primera opción siempre. Cargan solo cuando necesitas, descargan después.
-
-[Ver todos →](./skills-guide)
-
----
-
-### MCP Servers (v2.0+)
-
-**¿Qué son?** Herramientas externas persistentes (browser, databases, APIs). Siempre activos cuando habilitados.
-
-**Costo:** 4+ MCPs = 20-30% context window. Usa solo si necesitas tools permanentemente disponibles.
-
-::: warning Context Budget
-Skills son alternativa ligera. MCPs solo cuando workflow requiere integración continua.
+::: tip Recomendación
+Si el skill que necesitas es claro, usa `/skill-name` directamente. La invocación automática es conveniente pero no infalible — el slash explícito elimina ambigüedad.
 :::
 
-**Activar en `.claude/settings.local.json`:**
+[Ver guía completa de skills →](./skills-guide.md)
 
-```json
-{
-  "enabledMcpjsonServers": ["playwright", "shadcn"]
-}
-```
+### MCP Servers
 
-**Restart:** `Ctrl+D` → `claude` | **Verificar:** `/mcp`
+Los MCPs conectan Claude con servicios externos. Cada MCP activo consume parte del context window.
 
-**Servers pre-configurados:**
+[Ver configuración de integraciones →](./integrations.md)
 
-| Server | Context Cost | Uso |
-|--------|--------------|-----|
-| `playwright` | Alto (~15 tools) | E2E testing continuo |
-| `shadcn` | Medio (~7 tools) | UI dev con componentes |
+### Personal instructions
 
-**Cuándo usar:** Necesitas tools disponibles en cada prompt (E2E testing, UI library lookup).
-
-[Docs completos →](./integrations.md)
-
-### Personal Instructions
-
-**`CLAUDE.local.md`** — Personal instructions (auto-gitignored, never synced)
+**`CLAUDE.local.md`** — Instrucciones personales (auto-gitignored, nunca se sincronizan).
 
 [Best practices →](https://www.anthropic.com/engineering/claude-code-best-practices)
 
-::: tip Arquitectura v2.0
-Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personaliza sin miedo a perder cambios.
+::: tip Personalización segura
+El framework nunca sobrescribe `settings.local.json` ni `CLAUDE.local.md`. Personaliza sin riesgo de perder cambios.
 :::
 
 ---
 
-## Sub-Agents: Invocación Explícita
+## Invocación explícita de agentes
 
-**Invocación Automática** (default):
-
-```bash
-"Revisa la seguridad de este código"
-# Claude decide usar security-reviewer
-```
-
-**Invocación Explícita** (control manual):
-
-```bash
-"Use the security-reviewer agent to analyze this code"
-# Fuerza uso de security-reviewer
-```
+Los agents se invocan automáticamente por contexto. Usa invocación explícita cuando necesites control directo.
 
 **Sintaxis:**
 
@@ -418,21 +348,11 @@ Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personali
 # Natural language
 "Use the {agent-name} agent to {task}"
 
-# Task tool (paralelo)
+# Paralelo con Task tool
 "Use Task tool to launch code-reviewer and security-reviewer in parallel"
 ```
 
-**Best Practices:**
-
-1. **Single Responsibility** - Cada agent un propósito claro
-2. **Detailed Prompts** - Provee contexto específico
-3. **Tool Access Control** - Solo herramientas necesarias
-4. **Let Claude Orchestrate** - Solo invocación explícita cuando:
-   - Necesitas garantizar agent específico
-   - Quieres múltiples agents en paralelo
-   - Task beneficia de context window separado
-
-**Casos de uso común:**
+**Ejemplos:**
 
 ```bash
 # Review en paralelo (PR workflow)
@@ -440,25 +360,22 @@ Framework nunca sobrescribe `settings.local.json` o `CLAUDE.local.md`. Personali
 to review changes in current branch vs develop"
 
 # Especialización forzada
-"Use the performance-engineer agent specifically
-to analyze this database query optimization"
-
-# Debugging sistemático
-"Use the systematic-debugger agent to investigate
-this complex authentication failure with distributed tracing"
+"Use the performance-engineer agent to analyze
+this database query optimization"
 ```
 
-::: tip Cuándo Usar Invocación Explícita
-
+::: tip Cuándo usar invocación explícita
 - Workflows establecidos (PR reviews, deployment checks)
 - Paralelización (múltiples agents independientes)
 - Control preciso (garantizar agent específico)
-- Context overflow (task muy grande para single context)
-  :::
+- Context overflow (task muy grande para un solo context)
+:::
+
+[Ver guía completa de agents →](./agents-guide.md)
 
 ---
 
-## Análisis de Pull Requests
+## Análisis de pull requests
 
 Claude Code integra con GitHub CLI:
 
@@ -470,15 +387,15 @@ Claude Code integra con GitHub CLI:
 **Workflow típico:**
 
 ```
-1. "Analiza PR #210"     → Claude usa gh para datos
-2. Claude presenta evaluación crítica
+1. "Analiza PR #210"     → Claude usa gh para obtener datos
+2. Claude presenta evaluación
 3. "Corrige X e Y"       → Aplica solo fixes confirmados
 4. Claude commitea con /commit
 ```
 
 ---
 
-## Workflow Optimization
+## Optimización del workflow
 
 **Validación de contexto** antes de comandos importantes:
 
@@ -497,11 +414,11 @@ git commit -m "checkpoint: antes de refactor X"
 # Si falla: git reset --hard HEAD
 ```
 
-**Beneficio:** Git checkpoint + Claude `/rewind` = doble red de seguridad
+Git checkpoint + Claude `/rewind` = doble red de seguridad.
 
 ---
 
-## Selección de Modelo
+## Selección de modelo
 
 ```bash
 /model            # Ver modelos disponibles
@@ -513,7 +430,7 @@ git commit -m "checkpoint: antes de refactor X"
 
 ---
 
-## Combinaciones Poderosas
+## Combinaciones efectivas
 
 **@ referencias + extended thinking:**
 
@@ -521,7 +438,7 @@ git commit -m "checkpoint: antes de refactor X"
 @src/core/ Option+T "analiza la arquitectura de este módulo"
 ```
 
-Claude gets deep context upfront + razonamiento profundo = architectural insights precisos
+Contexto preciso desde el inicio + razonamiento profundo = análisis arquitectónico concreto.
 
 **ESC ESC + nueva conversación:**
 
@@ -529,7 +446,7 @@ Claude gets deep context upfront + razonamiento profundo = architectural insight
 [resultado no deseado] → ESC ESC (Both) → [nueva conversación limpia]
 ```
 
-Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto
+Después de 3 intentos fallidos, un fresh start es mejor que insistir con contexto contaminado.
 
 **Plan mode + extended thinking:**
 
@@ -537,21 +454,19 @@ Después de 3 intentos fallidos. Fresh start > insistir en contexto corrupto
 Shift+Tab (plan mode) + Option+T → planificación profunda antes de ejecutar
 ```
 
-Tareas complejas: planifica con extended thinking, revisa, luego ejecuta
+Para tareas complejas: planifica con extended thinking, revisa, y luego ejecuta.
 
 ---
 
-## Flujo Natural Recomendado
+## Flujo recomendado
 
-**Secuencia que funciona:**
+1. **Inicia con contexto** — Usa `@` para cargar archivos relevantes
+2. **Ajusta razonamiento** — `Option+T`/`Alt+T` según complejidad de la tarea
+3. **Checkpoint antes de cambios** — Protección contra errores
+4. **3 intentos máximo** — Después, nueva conversación
+5. **Revierte sin miedo** — `ESC ESC` está para eso
 
-1. **Inicia con contexto** - Usa `@` para archivos relevantes
-2. **Ajusta razonamiento** - `Option+T`/`Alt+T` para extended thinking según complejidad
-3. **Checkpoint antes de cambios** - Protección contra errores
-4. **3 intentos máximo** - Después → nueva conversación
-5. **Revierte sin miedo** - `ESC ESC` es tu amigo
-
-**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 intentos no funcionan, el enfoque necesita cambiar.
+**Anti-pattern:** Corregir infinitamente sin fresh start. Si 3 intentos no funcionan, el enfoque necesita cambiar, no el número de intentos.
 
 ---
 
@@ -559,9 +474,9 @@ Tareas complejas: planifica con extended thinking, revisa, luego ejecuta
 
 **Framework:**
 
-- [AI-First Workflow](./ai-first-workflow) — Workflows completos
-- [Skills Guide](./skills-guide) — Skills especializados
-- [Agents Guide](./agents-guide) — Agentes especializados por dominio
+- [AI-First Workflow](./ai-first-workflow.md) — Workflows completos
+- [Skills](./skills-guide.md) — Skills especializados
+- [Agents](./agents-guide.md) — Agentes especializados por dominio
 
 **Docs oficiales:**
 
@@ -569,8 +484,9 @@ Tareas complejas: planifica con extended thinking, revisa, luego ejecuta
 - [Extended Thinking](https://code.claude.com/docs/en/common-workflows#use-extended-thinking)
 - [Interactive Mode](https://code.claude.com/docs/en/interactive-mode)
 
----
+**Siguiente paso**: [Skills](./skills-guide.md)
 
-::: info Última Actualización
-**Fecha**: 2026-01-19 | **Cambios**: Corregido extended thinking (toggle `Option+T`/`Alt+T`, no text triggers)
+---
+::: info Última actualización
+**Fecha**: 2026-02-08
 :::
