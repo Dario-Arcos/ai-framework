@@ -29,20 +29,43 @@ Start by understanding the current project context, then ask questions one at a 
 - Once you believe you understand what you're building, present the design
 - Break it into sections of 200-300 words
 - Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
+- Cover: architecture, components, data flow, error handling, observable scenarios
 - Be ready to go back and clarify if something doesn't make sense
+
+**Defining observable scenarios:**
+- After architecture is validated, define 5-10 end-to-end scenarios that would satisfy the user
+- Each scenario is a concrete user story with specific inputs and expected observable outcomes
+- Scenarios use the user's language, not technical assertions
+- Scenarios must include happy paths, edge cases, and error experiences
+- Scenarios function as a holdout set: they define what "done" looks like before any code exists
+- Present scenarios for validation one at a time, just like design sections
+- Ask: "Would this scenario genuinely satisfy you?" — not "Is this correct?"
+
+Scenario format:
+```
+SCENARIO: <short descriptive name>
+Given <concrete initial state with specific values>
+When <specific user action>
+Then <observable outcome the user would see>
+And <additional observable outcomes if needed>
+```
+
+These scenarios become the holdout set for implementation. They are NOT tests — they are specifications of what would satisfy the user. Implementation must converge until all scenarios are satisfied.
 
 ## After the Design
 
 **Documentation:**
 - Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
 - Use humanizer skill if available for clear writing
+- The design document MUST include an "Observable Scenarios" section with all validated scenarios
+- Observable scenarios are the holdout set — they MUST NOT be modified during implementation without returning to brainstorming
 - Commit the design document to git
 
 **Implementation (if continuing):**
 - Ask: "Ready to set up for implementation?"
 - Use `/worktree-create` for isolated workspace if needed
-- Use ralph-orchestrator for autonomous execution, or Superpowers `writing-plans` for detailed implementation plan
+- Use ralph-orchestrator for autonomous execution, or scenario-driven-development for direct implementation
+- The observable scenarios from the design are the starting input for the SCENARIO phase — they are already defined
 
 ## Key Principles
 
@@ -52,3 +75,4 @@ Start by understanding the current project context, then ask questions one at a 
 - **Explore alternatives** - Always propose 2-3 approaches before settling
 - **Incremental validation** - Present design in sections, validate each
 - **Be flexible** - Go back and clarify when something doesn't make sense
+- **Scenarios before implementation** - Define observable scenarios as part of the design, not during coding. Scenarios are the bridge between "what to build" and "how to know it's done"

@@ -20,9 +20,9 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
 "I ran the tests earlier" is not evidence. "Tests passed" without output is not evidence. Only fresh, observable output counts.
 
-## The 5-Step Gate
+## The 6-Step Gate
 
-Every completion claim must pass through all five steps, in order.
+Every completion claim must pass through all six steps, in order.
 
 ### 1. IDENTIFY
 
@@ -53,10 +53,41 @@ Read the COMPLETE output of each command:
 Confirm output matches your claim:
 - All tests: PASSED (not "most tests")
 - Build: SUCCESS with exit code 0
-- Feature: Behaves as specified in requirements
+- Feature: Behaves as specified in requirements — verified by observing output, NEVER by reading source
 - No new warnings introduced
+- No skipped or pending tests hiding failures
 
-### 5. CLAIM
+### 5. SATISFY
+
+Verify that execution evidence demonstrates genuine user satisfaction, not just boolean passage.
+
+**Scenario Convergence:**
+- List every defined scenario for the implemented work
+- Confirm each scenario is satisfied through execution (not removed, not rewritten to match code)
+- Report: `[N/M] scenarios satisfied` — all M must be satisfied to proceed
+
+**Reward Hacking Check:**
+- Were any scenarios or tests modified AFTER code was written to make them pass?
+- Check `git diff` of test/scenario files: modifications to expectations after implementation = reward hacking
+- If scenarios were changed: justify each change against original user intent, or revert
+
+**Satisfaction Assessment:**
+- For each scenario: "Would a user accept this behavior across realistic variations beyond the tested inputs?"
+- Check for semantic correctness the assertions don't cover: rounding, display format, error message clarity, edge behavior
+- If the answer is "it passes but a user might not accept it" → not satisfied
+
+**Convergence Gate:**
+```
+□ All defined scenarios satisfied through execution evidence
+□ No scenarios removed or weakened during implementation
+□ No test expectations modified to match code (reward hacking check)
+□ Behavior satisfies user intent beyond the literal assertions
+□ [N/M] scenarios satisfied — must be M/M to proceed
+```
+
+If ANY gate fails, return to implementation. Do not proceed to CLAIM.
+
+### 6. CLAIM
 
 Only now may you state the claim, with evidence:
 
@@ -80,6 +111,13 @@ Always use this format when claiming completion:
 ```
 
 The command must be the actual command you ran. The output must be the actual output you observed. No paraphrasing, no approximation.
+
+**Satisfaction evidence format:**
+```
+Scenarios: [N/M] satisfied
+Reward hacking: [clean | N scenarios modified — justified: reason]
+Satisfaction: [genuine | concerns: specific concern]
+```
 
 ## Common Failures
 
@@ -166,9 +204,10 @@ The delegating agent is responsible for verifying the subagent's claims.
 - **sop-code-assist Step 5** — This gate runs before commit
 - **ralph-orchestrator** — Confession markers require evidence from this gate:
   ```
-  > confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof from 5-step gate]
+  > confession: objective=[task], met=[Yes/No], confidence=[N], satisfaction=[N/M scenarios], evidence=[proof from completion gate]
   ```
 - **pull-request** — PR readiness requires all claims verified with fresh evidence
+- **scenario-driven-development** — Step 5 (SATISFY) bridges SDD's convergence model into the completion gate. Scenario list and satisfaction criteria come from SDD's defined scenarios.
 
 ## Related
 

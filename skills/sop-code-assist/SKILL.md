@@ -128,7 +128,7 @@ Implement using the scenario-driven-development skill.
 
 Finalize and commit changes.
 
-- Invoke the verification-before-completion skill's 5-step gate
+- Invoke the verification-before-completion skill's 6-step gate
 - Every claim ("tests pass", "build succeeds") requires fresh evidence
 - `git add` relevant files
 - `git commit` with Conventional Commits format
