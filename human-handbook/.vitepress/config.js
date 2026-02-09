@@ -47,7 +47,7 @@ export default withMermaid(defineConfig({
         items: [
           { text: "Por qué AI Framework", link: "/docs/why-ai-framework" },
           { text: "Inicio rápido", link: "/docs/quickstart" },
-          { text: "Workflow AI-first", link: "/docs/ai-first-workflow" },
+          { text: "Workflow", link: "/docs/ai-first-workflow" },
           { text: "Pro tips", link: "/docs/claude-code-pro-tips" },
         ],
       },
