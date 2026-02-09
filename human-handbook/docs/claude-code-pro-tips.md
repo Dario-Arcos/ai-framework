@@ -10,8 +10,9 @@ Atajos, modos y patrones para trabajar con Claude Code de forma fluida en desarr
 
 | Acción                    | Comando/Atajo              |
 | ------------------------- | -------------------------- |
-| Toggle razonamiento       | `Option+T` / `Alt+T`       |
-| Configurar razonamiento   | `/config`                  |
+| Effort level (thinking)   | `/model` (flechas ←→)      |
+| Toggle thinking on/off    | `Cmd+T` / `Meta+T`         |
+| Ver razonamiento (verbose)| `Ctrl+O`                   |
 | Referencia archivo/dir    | `@path`                    |
 | Revertir cambios          | `ESC ESC` o `/rewind`      |
 | Cambiar modo permisos     | `Shift+Tab` o `Alt+M`      |
@@ -23,25 +24,42 @@ Atajos, modos y patrones para trabajar con Claude Code de forma fluida en desarr
 
 ---
 
-## Control de razonamiento extendido
+## Razonamiento extendido
 
-**Cómo activar:**
-- **Toggle**: `Option+T` (macOS) / `Alt+T` (Windows/Linux)
-- **Configuración persistente**: `/config`
-- **Límite de tokens**: Variable de entorno `MAX_THINKING_TOKENS`
+Extended thinking viene **activado por defecto** con budget máximo (31,999 tokens). No necesitas activarlo — ya está on.
 
-::: warning Importante
-Frases como `thinking`, `think hard`, `ultrathink` **NO asignan tokens de razonamiento**. Son texto normal del prompt. Usa el toggle `Option+T`/`Alt+T` para activar extended thinking.
+**Controles:**
+
+| Control | Qué hace | Scope |
+| ------- | -------- | ----- |
+| `/model` (flechas ←→) | Ajusta effort level (low/medium/high) en Opus 4.6 | Sesión |
+| `Cmd+T` / `Meta+T` | Toggle thinking on/off | Sesión |
+| `Ctrl+O` | Toggle verbose mode (ver el thinking interno) | Sesión |
+| `/config` | Configura `alwaysThinkingEnabled` persistente | Global |
+| `CLAUDE_CODE_EFFORT_LEVEL` | Effort level vía env variable (low/medium/high) | Env |
+| `MAX_THINKING_TOKENS` | Limita budget en modelos no-Opus (o `=0` para desactivar en todos) | Env |
+
+::: warning Nomenclatura del toggle
+La documentación oficial usa `Option+T` / `Alt+T` en algunas páginas, pero el binding real registrado es `Cmd+T` / `Meta+T` ([keybindings](https://code.claude.com/docs/en/keybindings)). En macOS, `Meta` = `Option` si el terminal está configurado para enviar Option como Meta/Escape. Si no funciona, ejecuta `/terminal-setup`.
 :::
 
-**Cuándo usar extended thinking:**
+::: warning Frases sin efecto mecánico
+`thinking`, `think hard`, `ultrathink` son texto normal del prompt — **NO asignan tokens de razonamiento**. Usa `/model` para ajustar effort level o `Cmd+T`/`Meta+T` para toggle on/off.
+:::
 
-| Escenario                        | Recomendación          |
-| -------------------------------- | ---------------------- |
-| Debugging simple, quick fixes    | Sin extended thinking  |
-| Diseño arquitectónico            | Con extended thinking  |
-| Refactoring complejo             | Con extended thinking  |
-| Análisis de dependencias         | Con extended thinking  |
+**Opus 4.6 vs otros modelos:**
+
+- **Opus 4.6**: usa razonamiento adaptativo controlado por effort level. `MAX_THINKING_TOKENS` se ignora (excepto `=0`). Ajustar profundidad con `/model` + flechas ←→.
+- **Otros modelos**: budget fijo de hasta 31,999 tokens. Limitable con `MAX_THINKING_TOKENS`.
+
+**Cuándo ajustar effort level:**
+
+| Escenario                        | Effort recomendado |
+| -------------------------------- | ------------------ |
+| Debugging simple, quick fixes    | Low                |
+| Tareas de producción rutinarias  | Medium (default)   |
+| Diseño arquitectónico            | High               |
+| Refactoring complejo             | High               |
 
 ---
 
@@ -300,22 +318,28 @@ Ideal para refactorings grandes, integraciones externas y cambios arquitectónic
 
 El framework incluye 21+ skills especializados. Se cargan bajo demanda, sin consumir contexto permanente.
 
-**Invocación explícita con `/`:**
+**Invocación de skills — dos mecanismos:**
 
-El sistema automático de invocación detecta contexto e intenta invocar el skill adecuado, pero no siempre acierta. Para certeza absoluta, escribe `/nombre-del-skill` en cualquier parte de tu prompt:
+| Mecanismo | Cómo funciona | Fiabilidad |
+| --------- | ------------- | ---------- |
+| `/skill` al inicio del prompt | REPL lo parsea como comando directo | **Determinista** — siempre funciona |
+| Mención mid-prompt | Claude interpreta la intención e invoca el Skill tool | **Probabilística** — depende del modelo |
 
 ```bash
-# Invocación directa — siempre funciona
+# Invocación directa (inicio del prompt) — determinista
 /commit
 /brainstorming quiero explorar ideas para un sistema de cache
-analiza este módulo y después /pull-request
 
-# Combinable con texto natural
-refactoriza el auth y cuando termines /commit
+# Señal semántica (mid-prompt) — Claude interpreta e invoca
+"refactoriza el auth y cuando termines haz commit"
 ```
 
+::: warning `/` solo funciona como comando al inicio del prompt
+Según la [documentación oficial](https://code.claude.com/docs/en/interactive-mode), el REPL solo parsea `/` como slash command cuando está **al inicio del input**. Si escribes `/skill` mid-prompt, el texto completo se envía a Claude como prompt natural — puede invocar el skill si interpreta la intención, pero no es determinista.
+:::
+
 ::: tip Recomendación
-Si el skill que necesitas es claro, usa `/skill-name` directamente. La invocación automática es conveniente pero no infalible — el slash explícito elimina ambigüedad.
+Usa `/skill-name` al inicio del prompt para certeza absoluta. La invocación automática por contexto es conveniente pero no infalible.
 :::
 
 [Ver guía completa de skills →](./skills-guide.md)
@@ -418,13 +442,15 @@ Git checkpoint + Claude `/rewind` = doble red de seguridad.
 
 ---
 
-## Selección de modelo
+## Selección de modelo y effort level
 
 ```bash
-/model            # Ver modelos disponibles
+/model            # Ver modelos disponibles + ajustar effort con ←→
 /model haiku      # Testing, experimentos (bajo costo)
 /model sonnet     # Producción, features reales (máxima calidad)
 ```
+
+Al seleccionar modelo con `/model`, usa **flechas ←→** para ajustar el effort level (low/medium/high). Esto controla la profundidad del razonamiento adaptativo en Opus 4.6.
 
 **Regla simple:** Haiku para probar, Sonnet para producción.
 
@@ -432,13 +458,13 @@ Git checkpoint + Claude `/rewind` = doble red de seguridad.
 
 ## Combinaciones efectivas
 
-**@ referencias + extended thinking:**
+**@ referencias + high effort:**
 
 ```
-@src/core/ Option+T "analiza la arquitectura de este módulo"
+@src/core/ "analiza la arquitectura de este módulo"
 ```
 
-Contexto preciso desde el inicio + razonamiento profundo = análisis arquitectónico concreto.
+Contexto preciso desde el inicio + effort high (default) = análisis arquitectónico concreto.
 
 **ESC ESC + nueva conversación:**
 
@@ -448,20 +474,20 @@ Contexto preciso desde el inicio + razonamiento profundo = análisis arquitectó
 
 Después de 3 intentos fallidos, un fresh start es mejor que insistir con contexto contaminado.
 
-**Plan mode + extended thinking:**
+**Plan mode + high effort:**
 
 ```
-Shift+Tab (plan mode) + Option+T → planificación profunda antes de ejecutar
+Shift+Tab (plan mode) → planificación profunda antes de ejecutar
 ```
 
-Para tareas complejas: planifica con extended thinking, revisa, y luego ejecuta.
+Para tareas complejas: planifica con thinking on (default), revisa, y luego ejecuta.
 
 ---
 
 ## Flujo recomendado
 
 1. **Inicia con contexto** — Usa `@` para cargar archivos relevantes
-2. **Ajusta razonamiento** — `Option+T`/`Alt+T` según complejidad de la tarea
+2. **Ajusta effort level** — `/model` + flechas ←→ según complejidad de la tarea
 3. **Checkpoint antes de cambios** — Protección contra errores
 4. **3 intentos máximo** — Después, nueva conversación
 5. **Revierte sin miedo** — `ESC ESC` está para eso
@@ -481,12 +507,12 @@ Para tareas complejas: planifica con extended thinking, revisa, y luego ejecuta.
 **Docs oficiales:**
 
 - [Claude Code](https://code.claude.com/docs/en/)
-- [Extended Thinking](https://code.claude.com/docs/en/common-workflows#use-extended-thinking)
+- [Extended Thinking](https://code.claude.com/docs/en/common-workflows#use-extended-thinking-thinking-mode)
 - [Interactive Mode](https://code.claude.com/docs/en/interactive-mode)
 
 **Siguiente paso**: [Skills](./skills-guide.md)
 
 ---
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-02-09
 :::
