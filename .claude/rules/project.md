@@ -5,7 +5,7 @@ Constitutional AI-first development framework for Claude Code. Provides speciali
 
 ## Paradigms
 - Scenario-Driven Development (SDD): all implementation follows SCENARIO→SATISFY→REFACTOR cycles with convergence gates. Reference: https://factory.strongdm.ai/
-- Constitutional Governance: CLAUDE.md + capability index drive every decision — agents and skills auto-delegate on context match
+- Constitutional Governance: CLAUDE.md constraints + SessionStart enforcement drive every decision — agents and skills auto-delegate on context match
 - Documentation-as-Code: agents/skills defined in Markdown with YAML frontmatter, not compiled source
 
 ## Domain

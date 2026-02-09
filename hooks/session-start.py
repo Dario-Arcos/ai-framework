@@ -216,6 +216,40 @@ def consume_stdin():
         pass
 
 
+def read_enforcement_content(plugin_root):
+    """Read using-ai-framework skill for context injection.
+
+    The enforcement skill lives in skills/ so it's distributed with the plugin
+    and auto-listed by Claude Code. The hook injects it as additionalContext
+    for maximum attention weight (system-reminder level).
+    """
+    skill_path = plugin_root / "skills" / "using-ai-framework" / "SKILL.md"
+    try:
+        with open(skill_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        # Strip YAML frontmatter — Claude Code already parses it for auto-listing
+        if content.startswith("---"):
+            end = content.find("---", 3)
+            if end != -1:
+                content = content[end + 3:].lstrip("\n")
+        return content
+    except (OSError, IOError):
+        sys.stderr.write("WARNING: Could not read " + str(skill_path) + "\n")
+        return ""
+
+
+def build_additional_context(enforcement_content):
+    """Wrap enforcement content for maximum attention weight."""
+    if not enforcement_content.strip():
+        return ""
+
+    return (
+        "<EXTREMELY_IMPORTANT>\n"
+        + enforcement_content
+        + "\n</EXTREMELY_IMPORTANT>"
+    )
+
+
 def output_hook_response(context_msg):
     """Output JSON response following hook protocol."""
     response = {
@@ -228,8 +262,7 @@ def output_hook_response(context_msg):
 
 
 def main():
-    """Install framework files on session start"""
-    # Consume stdin (required by hook protocol)
+    """Install framework files and inject skill enforcement on session start"""
     consume_stdin()
 
     try:
@@ -242,13 +275,12 @@ def main():
             output_hook_response("AI Framework: ✗ Plugin root not found")
             sys.exit(1)
 
-        # Ensure .gitignore has critical runtime rules
         ensure_gitignore_rules(plugin_root, project_dir)
-
-        # Sync template files (smart sync: skip unchanged)
         sync_all_files(plugin_root, project_dir)
 
-        output_hook_response("AI Framework: ✓ Templates synced")
+        enforcement = read_enforcement_content(plugin_root)
+        context = build_additional_context(enforcement)
+        output_hook_response(context or "AI Framework: ✓")
         sys.exit(0)
 
     except Exception as e:
