@@ -1,6 +1,8 @@
 # Integraciones
 
-Claude Code se extiende con plugins, skills y MCPs.
+Las integraciones son extensiones que conectan AI Framework con herramientas externas: plugins que agregan skills, MCPs que dan acceso a APIs y servicios, y catálogos donde encontrar más componentes. Esta guía cubre qué hay disponible y cómo configurarlo.
+
+> **Antes de empezar**: lee [Agentes](./agents-guide.md) para entender los componentes nativos del framework antes de ver las extensiones.
 
 ---
 
@@ -10,7 +12,7 @@ Incluidos en el plugin. No requieren instalación.
 
 ### agent-browser
 
-CLI de [Vercel](https://github.com/AstroTechLabs/agent-browser) para browser automation. Reemplaza WebFetch/WebSearch cuando necesitas interacción real con páginas.
+CLI de [AstroTechLabs](https://github.com/AstroTechLabs/agent-browser) para browser automation. Reemplaza WebFetch/WebSearch cuando necesitas interacción real con páginas.
 
 **Capacidades:**
 - Navegación y scraping de páginas dinámicas
@@ -41,7 +43,7 @@ export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
 
 ### Superpowers
 
-Skills profesionales: SDD, debugging sistemático, code review, worktrees. Mantenido por [obra](https://github.com/obra/superpowers).
+Skills profesionales: TDD, debugging sistemático, code review, worktrees. Mantenido por [obra](https://github.com/obra/superpowers).
 
 ::: code-group
 ```bash [Instalación]
@@ -59,7 +61,7 @@ Skills profesionales: SDD, debugging sistemático, code review, worktrees. Mante
 :::
 
 ::: details Skills incluidos
-- `scenario-driven-development` — SDD workflow completo
+- `test-driven-development` — TDD workflow completo
 - `systematic-debugging` — Debugging metódico
 - `verification-before-completion` — Verificación antes de entregar
 - `writing-plans`, `executing-plans` — Planificación estructurada
@@ -145,7 +147,7 @@ Consulta el catálogo cuando busques skills para tu stack. Muchos son compatible
 
 ## MCPs
 
-Un MCP (Model Context Protocol) conecta Claude con servicios externos. Claude los invoca automáticamente cuando son útiles.
+Un MCP (Model Context Protocol) conecta Claude con servicios externos. Claude los invoca automáticamente cuando son relevantes para la tarea en curso.
 
 ### Configuración
 
@@ -199,7 +201,7 @@ Reinicia Claude Code para aplicar cambios.
 
 ---
 
-## Context budget
+## Presupuesto de contexto
 
 ::: warning Cada integración consume contexto
 1-2 MCPs activos: ~5-10% del contexto. 4+ MCPs: 20-30%. Habilita solo lo que uses.
@@ -207,6 +209,9 @@ Reinicia Claude Code para aplicar cambios.
 
 ---
 
+**Siguiente paso**: [Changelog](./changelog.md)
+
+---
 ::: info Última actualización
-**Fecha**: 2026-01-31 | **Cambios**: Skills nativos y directorio skills.sh
+**Fecha**: 2026-02-08
 :::
