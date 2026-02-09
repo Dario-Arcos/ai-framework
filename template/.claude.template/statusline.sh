@@ -10,54 +10,44 @@ fi
 
 input=$(cat)
 
-# Parse JSON
-MODEL=$(echo "$input" | jq -r '.model.display_name // "Claude"')
-VERSION=$(echo "$input" | jq -r '.version // "?"')
-DURATION_MS=$(echo "$input" | jq -r '.cost.total_duration_ms // 0')
-LINES_ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
-LINES_REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+# Single jq call: extract all fields + compute fallback percentage
+# Replaces 6-9 separate jq invocations with one process spawn
+IFS=$'\t' read -r MODEL VERSION DURATION_MS LINES_ADDED LINES_REMOVED PERCENT <<< "$(
+    echo "$input" | jq -r '
+        [
+            (.model.display_name // "Claude"),
+            (.version // "?"),
+            ((.cost.total_duration_ms // 0) | tostring),
+            ((.cost.total_lines_added // 0) | tostring),
+            ((.cost.total_lines_removed // 0) | tostring),
+            (
+                if .context_window.used_percentage != null then
+                    .context_window.used_percentage | floor
+                else
+                    ((.context_window.context_window_size // 200000) | if . == 0 then 200000 else . end) as $size |
+                    if .context_window.current_usage != null then
+                        ((.context_window.current_usage.input_tokens // 0) +
+                         (.context_window.current_usage.cache_creation_input_tokens // 0) +
+                         (.context_window.current_usage.cache_read_input_tokens // 0)) * 100 / $size | floor
+                    else 0 end
+                end | tostring
+            )
+        ] | join("\t")
+    '
+)"
 
-# Use pre-calculated percentage from Claude Code (v2.1.6+)
-# This is more accurate than manual calculation from tokens.
-# LIMITATION: Still doesn't include MCP tools overhead (~17-50k tokens)
-# See: https://github.com/anthropics/claude-code/issues/13783
-PERCENT=$(echo "$input" | jq -r '.context_window.used_percentage // null')
-
-# Fallback for older versions without used_percentage
-if [ "$PERCENT" = "null" ] || [ -z "$PERCENT" ]; then
-    CONTEXT_SIZE=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
-    [ "$CONTEXT_SIZE" -eq 0 ] 2>/dev/null && CONTEXT_SIZE=200000
-    USAGE=$(echo "$input" | jq '.context_window.current_usage // null')
-    if [ "$USAGE" != "null" ]; then
-        CURRENT_TOKENS=$(echo "$USAGE" | jq '
-            (.input_tokens // 0) +
-            (.cache_creation_input_tokens // 0) +
-            (.cache_read_input_tokens // 0)
-        ')
-        PERCENT=$((CURRENT_TOKENS * 100 / CONTEXT_SIZE))
-    else
-        PERCENT=0
-    fi
-fi
-
-# Ensure PERCENT is a valid number
+# Guard against jq failure
+[ -z "$MODEL" ] && MODEL="Claude"
 [ -z "$PERCENT" ] && PERCENT=0
-PERCENT=${PERCENT%.*}  # Remove decimals if any
+PERCENT=${PERCENT%.*}
+[ "$PERCENT" -gt 100 ] 2>/dev/null && PERCENT=100
 
-# Cap at 100% for display
-[ "$PERCENT" -gt 100 ] && PERCENT=100
-
-# Git branch
+# Git: single rev-parse gives repo check + toplevel in one call
 GIT_BRANCH=""
-if git rev-parse --git-dir > /dev/null 2>&1; then
-    BRANCH=$(git branch --show-current 2>/dev/null)
-    [ -n "$BRANCH" ] && GIT_BRANCH="$BRANCH"
-fi
-
-# Worktree detection (compare absolute paths, not basenames)
 WORKTREE=""
-if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-    CURRENT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+CURRENT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$CURRENT_ROOT" ]; then
+    GIT_BRANCH=$(git branch --show-current 2>/dev/null)
     MAIN_ROOT=$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')
     if [ -n "$MAIN_ROOT" ] && [ "$CURRENT_ROOT" != "$MAIN_ROOT" ]; then
         WORKTREE=$(basename "$CURRENT_ROOT")

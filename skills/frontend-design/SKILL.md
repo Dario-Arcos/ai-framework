@@ -18,7 +18,7 @@ AI generates generic designs because it optimizes for "statistical likelihood" â
 
 ### Step 1: Research References
 
-Use **dev-browser skill** to navigate and capture screenshots from:
+Use **agent-browser skill** to navigate and capture screenshots from:
 
 1. **Awwwards.com** â€” Filter by category matching user's request
    - Prioritize "Site of the Day" winners
@@ -31,7 +31,7 @@ Use **dev-browser skill** to navigate and capture screenshots from:
 
 **Invocation:**
 ```
-Invoke skill: dev-browser
+Invoke skill: agent-browser
 
 Task: Navigate to awwwards.com, filter by [category], capture full-page screenshots of 3-5 "Site of the Day" winners. For each site, also capture:
 - Hero section close-up
@@ -39,7 +39,7 @@ Task: Navigate to awwwards.com, filter by [category], capture full-page screensh
 - Key interactive elements
 ```
 
-**Fallback** (only if dev-browser unavailable): Use Chrome extension tools (mcp__claude-in-chrome__*) to navigate and take screenshots.
+**Fallback** (only if agent-browser unavailable): Use Chrome extension tools (mcp__claude-in-chrome__*) to navigate and take screenshots.
 
 **Last resort** (only if browser tools fail): Use WebFetch to extract content, but acknowledge this provides inferior analysis.
 

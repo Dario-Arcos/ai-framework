@@ -112,25 +112,15 @@ def update_background():
     """Auto-update skill (via npx skills update) and CLI in background."""
     touch_update_check()
 
-    if sys.platform == "darwin" and shutil.which("brew"):
-        cli_update = "brew upgrade agent-browser 2>/dev/null"
-    else:
-        cli_update = "npm update -g agent-browser 2>/dev/null"
-
-    cmd = f"npx -y skills update 2>/dev/null; {cli_update}"
+    cmd = "npx -y skills update 2>/dev/null; npm update -g agent-browser 2>/dev/null"
     return run_background(cmd, "agent-browser-update.log")
 
 
 def install_background():
     """Install CLI + browsers + skill in background."""
-    if sys.platform == "darwin" and shutil.which("brew"):
-        install_cli = "brew install agent-browser"
-    else:
-        install_cli = "npm install -g agent-browser"
-
     touch_cooldown()
     touch_update_check()  # fresh install = latest version
-    cmd = f"{install_cli} && agent-browser install && {SKILL_ADD_CMD}"
+    cmd = f"npm install -g agent-browser && agent-browser install && {SKILL_ADD_CMD}"
     return run_background(cmd, "agent-browser-install.log")
 
 
