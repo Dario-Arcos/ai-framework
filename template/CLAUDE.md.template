@@ -6,8 +6,8 @@
 - NEVER propose or make changes to context files without FIRST invoking Skill tool context-engineering. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md. Context changes propagate to all sessions; framework prevents attention degradation.
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
-- NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → Task tool(run_in_background: true) → TaskUpdate(completed) → TaskList(next). Inline execution exhausts context; subagents get clean 200k each.
-- ALWAYS spawn sub-agents (Task tool) with model "opus". Never delegate to haiku or sonnet — lighter models degrade reasoning quality in autonomous workflows.
+- NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance. Untracked work drifts and loses coherence.
+- ALWAYS delegate execution to sub-agents (Task tool, model: "opus") over inline work. Sub-agents get clean 200k context; lighter models degrade autonomous reasoning.
 - ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
 - ALWAYS when blocked: research via agent-browser before retrying or escalating
 - NEVER add decorative or redundant comments (banners, separators, restating what code does). Only comment to explain non-obvious WHY.
