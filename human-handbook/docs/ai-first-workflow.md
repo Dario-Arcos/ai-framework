@@ -1,155 +1,263 @@
 # AI-First Workflow
 
-Desarrollo autónomo con quality gates. Ralph Loop como motor, Superpowers como acelerador.
+De idea a código en producción. El framework orquesta cada fase con skills especializados y quality gates automáticos.
 
 ---
 
-## Arquitectura
+## El Pipeline
+
+<details class="details custom-block">
+<summary>💡 1. IDEA — brainstorming → design doc</summary>
+<p>Convierte ideas vagas en diseños completos. Claude activa <code>brainstorming</code> automáticamente: pregunta una cosa a la vez, propone 2-3 enfoques con trade-offs, y genera un design doc en <code>docs/plans/</code>. <a href="#idea">Ver detalle →</a></p>
+</details>
+
+<details class="details custom-block">
+<summary>📋 2. PLAN — ralph-orchestrator · discovery → planning → tasks</summary>
+<p>Entry point único para desarrollo autónomo. Ralph ejecuta 8 pasos: elige modo (Interactive/Autonomous), discovery, planning, genera <code>.code-task.md</code> files, y se detiene en un <strong>checkpoint obligatorio</strong> antes de ejecutar. <a href="#plan">Ver detalle →</a></p>
+</details>
+
+<details class="details custom-block">
+<summary>⚙️ 3. IMPLEMENT — SCENARIO → SATISFY → REFACTOR</summary>
+<p>La metodología central. Cada feature se define primero como escenario (holdout externo), se implementa hasta que el behavior converge (satisfaction, no boolean), y se refactoriza preservando behavior. Código = pesos opacos; correctness se infiere solo de behavior observable. <a href="#implement">Ver detalle →</a></p>
+</details>
+
+<details class="details custom-block">
+<summary>🔍 4. QUALITY — 6 agents automáticos + verification gate</summary>
+<p>Seis agentes se activan solos según contexto: code-reviewer (SDD compliance, behavioral satisfaction, reward hacking), security-reviewer, edge-case-detector, code-simplifier, performance-engineer, systematic-debugger. Verification gate de 6 pasos antes de declarar cualquier tarea completa. <a href="#quality">Ver detalle →</a></p>
+</details>
+
+<details class="details custom-block">
+<summary>🚀 5. DELIVER — commit → pull-request → branch-cleanup</summary>
+<p>Commits semánticos con agrupación automática por tipo de archivo. Pull request con quality gate integrado (code review + security review en paralelo). Post-merge cleanup automático. <a href="#deliver">Ver detalle →</a></p>
+</details>
+
+Cada fase tiene un skill dedicado. Claude los activa automáticamente o puedes invocarlos explícitamente.
+
+---
+
+## Fase 1: Idea {#idea}
+
+Convierte ideas vagas en diseños completos mediante diálogo.
+
+```
+"Necesito sistema de notificaciones push"
+```
+
+Claude activa `brainstorming` automáticamente:
+
+1. Examina el proyecto, pregunta **una cosa a la vez**
+2. Propone 2-3 enfoques con trade-offs
+3. Diseña en secciones de 200-300 palabras, valida cada una
+4. Genera `docs/plans/YYYY-MM-DD-<topic>-design.md`
+
+::: tip Después del design doc
+Según el tamaño de la tarea, continúa con:
+- **Tarea pequeña** → Implementa directamente (ver [Patrones por tamaño](#patterns))
+- **Tarea mediana/grande** → `ralph-orchestrator` para planificación + ejecución autónoma
+:::
+
+---
+
+## Fase 2: Plan {#plan}
+
+### Ralph Orchestrator <Badge type="tip" text="recomendado" />
+
+Entry point único para desarrollo autónomo. Una invocación orquesta todo el pipeline.
+
+```
+"Implementa el sistema de notificaciones del design doc"
+```
+
+Ralph ejecuta 8 pasos en secuencia:
+
+| Paso | Qué hace | Output |
+|:----:|----------|--------|
+| 0 | Elige modo: **Interactive** o **Autonomous** | — |
+| 1 | Valida prerrequisitos | — |
+| 2 | **Discovery** (nuevo) o **Reverse** (existente) | `discovery.md` |
+| 3 | **Planning** — diseño detallado | `detailed-design.md` |
+| 4 | **Task generation** — todas las tareas upfront | `.code-task.md` files |
+| 5 | Genera `AGENTS.md` para workers | `AGENTS.md` |
+| 6 | **Checkpoint** — aprobación obligatoria | Tú decides |
+| 7 | Configura ejecución (quality level, gates) | `.ralph/config.sh` |
+| 8 | Lanza `loop.sh` en background | Ejecución autónoma |
+
+::: warning Checkpoint obligatorio (Paso 6)
+Ralph **nunca** ejecuta código sin tu aprobación. Después de generar el plan y las tareas, se detiene y te presenta todo para review.
+:::
+
+::: details ¿Qué son los modos?
+**Interactive** — Ralph pregunta y espera confirmación en cada decisión. Para cuando quieres control granular.
+
+**Autonomous** — Ralph toma decisiones solo, documenta assumptions y continúa sin bloquear. Para desarrollo overnight/AFK.
+
+En ambos modos, el checkpoint del paso 6 es **obligatorio**.
+:::
+
+### SOP Pipeline <Badge type="info" text="manual" />
+
+Si prefieres control paso a paso en lugar de Ralph, puedes invocar cada skill del pipeline individualmente:
+
+::: code-group
+```bash [1. Discovery]
+"Explora constraints y riesgos del sistema de notificaciones"
+# → sop-discovery → discovery.md
+```
+
+```bash [2. Planning]
+"Diseña la solución basándote en el discovery"
+# → sop-planning → detailed-design.md + plan.md
+```
+
+```bash [3. Tasks]
+"Genera las tareas del plan"
+# → sop-task-generator → .code-task.md files
+```
+
+```bash [4. Implement]
+"Implementa la primera tarea"
+# → sop-code-assist → código + tests + commit
+```
+:::
+
+::: details ¿Cuándo usar pipeline manual vs Ralph?
+**Ralph** — Features completas, desarrollo overnight, cuando quieres que el framework maneje todo.
+
+**Pipeline manual** — Cuando quieres iterar en una fase específica (ej: refinar el planning sin regenerar discovery), o para tareas donde solo necesitas una parte del pipeline.
+:::
+
+---
+
+## Fase 3: Implement {#implement}
+
+### Scenario-Driven Development <Badge type="danger" text="metodología central" />
+
+Todo código se escribe para satisfacer escenarios, nunca al revés.
 
 ```mermaid
-%%{init: {'theme': 'neutral', 'themeVariables': { 'primaryColor': '#6366f1', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#4f46e5', 'lineColor': '#64748b', 'secondaryColor': '#f1f5f9', 'tertiaryColor': '#e2e8f0'}}}%%
-flowchart TB
-    subgraph CORE["AI FRAMEWORK (Core)"]
-        direction TB
-        BR[brainstorming<br/>Explorar ideas] --> RL[ralph-orchestrator<br/>Desarrollo autónomo]
-        RL --> QG[Quality Gates<br/>code + security review]
-        QG --> GIT[Git Flow<br/>commit → PR → cleanup]
-    end
+flowchart LR
+  S["🎯 SCENARIO\nDefine behavior first"]
+  SA["✅ SATISFY\nCode until converge"]
+  R["♻️ REFACTOR\nSimplify, preserve behavior"]
 
-    subgraph EXT["SUPERPOWERS (Plugin)"]
-        direction TB
-        WP[writing-plans] --> EP[executing-plans]
-        EP --> SDD[scenario-driven-development]
-        SDD --> FB[finishing-branch]
-    end
-
-    BR -.->|"continuar con"| EXT
-    EXT -.->|"skills avanzados"| CORE
+  S --> SA --> R -.->|nuevo scenario| S
 ```
+
+::: danger Ley de hierro
+**NO se escribe código de producción sin un escenario definido primero.** Los escenarios definen el comportamiento esperado; el código existe para satisfacerlos.
+:::
+
+**El ciclo:**
+
+**1. SCENARIO** — Definir qué debe pasar (user story con valores concretos)
+
+```gherkin
+Dado un usuario con plan "free"
+Cuando intenta enviar más de 10 notificaciones/día
+Entonces recibe error "Límite diario alcanzado" y el contador no incrementa // [!code highlight]
+```
+
+**2. SATISFY** — Escribir código hasta que el escenario converge
+
+```js
+// ❌ Esto NO es convergencia
+test('should limit notifications', () => { expect(true).toBe(true) }) // [!code error]
+
+// ✅ Esto SÍ es convergencia
+// Ejecuté sendNotification() 11 veces → observé "Límite diario alcanzado" // [!code highlight]
+// y counter.value === 10 (no incrementó)                                  // [!code highlight]
+```
+
+- Ejecutar → observar output → ajustar → repetir
+- "Converge" = el behavior observable satisface al usuario, no solo "pasa un test"
+
+**3. REFACTOR** — Simplificar sin romper behavior
+
+```js
+// Antes
+if (count >= limit) {                     // [!code --]
+  if (plan === 'free') {                  // [!code --]
+    throw new Error('Límite alcanzado')   // [!code --]
+  }                                       // [!code --]
+}                                         // [!code --]
+
+// Después
+const planLimits = { free: 10, pro: 100 } // [!code ++]
+if (count >= planLimits[plan]) {          // [!code ++]
+  throw new LimitExceededError(plan)      // [!code ++]
+}                                         // [!code ++]
+```
+
+- Validar ANTES y DESPUÉS de cada cambio
+- Un cambio pequeño a la vez
+- Si algo rompe → undo inmediatamente
+
+::: details SDD vs TDD
+| | Scenario (SDD) | Test (TDD) |
+|---|---|---|
+| **Vive** | Spec externa al código | Código del codebase |
+| **Evalúa** | "¿Satisface al usuario?" | "¿Pasa?" (boolean) |
+| **Vulnerable a** | Nada (holdout externo) | Reward hacking |
+| **Escrito como** | User story observable | Assertion técnica |
+
+SDD no reemplaza tests — los complementa. Los escenarios definen **qué** debe pasar; los tests verifican **que siga pasando**.
+:::
 
 ---
 
-## Ralph Loop: El Corazón
+## Fase 4: Quality {#quality}
 
-Ralph Loop es desarrollo autónomo multi-iteración con fresh context en cada ciclo.
+Seis agentes especializados se activan automáticamente según contexto. No necesitas invocarlos — Claude los delega cuando corresponde.
 
-### Principios (The Ralph Tenets)
+| Agent | Qué revisa | Cuándo se activa |
+|-------|------------|------------------|
+| `code-reviewer` | SDD compliance, behavioral satisfaction, reward hacking | Después de implementar un step |
+| `code-simplifier` | Complejidad, redundancia, nombres | Después de escribir código |
+| `security-reviewer` | Injection, auth bypass, secrets | Antes de PR, cambios en auth/data |
+| `edge-case-detector` | Boundary, concurrency, resource leaks | Código crítico (money, state) |
+| `performance-engineer` | Queries, algorithmic complexity, I/O | Problemas de rendimiento |
+| `systematic-debugger` | Root cause 4 fases | Bug o test failure |
 
-| Principio | Significado |
-|-----------|-------------|
-| **Fresh Context Is Reliability** | Cada iteración limpia contexto. Sin context rot. |
-| **Backpressure Over Prescription** | Gates que rechazan mal trabajo, no scripts que prescriben cómo. |
-| **The Plan Is Disposable** | Regenerar plan cuesta un loop. Barato. |
-| **Disk Is State, Git Is Memory** | Archivos son handoff. Git es memoria persistente. |
-| **Steer With Signals** | Cuando falla, agrega Sign para próxima iteración. |
-| **Let Ralph Ralph** | Sit ON the loop, not IN it. |
+### Verification Gate <Badge type="danger" text="obligatorio" />
 
-### Quick Start
+Antes de declarar cualquier tarea completa, `verification-before-completion` ejecuta un gate de 6 pasos:
 
-```bash
-# Prerequisitos: git repo existente + comandos de validación (tests, lint, build)
+1. **IDENTIFY** — Listar cada claim que se está haciendo
+2. **RUN** — Ejecutar la verificación ahora, no después
+3. **READ** — Leer cada línea del output, completo
+4. **VERIFY** — ¿El output coincide con el claim?
+5. **SATISFY** — ¿Los escenarios convergen hacia satisfacción?
+6. **CLAIM** — Afirmar con evidencia: `npm test` → 47/47 ✓
 
-# 1. Instalar desde skill
-RALPH_SKILL="path/to/skills/ralph-orchestrator"
-cp "$RALPH_SKILL/scripts/loop.sh" .
-cp "$RALPH_SKILL/scripts/PROMPT_build.md" .
-cp "$RALPH_SKILL/scripts/PROMPT_plan.md" .
-chmod +x loop.sh
-
-# 2. Planificar
-./loop.sh plan      # Genera IMPLEMENTATION_PLAN.md (corre hasta completar)
-
-# 3. Ejecutar
-./loop.sh           # Ejecuta plan (corre hasta ALL tasks done)
+::: danger Sin evidencia no hay completion
 ```
-
-### Modos
-
-| Comando | Modo | Comportamiento |
-|---------|------|----------------|
-| `./loop.sh plan` | Planning | Gap analysis → genera plan |
-| `./loop.sh` | Building | Selecciona task → implementa → commit |
-| `./loop.sh 20` | Building limitado | Máximo 20 iteraciones |
-| `./loop.sh plan 5` | Planning limitado | Máximo 5 iteraciones |
-
-### Safety Features
-
-- **Double Completion**: Requiere 2 señales `COMPLETE` consecutivas
-- **Fresh Context**: Cada iteración comienza con contexto limpio (INPUT-based control)
-- **Task Abandonment**: Exit si mismo task falla 3+ veces
-- **Loop Thrashing**: Detecta patrones oscilantes (A→B→A→B)
-- **Circuit Breaker**: 3 fallos Claude consecutivos → exit
-
-### Exit Codes
-
-| Code | Significado |
-|------|-------------|
-| 0 | SUCCESS - Objetivo completo |
-| 1 | ERROR - Validación fallida |
-| 2 | CIRCUIT_BREAKER - 3 fallos consecutivos |
-| 3 | MAX_ITERATIONS - Límite alcanzado |
-| 6 | LOOP_THRASHING - Patrón oscilante |
-| 7 | TASKS_ABANDONED - 3+ fallos mismo task |
-| 130 | INTERRUPTED - Ctrl+C |
+"Debería funcionar"                                  // [!code error]
+"Ejecuté `npm test` y observé 47/47 passing"         // [!code highlight]
+```
+:::
 
 ---
 
-## Superpowers: Skills Avanzados
-
-Plugin externo con workflows de desarrollo estructurados.
-
-### Instalación
-
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
-
-### Skills Incluidos
-
-| Skill | Cuándo usar |
-|-------|-------------|
-| `writing-plans` | Diseño aprobado, necesitas plan ejecutable |
-| `executing-plans` | Plan existe, ejecución en batches con review |
-| `scenario-driven-development` | Implementar cualquier código (SCENARIO→SATISFY→REFACTOR) |
-| `systematic-debugging` | Bug o comportamiento inesperado |
-| `verification-before-completion` | Antes de declarar "done" |
-| `finishing-a-development-branch` | Tasks completos, decidir integración |
-| `using-git-worktrees` | Necesitas aislamiento sin perder WIP |
-
-### Workflow Típico con Superpowers
-
-```bash
-# 1. Brainstorming (skill del framework)
-"Necesito sistema de notificaciones"
-# → brainstorming: preguntas iterativas → design doc
-
-# 2. Planning (Superpowers)
-"Listo para implementar"
-# → writing-plans: tasks detallados con código exacto
-
-# 3. Execution (Superpowers)
-"Ejecuta el plan"
-# → executing-plans: batches con review entre cada uno
-
-# 4. Integration (Superpowers)
-"Feature completa"
-# → finishing-branch: tests → opciones → PR/merge/cleanup
-```
-
----
-
-## Git Flow
-
-Skills del framework para gestión de código.
+## Fase 5: Deliver {#deliver}
 
 ### Commit
 
 ```bash
-/commit "feat: add email validation"
+/commit "feat: add push notification system"
 ```
 
-Agrupa cambios automáticamente por tipo. Soporta formato corporativo `tipo|TASK-ID|YYYYMMDD|desc`.
+Agrupa cambios automáticamente por tipo de archivo. Si modificaste código + config + docs, crea commits separados.
+
+::: code-group
+```bash [Convencional]
+/commit "feat(notifications): add daily limit"
+```
+
+```bash [Corporativo]
+/commit "TRV-345 implementar límite diario"
+# → feat|TRV-345|20260208|implementar límite diario
+```
+:::
 
 ### Pull Request
 
@@ -157,197 +265,210 @@ Agrupa cambios automáticamente por tipo. Soporta formato corporativo `tipo|TASK
 /pull-request main
 ```
 
-Quality gate integrado:
+Quality gate integrado que ejecuta en paralelo:
 - Code review (lógica, arquitectura, bugs)
-- Security review (SQL injection, secrets, XSS)
+- Security review (injection, secrets, XSS)
 - Observaciones (tests, API, breaking changes)
 
-Opciones: **Create PR** | **Auto fix** | **Cancel**
+Tres opciones: **Create PR** · **Auto fix** · **Cancel**
 
-### Cleanup
+### Post-merge
 
 ```bash
 /branch-cleanup
 ```
 
-Post-merge: elimina branch local, sincroniza con remote.
+Elimina feature branch local, sincroniza con remote.
 
 ---
 
-## Worktrees
+## Patrones por tamaño {#patterns}
 
-::: tip ¿Cuándo usar worktrees?
-**Tienes WIP que no quieres perder** → `/worktree-create`
-**No tienes WIP** → Branch simple con `git checkout -b`
-:::
-
-### Crear
+### Small <Badge type="info" text="≤80 LOC" /> — Directo
 
 ```bash
-/worktree-create "feature-name" main
+# Describe y Claude implementa con SDD
+"Agrega validación de email en el formulario de registro" # [!code focus]
+
+# Commit y PR
+/commit "feat: add email validation"
+/pull-request main
 ```
 
-Crea `../worktree-feature-name/` con branch nueva.
+Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface → refactoriza).
 
-::: warning Post-creación
-1. Abrir terminal en nueva ventana
-2. Verificar directorio: `pwd`
-3. Iniciar Claude: `claude`
-
-Sin esto, Claude sigue en directorio anterior.
-:::
-
-### Limpiar
+### Medium <Badge type="tip" text="80-250 LOC" /> — Brainstorming + SDD
 
 ```bash
-/worktree-cleanup              # Lista disponibles
-/worktree-cleanup feature-name # Elimina específico
+# 1. Explorar diseño
+"Necesito rate limiting en la API"     # [!code focus]
+# → brainstorming → design doc
+
+# 2. Implementar con SDD
+"Implementa el diseño"                 # [!code focus]
+# → SDD cycle por cada componente
+
+# 3. Entregar
+/commit "feat: add API rate limiting"
+/pull-request main
+```
+
+### Large/XL <Badge type="warning" text=">250 LOC" /> — Ralph Orchestrator
+
+```bash
+# 1. Brainstorming (si no hay design doc)
+"Necesito autenticación OAuth completa"
+# → design doc
+
+# 2. Ralph se encarga de todo
+"Implementa con ralph-orchestrator"              # [!code focus]
+# → discovery → planning → tasks → checkpoint
+# → ejecución autónoma con commits incrementales
+
+# 3. PR final
+/pull-request main
+```
+
+::: tip ¿Cuándo usar Ralph?
+- Features de más de 250 LOC
+- Desarrollo overnight o AFK
+- Cuando quieres fresh context en cada iteración (evita context rot)
+- Cuando el feature tiene múltiples componentes interdependientes
+:::
+
+### Hotfix <Badge type="danger" text="urgente" /> — Worktree aislado
+
+```bash
+/worktree-create "hotfix-race-condition" main     # [!code focus]
+
+# En la nueva ventana:
+"Fix: race condition en checkout"
+/commit "fix: race condition in checkout process"
+/pull-request main
+
+/worktree-cleanup hotfix-race-condition           # [!code focus]
 ```
 
 ---
 
-## Project Rules
+## Herramientas de soporte {#tools}
 
-Reglas compartidas via Git para consistencia de equipo.
+### Project Init
 
-### Arquitectura
-
-```
-docs/claude-rules/        ← TRACKED (source of truth)
-├── stack.md
-├── patterns.md
-├── architecture.md
-└── testing.md
-        ↓ session-start hook (auto-sync)
-.claude/rules/            ← IGNORED (copia local)
-```
-
-### Setup
+Configura las reglas del proyecto para que Claude entienda tu codebase desde la primera sesión.
 
 ```bash
 /project-init
 ```
 
-Analiza proyecto → genera `docs/claude-rules/` → commit y push.
+Genera 4 archivos en `.claude/rules/`:
 
-### Actualizar
+| Archivo | Contenido |
+|---------|-----------|
+| `project.md` | Propósito, paradigmas, dominio |
+| `architecture.md` | Capas, boundaries, data flow |
+| `stack.md` | Runtime, dependencias, scripts |
+| `conventions.md` | Naming, errors, imports |
 
-Edita `docs/claude-rules/` → PR → merge. Todos obtienen cambios en próxima sesión.
+::: details Arquitectura dual
 
----
+```mermaid
+flowchart TB
+  subgraph GIT["📁 docs/claude-rules/ — TRACKED"]
+    G1[stack.md]
+    G2[patterns.md]
+    G3[architecture.md]
+    G4[testing.md]
+  end
 
-## Patrones por Tamaño
+  subgraph LOCAL["📂 .claude/rules/ — IGNORED"]
+    L1[stack.md]
+    L2[patterns.md]
+    L3[architecture.md]
+    L4[testing.md]
+  end
 
-### Size S (≤80 LOC)
-
-```bash
-"Implementa validación de email en el formulario"
-# Claude implementa directamente con tests
-/commit "feat: add email validation"
-/pull-request main
+  GIT -->|"session-start hook\n(auto-sync cada sesión)"| LOCAL
 ```
 
-### Size M (≤250 LOC)
-
-**Con Superpowers:**
-```bash
-"Necesito autenticación OAuth"
-# → brainstorming → writing-plans → executing-plans
-/pull-request main
-```
-
-**Con Ralph Loop:**
-```bash
-./loop.sh plan    # Genera plan
-./loop.sh         # Ejecuta hasta completar
-/pull-request main
-```
-
-### Size L/XL (>250 LOC)
-
-```bash
-# Ralph Loop es ideal para features grandes
-./loop.sh plan              # Plan detallado
-./loop.sh                   # Ejecución autónoma con fresh context
-# Ralph hace commits incrementales
-/pull-request main       # PR final con todo el trabajo
-```
-
-### Hotfix
-
-```bash
-/worktree-create "hotfix-race" main
-/understand "área del bug"
-# Fix directo
-/commit "fix: race condition in checkout"
-/pull-request main
-/worktree-cleanup hotfix-race
-```
-
----
-
-## Referencia Rápida
-
-::: details Skills del Framework
-| Skill | Uso |
-|-------|-----|
-| `brainstorming` | Explorar ideas antes de implementar |
-| `ralph-orchestrator` | Desarrollo autónomo multi-iteración |
-| `systematic-debugging` | Root cause antes de fix |
-| `pull-request` | PR con quality gate integrado |
-| `commit` | Commit semántico con agrupación |
-| `changelog` | CHANGELOG truth-based desde diff |
-| `branch-cleanup` | Post-merge cleanup |
-| `worktree-create` | Workspace aislado |
-| `worktree-cleanup` | Elimina worktrees |
-| `project-init` | Genera rules de equipo |
-| `deep-research` | Investigación multi-fuente |
-| `frontend-design` | Interfaces distintivas (anti-AI slop) |
-| `humanizer` | Eliminar patrones de texto IA |
-| `claude-code-expert` | Docs oficiales Claude Code |
-| `agent-browser` | Browser automation |
+Las reglas viven en `docs/claude-rules/` para versionarlas en PRs. El hook de session-start las sincroniza automáticamente.
 :::
 
-::: details Skills de Superpowers (Plugin)
-| Skill | Uso |
-|-------|-----|
-| `writing-plans` | Plan ejecutable detallado |
-| `executing-plans` | Ejecución en batches con review |
-| `scenario-driven-development` | SCENARIO → SATISFY → REFACTOR |
-| `systematic-debugging` | 4 fases: root cause primero |
-| `verification-before-completion` | Evidencia antes de claims |
-| `finishing-a-development-branch` | Tests → opciones → integración |
-| `using-git-worktrees` | Aislamiento con smart directory |
+### Deep Research
+
+Investigación multi-fuente con verificación y confidence ratings.
+
+```bash
+/deep-research "análisis competitivo sector fintech"
+```
+
+3-5 pases iterativos, mínimo 3 fuentes independientes por claim, cada afirmación citada con URL.
+
+### Agent Browser
+
+Gateway único para cualquier interacción web. Reemplaza WebFetch/WebSearch.
+
+```bash
+agent-browser open https://example.com
+agent-browser snapshot -i                         # [!code focus]
+# Output: @e1 [input "email"], @e2 [button "Submit"]
+agent-browser fill @e1 "user@test.com"
+agent-browser click @e2
+agent-browser screenshot result.png
+```
+
+Se instala automáticamente con el plugin. Ver [Quickstart](./quickstart.md#post-install) para detalles de primera instalación.
+
+### Worktrees
+
+Trabajo paralelo sin perder el WIP de tu branch actual.
+
+```bash
+/worktree-create "feature-name" main    # Crea directorio aislado
+/worktree-cleanup                       # Lista o elimina worktrees
+```
+
+::: warning Después de crear un worktree
+El IDE se abre automáticamente, pero debes iniciar nueva sesión de Claude en esa ventana. Si no, Claude sigue trabajando en el directorio anterior.
 :::
 
 ---
 
-## Cuándo Usar Qué
+## Superpowers <Badge type="warning" text="opcional" /> {#superpowers}
 
-| Situación | Herramienta |
-|-----------|-------------|
-| Feature grande (L/XL) | Ralph Loop |
-| Feature mediana con diseño | Superpowers (brainstorming → plans) |
-| Fix rápido | Directo + `/commit` |
-| Desarrollo overnight/AFK | Ralph Loop |
-| Pair programming con Claude | Superpowers skills |
-| CI/CD automation | Ralph Loop |
+Plugin externo con skills complementarios: `writing-plans`, `executing-plans`, `finishing-a-development-branch`, entre otros.
 
----
+Útil como acelerador cuando prefieres un workflow con batches y checkpoints explícitos en lugar del pipeline SOP del framework.
 
-## Prácticas Esenciales
+```bash
+/plugin marketplace add obra/superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace
+```
 
-| Práctica | Por qué |
-|----------|---------|
-| Ralph para L/XL | Fresh context evita degradación |
-| Superpowers para M | Workflow estructurado con checkpoints |
-| Quality gate siempre | Security review gratis |
-| Commits granulares | Auto-agrupación inteligente |
+Ver detalles en [Integrations](./integrations.md#superpowers).
 
 ---
 
-**Relacionados**: [Skills](./skills-guide.md) · [Agentes](./agents-guide.md) · [Integrations](./integrations.md)
+## Referencia rápida {#reference}
 
-::: info Última Actualización
-**Fecha**: 2026-01-25 | **Versión**: 5.2.0
+| Quiero... | Comando / Acción |
+|-----------|-----------------|
+| Explorar una idea | `"Necesito X"` → brainstorming activa |
+| Desarrollo autónomo | `"Implementa con ralph-orchestrator"` |
+| Investigar sistema existente | `"Investiga el módulo de auth"` → sop-reverse |
+| Debug metódico | `"Bug: el checkout falla"` → systematic-debugging |
+| Commit | `/commit "tipo: descripción"` |
+| Pull request | `/pull-request main` |
+| Limpiar branch | `/branch-cleanup` |
+| Worktree paralelo | `/worktree-create "nombre" base` |
+| Inicializar proyecto | `/project-init` |
+| Investigación profunda | `/deep-research "tema"` |
+| Interacción web | `agent-browser open URL` |
+
+---
+
+**Relacionados**: [Skills](./skills-guide.md) · [Agents](./agents-guide.md) · [Integrations](./integrations.md) · [Quickstart](./quickstart.md)
+
+::: info Última actualización
+**Fecha**: 2026-02-08
 :::
