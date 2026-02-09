@@ -7,6 +7,7 @@
 - NEVER `git push` without explicit user authorization
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction (research, scraping, navigation, E2E) MUST route through agent-browser skill
 - NEVER execute multi-step work without task tracking: TaskCreate(plan) → per task: TaskUpdate(in_progress) → Task tool(run_in_background: true) → TaskUpdate(completed) → TaskList(next). Inline execution exhausts context; subagents get clean 200k each.
+- ALWAYS spawn sub-agents (Task tool) with model "opus". Never delegate to haiku or sonnet — lighter models degrade reasoning quality in autonomous workflows.
 - ALWAYS identify blast radius before modifying (what else breaks — including docs that go stale)
 - ALWAYS when blocked: research via agent-browser before retrying or escalating
 - NEVER add decorative or redundant comments (banners, separators, restating what code does). Only comment to explain non-obvious WHY.
