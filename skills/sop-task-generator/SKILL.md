@@ -168,12 +168,36 @@ Action: Will generate 5 task files (one per step)
 
 3. Wait for user approval (interactive mode only)
 4. If user suggests changes, adjust and re-present (interactive mode only)
-5. Only proceed to Step 5 when user explicitly approves (interactive mode) or immediately (autonomous mode)
+5. Only proceed to Step 5 (Validate Task Atomicity) when user explicitly approves (interactive mode) or immediately (autonomous mode)
 
 **Constraints:**
 - In interactive mode: Present breakdown, wait for explicit approval
 - In autonomous mode: Log breakdown, proceed to generation immediately
 - You MUST NOT generate files before user approval in interactive mode because generating unapproved files creates artifacts that may need deletion or cause confusion
+
+### Step 5: Validate Task Atomicity
+
+Each task MUST fit within one sub-agent context window. Validate before generating:
+
+| Constraint | Threshold | Action if exceeded |
+|------------|-----------|-------------------|
+| Files to modify | ≤ 5 | Split into sub-tasks by file group |
+| Files to understand | ≤ 15 | Reduce scope or provide focused context references |
+| Acceptance criteria | 3-5 | Merge if < 3, split if > 5 |
+| Estimated complexity | S or M | Split XL/L tasks into M-sized sub-tasks |
+
+**Why these limits**: Sub-agents operate with ~120K effective tokens (60% of 200K window). Budget: ~20K system, ~15K task context, ~25K code reading, ~60K for SDD cycles. Tasks exceeding these limits cause quality degradation.
+
+**Splitting strategy**:
+1. Group by file proximity (files in same module → same task)
+2. Maintain dependency ordering (foundation before features)
+3. Each sub-task must be independently testable
+4. Each sub-task must have its own acceptance criteria
+
+**Constraints:**
+- In **interactive mode**: Present validation results, ask user to approve splits.
+- In **autonomous mode**: Apply splits automatically, document rationale in task description.
+- You MUST NOT skip atomicity validation because oversized tasks degrade sub-agent output quality
 
 ### Task File Generation Requirements (PDD Mode)
 
@@ -205,7 +229,7 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 - Skip steps that seem "simple" because simplicity is subjective and skipped steps create gaps in the execution sequence
 - Ask which step to process (process ALL of them) because selective processing defeats the purpose of complete upfront task generation
 
-### Step 5: Generate Tasks
+### Step 6: Generate Tasks
 
 **File Organization:**
 
@@ -296,6 +320,9 @@ Each task file MUST follow this exact structure:
 - **Required Skills**: [Skills or expertise needed]
 - **Related Tasks**: [Links to dependent or related tasks]
 - **Step**: [NN of total] (e.g., "03 of 05")
+- **Files to Modify**: Specific file paths this task will change (max 5)
+- **Files to Read**: File paths needed for context understanding (max 15)
+- **Context Estimate**: S (<40K tokens) or M (40-80K tokens) — tasks must not exceed M
 ```
 
 **Status Field Values:**
@@ -308,7 +335,7 @@ Each task file MUST follow this exact structure:
 - Empty string if task has no blockers
 - Path to blocking task if blocked (e.g., `step01/task-01-setup.code-task.md`)
 - Multiple blockers separated by comma
-- Used by loop to skip blocked tasks and select next available
+- Used by coordinator to skip blocked tasks and select next available
 
 **CRITICAL: Populating Blocked-By:**
 
@@ -357,7 +384,7 @@ Generates:
 - You MUST include all required sections (Description, Background, Reference Documentation, etc.)
 - You MUST NOT place tasks in wrong directory structure because incorrect placement breaks orchestrator discovery and task sequencing
 
-### Step 6: Report Results
+### Step 7: Report Results
 
 **Actions:**
 1. List all generated files with absolute paths

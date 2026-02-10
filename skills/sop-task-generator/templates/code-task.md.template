@@ -1,4 +1,5 @@
 ## Status: PENDING
+## Blocked-By: {blocked_by}
 ## Completed: [DATE when done]
 
 # Task: {task_name}
@@ -7,11 +8,11 @@
 ## Overview
 
 Code implementation task template for sop-task-generator.
-Provides structured task definition for worker agents.
+Provides structured task definition for sub-agents.
 
 ## Usage Constraints
 
-- You MUST fill all required placeholders because workers need complete context
+- You MUST fill all required placeholders because sub-agents need complete context
 - You MUST read the design document before implementing because it contains critical decisions
 - You MUST meet all acceptance criteria because these define "done"
 - You SHOULD follow the suggested implementation approach because it's been validated
@@ -86,6 +87,9 @@ Provides structured task definition for worker agents.
 - **Required Skills**: {required_skills}
 - **Related Tasks**: {related_tasks}
 - **Step**: {step}
+- **Files to Modify**: {files_to_modify} <!-- max 5 -->
+- **Files to Read**: {files_to_read} <!-- max 15 -->
+- **Context Estimate**: {context_estimate} <!-- S: <40K tokens, M: 40-80K tokens -->
 
 ---
 

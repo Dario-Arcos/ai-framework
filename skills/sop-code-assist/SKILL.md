@@ -156,7 +156,7 @@ When invoked from ralph-orchestrator in autonomous mode:
 </at_startup>
 
 <at_completion>
-- Add memories to `guardrails.md` (orchestrator handles `scratchpad.md`)
+- Add memories to `guardrails.md`
 - Emit confession and task_completed markers
 </at_completion>
 
