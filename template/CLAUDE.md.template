@@ -21,7 +21,6 @@ ALWAYS on flaw detection: State directly → propose better path → user decide
 ALWAYS study before acting: restate goal (≤3 bullets), define observable scenarios.
 ALWAYS build in increments: each increment produces observable output verified through execution, never through code reading.
 ALWAYS plan mode first: crystallize decisions + scenarios in plan file before implementation.
-Skill and agent routing delivered via SessionStart context — follow each skill's internal phases.
 
 External knowledge (prefer retrieval over pre-training):
 - Context7 MCP → API docs, signatures, framework patterns
