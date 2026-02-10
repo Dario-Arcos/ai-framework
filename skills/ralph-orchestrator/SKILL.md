@@ -11,7 +11,7 @@ description: Use when building features requiring planning + autonomous executio
 ## Overview
 
 - **Planning**: Interactive OR autonomous (user chooses)
-- **Execution**: ALWAYS autonomous — Agent Teams cockpit (Ghostty + tmux)
+- **Execution**: ALWAYS autonomous — Agent Teams cockpit (tmux, Ghostty optional)
 
 ## When to Use
 
@@ -57,15 +57,24 @@ description: Use when building features requiring planning + autonomous executio
 
 ### Infrastructure Setup
 
-**Required before planning. Verified automatically, not by retrieval.**
-
-- [ ] `tmux` installed (`which tmux` — if missing: `brew install tmux`)
+**Planning prerequisites (required now):**
 - [ ] `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment
-- [ ] Ghostty available (macOS: `open -na Ghostty.app` — if missing: `brew install --cask ghostty`)
 - [ ] `.ralph/config.sh` exists — if missing: copy from `templates/config.sh.template`
 - [ ] `guardrails.md` exists in project root — if missing: copy from `templates/guardrails.md.template`
 
-**You MUST** verify all prerequisites before planning. **You MUST NOT** proceed if any are missing.
+**Execution prerequisites (required for Step 8):**
+- [ ] `tmux` installed (`which tmux`)
+  - If missing: **Use AskUserQuestion**:
+    Question: "tmux no esta instalado. Es requerido para ejecutar. Quieres instalarlo?"
+    Header: "tmux"
+    Options:
+    - Instalar ahora (Recommended): Ejecuta brew install tmux (macOS) / sudo apt install tmux (Linux)
+    - Continuar sin tmux: Solo planificacion disponible (Steps 0-7)
+
+**Optional (presentation):**
+- [ ] Ghostty (macOS) — mejora UX, no requerido. Fallback: tmux attach en terminal actual
+
+**You MUST** verify planning prerequisites before planning. **You MUST NOT** proceed to Step 8 without execution prerequisites.
 
 > Error handling: [troubleshooting.md](references/troubleshooting.md)
 
@@ -197,6 +206,10 @@ Update `.ralph/config.sh`. See [configuration-guide.md](references/configuration
 
 ### Step 8: Launch Execution
 
+**You MUST NOT launch Step 8 without tmux.** There is no headless mode.
+If tmux was not installed during Infrastructure Setup, STOP here.
+Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ralph-orchestrator."
+
 **Prerequisites (all must be true):**
 - `specs/{goal}/implementation/plan.md` + `.code-task.md` files with `Status: PENDING`
 - `AGENTS.md` in project root, Plan Review passed (Step 6)
@@ -206,9 +219,9 @@ Update `.ralph/config.sh`. See [configuration-guide.md](references/configuration
 
 1. Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
 2. Launch: `Bash(command="bash .ralph/launch-build.sh")`
-3. Inform user: "Cockpit lanzado en Ghostty. `team` (Ctrl+B 0): Lead + teammates, `services` (Ctrl+B 1): Dev server + DB, `quality` (Ctrl+B 2): Test watcher, `monitor` (Ctrl+B 3): Logs, `shell` (Ctrl+B 4): Terminal libre."
+3. Inform user: "Cockpit lanzado en tmux. `team` (Ctrl+B 0): Lead + teammates, `services` (Ctrl+B 1): Dev server + DB, `quality` (Ctrl+B 2): Test watcher, `monitor` (Ctrl+B 3): Logs, `shell` (Ctrl+B 4): Terminal libre."
 
-**In the Ghostty session** (automatic via launch-build.sh):
+**In the tmux session** (automatic via launch-build.sh):
 1. Claude Code starts with `--teammate-mode tmux`
 2. `/ralph-orchestrator` auto-invoked — state detection routes to Step 8 continuation
 3. `TeamCreate(team_name="ralph-{goal-slug}")`

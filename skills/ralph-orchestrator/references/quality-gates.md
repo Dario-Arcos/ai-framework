@@ -81,9 +81,9 @@ QUALITY_LEVEL="library"
 - You MUST NOT skip to later gates because failed early gates invalidate later results
 
 **Order:**
-1. `GATE_LINT` - Catch style issues early
+1. `GATE_TEST` - Verify behavior
 2. `GATE_TYPECHECK` - Catch type errors
-3. `GATE_TEST` - Verify behavior
+3. `GATE_LINT` - Catch style issues
 4. `GATE_BUILD` - Ensure it compiles
 5. `GATE_SECURITY` - Final security check
 
@@ -106,7 +106,18 @@ If any gate fails, sub-agent must fix before proceeding.
 3. Implementation satisfies the scenario (satisfy)
 4. Refactor while satisfied
 
-Sub-agents that skip SDD have their work rejected by gates.
+Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip GATE_TEST but all other gates still apply.
+
+### Scenario-Strategy Override
+
+Tasks with `Scenario-Strategy: not-applicable` skip GATE_TEST but run all other gates.
+
+| Scenario-Strategy | GATE_TEST | GATE_TYPECHECK | GATE_LINT | GATE_BUILD |
+|---|---|---|---|---|
+| `required` | Run | Run | Run | Run |
+| `not-applicable` | **Skip** | Run | Run | Run |
+
+Default: field absent → `required` (all gates run).
 
 ---
 

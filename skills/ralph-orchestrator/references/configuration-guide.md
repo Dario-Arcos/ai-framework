@@ -95,6 +95,29 @@ COCKPIT_DB=""                     # Database command (tmux "services" window, pa
 
 ---
 
+## Scenario-Strategy and Quality Gates
+
+The `Scenario-Strategy` field in `.code-task.md` files controls whether GATE_TEST runs for a given task:
+
+| Scenario-Strategy | Effect on Gates |
+|---|---|
+| `required` (default) | All gates run. SDD mandatory. |
+| `not-applicable` | GATE_TEST skipped. GATE_TYPECHECK, GATE_LINT, GATE_BUILD still run. |
+
+**Interaction with QUALITY_LEVEL:**
+
+| QUALITY_LEVEL | Scenario-Strategy | Result |
+|---|---|---|
+| `prototype` | any | All gates skipped (prototype overrides everything) |
+| `production` | `required` | Full SDD + all gates |
+| `production` | `not-applicable` | No SDD, skip GATE_TEST, other gates run |
+| `library` | `required` | Full SDD + all gates + coverage |
+| `library` | `not-applicable` | Skip GATE_TEST, other gates + coverage |
+
+The `sop-task-generator` classifies tasks automatically. When in doubt, it defaults to `required` (safe default). The `task-completed.py` hook reads the field at gate execution time.
+
+---
+
 ## Safety Settings (Circuit Breakers)
 
 **Constraints:**

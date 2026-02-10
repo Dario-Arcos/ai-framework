@@ -101,12 +101,16 @@ tmux send-keys -t "$SESSION:team" "/ralph-orchestrator" Enter
 # OPEN GHOSTTY
 # ─────────────────────────────────────────────────────────────────
 
-# macOS: open Ghostty attached to the tmux session
 if [[ "$(uname -s)" == "Darwin" ]]; then
-    open -na Ghostty.app --args \
-        --title="Ralph Cockpit: $(basename "$PROJECT_DIR")" \
-        -e "tmux attach -t $SESSION"
+    if [ -d "/Applications/Ghostty.app" ]; then
+        open -na Ghostty.app --args \
+            --title="Ralph Cockpit: $(basename "$PROJECT_DIR")" \
+            -e "tmux attach -t $SESSION"
+    else
+        echo "Ghostty not found. Attaching to tmux directly."
+        echo "Windows: Ctrl+B {N} (0=team, 1=services, 2=quality, 3=monitor, 4=shell)"
+        tmux attach -t "$SESSION"
+    fi
 else
-    # Linux/other: attach directly (assumes running in a terminal)
     tmux attach -t "$SESSION"
 fi

@@ -38,7 +38,9 @@ echo "Preflight checks..."
 if command -v tmux > /dev/null 2>&1; then
     echo -e "  ${GREEN}✓${NC} tmux found ($(tmux -V))"
 else
-    echo -e "  ${YELLOW}⚠${NC} tmux not installed — required at runtime for cockpit launcher"
+    echo -e "  ${RED}✗${NC} tmux not installed — REQUIRED for execution"
+    echo "    Install: brew install tmux (macOS) / sudo apt install tmux (Linux)"
+    echo "    Without tmux, ralph can only plan (Steps 0-7)"
 fi
 
 if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
@@ -47,6 +49,14 @@ else
     echo -e "  ${YELLOW}⚠${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS not set — required for Agent Teams"
     echo "    Export it before running Claude Code:"
     echo "    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=true"
+fi
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    if [ -d "/Applications/Ghostty.app" ]; then
+        echo -e "  ${GREEN}✓${NC} Ghostty found"
+    else
+        echo -e "  ${YELLOW}⊘${NC} Ghostty not found (optional) — cockpit uses tmux attach directly"
+    fi
 fi
 
 echo ""

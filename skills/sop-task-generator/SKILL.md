@@ -153,11 +153,13 @@ Action: Will generate 5 task files (one per step)
    Task 1: [Title]
    - [Brief description]
    - Complexity: [Low/Medium/High]
+   - Scenario-Strategy: [required/not-applicable]
 
    Task 2: [Title]
    - [Brief description]
    - Depends on: Task 1
    - Complexity: [Low/Medium/High]
+   - Scenario-Strategy: [required/not-applicable]
 
    Files to create:
    - specs/{goal}/implementation/stepNN/task-01-{title}.code-task.md
@@ -193,6 +195,13 @@ Each task MUST fit within one sub-agent context window. Validate before generati
 2. Maintain dependency ordering (foundation before features)
 3. Each sub-task must be independently testable
 4. Each sub-task must have its own acceptance criteria
+
+**Scenario-Strategy Classification:**
+- `required` (DEFAULT): ANY file in "Files to Modify" is source code (.ts, .js, .py, .go, .rs, etc.)
+  OR acceptance criteria include behavioral Given-When-Then outcomes
+- `not-applicable`: ALL modified files are non-code (markdown, yaml, json config, scripts without logic)
+  AND no behavioral criteria exist
+- When in doubt: `required` (safe default)
 
 **Constraints:**
 - In **interactive mode**: Present validation results, ask user to approve splits.
@@ -303,7 +312,7 @@ Each task file MUST follow this exact structure:
    - When [action or trigger]
    - Then [expected observable result]
 
-2. **[Unit Tests]**
+2. **[Scenario Validation]**
    - Given [test setup]
    - When [test execution]
    - Then [test passes with expected assertions]
@@ -323,6 +332,7 @@ Each task file MUST follow this exact structure:
 - **Files to Modify**: Specific file paths this task will change (max 5)
 - **Files to Read**: File paths needed for context understanding (max 15)
 - **Context Estimate**: S (<40K tokens) or M (40-80K tokens) — tasks must not exceed M
+- **Scenario-Strategy**: required | not-applicable
 ```
 
 **Status Field Values:**
@@ -374,7 +384,7 @@ Generates:
 - Background: Sufficient context, no jargon without explanation
 - Technical Requirements: Specific, measurable, testable
 - Acceptance Criteria: At least 3 criteria, all in Given-When-Then format
-- Include unit test requirements in acceptance criteria
+- Include scenario validation requirements in acceptance criteria
 - Dependencies: All external dependencies documented, including previous steps
 - Implementation Approach: Guidance without over-prescription
 - Metadata Step: Must include position (e.g., "03 of 05")

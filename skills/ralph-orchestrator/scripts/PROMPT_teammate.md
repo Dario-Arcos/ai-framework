@@ -76,11 +76,16 @@ Use /sop-code-assist to implement this task. It handles: Explore > Plan > Code >
 ## Guardrails (lessons from previous tasks)
 {paste full guardrails.md content}
 
+## Scenario Strategy
+- This task's Scenario-Strategy: {read from .code-task.md Metadata}
+- If `required`: Follow SDD — SCENARIO (define observable behavior) > SATISFY (converge) > REFACTOR.
+- If `not-applicable`: No SDD. Implement directly. No scenarios needed.
+
 ## Rules
 - Commit with: git add -A && git commit -m "type(scope): description"
 - Do NOT push to remote.
-- Follow SDD: SCENARIO (test must fail) > SATISFY (minimal code to pass) > REFACTOR.
-- If QUALITY_LEVEL=prototype, skip test writing — implement directly.
+- Follow SDD: SCENARIO (define observable behavior) > SATISFY (converge) > REFACTOR.
+- If QUALITY_LEVEL=prototype or Scenario-Strategy=not-applicable, skip scenario definition — implement directly.
 """
 )
 ```

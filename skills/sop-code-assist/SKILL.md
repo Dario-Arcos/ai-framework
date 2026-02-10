@@ -55,6 +55,9 @@ Analyze requirements and research patterns.
 
 - Analyze acceptance criteria from `.code-task.md`
 - Research existing patterns in repository
+- Check `.code-task.md` Metadata for `Scenario-Strategy`
+  - If `not-applicable`: skip SDD cycle (Steps 3-4), implement directly, proceed to Commit
+  - If `required` or absent: proceed with full SDD
 - Identify scenario strategy
 
 <bug_fix_detection>
@@ -79,8 +82,7 @@ The root cause you identify becomes the specification for your first scenario in
 
 Design scenarios covering all acceptance criteria.
 
-- Design scenarios for each acceptance criterion
-- Plan test structure (unit, integration, e2e as appropriate)
+- Design scenarios for each acceptance criterion (scope: unit, integration, e2e as needed)
 
 **Constraints:**
 - Scenarios MUST define observable behavior before code exists (SCENARIO phase)

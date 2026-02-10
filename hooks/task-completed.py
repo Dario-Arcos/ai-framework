@@ -197,6 +197,34 @@ def run_gate(name, command, cwd):
         return False, f"Gate '{name}' failed to execute: {e}"
 
 
+def find_scenario_strategy(cwd, task_subject):
+    """Find Scenario-Strategy from .code-task.md matching task_subject.
+
+    Returns 'not-applicable' or 'required' (default if not found).
+    """
+    try:
+        result = subprocess.run(
+            ["grep", "-rFl", f"# Task: {task_subject}", "--include=*.code-task.md", "."],
+            capture_output=True, text=True, cwd=cwd, timeout=5,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return "required"
+
+        task_file = result.stdout.strip().split("\n")[0]
+        task_path = Path(cwd) / task_file
+        content = task_path.read_text(encoding="utf-8")
+
+        for line in content.splitlines():
+            if "Scenario-Strategy" in line:
+                if "not-applicable" in line:
+                    return "not-applicable"
+                return "required"
+
+        return "required"
+    except (subprocess.TimeoutExpired, OSError, ValueError):
+        return "required"
+
+
 # ─────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────
@@ -211,6 +239,7 @@ def main():
 
     cwd = input_data.get("cwd", os.getcwd())
     task_subject = input_data.get("task_subject", "unknown task")
+    scenario_strategy = find_scenario_strategy(cwd, task_subject)
     teammate_name = input_data.get("teammate_name", "unknown")
 
     # Guard: not a ralph-orchestrator project
@@ -228,13 +257,15 @@ def main():
         update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
         sys.exit(0)
 
-    # Run quality gates in order
-    gates = [
-        ("test", config["GATE_TEST"]),
+    # Run quality gates in order (skip GATE_TEST for not-applicable tasks)
+    gates = []
+    if scenario_strategy != "not-applicable":
+        gates.append(("test", config["GATE_TEST"]))
+    gates.extend([
         ("typecheck", config["GATE_TYPECHECK"]),
         ("lint", config["GATE_LINT"]),
         ("build", config["GATE_BUILD"]),
-    ]
+    ])
 
     for gate_name, gate_cmd in gates:
         if not gate_cmd:

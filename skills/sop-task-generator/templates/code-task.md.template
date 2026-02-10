@@ -90,6 +90,7 @@ Provides structured task definition for sub-agents.
 - **Files to Modify**: {files_to_modify} <!-- max 5 -->
 - **Files to Read**: {files_to_read} <!-- max 15 -->
 - **Context Estimate**: {context_estimate} <!-- S: <40K tokens, M: 40-80K tokens -->
+- **Scenario-Strategy**: {scenario_strategy} <!-- required | not-applicable -->
 
 ---
 
