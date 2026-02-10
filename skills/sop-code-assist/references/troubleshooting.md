@@ -156,7 +156,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ---
 
-## Progress.md not tracking changes
+## .ralph/guardrails.md not tracking changes
 
 **Symptom:** .ralph/guardrails.md empty or outdated
 
@@ -164,7 +164,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Fix:** Verify write permissions, manually update if needed
 
-**Progress.md MUST track:**
+**.ralph/guardrails.md MUST track:**
 - Each SDD cycle (SCENARIO, SATISFY, REFACTOR)
 - Decisions made and rationale
 - Challenges encountered

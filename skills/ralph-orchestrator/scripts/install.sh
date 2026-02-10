@@ -48,7 +48,7 @@ if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
 else
     echo -e "  ${YELLOW}⚠${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS not set — required for Agent Teams"
     echo "    Export it before running Claude Code:"
-    echo "    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=true"
+    echo "    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
 fi
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
@@ -110,6 +110,9 @@ if [ ${#DIRS[@]} -gt 0 ]; then
     echo ""
 fi
 
+# Create directories
+mkdir -p "$TARGET_DIR/.ralph"
+
 # Copy templates (only if destination doesn't exist)
 echo "Setting up templates..."
 for template_mapping in "${TEMPLATES[@]}"; do
@@ -134,9 +137,6 @@ done
 # Make scripts executable
 chmod +x "$TARGET_DIR/.ralph/launch-build.sh" 2>/dev/null || true
 
-# Create directories
-mkdir -p "$TARGET_DIR/.ralph"
-
 echo ""
 echo -e "${GREEN}Installation complete!${NC}"
 echo ""
@@ -148,7 +148,7 @@ echo ""
 echo "Workflow:"
 echo "  1. Invoke /ralph-orchestrator to start planning"
 echo "  2. Complete discovery, planning, and task generation"
-echo "  3. Execution launches automatically in Ghostty + tmux cockpit"
+echo "  3. Execution launches automatically in tmux cockpit"
 echo ""
 echo "Cockpit:"
 echo "  bash .ralph/launch-build.sh    # Manual launch (if needed)"

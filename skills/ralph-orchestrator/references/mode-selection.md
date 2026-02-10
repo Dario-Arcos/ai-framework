@@ -215,38 +215,32 @@ graph LR
 
 ---
 
-## Checkpoint Configuration
+## Safety Configuration
 
 **Constraints:**
-- You MUST use frequent checkpoints for first-time ralph-orchestrator users because learning requires observation
-- You MUST enable checkpoints for high-risk tasks because auth/payments need human review
-- You MAY disable checkpoints when confident in quality gates and codebase
+- You MUST configure safety limits before execution because defaults may not match your risk tolerance
+- You MUST review `.ralph/config.sh` for high-risk tasks because auth/payments need tighter limits
+- You MAY adjust MAX_CONSECUTIVE_FAILURES and MAX_TASK_ATTEMPTS based on task complexity
 
-After planning, configure checkpoint frequency:
+After planning, configure safety limits in `.ralph/config.sh`:
 
-> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). The only choice is checkpoint frequency—how often (if ever) the system pauses for human review.
+> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). Safety is enforced by circuit breakers and retry limits, not by human pauses.
 
 ```mermaid
 graph TD
-    Ready[Planning Complete] --> Q1{First time<br/>with ralph-orchestrator?}
+    Ready[Planning Complete] --> Config[Configure .ralph/config.sh]
 
-    Q1 -->|Yes| CP1[Frequent checkpoints<br/>every 1-5 tasks]
-    Q1 -->|No| Q2{Task risk?}
+    Config --> Q1{Task risk?}
 
-    Q2 -->|High<br/>Auth/Payments| CP2[Checkpoints enabled<br/>every N tasks]
-    Q2 -->|Low| Q3{Duration?}
+    Q1 -->|High<br/>Auth/Payments| Strict[Strict limits<br/>MAX_CONSECUTIVE_FAILURES=2<br/>MAX_TASK_ATTEMPTS=2]
+    Q1 -->|Normal| Default[Default limits<br/>MAX_CONSECUTIVE_FAILURES=3<br/>MAX_TASK_ATTEMPTS=3]
+    Q1 -->|Low/Familiar| Relaxed[Relaxed limits<br/>MAX_CONSECUTIVE_FAILURES=5<br/>MAX_TASK_ATTEMPTS=5]
 
-    Q3 -->|< 1 hour| NCP1[No checkpoints<br/>10-20 task cycles]
-    Q3 -->|> 1 hour| NCP2[No checkpoints<br/>Until complete]
+    Strict --> Launch[Launch Agent Teams cockpit]
+    Default --> Launch
+    Relaxed --> Launch
 
-    CP1 --> Review[Review & Learn]
-    CP2 --> Review
-    NCP1 --> Monitor[Passive monitoring]
-    NCP2 --> Monitor
-
-    Review --> Q4{Confident?}
-    Q4 -->|Yes| NCP2
-    Q4 -->|No| CP1
+    Launch --> Monitor[Monitor .ralph/metrics.json<br/>and .ralph/failures.json]
 ```
 
 ---
@@ -260,13 +254,13 @@ Situation: Build user profile page
 Complexity: Medium (4-6 files, tests, styling)
 Experience: Familiar with stack
 
-Decision: Forward Flow → no checkpoints
+Decision: Forward Flow → production quality
 Steps:
 1. /ralph-orchestrator → Forward
 2. sop-discovery (15 min)
 3. sop-planning (30 min)
 4. sop-task-generator (10 min)
-5. Configure: no checkpoints, production quality
+5. Configure: QUALITY_LEVEL="production" in .ralph/config.sh
 6. Launch and monitor
 ```
 
@@ -304,13 +298,13 @@ Situation: Extract shared utilities into library
 Complexity: Large (15+ files)
 Risk: Breaking changes
 
-Decision: Forward Flow → checkpoints enabled
+Decision: Forward Flow → strict safety limits
 Steps:
 1. /ralph-orchestrator → Forward
 2. Planning phase (interactive)
-3. Configure: Checkpoints every 5 tasks
-4. Review after each checkpoint
-5. Adjust plan if needed
+3. Configure: MAX_CONSECUTIVE_FAILURES=2, MAX_TASK_ATTEMPTS=2 in .ralph/config.sh
+4. Monitor .ralph/metrics.json for progress
+5. Review .ralph/failures.json if issues arise
 ```
 
 ---
@@ -366,10 +360,10 @@ Solution: Decompose into features, run multiple team sessions
 | Want to improve after understanding | Reverse → Forward |
 | Task is trivial (< 3 steps) | Direct implementation |
 | Task is complex (> 5 steps) | Ralph Agent Teams |
-| First time using ralph-orchestrator | Frequent checkpoints |
-| High-risk task (auth, payments) | Checkpoints enabled |
-| Overnight development needed | No checkpoints |
-| Learning codebase patterns | Start with checkpoints, graduate to none |
+| First time using ralph-orchestrator | Strict safety limits (low MAX_CONSECUTIVE_FAILURES) |
+| High-risk task (auth, payments) | Strict safety limits + high MIN_TEST_COVERAGE |
+| Overnight development needed | Default safety limits + MAX_RUNTIME set |
+| Learning codebase patterns | Start strict, relax limits as confidence grows |
 
 ---
 
@@ -389,14 +383,14 @@ If task sizing is unclear:
 - You SHOULD estimate hours of work
 - You MUST decompose if estimate exceeds 1 week
 
-### Checkpoint Configuration Difficult
+### Safety Configuration Unclear
 
-If checkpoint configuration is unclear:
-- You SHOULD start with checkpoints enabled for safety
-- You SHOULD graduate to no checkpoints after 5-10 successful supervised runs
-- You MUST NOT disable checkpoints for high-risk tasks regardless of experience
+If safety configuration is unclear:
+- You SHOULD start with strict limits (MAX_CONSECUTIVE_FAILURES=2) for safety
+- You SHOULD relax limits after 5-10 successful runs with confidence
+- You MUST NOT set MAX_CONSECUTIVE_FAILURES above 5 for high-risk tasks
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-01-30*
+*Version: 2.0.0 | Updated: 2026-02-10*
 *Compliant with strands-agents SOP format (RFC 2119)*

@@ -68,7 +68,7 @@ You are implementing a single task for a ralph-orchestrator build.
 {paste full task description from TaskGet}
 
 ## Approach
-Use /sop-code-assist to implement this task. It handles: Explore > Plan > Code > Commit.
+Use /sop-code-assist mode="autonomous" to implement this task. The autonomous mode is required because you are running without user interaction. It handles: Explore > Plan > Code > Commit.
 
 ## Project Context (.ralph/agents.md)
 {paste full .ralph/agents.md content}

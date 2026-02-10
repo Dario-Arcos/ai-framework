@@ -535,7 +535,7 @@ project-root/
 {
   rough_idea: "Add retry mechanism to payment processing",
   project_dir: ".ralph/specs/payment-retry",
-  prior_investigation: ".ralph/specs/payment-investigation/specs-generated/"
+  discovery_path: ".ralph/specs/payment-investigation/specs-generated/"
 }
 
 // sop-planning incorporates investigation findings

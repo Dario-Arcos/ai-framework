@@ -127,7 +127,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 - **Fix**:
   1. Check `.ralph/failures.json` for the affected teammate
   2. Identify the failing gate and fix root cause
-  3. Reset failures: edit `.ralph/failures.json` to set `consecutive_failures: 0`
+  3. Reset failures: edit `.ralph/failures.json` and set the failing teammate's value to 0, e.g., `{"teammate-1": 0}`
   4. Re-launch cockpit or spawn new teammate
 
 ---

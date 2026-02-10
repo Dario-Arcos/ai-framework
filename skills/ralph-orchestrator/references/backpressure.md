@@ -24,103 +24,56 @@ npm run build     # Build must succeed
 
 ---
 
-## Checkpoint-Based Backpressure
+## Safety-Based Backpressure
 
-Checkpoints provide execution-level backpressure by pausing for human review.
+Safety limits provide execution-level backpressure by stopping teammates when failures accumulate.
 
 **Constraints:**
-- You MUST configure checkpoint mode before execution because mid-run changes cause inconsistency
-- You MUST resume with same command after checkpoint because state persists
-- You SHOULD use milestones for multi-module features because natural breakpoints aid review
+- You MUST configure safety limits before execution because defaults may not match your risk tolerance
+- You MUST diagnose root cause before restarting after circuit breaker because same failures will repeat
+- You SHOULD monitor .ralph/failures.json during execution for early warning signs
 
 ### Configuration
 
 In `.ralph/config.sh`:
 
 ```bash
-# Mode: none, iterations (milestones not implemented)
-CHECKPOINT_MODE="iterations"
+# Circuit breaker: stop teammate after N consecutive gate failures
+MAX_CONSECUTIVE_FAILURES=3
 
-# For iterations mode: pause every N iterations
-CHECKPOINT_INTERVAL=5
+# Task retry limit: max attempts per task before escalating
+MAX_TASK_ATTEMPTS=3
 
-# NOT IMPLEMENTED - milestones mode planned for future
-# CHECKPOINT_ON_MODULE=true
+# Runtime limit (0 = unlimited)
+MAX_RUNTIME=0
 ```
 
-### Checkpoint Modes
+### Safety Mechanisms
 
-#### 1. None (Pure AFK)
-
-```bash
-CHECKPOINT_MODE="none"
-```
+#### 1. Circuit Breaker (Consecutive Failures)
 
 **Behavior:**
-- No interruptions
-- Runs until complete or circuit breaker trips
-- Trust quality gates completely
-- Review results at end
+- Tracks consecutive gate failures per teammate in `.ralph/failures.json`
+- When a teammate hits `MAX_CONSECUTIVE_FAILURES`, it goes idle (exit 0 via teammate-idle hook)
+- Counter resets on any successful task completion
+- Review `.ralph/failures.json` to diagnose the pattern
 
-**Use when:**
-- High confidence in gates
-- Low-risk tasks
-- Well-tested patterns
-- Overnight execution
+**Use when adjusting:**
+- Lower (2) for high-risk tasks where early stopping matters
+- Default (3) for production work
+- Higher (5) for experimental/prototype work where some failures are expected
 
-#### 2. Iterations (Regular Intervals)
-
-```bash
-CHECKPOINT_MODE="iterations"
-CHECKPOINT_INTERVAL=5  # Every 5 iterations
-```
+#### 2. Task Retry Limit (Per-Task Attempts)
 
 **Behavior:**
-- Pauses after N iterations
-- Exit code: `8` (CHECKPOINT_PAUSE)
-- Resume with same command: `bash .ralph/launch-build.sh`
-- Review progress between checkpoints
+- Each task can be attempted up to `MAX_TASK_ATTEMPTS` times
+- After exhausting attempts, the task is escalated
+- Prevents a single difficult task from blocking all progress
 
-**Use when:**
-- Learning Ralph patterns
-- Medium-risk tasks
-- Want frequent review points
-- Testing new quality gates
-
-**Example:**
-```bash
-# Configure checkpoint
-echo 'CHECKPOINT_MODE="iterations"' >> .ralph/config.sh
-echo 'CHECKPOINT_INTERVAL=5' >> .ralph/config.sh
-
-# Launch build via Agent Teams cockpit
-bash .ralph/launch-build.sh
-
-# After 5 task cycles, exits with code 8
-# Review commits, logs, test results
-
-# Resume from where it left off
-bash .ralph/launch-build.sh
-
-# Repeat until complete
-```
-
-#### 3. Milestones (Module Boundaries) - NOT IMPLEMENTED
-
-> **NOT IMPLEMENTED**: This mode is documented but not yet implemented in Agent Teams cockpit.
-> Planned for a future release.
-
-```bash
-# NOT IMPLEMENTED
-CHECKPOINT_MODE="milestones"
-CHECKPOINT_ON_MODULE=true
-```
-
-**Planned behavior (when implemented):**
-- Pauses when module/component completes
-- Detected via plan.md section markers
-- Natural breakpoints in implementation
-- Allows architectural review
+**Use when adjusting:**
+- Lower (2) for tasks that should succeed on first or second try
+- Default (3) for normal development
+- Higher (5) for complex tasks where iteration is expected
 
 ---
 
@@ -136,38 +89,35 @@ Ralph implements backpressure at multiple levels:
 ```mermaid
 graph TD
     A[Task attempted] --> B{Quality gates pass?}
-    B -->|No| C[Reject: Fix and retry]
+    B -->|No| C[Reject: Exit 2<br/>Teammate retries]
     B -->|Yes| D[Commit]
 
-    D --> E{Checkpoint reached?}
-    E -->|Yes| F[Pause: Exit code 8]
-    E -->|No| G{Circuit breaker?}
+    D --> E{Circuit breaker?}
+    E -->|MAX_CONSECUTIVE_FAILURES hit| F[Teammate goes idle<br/>Exit 0]
+    E -->|OK| G{Task retry limit?}
 
-    G -->|3 failures| H[Stop: Exit code 2]
-    G -->|OK| I{Tasks abandoned?}
+    G -->|MAX_TASK_ATTEMPTS hit| H[Task escalated<br/>Move to next task]
+    G -->|OK| I{Pending tasks?}
 
-    I -->|Same task 3x| J[Stop: Exit code 7]
-    I -->|OK| M[Continue]
+    I -->|Yes| J[Claim next task<br/>Exit 2 from teammate-idle]
+    I -->|No| K[All done<br/>Exit 0]
 
-    F --> N[Human review]
-    N --> O[Resume execution]
-    O --> A
+    C --> A
 
     style C fill:#ffe1e1
-    style F fill:#fff4e1
-    style H fill:#ffe1e1
-    style J fill:#ffe1e1
-    style M fill:#e1ffe1
+    style F fill:#ffe1e1
+    style H fill:#fff4e1
+    style K fill:#e1ffe1
+    style J fill:#e1ffe1
 ```
 
 ### Backpressure Levels
 
 | Level | Mechanism | Trigger | Action |
 |-------|-----------|---------|--------|
-| **Task** | Quality gates | Gate fails | Reject task cycle |
-| **Checkpoint** | Iteration/Milestone | N iterations OR module done | Pause for review |
-| **Circuit breaker** | Consecutive failures | 3 failures | Stop execution |
-| **Abandonment** | Task repetition | Same task 3x | Stop execution |
+| **Task** | Quality gates | Gate fails | Reject task completion (exit 2), teammate retries |
+| **Task retry** | MAX_TASK_ATTEMPTS | Same task fails N times | Task escalated, teammate moves on |
+| **Circuit breaker** | MAX_CONSECUTIVE_FAILURES | N consecutive failures | Teammate goes idle (exit 0) |
 
 ---
 
@@ -178,7 +128,7 @@ graph TD
 - You MUST NOT use prototype in production code because shortcuts accumulate debt
 - You SHOULD use library level for reusable code because polish matters for shared code
 
-Define expectations in `.ralph/agents.md`:
+Define expectations in `.ralph/config.sh` (`QUALITY_LEVEL` variable):
 
 | Level | Shortcuts OK | Tests Required | Polish Required |
 |-------|--------------|----------------|-----------------|
@@ -192,7 +142,7 @@ Define expectations in `.ralph/agents.md`:
 - **Production** - SDD mandatory, all gates must pass
 - **Library** - Full coverage, documentation, edge cases
 
-**Set in:** `.ralph/agents.md` -> Quality Level section
+**Set in:** `.ralph/config.sh` (`QUALITY_LEVEL`)
 
 ---
 
@@ -248,15 +198,15 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 ## Circuit Breaker
 
 **Constraints:**
-- You MUST check errors.log after circuit breaker because root cause needs identification
+- You MUST check .ralph/failures.json after circuit breaker because root cause needs identification
 - You MUST fix underlying issue before restart because same failures will repeat
 - You MUST NOT disable circuit breaker because it protects against runaway failures
 
 After 3 consecutive failures, Agent Teams cockpit stops:
 
-1. Check errors.log for details
-2. Review last Claude output
-3. Fix manually or adjust specs
+1. Check `.ralph/failures.json` for per-teammate failure counts
+2. Check `.ralph/metrics.json` for task success/failure history
+3. Fix underlying issue or adjust specs
 4. Run `bash .ralph/launch-build.sh` again
 
 ---
@@ -309,7 +259,7 @@ If quality gates fail repeatedly:
 
 If circuit breaker triggers frequently:
 - You SHOULD check task clarity in plan
-- You SHOULD use more frequent checkpoints
+- You SHOULD lower MAX_CONSECUTIVE_FAILURES to catch issues earlier
 - You MUST diagnose root cause before continuing
 
 ### Tasks Taking Too Long
@@ -321,5 +271,5 @@ If tasks consistently fail to complete in one task cycle:
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 2.0.0 | Updated: 2026-02-10*
 *Compliant with strands-agents SOP format (RFC 2119)*

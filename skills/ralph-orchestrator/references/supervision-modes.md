@@ -22,7 +22,7 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 │  PHASE 2: EXECUTION                                             │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │  Mode: ALWAYS AUTONOMOUS (Agent Teams cockpit)           │    │
-│  │  Optional: Checkpoints every N tasks for review         │    │
+│  │  Safety: Circuit breaker + task retry limits             │    │
 │  │  Duration: 1-8 hours                                    │    │
 │  └─────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
@@ -102,54 +102,42 @@ User options:
 
 **Execution is ALWAYS autonomous.** The Agent Teams cockpit launches coordinators that claim tasks, spawn sub-agents with fresh 200K context, and drive task cycles. There is no "interactive execution" - that's a contradiction.
 
-### Checkpoint Configuration
+### Safety Configuration
 
-The ONLY configuration choice for execution is checkpoint frequency:
+Execution runs autonomously until all tasks complete or a safety limit is reached. The key configuration options in `.ralph/config.sh`:
 
-| Option | Configuration | Behavior |
-|--------|---------------|----------|
-| **No checkpoints** | `CHECKPOINT_MODE="none"` | Run until complete or failure |
-| **Every N tasks** | `CHECKPOINT_MODE="iterations"` + `CHECKPOINT_INTERVAL=N` | Pause every N tasks for review |
-
-### When to Use Checkpoints
-
-**No checkpoints (recommended for most cases):**
-- Well-defined tasks with clear acceptance criteria
-- Strong test coverage (90%+)
-- Confident in quality gates
-- Overnight/AFK runs
-
-**Checkpoints every 3-5 tasks:**
-- First time using ralph-orchestrator
-- Learning how the system handles your codebase
-- Higher-risk changes (auth, payments)
-- Testing new quality gate configurations
+| Option | Variable | Default | Behavior |
+|--------|----------|---------|----------|
+| **Circuit breaker** | `MAX_CONSECUTIVE_FAILURES` | 3 | Stop teammate after N consecutive gate failures |
+| **Task retry limit** | `MAX_TASK_ATTEMPTS` | 3 | Max retries per task before escalating |
+| **Confidence gate** | `CONFESSION_MIN_CONFIDENCE` | 80 | Tasks below this confidence are NOT complete |
+| **Coverage gate** | `MIN_TEST_COVERAGE` | 90 | Coverage below this blocks completion |
+| **Runtime limit** | `MAX_RUNTIME` | 0 (unlimited) | Max seconds per session |
 
 ### Configuration Example
 
 ```bash
 # .ralph/config.sh
 
-# No checkpoints - run until complete
-CHECKPOINT_MODE="none"
-
-# OR: Checkpoint every 5 tasks
-CHECKPOINT_MODE="iterations"
-CHECKPOINT_INTERVAL=5
+# Safety limits
+MAX_CONSECUTIVE_FAILURES=3   # Circuit breaker threshold
+MAX_TASK_ATTEMPTS=3           # Max retries per task
+CONFESSION_MIN_CONFIDENCE=80  # Minimum confidence to accept
+MIN_TEST_COVERAGE=90          # Minimum coverage to accept
+MAX_RUNTIME=0                 # 0 = unlimited, or seconds (e.g., 3600 = 1 hour)
 ```
 
 ---
 
 ## Safety Features (Always Active)
 
-These protections work regardless of checkpoint configuration:
+These protections are always active during execution:
 
 | Feature | Trigger | Action |
 |---------|---------|--------|
-| **Circuit breaker** | 3 consecutive failures | Exit with code 2 |
-| **Task abandonment** | Same task fails 3 times | Exit with code 7 |
-| **Loop thrashing** | Oscillating task patterns | Exit with code 6 |
-| **Quality gates** | Test/lint/build failure | Reject iteration, retry |
+| **Circuit breaker** | `MAX_CONSECUTIVE_FAILURES` consecutive failures | Teammate goes idle (exit 0 via teammate-idle hook) |
+| **Task retry limit** | Same task fails `MAX_TASK_ATTEMPTS` times | Task escalated, teammate moves on |
+| **Quality gates** | Test/lint/build failure | Reject task completion (exit 2), teammate retries |
 
 ---
 
@@ -159,13 +147,13 @@ These protections work regardless of checkpoint configuration:
 
 **Wrong:** "I want human-in-the-loop execution where I review each task."
 
-**Right:** Execution is always autonomous. If you want frequent review, use checkpoints every 1-3 tasks. But the Agent Teams cockpit runs autonomously - you review at pauses, not during execution.
+**Right:** Execution is always autonomous. The Agent Teams cockpit runs teammates that claim tasks, execute them, and pass quality gates. Safety is enforced by circuit breakers and retry limits, not by human pauses.
 
 ### "AFK vs HITL"
 
 **Wrong:** "AFK and HITL are two different execution modes."
 
-**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. "AFK" means no checkpoints. "Frequent checkpoints" replaces what was misleadingly called "HITL".
+**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. Safety nets (MAX_CONSECUTIVE_FAILURES, MAX_TASK_ATTEMPTS) protect against runaway failures. You review results when execution completes.
 
 ### "Autonomous Planning = No Control"
 
@@ -206,28 +194,24 @@ Planning            Planning
               │
               ▼
 ┌─────────────────────────────┐
-│ Do you want review pauses   │
-│ during execution?           │
+│ Configure safety limits in  │
+│ .ralph/config.sh            │
 └─────────────┬───────────────┘
-              │
-    ┌─────────┴─────────┐
-    ▼                   ▼
-┌────────┐         ┌──────────┐
-│  Yes   │         │    No    │
-└───┬────┘         └────┬─────┘
-    │                   │
-    ▼                   ▼
-Checkpoints         No checkpoints
-every N tasks       (full AFK)
-    │                   │
-    └─────────┬─────────┘
               │
               ▼
        Launch Agent Teams cockpit
        (ALWAYS autonomous)
+              │
+              ▼
+┌─────────────────────────────┐
+│ Safety nets active:         │
+│ - Circuit breaker (failures)│
+│ - Task retry limits         │
+│ - Quality gates per task    │
+└─────────────────────────────┘
 ```
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-01-29*
-*Rewritten to eliminate HITL/AFK ambiguity*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Rewritten to eliminate HITL/AFK ambiguity and ghost variables*

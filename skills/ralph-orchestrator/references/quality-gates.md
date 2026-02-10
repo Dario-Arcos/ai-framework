@@ -20,7 +20,6 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 | `GATE_TYPECHECK` | Type checking | `npm run typecheck`, `mypy src/` |
 | `GATE_LINT` | Linting | `npm run lint`, `ruff check .` |
 | `GATE_BUILD` | Build validation | `npm run build`, `go build ./...` |
-| `GATE_SECURITY` | Security scan | `npm audit`, `safety check` |
 
 ---
 
@@ -85,9 +84,8 @@ QUALITY_LEVEL="library"
 2. `GATE_TYPECHECK` - Catch type errors
 3. `GATE_LINT` - Catch style issues
 4. `GATE_BUILD` - Ensure it compiles
-5. `GATE_SECURITY` - Final security check
 
-If any gate fails, sub-agent must fix before proceeding.
+If any gate fails, the `task-completed.py` hook returns exit 2 with failure output on stderr. The teammate receives the gate output and must fix the issue before marking the task complete again.
 
 ---
 
@@ -124,18 +122,24 @@ Default: field absent → `required` (all gates run).
 ## Custom Gates
 
 **Constraints:**
-- You MAY add custom gates for project-specific requirements
-- You MUST add custom gates to `.ralph/config.sh` because this ensures they persist
+- You MUST modify `hooks/task-completed.py` to add custom gates because the hook only reads the 4 hardcoded gate names (`GATE_TEST`, `GATE_TYPECHECK`, `GATE_LINT`, `GATE_BUILD`)
+- You MUST add the corresponding gate command to `.ralph/config.sh` because the hook sources this file for gate commands
+- You MUST NOT assume that adding a new `GATE_*` variable to `config.sh` alone will activate it — the hook's `CONFIG_KEYS` list and gate execution logic must also be updated
+
+**Example** (requires both hook and config changes):
 
 ```bash
-# E2E tests
+# In .ralph/config.sh — define the command
 GATE_E2E="npm run e2e"
+```
 
-# Performance check
-GATE_PERF="npm run benchmark"
-
-# Documentation check
-GATE_DOCS="npm run docs:check"
+```python
+# In hooks/task-completed.py — add to CONFIG_KEYS and gate execution
+CONFIG_KEYS = [
+    "QUALITY_LEVEL",
+    "GATE_TEST", "GATE_TYPECHECK", "GATE_LINT", "GATE_BUILD",
+    "GATE_E2E",  # ← add here
+]
 ```
 
 ---
@@ -155,16 +159,17 @@ GATE_DOCS="npm run docs:check"
 
 ---
 
-## Double Completion Verification
+## Task Completion Protocol
 
 **Constraints:**
-- You MUST require two consecutive COMPLETE signals because single signals may be premature
-- You MUST NOT accept completion on first signal because sub-agents often claim done before actual completion
+- You MUST understand that task completion is enforced by the `task-completed.py` hook, not by manual signals
+- You MUST NOT bypass the hook because it is the single enforcement point for quality gates
 
 **Process:**
-- Single `<promise>COMPLETE</promise>` enters pending state
-- Requires **two consecutive** COMPLETE signals to confirm
-- Prevents premature "done" claims
+- When a teammate marks a task as complete, the `TaskCompleted` hook fires automatically
+- The hook runs all configured gates in order (test → typecheck → lint → build)
+- **Exit 0**: all gates passed — task is marked complete, failure counter resets, metrics updated
+- **Exit 2**: a gate failed — task remains incomplete, failure output sent to teammate via stderr, failure counter incremented
 
 ---
 
@@ -193,5 +198,5 @@ If circuit breaker trips (3 failures):
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Compliant with Agent Teams architecture (RFC 2119)*
