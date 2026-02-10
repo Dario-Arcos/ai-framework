@@ -28,7 +28,7 @@ Ignore: src/generated/*, *.test.ts
 ### Prompt Modification
 
 **Constraints:**
-- You MUST select ONE uncovered function per iteration because batch processing loses focus
+- You MUST select ONE uncovered function per task cycle because batch processing loses focus
 - You MUST apply SDD (scenario must be defined first) because this validates scenario correctness
 - You MUST verify coverage increases because stagnant coverage indicates stuck loop
 
@@ -48,10 +48,10 @@ Coverage must increase. If not -> Sign + exit.
 
 ## Linting Loop
 
-Fix lint errors one at a time with fresh context.
+Fix lint errors one at a time with fresh context via sub-agents.
 
 **Constraints:**
-- You MUST fix ONE error per iteration because batch fixes introduce new errors
+- You MUST fix ONE error per task cycle because batch fixes introduce new errors
 - You MUST verify lint count decreases because stagnant count indicates configuration issues
 - You MUST NOT batch multiple lint fixes because cross-file fixes create conflicts
 
@@ -111,7 +111,7 @@ Complexity metric must improve.
 ## Creating Custom Loops
 
 **Constraints:**
-- You MUST define clear selection criteria because workers need unambiguous task selection
+- You MUST define clear selection criteria because sub-agents need unambiguous task selection
 - You MUST define validation gate because completion requires measurable verification
 - You MUST define exit condition because infinite loops waste resources
 
@@ -154,7 +154,7 @@ passes:
 ### How It Works
 
 1. Ralph reads spec with `passes` field
-2. Each iteration runs all `passes` commands
+2. Each task cycle runs all `passes` commands
 3. Loop continues until ALL pass
 4. Human doesn't need to define "done" - spec does
 

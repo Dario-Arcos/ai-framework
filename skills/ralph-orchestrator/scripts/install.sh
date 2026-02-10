@@ -1,6 +1,6 @@
 #!/bin/bash
-# Ralph Loop Installer
-# Copies ralph-orchestrator scripts to target project directory
+# Ralph Agent Teams Installer
+# Copies ralph-orchestrator infrastructure to target project directory
 #
 # Usage:
 #   ./install.sh                    # Install to current directory
@@ -21,7 +21,7 @@ SKILL_DIR="$(dirname "$SCRIPT_DIR")"
 TARGET_DIR="${1:-.}"
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 
-echo -e "${GREEN}Ralph Loop Installer${NC}"
+echo -e "${GREEN}Ralph Agent Teams Installer${NC}"
 echo "Source: $SKILL_DIR"
 echo "Target: $TARGET_DIR"
 echo ""
@@ -32,60 +32,75 @@ if ! git -C "$TARGET_DIR" rev-parse --git-dir > /dev/null 2>&1; then
     exit 1
 fi
 
-# Files to copy
-FILES=(
-    "scripts/loop.sh"
-    "scripts/monitor.sh"
-    "scripts/truncate-context.sh"
-    "scripts/PROMPT_build.md"
-)
+# Preflight checks
+echo "Preflight checks..."
 
-# Directories to copy
-DIRS=(
-    "scripts/lib"
-)
+if command -v tmux > /dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} tmux found ($(tmux -V))"
+else
+    echo -e "  ${YELLOW}⚠${NC} tmux not installed — required at runtime for cockpit launcher"
+fi
+
+if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
+    echo -e "  ${GREEN}✓${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is set"
+else
+    echo -e "  ${YELLOW}⚠${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS not set — required for Agent Teams"
+    echo "    Export it before running Claude Code:"
+    echo "    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=true"
+fi
+
+echo ""
+
+# Files to copy (none — templates handle all distribution)
+FILES=()
+
+# Directories to copy (none — no script libraries needed)
+DIRS=()
 
 # Templates to copy (source:dest)
-# Note: memories.md removed - decisions live in specs/design/, gotchas in guardrails.md
 TEMPLATES=(
     "templates/AGENTS.md.template:AGENTS.md"
     "templates/guardrails.md.template:guardrails.md"
-    "templates/scratchpad.md.template:scratchpad.md"
     "templates/config.sh.template:.ralph/config.sh"
+    "templates/launch-build.sh.template:.ralph/launch-build.sh"
 )
 
 # Copy files
-echo "Copying files..."
-for file in "${FILES[@]}"; do
-    src="$SKILL_DIR/$file"
-    dest="$TARGET_DIR/$(basename "$file")"
+if [ ${#FILES[@]} -gt 0 ]; then
+    echo "Copying files..."
+    for file in "${FILES[@]}"; do
+        src="$SKILL_DIR/$file"
+        dest="$TARGET_DIR/$(basename "$file")"
 
-    if [ -f "$src" ]; then
-        cp "$src" "$dest"
-        echo -e "  ${GREEN}✓${NC} $(basename "$file")"
-    else
-        echo -e "  ${YELLOW}⚠${NC} $(basename "$file") not found, skipping"
-    fi
-done
+        if [ -f "$src" ]; then
+            cp "$src" "$dest"
+            echo -e "  ${GREEN}✓${NC} $(basename "$file")"
+        else
+            echo -e "  ${YELLOW}⚠${NC} $(basename "$file") not found, skipping"
+        fi
+    done
+    echo ""
+fi
 
 # Copy directories
-echo ""
-echo "Copying directories..."
-for dir in "${DIRS[@]}"; do
-    src="$SKILL_DIR/$dir"
-    dest="$TARGET_DIR/$(basename "$dir")"
+if [ ${#DIRS[@]} -gt 0 ]; then
+    echo "Copying directories..."
+    for dir in "${DIRS[@]}"; do
+        src="$SKILL_DIR/$dir"
+        dest="$TARGET_DIR/$(basename "$dir")"
 
-    if [ -d "$src" ]; then
-        cp -r "$src" "$dest"
-        chmod +x "$dest"/*.sh 2>/dev/null || true
-        echo -e "  ${GREEN}✓${NC} $(basename "$dir")/ ($(ls -1 "$dest" | wc -l | tr -d ' ') files)"
-    else
-        echo -e "  ${YELLOW}⚠${NC} $(basename "$dir")/ not found, skipping"
-    fi
-done
+        if [ -d "$src" ]; then
+            cp -r "$src" "$dest"
+            chmod +x "$dest"/*.sh 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} $(basename "$dir")/ ($(ls -1 "$dest" | wc -l | tr -d ' ') files)"
+        else
+            echo -e "  ${YELLOW}⚠${NC} $(basename "$dir")/ not found, skipping"
+        fi
+    done
+    echo ""
+fi
 
 # Copy templates (only if destination doesn't exist)
-echo ""
 echo "Setting up templates..."
 for template_mapping in "${TEMPLATES[@]}"; do
     src_template="${template_mapping%%:*}"
@@ -107,9 +122,7 @@ for template_mapping in "${TEMPLATES[@]}"; do
 done
 
 # Make scripts executable
-chmod +x "$TARGET_DIR/loop.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/monitor.sh" 2>/dev/null || true
-chmod +x "$TARGET_DIR/truncate-context.sh" 2>/dev/null || true
+chmod +x "$TARGET_DIR/.ralph/launch-build.sh" 2>/dev/null || true
 
 # Create directories
 mkdir -p "$TARGET_DIR/specs"
@@ -125,10 +138,8 @@ echo ""
 echo "Workflow:"
 echo "  1. Invoke /ralph-orchestrator to start planning"
 echo "  2. Complete discovery, planning, and task generation"
-echo "  3. Run: ./loop.sh specs/{goal}/   # Start autonomous execution"
+echo "  3. Execution launches automatically in Ghostty + tmux cockpit"
 echo ""
-echo "Utilities:"
-echo "  ./monitor.sh             # Live dashboard (run in separate terminal)"
-echo "  ./monitor.sh --stream    # Stream worker output in real-time"
-echo "  ./monitor.sh --status    # View current status (one-shot)"
-echo "  ./monitor.sh --logs      # View iteration logs"
+echo "Cockpit:"
+echo "  bash .ralph/launch-build.sh    # Manual launch (if needed)"
+echo ""

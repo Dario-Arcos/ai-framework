@@ -2,266 +2,190 @@
 
 ## Overview
 
-This reference defines the structured logging and monitoring capabilities of Ralph. Understanding observability is essential for debugging loops and tracking execution progress.
+This reference defines monitoring and debugging capabilities during Agent Teams execution. Understanding observability is essential for tracking progress, diagnosing failures, and maintaining oversight of concurrent teammates.
 
 ---
 
-## Output Artifacts
+## Primary Observability Channels
 
 **Constraints:**
-- You MUST monitor status.json for loop state because this is the source of truth
-- You MUST check iteration.log for debugging because detailed events are recorded there
-- You SHOULD review metrics.json for performance analysis because aggregated data reveals patterns
+- You MUST use TaskList as the primary progress indicator because it reflects real-time task state
+- You MUST check .ralph/metrics.json for aggregate data because it shows success/failure trends
+- You SHOULD check .ralph/failures.json for circuit breaker state because it reveals at-risk teammates
 
-| Artifact | Purpose |
-|----------|---------|
-| `logs/iteration.log` | Timestamped iteration events |
-| `logs/metrics.json` | Success rate, durations, totals |
-| `status.json` | Current loop state |
-| `errors.log` | Failed iteration details |
+| Channel | Purpose | Access |
+|---------|---------|--------|
+| `TaskList` | Real-time task progress (PENDING, IN_PROGRESS, COMPLETED, BLOCKED) | Lead tool call |
+| `.ralph/metrics.json` | Aggregate success/failure counts | `Read(".ralph/metrics.json")` |
+| `.ralph/failures.json` | Per-teammate failure tracking | `Read(".ralph/failures.json")` |
+| `guardrails.md` | Accumulated error lessons | `Read("guardrails.md")` |
+| Cockpit windows | Live service output (dev server, tests, logs) | tmux capture-pane |
 
 ---
 
-## Utilities
+## Monitoring During Execution (Phase 2)
 
 **Constraints:**
-- You MUST use status.sh for quick state checks because it formats output clearly
-- You SHOULD use tail-logs.sh for real-time monitoring because it streams events
+- You MUST remain in MONITOR role because teammates handle implementation
+- You MUST NOT use Write/Edit because state is owned by teammates and hooks
+- You SHOULD check progress periodically because early detection prevents wasted work
+
+### Lead Monitoring Pattern
+
+```
+1. TaskList → check task states
+2. Read(".ralph/metrics.json") → aggregate progress
+3. Read(".ralph/failures.json") → check for struggling teammates
+4. Read("guardrails.md") → review accumulated lessons
+5. If teammate struggling → SendMessage with guidance
+6. Repeat every few minutes
+```
+
+### What to Monitor
+
+| Signal | Healthy | Concerning | Action |
+|--------|---------|------------|--------|
+| Tasks completing | Steady progress | No completions for extended time | Check failures.json, SendMessage |
+| Failure count | 0-1 consecutive | 2+ consecutive per teammate | Review gate output, add Sign |
+| guardrails.md growth | Gradual, useful Signs | Rapid growth, repetitive Signs | Task may be too complex — consider splitting |
+| Blocked tasks | Rare | Multiple tasks blocked | Review blockers.md, may need user input |
+
+---
+
+## Cockpit Monitoring
+
+Teammates and the lead can observe cockpit windows via tmux:
 
 ```bash
-./status.sh           # View current status & metrics
-./tail-logs.sh        # Real-time log following
+# Read dev server output
+tmux capture-pane -p -t ralph:services.0
+
+# Read test watcher output
+tmux capture-pane -p -t ralph:quality.0
+
+# Read log output
+tmux capture-pane -p -t ralph:monitor.0
 ```
 
----
+### Useful Patterns
 
-## Interactive Monitoring
-
-**Constraints:**
-- You MUST use separate Claude session for monitoring because implementation sessions have polluted context
-- You MUST NOT interfere with bash loops because monitoring and execution are independent
-- You SHOULD keep monitoring sessions under 4 hours because compaction loses context
-
-Use an active Claude Code session as observer:
-
-- Cost: ~$0.48 per 2 hours
-- Won't compact in sessions <4h
-- No interference with bash loops (independent processes)
-
-### Monitoring Pattern (Specs-Based Execution)
-
-Since ralph-orchestrator now only executes (planning is separate), monitoring focuses on task progress:
-
-```
-1. result = Bash("./loop.sh specs/{goal}/", run_in_background=true)
-2. task_id = result.task_id
-3. specs_path = "specs/{goal}/"
-
-4. REPEAT every 30-90 seconds:
-   a. TaskOutput(task_id, block=false, timeout=interval*1000)
-   b. Read("status.json")
-   c. Read(specs_path + "implementation/plan.md")  # Check task completion
-   d. display_dashboard()
-   e. interval = clamp(last_duration/3, 30, 90)
-
-5. When status != "running":
-   TaskOutput(task_id, block=true)  # Get final output
-```
-
-### Key Monitoring Points
-
-| Artifact | Purpose | Update Frequency |
-|----------|---------|------------------|
-| `status.json` | Loop state, iteration count | Real-time |
-| `specs/{goal}/implementation/plan.md` | Task checklist progress | Per iteration |
-| `logs/iteration.log` | Iteration events | Per iteration |
-| `logs/metrics.json` | Success rates, durations | Continuous |
-
-### Dashboard Display
-
-```
-═══════════════════════════════════════════════
-RALPH LOOP MONITOR
-═══════════════════════════════════════════════
-Status:     running
-Iteration:  12
-Specs:      specs/user-auth-system/
-Branch:     feature-user-auth
-Quality:    production
-═══════════════════════════════════════════════
-Tasks:      ✓ 8 complete | ⧗ 1 in progress | ○ 3 pending
-Progress:   67% (8/12 tasks)
-Duration:   2h 15m
-Success:    92% (11/12 iterations)
-═══════════════════════════════════════════════
-Current:    Implementing JWT token validation
-Last:       Tests passed, types checked, committed
-Next:       Token refresh mechanism
-═══════════════════════════════════════════════
-```
-
----
-
-## Monitoring Task Progress
-
-**Constraints:**
-- You MUST use plan.md as source of truth for progress because workers update it
-- You MUST NOT modify plan.md during monitoring because workers own the file
-- You SHOULD track completion percentage because this indicates remaining work
-
-The implementation plan (`specs/{goal}/implementation/plan.md`) is the source of truth for progress tracking.
-
-### Task Plan Format
-
-```markdown
-# Implementation Plan
-
-## Tasks
-
-- [x] Setup authentication routes
-  Files: src/routes/auth.ts, tests/auth.test.ts
-
-- [x] Implement JWT token generation
-  Files: src/utils/jwt.ts, tests/jwt.test.ts
-
-- [ ] Add token validation middleware
-  Files: src/middleware/auth.ts, tests/middleware.test.ts
-
-- [ ] Implement token refresh endpoint
-  Files: src/routes/refresh.ts, tests/refresh.test.ts
-```
-
-### Progress Tracking
-
-Workers mark tasks as complete by:
-1. Changing `[ ]` to `[x]`
-2. Adding completion notes if needed
-3. Committing the updated plan.md
-
-### Monitoring Script Example
-
+**Check if dev server is healthy:**
 ```bash
-#!/bin/bash
-# Quick progress check
-PLAN="specs/my-feature/implementation/plan.md"
-
-total=$(grep -c "^- \[" "$PLAN")
-done=$(grep -c "^- \[x\]" "$PLAN")
-pct=$((done * 100 / total))
-
-echo "Progress: $done/$total tasks ($pct%)"
-grep "^- \[ \]" "$PLAN" | head -1 | sed 's/- \[ \] /Next: /'
+tmux capture-pane -p -t ralph:services.0 | tail -5
+# Look for: "ready", "listening on", "compiled successfully"
 ```
 
----
-
-## Status File Format
-
-**Constraints:**
-- You MUST check status field for loop state because this determines next actions
-- You MUST check consecutive_failures for circuit breaker because approaching threshold needs attention
-- You SHOULD check timestamp for stale status because stuck loops don't update
-
-```json
-{
-  "current_iteration": 10,
-  "consecutive_failures": 0,
-  "status": "running",
-  "mode": "build",
-  "branch": "feature-x",
-  "timestamp": "2026-01-25T17:31:41Z"
-}
+**Check test watcher for failures:**
+```bash
+tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 ```
-
-**Status values:** `running`, `complete`, `max_iterations`, `circuit_breaker`
 
 ---
 
 ## Metrics File Format
 
 **Constraints:**
-- You SHOULD calculate success rate because this indicates loop health
-- You SHOULD track avg_duration because increasing duration indicates complexity growth
-- You MAY use metrics for cost estimation because tokens correlate with cost
+- You SHOULD calculate success rate because this indicates execution health
+- You SHOULD track tasks_pending because zero pending with all completed means done
 
 ```json
 {
-  "total_iterations": 10,
-  "successful": 9,
-  "failed": 1,
-  "total_duration_seconds": 1800,
-  "avg_duration_seconds": 180
+  "tasks_completed": 8,
+  "tasks_failed": 2,
+  "tasks_pending": 5,
+  "gates_passed": 8,
+  "gates_failed": 3,
+  "last_updated": "2026-02-10T14:30:00Z"
 }
 ```
 
+### Key Derived Metrics
+
+| Metric | Calculation | Healthy Threshold |
+|--------|-------------|-------------------|
+| Success rate | completed / (completed + failed) | > 80% |
+| Completion progress | completed / total tasks | Increasing |
+| Gate pass rate | gates_passed / (gates_passed + gates_failed) | > 75% |
+
 ---
 
-## Log Analysis
+## Failures File Format
 
-**Constraints:**
-- You MUST review errors.log after circuit breaker because root cause needs identification
-- You SHOULD search for patterns in failures because systematic issues have common causes
-- You MAY use grep for quick analysis because structured logs enable filtering
-
-```bash
-# Count successful vs failed iterations
-grep -c "SUCCESS" logs/iteration.log
-grep -c "FAILED" logs/iteration.log
-
-# Find slowest iteration
-grep "Duration:" logs/iteration.log | sort -t: -k4 -rn | head -1
-
-# Extract all task completions
-grep "Task:" logs/iteration.log
+```json
+{
+  "teammate-uuid": {
+    "consecutive_failures": 2,
+    "last_failure": "Gate 'test' failed: 3 tests failing",
+    "total_failures": 5,
+    "total_successes": 8
+  }
+}
 ```
 
+**Circuit breaker**: When `consecutive_failures >= MAX_CONSECUTIVE_FAILURES` (default 3), TeammateIdle hook exits 0, stopping that teammate.
+
 ---
 
-## Debugging Failed Iterations
+## Debugging Failed Tasks
 
 **Constraints:**
-- You MUST check errors.log first because this contains failure details
-- You MUST look for patterns in Signs because repeated errors indicate systematic issues
-- You MUST NOT restart loop without diagnosing because same failures will repeat
+- You MUST check failures.json first because this shows which teammate and which gate failed
+- You MUST look for patterns in guardrails.md because repeated errors indicate systematic issues
+- You MUST NOT restart execution without diagnosing because same failures will repeat
 
-1. Check `errors.log` for failure details
-2. Look for patterns in Signs (guardrails.md)
-3. Review `status.json` for circuit breaker state
+### Diagnosis Steps
+
+1. `TaskList` — identify which tasks failed or are stuck
+2. `Read(".ralph/failures.json")` — which teammate is failing, what gate
+3. `Read("guardrails.md")` — are there relevant Signs already?
+4. `SendMessage` to struggling teammate — ask for status or provide guidance
+5. If systematic: add Sign to guardrails.md, all teammates benefit
+
+### Common Failure Patterns
+
+| Pattern | Symptom | Resolution |
+|---------|---------|------------|
+| Gate misconfiguration | All teammates fail same gate | Fix gate command in config.sh, relaunch |
+| Missing dependency | Build/test gates fail immediately | Install dependency, add to AGENTS.md |
+| Task too complex | Teammate cycles without completing | Split task into subtasks |
+| Flaky tests | Intermittent gate failures | Fix test, add Sign about flaky test |
 
 ---
 
 ## Context Philosophy
 
-Ralph does NOT monitor context percentages. The INPUT-based approach (truncating files before iteration) ensures each iteration starts fresh without measuring output.
+Agent Teams teammates have persistent context (compacted by Claude Code). Unlike iteration-based models, there is no context truncation between tasks. Observability focuses on **task outcomes** (metrics.json) and **accumulated lessons** (guardrails.md), not context percentages.
 
-**Observability**: Track `num_turns` and `total_cost_usd` for session metrics, not context percentage.
+**Track**: Task completion rate, gate pass rate, failure patterns.
+**Ignore**: Context size, token counts (managed internally by Claude Code).
 
 ---
 
 ## Troubleshooting
 
-### Status File Not Updating
+### Metrics Not Updating
 
-If status.json stops updating:
-- You SHOULD check if loop process is running
-- You SHOULD check for disk space issues
-- You MUST NOT assume loop is healthy without updates
+If .ralph/metrics.json stops updating:
+- You SHOULD check if TaskCompleted hook is registered in hooks.json
+- You SHOULD check if teammates are completing tasks (TaskList)
+- You MUST verify hooks directory is accessible
 
-### Metrics Show High Failure Rate
+### High Failure Rate
 
 If success rate drops below 80%:
-- You SHOULD review recent Signs for common issues
+- You SHOULD review guardrails.md for common issues
 - You SHOULD check task sizing (may be too large)
-- You SHOULD increase checkpoint frequency for diagnosis
+- You SHOULD verify gate commands work manually
+- You MAY reduce MAX_TEAMMATES to reduce contention
 
-### Logs Missing Information
+### Cockpit Windows Empty
 
-If logs lack expected detail:
-- You SHOULD verify log level configuration
-- You SHOULD check disk space for truncation
-- You MUST ensure worker prompts include logging instructions
+If cockpit windows show no output:
+- You SHOULD verify COCKPIT_* variables in config.sh
+- You SHOULD check if tmux session "ralph" exists: `tmux ls`
+- You MUST verify commands work when run manually
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Agent Teams observability*

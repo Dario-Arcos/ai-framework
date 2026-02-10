@@ -10,13 +10,13 @@ This reference defines how ralph-orchestrator integrates with the SOP (Standard 
 
 **Constraints:**
 - You MUST follow the two-phase structure because mixing planning and execution degrades both
-- You MUST complete planning phase before execution because workers need clear specifications
+- You MUST complete planning phase before execution because teammates need clear specifications
 - You MUST NOT skip any planning step because incomplete specs cause implementation failures
 
-Ralph-loop orchestrates SOP skills to transform ideas into implementations through a two-phase workflow:
+Ralph orchestrates SOP skills to transform ideas into implementations through a two-phase workflow:
 
 1. **Planning Phase (Interactive)**: Interactive session using SOP skills
-2. **Execution Phase**: Autonomous loop executing the plan
+2. **Execution Phase**: Agent Teams cockpit executing the plan
 
 ```mermaid
 graph TD
@@ -35,9 +35,9 @@ graph TD
         I --> J[Configure execution]
     end
 
-    subgraph "Execution Phase - Autonomous"
-        J --> K[Launch ./loop.sh]
-        K --> L[Worker iterations]
+    subgraph "Execution Phase - Agent Teams"
+        J --> K[Launch cockpit via bash .ralph/launch-build.sh]
+        K --> L[Teammate task cycles]
         L --> M{Complete?}
         M -->|No| L
         M -->|Yes| N[Done]
@@ -245,9 +245,9 @@ Output: specs/user-auth/design/detailed-design.md
 ### 4. sop-task-generator
 
 **Constraints:**
-- You MUST include acceptance criteria for each task because workers need clear completion criteria
+- You MUST include acceptance criteria for each task because sub-agents need clear completion criteria
 - You MUST size tasks appropriately (M-size optimal) because oversized tasks exhaust context
-- You MUST NOT create tasks without file lists because workers need to know scope
+- You MUST NOT create tasks without file lists because sub-agents need to know scope
 
 **Purpose**: Generate structured implementation tasks from design
 
@@ -372,8 +372,8 @@ sequenceDiagram
     participant D as sop-discovery
     participant P as sop-planning
     participant T as sop-task-generator
-    participant L as loop.sh
-    participant W as Workers
+    participant C as Agent Teams Cockpit
+    participant S as Sub-agents
 
     U->>O: /ralph-orchestrator
     O->>U: Flow direction?
@@ -401,13 +401,13 @@ sequenceDiagram
     O->>U: Execution mode?
     U->>O: AFK, production quality
 
-    O->>L: Launch ./loop.sh specs/user-auth/
-    L->>W: Task 1
-    W->>L: Complete
-    L->>W: Task 2
-    W->>L: Complete
-    Note over L,W: Continues until all tasks done
-    L-->>O: Exit 0 (SUCCESS)
+    O->>C: Launch cockpit: bash .ralph/launch-build.sh specs/user-auth/
+    C->>S: Task 1
+    S->>C: Complete
+    C->>S: Task 2
+    S->>C: Complete
+    Note over C,S: Continues until all tasks done
+    C-->>O: All tasks completed
     O->>U: Implementation complete
 ```
 
@@ -427,7 +427,7 @@ sequenceDiagram
     participant R as sop-reverse
     participant P as sop-planning
     participant T as sop-task-generator
-    participant L as loop.sh
+    participant C as Agent Teams Cockpit
 
     U->>O: /ralph-orchestrator
     O->>U: Flow direction?
@@ -451,7 +451,7 @@ sequenceDiagram
     alt User says Yes
         U->>O: Yes, add retry mechanism
         O->>P: Invoke with specs-generated
-        Note over P,T,L: Same as forward flow
+        Note over P,T,C: Same as forward flow
     else User says No
         U->>O: No, just needed analysis
         O->>U: Specs available for review
@@ -463,8 +463,8 @@ sequenceDiagram
 ## Directory Structure After Full Flow
 
 **Constraints:**
-- You MUST maintain directory structure because workers expect standard paths
-- You MUST NOT modify specs structure during execution because workers read from fixed locations
+- You MUST maintain directory structure because teammates and sub-agents expect standard paths
+- You MUST NOT modify specs structure during execution because sub-agents read from fixed locations
 - You SHOULD commit specs before execution because this creates recovery point
 
 ```
@@ -487,14 +487,11 @@ project-root/
 │   └── templates/
 │
 ├── AGENTS.md                         # Project context
-├── guardrails.md                     # Signs (error lessons)
-├── scratchpad.md                     # Session state
+├── guardrails.md                     # Shared memory (error lessons, constraints, signs)
 │
 ├── logs/                             # Created during execution
-│   ├── iteration.log
+│   ├── task-cycle.log
 │   └── metrics.json
-│
-├── status.json                       # Real-time loop state
 │
 └── src/                              # Implementation output
     ├── routes/
@@ -589,7 +586,7 @@ specs/user-auth/implementation/
 # - Creates specs/{goal}/implementation/{task_name}/ artifacts
 ```
 
-### Task Generation → Execution (Autonomous Loop)
+### Task Generation → Execution (Agent Teams Cockpit)
 
 **Handoff mechanism**: Specs directory path
 
@@ -597,19 +594,21 @@ specs/user-auth/implementation/
 # sop-task-generator outputs:
 specs/user-auth/implementation/plan.md
 
-# Orchestrator launches execution with:
-./loop.sh specs/user-auth/
+# Orchestrator launches the Agent Teams cockpit with:
+bash .ralph/launch-build.sh specs/user-auth/
 
-# loop.sh reads:
+# Teammates and sub-agents read:
 # - specs/user-auth/implementation/plan.md (tasks)
 # - specs/user-auth/implementation/step*/task-*.code-task.md (if exist)
 # - specs/user-auth/design/detailed-design.md (context)
 # - specs/user-auth/discovery.md (background)
+# - guardrails.md (shared memory across all agents)
 ```
 
-**Note:** The loop operates in **SOP mode only**:
+**Note:** The cockpit operates in **SOP mode only**:
 - Reads `specs/{goal}/implementation/plan.md` (generated by sop-task-generator)
 - Reads `.code-task.md` files for detailed task execution
+- Quality gates run via TaskCompleted hook (test → typecheck → lint → build)
 
 > **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
 > All planning goes through the SOP structure: `specs/{goal}/implementation/plan.md`
@@ -672,23 +671,23 @@ Good task: "- [ ] Implement JWT token generation | Size: M
 
 ### Execution Failure
 
-**Symptom**: Worker cannot complete task
+**Symptom**: Sub-agent cannot complete task
 
-**Detection**: Quality gates fail repeatedly
+**Detection**: Quality gates fail repeatedly (TaskCompleted hook)
 
-**Action**: Circuit breaker stops loop, update plan, restart
+**Action**: Circuit breaker stops task cycle, update plan, restart cockpit
 
 **Example**:
 ```
-Iteration 5: Tests fail (authentication logic incomplete)
-Iteration 6: Tests fail (same issue)
-Iteration 7: Tests fail (same issue)
+Task cycle 5: Tests fail (authentication logic incomplete)
+Task cycle 6: Tests fail (same issue)
+Task cycle 7: Tests fail (same issue)
 → Circuit breaker triggers (EXIT_CIRCUIT_BREAKER)
 
 Human reviews logs, updates plan.md with clarification:
 "- [ ] Implement JWT generation - use RS256 algorithm, not HS256"
 
-Resume: ./loop.sh specs/user-auth/
+Resume: bash .ralph/launch-build.sh specs/user-auth/
 ```
 
 ---
@@ -733,7 +732,7 @@ Typical cost breakdown for medium-sized feature:
 
 **ROI Comparison**:
 - Manual implementation: ~8 hours developer time
-- Ralph-loop: ~1 hour human time + ~3 hours autonomous
+- Agent Teams cockpit: ~1 hour human time + ~3 hours autonomous
 - Cost: $2.90 vs $400+ developer cost
 - Quality: SDD enforced, all gates passed
 
@@ -751,12 +750,12 @@ Typical cost breakdown for medium-sized feature:
 ```bash
 # Goal 1: Authentication
 /ralph-orchestrator → Forward → specs/user-auth/
-./loop.sh specs/user-auth/
+bash .ralph/launch-build.sh specs/user-auth/
 
 # Goal 2: User Profile (depends on auth)
 /ralph-orchestrator → Forward → specs/user-profile/
 # In planning, reference specs/user-auth/ for context
-./loop.sh specs/user-profile/
+bash .ralph/launch-build.sh specs/user-profile/
 ```
 
 ### Pattern 2: Iterative Improvement
@@ -764,12 +763,12 @@ Typical cost breakdown for medium-sized feature:
 ```bash
 # Round 1: Basic auth
 /ralph-orchestrator → Forward → specs/auth-v1/
-./loop.sh specs/auth-v1/
+bash .ralph/launch-build.sh specs/auth-v1/
 
 # Round 2: Add MFA
 /ralph-orchestrator → Reverse → specs/auth-v1-investigation/
 → Continue to Forward → specs/auth-mfa/
-./loop.sh specs/auth-mfa/
+bash .ralph/launch-build.sh specs/auth-mfa/
 ```
 
 ### Pattern 3: Research Then Build
@@ -784,7 +783,7 @@ Typical cost breakdown for medium-sized feature:
 # Later, use findings
 /ralph-orchestrator → Forward → specs/api-rate-limiter/
 # In planning, reference specs/rate-limiting-research/
-./loop.sh specs/api-rate-limiter/
+bash .ralph/launch-build.sh specs/api-rate-limiter/
 ```
 
 ---
@@ -812,12 +811,12 @@ If task list has many S-size tasks:
 - You SHOULD aim for 40-60% context usage per task
 - You MUST NOT create tasks smaller than single function implementation
 
-### Workers Can't Find Context in Specs
+### Sub-agents Can't Find Context in Specs
 
-If workers report missing information:
+If sub-agents report missing information:
 - You SHOULD verify detailed-design.md has all implementation details
 - You SHOULD add cross-references from plan.md to design files
-- You MUST update specs and restart loop if information is truly missing
+- You MUST update specs and restart the cockpit if information is truly missing
 
 ---
 

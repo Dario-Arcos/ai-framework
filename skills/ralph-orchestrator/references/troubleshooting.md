@@ -6,23 +6,35 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 
 ## Infrastructure Issues
 
-### Missing loop.sh
-
-- **Cause**: Infrastructure not installed in project
-- **Fix**: Run `./skills/ralph-orchestrator/scripts/install.sh /path/to/project`
-- **Verification**: Check that `./loop.sh` exists in project root
-
 ### Missing config.sh
 
 - **Cause**: Incomplete installation or corrupted setup
-- **Fix**: Re-run `./skills/ralph-orchestrator/scripts/install.sh`
-- **Verification**: Check that `.ralph/config.sh` exists
+- **Fix**: Copy from templates: `cp templates/config.sh.template .ralph/config.sh`
+- **Verification**: Check that `.ralph/config.sh` exists and is valid shell
 
-### Missing guardrails.md or scratchpad.md
+### Missing guardrails.md
 
 - **Cause**: Partial installation
-- **Fix**: Re-run install script, which creates all required files
-- **Verification**: All files listed in install output exist
+- **Fix**: Copy from templates: `cp templates/guardrails.md.template guardrails.md`
+- **Verification**: File exists in project root
+
+### tmux Not Installed
+
+- **Cause**: Missing prerequisite
+- **Fix**: `brew install tmux`
+- **Verification**: `which tmux` returns a path
+
+### Ghostty Not Available
+
+- **Cause**: Missing prerequisite for cockpit
+- **Fix**: `brew install --cask ghostty`
+- **Verification**: `open -na Ghostty.app` launches without error
+
+### Agent Teams Flag Not Set
+
+- **Cause**: Environment variable missing
+- **Fix**: `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (add to shell profile for persistence)
+- **Verification**: `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` returns `1`
 
 ---
 
@@ -56,67 +68,94 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 
 ## Execution Issues
 
-### Workers failing on same task repeatedly
+### Teammate Not Claiming Tasks
 
-- **Cause**: Task too complex or missing context in AGENTS.md
+- **Cause**: No PENDING tasks, or TeammateIdle hook not firing
 - **Fix**:
-  1. Read logs in `logs/` directory for error details
-  2. Update AGENTS.md with missing project context
-  3. Consider breaking task into smaller subtasks
-  4. Add relevant Sign to `guardrails.md` if technical gotcha found
+  1. `TaskList` — verify tasks exist with PENDING status
+  2. Check `.code-task.md` files have `Status: PENDING` header
+  3. Check `.ralph/failures.json` — circuit breaker may have triggered
+  4. Verify TeammateIdle hook is registered in `hooks/hooks.json`
 
-### Orchestrator tempted to implement
+### Gates Failing for All Teammates
 
-- **Symptom**: Urge to write code directly instead of delegating
-- **Fix**: Remember - Workers have 200K fresh context (10x better than polluted orchestrator context). Update the plan instead of implementing.
-- **Response template**: *"Workers have fresh 200K token context. Your intervention pollutes. Update plan instead."*
-
-### Loop fails mid-execution
-
+- **Cause**: Misconfigured gate commands, missing dependencies
 - **Fix**:
-  1. Check `logs/` directory for error details
-  2. Read last iteration output
-  3. Identify root cause (config error, missing dependency, etc.)
-  4. Fix the issue
-  5. Restart loop (do not start fresh - continuity matters)
+  1. Run gate commands manually in the `shell` tmux window:
+     ```bash
+     npm test        # GATE_TEST
+     npm run lint    # GATE_LINT
+     npm run build   # GATE_BUILD
+     ```
+  2. Fix the failing command
+  3. Update `.ralph/config.sh` if gate command is wrong
+  4. Teammates will succeed on next attempt (TaskCompleted rejects, they retry)
 
-### Loop seems stuck
+### Cockpit Not Launching
 
-- **Symptom**: Same task attempted 3+ times without progress
-- **Cause**: Missing context, circular dependency, or impossible task
+- **Cause**: tmux or Ghostty issue, or launch-build.sh missing
 - **Fix**:
-  1. Check `status.json` for current state
-  2. Read recent logs for patterns
-  3. Consider intervention:
-     - Update AGENTS.md with missing context
-     - Break task into subtasks
-     - Skip task if truly blocked
+  1. Verify `.ralph/launch-build.sh` exists and is executable
+  2. If missing: copy from `templates/launch-build.sh.template`, `chmod +x`
+  3. Check tmux is not already running a "ralph" session: `tmux ls`
+  4. Kill stale session if needed: `tmux kill-session -t ralph`
+  5. Re-launch: `bash .ralph/launch-build.sh`
+
+### tmux Session Issues
+
+- **Symptom**: Windows missing, panes not responding
+- **Fix**:
+  1. List sessions: `tmux ls`
+  2. Attach to verify: `tmux attach -t ralph`
+  3. Check window list: `Ctrl+B w` (inside tmux)
+  4. If corrupted: kill and relaunch
+     ```bash
+     tmux kill-session -t ralph
+     bash .ralph/launch-build.sh
+     ```
+
+### Orchestrator Tempted to Implement
+
+- **Symptom**: Lead wants to write code directly instead of delegating
+- **Fix**: Remember — teammates have persistent context and dedicated focus. Lead coordinates, doesn't implement.
+- **Response template**: *"Teammates have persistent context and dedicated focus. Your role is coordination. Use SendMessage to guide them."*
+
+### Circuit Breaker Triggered
+
+- **Symptom**: Teammate stops claiming tasks
+- **Cause**: MAX_CONSECUTIVE_FAILURES exceeded in `.ralph/failures.json`
+- **Fix**:
+  1. Check `.ralph/failures.json` for the affected teammate
+  2. Identify the failing gate and fix root cause
+  3. Reset failures: edit `.ralph/failures.json` to set `consecutive_failures: 0`
+  4. Re-launch cockpit or spawn new teammate
 
 ---
 
 ## Monitoring Issues
 
-### Cannot see loop progress
+### Cannot See Execution Progress
 
-- **Cause**: Loop running in background without monitoring
-- **Fix**: Use these read-only commands:
-  ```python
-  TaskOutput(task_id, block=False)  # Check background task
-  Read("status.json")               # Current state
-  Read("logs/iteration-N.log")      # Specific iteration
-  ```
+- **Cause**: Not using the right monitoring tools
+- **Fix**: Use these read-only approaches:
+  - `TaskList` — real-time task states
+  - `Read(".ralph/metrics.json")` — aggregate counts
+  - `Read(".ralph/failures.json")` — per-teammate failures
+  - `tmux capture-pane -p -t ralph:team.0` — team window output
 
-### Log files too large
+### Metrics Show High Failure Rate
 
-- **Cause**: Long-running loops accumulate logs
-- **Fix**: Focus on recent iterations only
-- **Prevention**: Clean old logs between major sessions
+If success rate drops below 80%:
+- You SHOULD review guardrails.md for common issues
+- You SHOULD check task sizing (may be too large)
+- You SHOULD verify gate commands work manually
+- You MAY reduce MAX_TEAMMATES to reduce resource contention
 
 ---
 
 ## Configuration Issues
 
-### Quality gates failing unexpectedly
+### Quality Gates Failing Unexpectedly
 
 - **Cause**: Misconfigured gate commands in `.ralph/config.sh`
 - **Fix**: Verify gate commands work manually:
@@ -126,30 +165,15 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
   npm run build   # GATE_BUILD
   ```
 
-### Circuit breaker triggered
+### Configuration Not Taking Effect
 
-- **Symptom**: Loop stops after consecutive failures
-- **Cause**: MAX_CONSECUTIVE_FAILURES (default: 3) exceeded
+- **Cause**: Cockpit reads config at launch, not dynamically
 - **Fix**:
-  1. Check logs for pattern of failures
-  2. Fix root cause
-  3. Restart loop
-
----
-
-## Exit Codes
-
-| Code | Meaning | Action |
-|------|---------|--------|
-| 0 | SUCCESS | All tasks completed successfully |
-| 1 | ERROR | Validation or setup failure - check logs |
-| 2 | CIRCUIT_BREAKER | Max consecutive failures reached - review failing task |
-| 3 | MAX_ITERATIONS | Iteration limit reached - increase limit or review progress |
-| 4 | MAX_RUNTIME | Runtime limit exceeded - increase limit or split work |
-| 6 | LOOP_THRASHING | Oscillating task pattern detected - review task dependencies |
-| 7 | TASKS_ABANDONED | Same task failed repeatedly - manual intervention needed |
-| 8 | CHECKPOINT_PAUSE | Checkpoint reached, awaiting resume - run `./loop.sh` to continue |
-| 130 | INTERRUPTED | User interrupt (Ctrl+C) - resume when ready |
+  1. Verify config.sh syntax: `source .ralph/config.sh && echo "OK"`
+  2. Stop current execution: `touch .ralph/ABORT`
+  3. Wait for teammates to idle
+  4. Remove abort: `rm .ralph/ABORT`
+  5. Re-launch cockpit
 
 ---
 
@@ -157,21 +181,23 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 
 When something goes wrong:
 
-1. [ ] Check `status.json` - What's the current state?
-2. [ ] Read latest log in `logs/` - What was the last action?
-3. [ ] Verify `.ralph/config.sh` - Is configuration correct?
-4. [ ] Check `guardrails.md` - Any known gotchas?
-5. [ ] Review AGENTS.md - Is project context complete?
+1. [ ] `TaskList` — What are the task states?
+2. [ ] `Read(".ralph/failures.json")` — Which teammates are failing?
+3. [ ] `Read(".ralph/metrics.json")` — What's the success rate?
+4. [ ] Verify `.ralph/config.sh` — Is configuration correct?
+5. [ ] Check `guardrails.md` — Any known gotchas?
+6. [ ] Review `AGENTS.md` — Is project context complete?
 
 ---
 
 ## See Also
 
-- [configuration-guide.md](configuration-guide.md) - All configuration options and exit codes
-- [monitoring-pattern.md](monitoring-pattern.md) - How to monitor execution properly
-- [supervision-modes.md](supervision-modes.md) - Autonomous vs Checkpoint modes
+- [configuration-guide.md](configuration-guide.md) - All configuration options
+- [agent-teams-architecture.md](agent-teams-architecture.md) - Architecture, hooks, cockpit
+- [observability.md](observability.md) - Metrics, debugging
+- [supervision-modes.md](supervision-modes.md) - Planning modes
 
 ---
 
 *Troubleshooting reference for ralph-orchestrator.*
-*Version: 1.0.0 | Updated: 2026-01-28*
+*Version: 2.0.0 | Updated: 2026-02-10*

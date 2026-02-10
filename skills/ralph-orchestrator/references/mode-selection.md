@@ -36,7 +36,7 @@ graph TD
 
 ---
 
-## When to Use Ralph-Loop vs Direct Implementation
+## When to Use Ralph Agent Teams vs Direct Implementation
 
 **Constraints:**
 - You MUST NOT use ralph-orchestrator for trivial tasks (1-2 steps) because overhead exceeds benefit
@@ -65,7 +65,7 @@ graph TD
 
 ### Decision Criteria Table
 
-| Factor | Direct | Ralph-Loop |
+| Factor | Direct | Ralph Agent Teams |
 |--------|--------|------------|
 | **Steps** | ≤ 3 | ≥ 3 |
 | **Files** | ≤ 2 | ≥ 3 |
@@ -82,7 +82,7 @@ graph TD
 **Constraints:**
 - You MUST NOT skip discovery if requirements are unclear because vague requirements cause rework
 - You MUST NOT skip planning if design doesn't exist because ad-hoc design leads to poor architecture
-- You MUST complete task generation before execution because workers need structured tasks
+- You MUST complete task generation before execution because coordinators and sub-agents need structured tasks
 
 ```mermaid
 graph TD
@@ -160,14 +160,14 @@ graph LR
 
 ---
 
-## Task Sizing for Ralph-Loop
+## Task Sizing for Ralph Agent Teams
 
 **Constraints:**
-- You MUST decompose XL tasks into multiple loops because single loops cannot handle weeks of work
+- You MUST decompose XL tasks into multiple team runs because a single team run cannot handle weeks of work
 - You MUST NOT use ralph-orchestrator for trivial tasks (< 3 steps) because overhead exceeds value
-- You SHOULD target M-L size tasks for optimal loop efficiency
+- You SHOULD target M-L size tasks for optimal Agent Teams efficiency
 
-### Perfect for Ralph-Loop (M-L size)
+### Perfect for Ralph Agent Teams (M-L size)
 
 ```
 ✓ Add authentication system with JWT
@@ -183,7 +183,7 @@ graph LR
   - 4-6 hours estimated
 ```
 
-### Too Small for Ralph-Loop (S size)
+### Too Small for Ralph Agent Teams (S size)
 
 ```
 ✗ Fix typo in error message
@@ -224,7 +224,7 @@ graph LR
 
 After planning, configure checkpoint frequency:
 
-> **Key insight**: Execution is ALWAYS autonomous via loop.sh. The only choice is checkpoint frequency—how often (if ever) the loop pauses for human review.
+> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). The only choice is checkpoint frequency—how often (if ever) the system pauses for human review.
 
 ```mermaid
 graph TD
@@ -236,7 +236,7 @@ graph TD
     Q2 -->|High<br/>Auth/Payments| CP2[Checkpoints enabled<br/>every N tasks]
     Q2 -->|Low| Q3{Duration?}
 
-    Q3 -->|< 1 hour| NCP1[No checkpoints<br/>10-20 iterations]
+    Q3 -->|< 1 hour| NCP1[No checkpoints<br/>10-20 task cycles]
     Q3 -->|> 1 hour| NCP2[No checkpoints<br/>Until complete]
 
     CP1 --> Review[Review & Learn]
@@ -294,7 +294,7 @@ Complexity: Trivial (1 file, 1 function)
 Duration: 5-10 minutes
 
 Decision: Direct Implementation
-Reason: Ralph-loop overhead > task complexity
+Reason: Ralph Agent Teams overhead > task complexity
 ```
 
 ### Scenario 4: Large Refactoring
@@ -319,11 +319,11 @@ Steps:
 
 **Constraints:**
 - You MUST NOT use ralph-orchestrator for 1-line fixes because 10x overhead wastes resources
-- You MUST NOT skip planning phase because confused workers produce poor output
+- You MUST NOT skip planning phase because confused sub-agents produce poor output
 - You MUST NOT use Forward Flow on legacy code without understanding because changes break existing assumptions
-- You MUST NOT run single loop for XL tasks because unclear progress leads to infinite loops
+- You MUST NOT run a single team for XL tasks because unclear progress leads to stalled execution
 
-### ❌ Using Ralph-Loop for Everything
+### ❌ Using Ralph Agent Teams for Everything
 
 ```
 Problem: "I'll use ralph-orchestrator for this 1-line fix"
@@ -334,8 +334,8 @@ Solution: Direct implementation for tasks < 3 steps
 ### ❌ Skipping Planning Phase
 
 ```
-Problem: "I'll just start the loop, I know what I want"
-Reality: Workers confused, poor quality output
+Problem: "I'll just start the cockpit, I know what I want"
+Reality: Sub-agents confused, poor quality output
 Solution: Always complete planning first
 ```
 
@@ -351,8 +351,8 @@ Solution: Reverse → understand → Forward → improve
 
 ```
 Problem: "Build entire CRM system with ralph-orchestrator"
-Reality: Loop runs forever, unclear progress
-Solution: Decompose into features, run multiple loops
+Reality: Team runs forever, unclear progress
+Solution: Decompose into features, run multiple team sessions
 ```
 
 ---
@@ -365,7 +365,7 @@ Solution: Decompose into features, run multiple loops
 | Need to understand existing code | Reverse Flow |
 | Want to improve after understanding | Reverse → Forward |
 | Task is trivial (< 3 steps) | Direct implementation |
-| Task is complex (> 5 steps) | Ralph-loop |
+| Task is complex (> 5 steps) | Ralph Agent Teams |
 | First time using ralph-orchestrator | Frequent checkpoints |
 | High-risk task (auth, payments) | Checkpoints enabled |
 | Overnight development needed | No checkpoints |

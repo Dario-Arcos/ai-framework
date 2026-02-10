@@ -78,7 +78,7 @@ CHECKPOINT_INTERVAL=5  # Every 5 iterations
 **Behavior:**
 - Pauses after N iterations
 - Exit code: `8` (CHECKPOINT_PAUSE)
-- Resume with same command: `./loop.sh specs/{goal}/`
+- Resume with same command: `bash .ralph/launch-build.sh`
 - Review progress between checkpoints
 
 **Use when:**
@@ -93,21 +93,21 @@ CHECKPOINT_INTERVAL=5  # Every 5 iterations
 echo 'CHECKPOINT_MODE="iterations"' >> .ralph/config.sh
 echo 'CHECKPOINT_INTERVAL=5' >> .ralph/config.sh
 
-# Run loop
-./loop.sh specs/my-feature/
+# Launch build via Agent Teams cockpit
+bash .ralph/launch-build.sh
 
-# After 5 iterations, exits with code 8
+# After 5 task cycles, exits with code 8
 # Review commits, logs, test results
 
 # Resume from where it left off
-./loop.sh specs/my-feature/
+bash .ralph/launch-build.sh
 
 # Repeat until complete
 ```
 
 #### 3. Milestones (Module Boundaries) - NOT IMPLEMENTED
 
-> **NOT IMPLEMENTED**: This mode is documented but not yet implemented in loop.sh.
+> **NOT IMPLEMENTED**: This mode is documented but not yet implemented in Agent Teams cockpit.
 > Planned for a future release.
 
 ```bash
@@ -150,7 +150,7 @@ graph TD
     I -->|OK| M[Continue]
 
     F --> N[Human review]
-    N --> O[Resume loop]
+    N --> O[Resume execution]
     O --> A
 
     style C fill:#ffe1e1
@@ -164,10 +164,10 @@ graph TD
 
 | Level | Mechanism | Trigger | Action |
 |-------|-----------|---------|--------|
-| **Task** | Quality gates | Gate fails | Reject iteration |
+| **Task** | Quality gates | Gate fails | Reject task cycle |
 | **Checkpoint** | Iteration/Milestone | N iterations OR module done | Pause for review |
-| **Circuit breaker** | Consecutive failures | 3 failures | Stop loop |
-| **Abandonment** | Task repetition | Same task 3x | Stop loop |
+| **Circuit breaker** | Consecutive failures | 3 failures | Stop execution |
+| **Abandonment** | Task repetition | Same task 3x | Stop execution |
 
 ---
 
@@ -224,7 +224,7 @@ One task = one context window.
 
 Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges naturally from atomic task design.
 
-**INPUT-based control**: `truncate-context.sh` limits file sizes before each iteration
+**INPUT-based control**: auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) manages context size between task cycles
 **No OUTPUT measurement**: We don't track or exit based on context percentage
 
 ---
@@ -241,7 +241,7 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 - Same file modified 5+ times
 - No progress in 30 minutes
 
-**Recovery:** Add Sign -> Exit -> Fresh approach next iteration.
+**Recovery:** Add Sign -> Exit -> Fresh approach next task cycle.
 
 ---
 
@@ -252,23 +252,23 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 - You MUST fix underlying issue before restart because same failures will repeat
 - You MUST NOT disable circuit breaker because it protects against runaway failures
 
-After 3 consecutive failures, loop.sh stops:
+After 3 consecutive failures, Agent Teams cockpit stops:
 
 1. Check errors.log for details
 2. Review last Claude output
 3. Fix manually or adjust specs
-4. Run ./loop.sh again
+4. Run `bash .ralph/launch-build.sh` again
 
 ---
 
 ## Plan Format
 
 **Constraints:**
-- You MUST keep plan under 100 lines because verbose plans confuse workers
+- You MUST keep plan under 100 lines because verbose plans confuse teammates
 - You MUST limit each task to 3-5 lines because detail belongs in specs
 - You MUST NOT include implementation details because tasks define what, not how
 
-**The plan is disposable.** Regeneration costs one planning loop.
+**The plan is disposable.** Regeneration costs one planning task cycle.
 
 ### Constraints
 
@@ -292,7 +292,7 @@ After 3 consecutive failures, loop.sh stops:
 - Step-by-step implementation notes
 - Keeping completed tasks forever
 
-**Recovery:** If plan exceeds 100 lines -> `./loop.sh plan 1`
+**Recovery:** If plan exceeds 100 lines -> re-run planning via Agent Teams cockpit (`bash .ralph/launch-build.sh`)
 
 ---
 
@@ -314,10 +314,10 @@ If circuit breaker triggers frequently:
 
 ### Tasks Taking Too Long
 
-If tasks consistently fail to complete in one iteration:
+If tasks consistently fail to complete in one task cycle:
 - You SHOULD split task into smaller atomic parts
-- You SHOULD reduce exploration in worker prompt
-- You SHOULD use `truncate-context.sh` to reduce input size
+- You SHOULD reduce exploration in `PROMPT_teammate.md`
+- You SHOULD use auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) to reduce context size
 
 ---
 

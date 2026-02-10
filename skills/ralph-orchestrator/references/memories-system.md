@@ -10,8 +10,7 @@ Ralph uses a **distributed memory architecture** where different types of learni
 
 | Component | Scope | Lifetime | Purpose |
 |-----------|-------|----------|---------|
-| `scratchpad.md` | Iteration | Session | Current state, progress, blockers |
-| `guardrails.md` | Loop | Session | Fixes, decisions, patterns (structured) |
+| `guardrails.md` | Team | Session | Fixes, decisions, patterns, current state (shared memory) |
 | `specs/design/` | Feature | Permanent | Architectural decisions |
 | `AGENTS.md` | Project | Permanent | Build commands, patterns, conventions |
 | Git history | All | Permanent | Complete audit trail |
@@ -64,7 +63,7 @@ MEMORIES_BUDGET=2000    # Max tokens to inject (~8000 chars)
 
 ## Truncation Behavior
 
-The `truncate-context.sh` script respects memory block boundaries:
+Auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) respects memory block boundaries:
 - Never cuts mid-memory (waits for `-->` marker)
 - Adds `<!-- truncated: budget exceeded -->` when truncating
 - Preserves parseability of remaining memories
@@ -95,8 +94,8 @@ What kind of learning?
 ├── Convention/pattern discovered?
 │   └── → guardrails.md ## Patterns
 │
-├── Progress/State for next iteration?
-│   └── → scratchpad.md
+├── Progress/State for next task cycle?
+│   └── → guardrails.md (shared memory)
 │
 └── Permanent project-wide pattern?
     └── → AGENTS.md

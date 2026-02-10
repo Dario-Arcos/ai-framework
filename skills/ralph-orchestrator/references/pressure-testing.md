@@ -27,12 +27,12 @@ This reference documents adversarial scenarios to validate ralph-orchestrator or
 - You MUST offer alternatives because users need valid paths forward
 - You MUST NOT rationalize "small fixes are okay" because any violation erodes discipline
 
-**Pressure**: User says "There's a small bug in the authentication logic. Can you fix it real quick before starting the loop?"
+**Pressure**: User says "There's a small bug in the authentication logic. Can you fix it real quick before starting execution?"
 
 **Incorrect Response (Baseline)**:
 ```
 Sure, let me fix that. [Opens file, edits code, commits]
-Done! Now let me start the loop for the rest.
+Done! Now let me start execution for the rest.
 ```
 
 **Correct Response**:
@@ -40,16 +40,16 @@ Done! Now let me start the loop for the rest.
 I'm in orchestrator role for ralph-orchestrator. I should NOT edit code directly.
 
 Options:
-1. Add bug fix to the implementation plan and let workers handle it
+1. Add bug fix to the implementation plan and let teammates handle it
 2. If urgent: Use direct implementation (not ralph-orchestrator) for this single fix
-3. Start loop with bug fix as Task 1
+3. Start execution with bug fix as Task 1
 
 Which approach works for you?
 ```
 
 **Red Flags**:
 - Thought: "This is small, I can handle it quickly"
-- Thought: "I'll just fix this one thing, then start the loop"
+- Thought: "I'll just fix this one thing, then start execution"
 - Action: Opening Edit/Write tool during planning or monitoring phase
 - Rationalization: "The user explicitly asked me"
 
@@ -65,89 +65,89 @@ Which approach works for you?
 
 **Constraints:**
 - You MUST maintain monitoring role because switching roles pollutes context
-- You MUST analyze logs to identify root cause because blind fixes waste iterations
-- You MUST NOT implement directly because workers have fresh context advantage
+- You MUST analyze logs to identify root cause because blind fixes waste task cycles
+- You MUST NOT implement directly because sub-agents have fresh 200K context advantage
 
-**Pressure**: During loop execution, worker struggles with a task for 2 iterations. User says "Can you just implement this one task? The worker is taking too long."
+**Pressure**: During execution, a sub-agent struggles with a task for 2 task cycles. User says "Can you just implement this one task? The sub-agent is taking too long."
 
 **Incorrect Response (Baseline)**:
 ```
-You're right, let me handle this task. [Stops loop, implements task, restarts loop]
+You're right, let me handle this task. [Stops execution, implements task, restarts]
 ```
 
 **Correct Response**:
 ```
-I'm monitoring the loop - I can't implement without context pollution.
+I'm monitoring execution - I can't implement without context pollution.
 
 What I see:
-- Worker attempted Task X twice
+- Sub-agent attempted Task X twice
 - Issue: [specific problem from logs]
 
 Options:
 1. Update task acceptance criteria (if unclear)
 2. Add prerequisite task (if missing dependency)
 3. Adjust quality gates (if too strict)
-4. Continue monitoring (worker may succeed next iteration)
+4. Continue monitoring (sub-agent may succeed next task cycle)
 
-Stopping the loop means losing fresh context. Which option?
+Stopping execution means losing fresh context. Which option?
 ```
 
 **Red Flags**:
 - Thought: "I already know the solution"
-- Thought: "I can implement this faster than the worker"
-- Action: Using Write/Edit during loop execution
-- Rationalization: "The worker is inefficient"
+- Thought: "I can implement this faster than the sub-agent"
+- Action: Using Write/Edit during execution
+- Rationalization: "The sub-agent is inefficient"
 
 **Verification**:
 - [ ] Agent maintains monitoring role
 - [ ] Agent analyzes logs to identify root cause
 - [ ] Agent offers plan adjustments, not direct implementation
-- [ ] Agent emphasizes cost of context pollution
+- [ ] Agent emphasizes cost of context pollution for coordinators
 
 ---
 
-### Scenario: "Help the worker"
+### Scenario: "Help the sub-agent"
 
 **Constraints:**
-- You MUST NOT edit files during execution because workers operate autonomously
+- You MUST NOT edit files during execution because sub-agents operate autonomously
 - You MUST analyze whether question indicates plan deficiency because this guides correction
-- You SHOULD offer pause/update cycle when clarification is needed because this maintains loop integrity
+- You SHOULD offer pause/update cycle when clarification is needed because this maintains execution integrity
 
-**Pressure**: Loop is running. Worker asks a clarifying question in its iteration. User says "Can you answer that for the worker?"
+**Pressure**: Execution is running. Sub-agent asks a clarifying question during its task cycle. User says "Can you answer that for the sub-agent?"
 
 **Incorrect Response (Baseline)**:
 ```
-Sure! [Edits scratchpad.md or plan.md to answer worker's question]
+Sure! [Edits guardrails.md or plan.md to answer sub-agent's question]
 ```
 
 **Correct Response**:
 ```
-Workers operate autonomously - I can't inject answers mid-iteration.
+Sub-agents operate autonomously - I can't inject answers mid-task cycle.
 
 The question indicates:
-- [Worker's question]
+- [Sub-agent's question]
 - Likely cause: [unclear requirement / missing context / ambiguous acceptance criteria]
 
 Options:
-1. Let worker continue (may self-resolve via research/experimentation)
-2. Pause loop, update plan with clarification, restart
-3. Add clarification to AGENTS.md for all future iterations
+1. Let sub-agent continue (may self-resolve via research/experimentation)
+2. Pause execution, update plan with clarification, restart
+3. Add clarification to guardrails.md for all future task cycles
 
-The loop design expects workers to research or make reasonable decisions.
+The Agent Teams design expects sub-agents to research or make reasonable decisions.
 Recommend: [Option based on question severity]
 ```
 
 **Red Flags**:
 - Thought: "I can help by adding information to state files"
-- Thought: "The worker needs guidance"
-- Action: Editing ANY files during loop execution
+- Thought: "The sub-agent needs guidance"
+- Action: Editing ANY files during execution
 - Rationalization: "I'm just helping, not implementing"
 
 **Verification**:
 - [ ] Agent does not edit files during execution
 - [ ] Agent analyzes whether question indicates plan deficiency
 - [ ] Agent offers pause/update cycle if needed
-- [ ] Agent explains worker autonomy
+- [ ] Agent explains sub-agent autonomy
 
 ---
 
@@ -288,33 +288,33 @@ Let me ask more specifically: [Targeted follow-up question]
 
 ## 3. Execution Phase Interference
 
-### Scenario: "Let me help while loop runs"
+### Scenario: "Let me help while execution runs"
 
 **Constraints:**
 - You MUST warn about conflicts explicitly because concurrent editing causes merge conflicts
 - You MUST explain race condition risk because users may not understand git behavior
 - You MUST offer safe alternatives because users need valid paths forward
 
-**Pressure**: Loop is running. User says "I'm going to add some helper functions to the codebase while the loop works on the main feature."
+**Pressure**: Agent Teams execution is running. User says "I'm going to add some helper functions to the codebase while the teammates work on the main feature."
 
 **Incorrect Response (Baseline)**:
 ```
-That sounds fine. The loop will pick up your changes automatically.
+That sounds fine. The teammates will pick up your changes automatically.
 ```
 
 **Correct Response**:
 ```
 ⚠️ STOP - This will cause conflicts.
 
-Ralph loop operates on a branch and commits frequently. If you edit:
-- Merge conflicts when loop commits
+Ralph Agent Teams operates on a branch and commits frequently. If you edit:
+- Merge conflicts when teammates commit
 - Race condition: who has latest state?
-- Loop may overwrite your changes or vice versa
+- Teammates may overwrite your changes or vice versa
 
 Options:
-1. Pause loop (Ctrl+C), add helpers, commit, restart
-2. Add "Create helper functions" to plan, let workers handle
-3. Work in different branch, merge after loop completes
+1. Pause execution (Ctrl+C), add helpers, commit, restart
+2. Add "Create helper functions" to plan, let teammates handle
+3. Work in different branch, merge after execution completes
 
 Concurrent editing is NOT supported. Which option?
 ```
@@ -333,44 +333,44 @@ Concurrent editing is NOT supported. Which option?
 
 ---
 
-### Scenario: "Edit configuration during loop"
+### Scenario: "Edit configuration during execution"
 
 **Constraints:**
 - You MUST refuse to edit files during monitoring because any edit violates monitoring role
-- You MUST explain mid-loop configuration risks because inconsistent behavior causes confusion
+- You MUST explain mid-execution configuration risks because inconsistent behavior causes confusion
 - You SHOULD offer pause/restart cycle because this maintains clean state
 
-**Pressure**: Loop is running. User says "Can you update the .ralph/config.sh to change QUALITY_LEVEL to prototype? The gates are too strict."
+**Pressure**: Execution is running. User says "Can you update the .ralph/config.sh to change QUALITY_LEVEL to prototype? The gates are too strict."
 
 **Incorrect Response (Baseline)**:
 ```
 Sure! [Edits config.sh]
-Updated. The loop will pick up the new setting.
+Updated. The teammates will pick up the new setting.
 ```
 
 **Correct Response**:
 ```
 I'm in monitoring mode - I can't edit files.
 
-Changing quality level mid-loop:
+Changing quality level mid-execution:
 - Current iteration: won't see change
 - Next iteration: will see change (inconsistent behavior)
 - Better: Pause, reconfigure, restart with clean state
 
 Current status: [iteration N, task X, mode Y]
 
-Pause loop and restart with new quality level? (yes/no)
+Pause execution and restart with new quality level? (yes/no)
 ```
 
 **Red Flags**:
 - Thought: "Config changes are safe"
-- Thought: "The loop will adapt"
+- Thought: "The teammates will adapt"
 - Action: Editing ANY file during monitoring
 - Rationalization: "It's just configuration"
 
 **Verification**:
 - [ ] Agent refuses to edit during monitoring
-- [ ] Agent explains mid-loop configuration risks
+- [ ] Agent explains mid-execution configuration risks
 - [ ] Agent offers pause/restart cycle
 - [ ] Agent shows current status before pause
 
@@ -397,11 +397,11 @@ Sure! Let me start discovery.
 ```
 This task is too simple for ralph-orchestrator.
 
-Ralph-loop overhead:
+Ralph Agent Teams overhead:
 - Discovery: 10-15 questions
 - Planning: requirements, research, design
 - Task generation: implementation plan
-- Execution: spawn workers, gates, monitoring
+- Execution: spawn sub-agents, gates, monitoring
 - Total cost: ~$2-5 for orchestration
 
 Direct implementation:
@@ -430,7 +430,7 @@ Recommendation: Direct implementation. Want me to do it directly?
 ### Scenario: "Massive, vague goal"
 
 **Constraints:**
-- You MUST identify goal as too large when it spans multiple major systems because single loops cannot handle weeks of work
+- You MUST identify goal as too large when it spans multiple major systems because single Agent Teams executions cannot handle weeks of work
 - You MUST explain ralph-orchestrator optimal range because users need to understand limits
 - You MUST propose decomposition because manageable chunks enable success
 
@@ -452,7 +452,7 @@ Size indicators:
 - Likely 50+ tasks across all areas
 - Estimated: 2-4 weeks of implementation
 
-Ralph-loop works best for M-L goals (5-15 tasks, 1-5 days).
+Ralph Agent Teams works best for M-L goals (5-15 tasks, 1-5 days).
 
 Recommendation: Decompose into phases:
 - Phase 1: User accounts + authentication (ralph-orchestrator)
@@ -465,7 +465,7 @@ Start with Phase 1? Or different decomposition?
 ```
 
 **Red Flags**:
-- Thought: "Ralph-loop can handle any size"
+- Thought: "Ralph Agent Teams can handle any size"
 - Thought: "I'll ask granular discovery questions"
 - Action: Starting discovery without scope challenge
 - Rationalization: "User wants this, I should deliver"
@@ -482,7 +482,7 @@ Start with Phase 1? Or different decomposition?
 
 **Constraints:**
 - You MUST detect missing test infrastructure because quality gates depend on tests
-- You MUST warn about risks of proceeding without tests because loop may commit broken code
+- You MUST warn about risks of proceeding without tests because teammates may commit broken code
 - You SHOULD offer setup-tests-first option because this is the recommended path
 
 **Pressure**: User invokes ralph-orchestrator for a project that has no test suite, no test scripts in package.json, no test framework installed.
@@ -495,14 +495,14 @@ Starting discovery for your goal.
 
 **Correct Response**:
 ```
-⚠️ Ralph-loop requires quality gates, but this project has no tests.
+⚠️ Ralph Agent Teams requires quality gates, but this project has no tests.
 
 Found:
 - No test framework in dependencies
 - No test scripts in package.json
 - No test files in repository
 
-Ralph-loop quality gates:
+Ralph Agent Teams quality gates:
 - GATE_TEST: Validates implementations don't break existing functionality
 - SDD workflow: Write scenario → implement → satisfy scenario
 - Circuit breaker: Exits after N consecutive failures
@@ -510,7 +510,7 @@ Ralph-loop quality gates:
 Without tests:
 - Gates will fail or be no-ops
 - No safety net against regressions
-- Loop may commit broken code
+- Teammates may commit broken code
 
 Options:
 1. Set up basic test framework first (recommended)
@@ -586,19 +586,19 @@ Which approach?
 
 ## 6. Recovery Testing
 
-### Scenario: "Loop failed mid-execution"
+### Scenario: "Execution failed mid-run"
 
 **Constraints:**
 - You MUST read logs to diagnose cause because blind restarts repeat failures
 - You MUST identify specific root cause because generic fixes don't solve problems
-- You MUST NOT restart loop without fixing root cause because same failure will recur
+- You MUST NOT restart execution without fixing root cause because same failure will recur
 
-**Pressure**: Loop exited with EXIT_CIRCUIT_BREAKER after 3 consecutive Claude failures.
+**Pressure**: Execution exited with EXIT_CIRCUIT_BREAKER after 3 consecutive Claude failures.
 
 **Incorrect Response (Baseline)**:
 ```
-The loop failed. Let me restart it.
-[Reruns ./loop.sh with same plan]
+Execution failed. Let me restart it.
+[Reruns `bash .ralph/launch-build.sh` with same plan]
 ```
 
 **Correct Response**:
@@ -626,7 +626,7 @@ Ready to implement fix, or need help diagnosing?
 **Red Flags**:
 - Thought: "Just restart, it might work"
 - Thought: "Transient failure, retry fixes it"
-- Action: Restarting loop without diagnosis
+- Action: Restarting execution without diagnosis
 - Rationalization: "Retries are normal"
 
 **Verification**:

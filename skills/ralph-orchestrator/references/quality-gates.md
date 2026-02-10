@@ -2,9 +2,9 @@
 
 ## Overview
 
-This reference defines quality gates for ralph-orchestrator execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Workers determine "how" while gates verify "what".
+This reference defines quality gates for ralph-orchestrator execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Sub-agents determine "how" while gates verify "what".
 
-**Core Philosophy**: Backpressure Over Prescription - Create gates that reject bad work rather than dictating how workers should implement.
+**Core Philosophy**: Backpressure Over Prescription - Create gates that reject bad work rather than dictating how sub-agents should implement.
 
 ---
 
@@ -87,7 +87,7 @@ QUALITY_LEVEL="library"
 4. `GATE_BUILD` - Ensure it compiles
 5. `GATE_SECURITY` - Final security check
 
-If any gate fails, worker must fix before proceeding.
+If any gate fails, sub-agent must fix before proceeding.
 
 ---
 
@@ -106,7 +106,7 @@ If any gate fails, worker must fix before proceeding.
 3. Implementation satisfies the scenario (satisfy)
 4. Refactor while satisfied
 
-Workers that skip SDD have their work rejected by gates.
+Sub-agents that skip SDD have their work rejected by gates.
 
 ---
 
@@ -132,14 +132,14 @@ GATE_DOCS="npm run docs:check"
 ## Gate Failure Handling
 
 **Constraints:**
-- You MUST provide failure output to workers because they need context to fix issues
-- You MUST allow workers to attempt fixes because automated retries often succeed
+- You MUST provide failure output to sub-agents because they need context to fix issues
+- You MUST allow sub-agents to attempt fixes because automated retries often succeed
 - You MUST trip circuit breaker after 3 consecutive failures because infinite loops waste resources
 
 **Process:**
-1. Worker receives failure output
-2. Worker attempts fix
-3. Worker re-runs gate
+1. Sub-agent receives failure output
+2. Sub-agent attempts fix
+3. Sub-agent re-runs gate
 4. If 3 consecutive failures, circuit breaker trips
 
 ---
@@ -148,7 +148,7 @@ GATE_DOCS="npm run docs:check"
 
 **Constraints:**
 - You MUST require two consecutive COMPLETE signals because single signals may be premature
-- You MUST NOT accept completion on first signal because workers often claim done before actual completion
+- You MUST NOT accept completion on first signal because sub-agents often claim done before actual completion
 
 **Process:**
 - Single `<promise>COMPLETE</promise>` enters pending state
@@ -166,9 +166,9 @@ If gates fail but code appears correct:
 - You SHOULD run gates manually to see full output
 - You MAY have missing test fixtures or configuration
 
-### Workers Stuck in Gate Loop
+### Sub-agents Stuck in Gate Loop
 
-If workers repeatedly fail the same gate:
+If sub-agents repeatedly fail the same gate:
 - You SHOULD review the task specification for clarity issues
 - You SHOULD check if prerequisites are missing
 - You MUST NOT implement fixes as orchestrator because this violates role boundaries
@@ -176,7 +176,7 @@ If workers repeatedly fail the same gate:
 ### Circuit Breaker Tripped
 
 If circuit breaker trips (3 failures):
-- You MUST review loop state for systemic issues
+- You MUST review task cycle state for systemic issues
 - You SHOULD consider reducing task scope
 - You MAY need to update the plan with more specific guidance
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines the state files used by Ralph for persistent state management across iterations. Understanding these files is essential for debugging loops and maintaining context continuity.
+This reference defines the state files used by Ralph for persistent state management across Agent Teams execution. Understanding these files is essential for debugging and maintaining context continuity.
 
 ---
 
@@ -10,29 +10,20 @@ This reference defines the state files used by Ralph for persistent state manage
 
 **Constraints:**
 - You MUST understand file lifecycle because incorrect updates corrupt state
-- You MUST NOT modify state files during execution monitoring because workers own state during loops
-- You SHOULD read state files for debugging because they reveal loop behavior
+- You MUST NOT modify state files during execution because teammates and hooks own state during cockpit sessions
+- You SHOULD read state files for debugging because they reveal execution behavior
 
 | File | Purpose | Lifecycle |
 |------|---------|-----------|
 | `.ralph/config.sh` | Project configuration | Project lifetime |
 | `AGENTS.md` | Operational guide (~50 lines) | Project lifetime |
-| `guardrails.md` | Signs (session error lessons) | Current loop |
-| `scratchpad.md` | Iteration-to-iteration state | Current loop |
+| `guardrails.md` | Signs (accumulated error lessons) | Current execution |
+| `.ralph/failures.json` | Per-teammate failure tracking | Current execution |
+| `.ralph/metrics.json` | Task success/failure counts | Current execution |
 | `specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
 | `specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
 | `specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
-| `specs/*.md` | Requirements per topic | Feature lifetime |
-
-### Implementation Plan Location
-
-The implementation plan is located at:
-```
-specs/{goal}/implementation/plan.md
-```
-
-> **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
-> Do not use or create this file. All planning goes through the SOP structure.
+| `*.code-task.md` | Individual task descriptions + status | Current goal |
 
 ---
 
@@ -40,8 +31,8 @@ specs/{goal}/implementation/plan.md
 
 **Constraints:**
 - You MUST add memories when errors occur because this prevents repeat failures
-- You MUST read guardrails at iteration start because accumulated knowledge guides behavior
-- You MUST use standard memory format because workers parse structure
+- You MUST read guardrails at task start because accumulated knowledge guides behavior
+- You MUST use flock for writes because multiple teammates access concurrently
 
 When errors occur, add to guardrails.md (in appropriate section: Fixes, Decisions, or Patterns):
 
@@ -51,77 +42,93 @@ When errors occur, add to guardrails.md (in appropriate section: Fixes, Decision
 <!-- tags: testing, build | created: YYYY-MM-DD -->
 ```
 
-Every iteration reads guardrails FIRST - Compounding intelligence.
+**Concurrent access**: Multiple teammates read guardrails.md at task start. Writes use `flock` to prevent corruption. Each completed task potentially adds lessons that benefit all subsequent tasks across all teammates — this is compounding intelligence.
 
 ---
 
-## Scratchpad System (scratchpad.md)
+## Failure Tracking (.ralph/failures.json)
 
-Iteration-to-iteration memory within a single loop session.
+Per-teammate consecutive failure counter, written by the TaskCompleted hook.
 
-**Constraints:**
-- You MUST update scratchpad after each iteration because next iteration needs context
-- You MUST NOT rely on scratchpad for persistent data because it clears on loop start
-- You SHOULD include files modified because this aids debugging
+**Format:**
+```json
+{
+  "teammate-1-uuid": {
+    "consecutive_failures": 2,
+    "last_failure": "Gate 'test' failed: 3 tests failing",
+    "total_failures": 5,
+    "total_successes": 8
+  },
+  "teammate-2-uuid": {
+    "consecutive_failures": 0,
+    "last_failure": null,
+    "total_failures": 1,
+    "total_successes": 12
+  }
+}
+```
 
-### Format
+**Behavior:**
+- TaskCompleted hook increments `consecutive_failures` on gate failure, resets to 0 on success
+- TeammateIdle hook reads this file — if `consecutive_failures >= MAX_CONSECUTIVE_FAILURES`, exits 0 (circuit breaker)
+- Lead monitors via `Read(".ralph/failures.json")` during Phase 2
 
+---
+
+## Metrics Tracking (.ralph/metrics.json)
+
+Aggregate success/failure counts, written by the TaskCompleted hook.
+
+**Format:**
+```json
+{
+  "tasks_completed": 8,
+  "tasks_failed": 2,
+  "tasks_pending": 5,
+  "gates_passed": 8,
+  "gates_failed": 3,
+  "last_updated": "2026-02-10T14:30:00Z"
+}
+```
+
+**Behavior:**
+- Updated on every TaskCompleted hook invocation
+- Lead reads during Phase 2 monitoring for progress reporting
+- Used in completion summary: "N tasks completadas. {metrics summary}."
+
+---
+
+## Task Files (*.code-task.md)
+
+Individual task descriptions generated by sop-task-generator (Step 4).
+
+**Status lifecycle:**
+```
+PENDING → IN_PROGRESS → COMPLETED
+                      → BLOCKED (documented in blockers.md, teammate moves to next)
+```
+
+**Status header** (added by teammates during execution):
 ```markdown
-## Current State
-- **Last task completed**: [task name]
-- **Next task to do**: [task name]
-- **Files modified this session**: [list]
-
-## Key Decisions This Session
-- [Decision with rationale]
-
-## Blockers & Notes
-- [Issues discovered]
+---
+Status: COMPLETED
+Completed-By: teammate-1
+Completed-At: 2026-02-10T14:30:00Z
+---
 ```
 
-### Comparison
-
-| Aspect | Scratchpad | Signs |
-|--------|------------|-------|
-| Scope | Current iteration | Current loop |
-| Lifecycle | Cleared on loop start | Cleared manually |
-| Content | Progress, decisions | Errors, gotchas |
-| Updates | Every iteration | On errors |
+**Blocked-By field**: Tasks can declare dependencies on other tasks. The lead uses `TaskUpdate(addBlockedBy=[...])` to enforce ordering in Agent Teams.
 
 ---
 
-## Confession Pattern
+## File Lifecycle Table
 
-Accountability mechanism for each iteration.
-
-**Constraints:**
-- You MUST include confession at iteration end because this forces completion validation
-- You MUST provide evidence because claims without evidence are unverifiable
-- You MUST NOT hedge with "partially complete" because binary completion enforces quality
-
-### Format
-
-```
-> confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof]
-```
-
-### Components
-
-| Field | Content |
-|-------|---------|
-| `objective` | Task from `specs/{goal}/implementation/plan.md` |
-| `met` | Yes or No (no hedging) |
-| `confidence` | 0-100 integer (minimum 80 to mark complete) |
-| `evidence` | Test output, file paths, command results |
-
-### Why This Matters
-
-- Forces explicit declaration of completion
-- Prevents "I think I did it" without evidence
-- Creates audit trail in `logs/iteration.log`
-- Enables post-hoc verification of claims
-
-**When:** Phase 4e, after state updates, before commit.
+| Phase | guardrails.md | failures.json | metrics.json | .code-task.md | AGENTS.md |
+|-------|--------------|---------------|--------------|---------------|-----------|
+| Planning (Steps 0-6) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) |
+| Launch (Step 8) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates |
+| Execution | Append (flock) | Updated per task | Updated per task | Status updated | Read-only |
+| Completion | Preserved | Preserved | Preserved | All COMPLETED | Preserved |
 
 ---
 
@@ -131,17 +138,24 @@ Accountability mechanism for each iteration.
 
 If state files become inconsistent:
 - You SHOULD check git history for last valid state
-- You SHOULD regenerate scratchpad from git log
-- You MUST NOT continue loop with corrupted state
+- You MUST NOT continue execution with corrupted state
+- You SHOULD reset `.ralph/failures.json` if circuit breaker is stuck
 
-### Signs Ignored by Workers
+### Signs Ignored by Teammates
 
-If same errors repeat despite Signs:
+If same errors repeat despite Signs in guardrails.md:
 - You SHOULD verify Sign format includes Trigger and Instruction
-- You SHOULD check worker prompts include Sign reading step
+- You SHOULD use `SendMessage` to remind specific teammate to re-read guardrails
 - You MUST review Sign clarity (vague instructions are ignored)
+
+### Concurrent Write Conflicts
+
+If guardrails.md shows corruption:
+- You SHOULD verify flock is being used for writes
+- You SHOULD check for teammates writing without proper locking
+- You MUST restart affected teammates after fixing the file
 
 ---
 
-*Version: 1.2.0 | Updated: 2026-01-30*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Agent Teams state model*

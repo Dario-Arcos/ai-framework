@@ -1,35 +1,35 @@
 # Best Practices Reference
 
 > Consolidated best practices for Ralph Orchestrator operation.
-> See also: [supervision-modes.md](supervision-modes.md), [monitoring-pattern.md](monitoring-pattern.md), [configuration-guide.md](configuration-guide.md)
+> See also: [supervision-modes.md](supervision-modes.md), [observability.md](observability.md), [configuration-guide.md](configuration-guide.md)
 
 ---
 
-## Loop Execution
+## Task Cycle Execution
 
-**Background execution required:**
+**Agent Teams cockpit launch:**
 ```bash
-# Correct: Use run_in_background=true
-Bash(command="./loop.sh specs/{goal}/", run_in_background=true)
+# Correct: Launch via Agent Teams cockpit
+Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
 
 # Incorrect: Foreground execution risks timeout
-Bash(command="./loop.sh")  # May be killed by timeout
+Bash(command="bash .ralph/launch-build.sh")  # May be killed by timeout
 ```
 
 **Monitor without blocking:**
 ```bash
-# Check status without waiting
-TaskOutput(task_id="{id}", block=false)
+# Check status via TaskList
+TaskList()
 
-# Read full log for details
-Read(file_path="logs/iteration-{N}.log")
+# Read teammate output
+TaskOutput(task_id="{id}", block=false)
 
 # DO NOT use these (they block):
 # tail -f logs/current.log  # Blocks indefinitely
 # Bash with long timeout    # May kill process
 ```
 
-> Cross-reference: [monitoring-pattern.md](monitoring-pattern.md) for complete monitoring strategies.
+> Cross-reference: [observability.md](observability.md) for complete monitoring strategies.
 
 ---
 
@@ -38,7 +38,7 @@ Read(file_path="logs/iteration-{N}.log")
 The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 - Atomic task design naturally stays within effective context range
-- Control is INPUT-based (truncate scratchpad/guardrails before iteration)
+- Control is INPUT-based (trim guardrails before each task cycle)
 - No post-hoc measurement or exit conditions based on context percentage
 
 **Configuration**: Use `max_iterations` and `max_runtime` for limits, not context percentages.
@@ -48,17 +48,17 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 ---
 
-## Iteration Strategy
+## Task Cycle Strategy
 
-**When to let it iterate:**
+**When to let it continue:**
 - Complex multi-file changes
 - Debugging cycles
 - Tests failing
-- Worker making measurable progress
+- Teammate making measurable progress
 
 **When to intervene:**
-- Loop stuck on same error (3+ attempts)
-- 3+ iterations on simple task
+- Task cycle stuck on same error (3+ attempts)
+- 3+ task cycles on simple task
 - Quality degrading instead of improving
 - Red flags appearing in logs
 
@@ -71,13 +71,13 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 After every session verify:
 1. `guardrails.md` has new Signs (if gotchas found)
-2. `scratchpad.md` reflects final state
+2. `guardrails.md` reflects final state (shared memory across teammates and sub-agents)
 
 **Capture checklist:**
 | Artifact | Check | Purpose |
 |----------|-------|---------|
 | guardrails.md | New Signs added? | Prevent repeat mistakes |
-| scratchpad.md | State updated? | Resume point for next iteration |
+| guardrails.md | State updated? | Shared memory for teammates and sub-agents |
 
 > Cross-reference: [state-files.md](state-files.md) for state file management.
 
@@ -88,13 +88,13 @@ After every session verify:
 | Mode | Use Case | Intervention |
 |------|----------|--------------|
 | Autonomous | Overnight runs, high confidence tasks | None until completion |
-| Checkpoint (iterations) | Complex features, want visibility | Every N iterations |
+| Checkpoint (task cycles) | Complex features, want visibility | Every N task cycles |
 
 > Note: Checkpoint (milestones) mode is planned but NOT IMPLEMENTED.
 
 **Mode selection criteria:**
 - **Autonomous**: Confident in SOP, well-tested pipeline, low-risk changes
-- **Checkpoint (iterations)**: New features, moderate complexity, want progress visibility
+- **Checkpoint (task cycles)**: New features, moderate complexity, want progress visibility
 
 > Cross-reference: [supervision-modes.md](supervision-modes.md) for detailed mode documentation.
 > Cross-reference: [mode-selection.md](mode-selection.md) for mode selection flowchart.
@@ -105,9 +105,9 @@ After every session verify:
 
 | Anti-Pattern | Problem | Solution |
 |--------------|---------|----------|
-| Foreground loops | Timeout kills process | Use `run_in_background=true` |
+| Foreground launch | Timeout kills process | Use `run_in_background=true` |
 | Blocking monitors | Claude stuck waiting | Use `block=false` with TaskOutput |
-| Context pollution | Worker context degraded | Update plan, don't pollute worker |
+| Context pollution | Sub-agent context degraded | Update plan, don't pollute sub-agent |
 | Skip prerequisites | Missing SOP artifacts | Always validate Step 0 |
 | Ignore red flags | Issues compound | Intervene at first sign |
 
@@ -117,24 +117,20 @@ After every session verify:
 
 **Essential commands:**
 ```bash
-# Start loop
-Bash(command="./loop.sh specs/{goal}/", run_in_background=true)
+# Launch Agent Teams cockpit
+Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
 
-# Check status
+# Check status via TaskList
+TaskList()
+
+# Read teammate output
 TaskOutput(task_id="{id}", block=false)
-
-# Read logs
-Read(file_path="logs/iteration-{N}.log")
-
-# Force iteration
-echo "ITERATE" > specs/{goal}/control/iteration-trigger
 ```
 
 **Context philosophy:**
 - 40-60% sweet spot emerges from atomic task design
-- INPUT-based control via `truncate-context.sh`
-- No OUTPUT measurement or context-based exits
+- INPUT-based control via auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`)
+- Fresh context via sub-agents — no OUTPUT measurement or context-based exits
 
 **Knowledge artifacts:**
-- `guardrails.md`: Warning signs and rules
-- `scratchpad.md`: Current state
+- `guardrails.md`: Warning signs, rules, and shared memory across teammates and sub-agents

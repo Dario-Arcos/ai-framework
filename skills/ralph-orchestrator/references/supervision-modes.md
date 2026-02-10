@@ -21,7 +21,7 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 ├─────────────────────────────────────────────────────────────────┤
 │  PHASE 2: EXECUTION                                             │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │  Mode: ALWAYS AUTONOMOUS (loop.sh in background)        │    │
+│  │  Mode: ALWAYS AUTONOMOUS (Agent Teams cockpit)           │    │
 │  │  Optional: Checkpoints every N tasks for review         │    │
 │  │  Duration: 1-8 hours                                    │    │
 │  └─────────────────────────────────────────────────────────┘    │
@@ -100,7 +100,7 @@ User options:
 
 ### Core Truth
 
-**Execution is ALWAYS autonomous.** The loop.sh script runs in the background and executes tasks with fresh context per iteration. There is no "interactive execution" - that's a contradiction.
+**Execution is ALWAYS autonomous.** The Agent Teams cockpit launches coordinators that claim tasks, spawn sub-agents with fresh 200K context, and drive task cycles. There is no "interactive execution" - that's a contradiction.
 
 ### Checkpoint Configuration
 
@@ -159,13 +159,13 @@ These protections work regardless of checkpoint configuration:
 
 **Wrong:** "I want human-in-the-loop execution where I review each task."
 
-**Right:** Execution is always autonomous. If you want frequent review, use checkpoints every 1-3 tasks. But the loop itself runs autonomously - you review at pauses, not during execution.
+**Right:** Execution is always autonomous. If you want frequent review, use checkpoints every 1-3 tasks. But the Agent Teams cockpit runs autonomously - you review at pauses, not during execution.
 
 ### "AFK vs HITL"
 
 **Wrong:** "AFK and HITL are two different execution modes."
 
-**Right:** There's only ONE execution mode: autonomous via loop.sh. "AFK" means no checkpoints. "Frequent checkpoints" replaces what was misleadingly called "HITL".
+**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. "AFK" means no checkpoints. "Frequent checkpoints" replaces what was misleadingly called "HITL".
 
 ### "Autonomous Planning = No Control"
 
@@ -223,7 +223,7 @@ every N tasks       (full AFK)
     └─────────┬─────────┘
               │
               ▼
-       Launch loop.sh
+       Launch Agent Teams cockpit
        (ALWAYS autonomous)
 ```
 

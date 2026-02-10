@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines ralph configuration options in `.ralph/config.sh`. Understanding configuration is essential for customizing loop behavior to match project requirements.
+This reference defines ralph configuration options in `.ralph/config.sh`. Configuration controls quality gates, safety thresholds, and cockpit services for Agent Teams execution.
 
 ---
 
@@ -54,20 +54,43 @@ GATE_LINT="golangci-lint run"
 GATE_BUILD="go build ./..."
 ```
 
----
+Gates execute in order: **test → typecheck → lint → build**. First failure stops the chain (TaskCompleted hook).
 
-## Checkpoint Configuration
-
-**Constraints:**
-- You MUST configure checkpoint mode before execution because mid-run changes cause inconsistency
-- You MUST resume with same command after checkpoint because state persists
-- You SHOULD use milestones for multi-module features because natural breakpoints aid review
+**Coverage Threshold:**
 
 ```bash
-CHECKPOINT_MODE="none"        # none|iterations (milestones not implemented)
-CHECKPOINT_INTERVAL=5         # Pause every N iterations (if mode=iterations)
-# CHECKPOINT_ON_MODULE=true   # NOT IMPLEMENTED - milestones mode planned for future
+MIN_TEST_COVERAGE=""  # Default: empty (no coverage check)
 ```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `MIN_TEST_COVERAGE` | `""` | Minimum test coverage percentage. When set, test gate validates coverage meets this threshold. Empty = no coverage enforcement |
+
+---
+
+## Agent Teams Options
+
+**Constraints:**
+- You MUST configure cockpit services before launch because launch-build.sh reads config at startup
+- You SHOULD set MAX_TEAMMATES based on task parallelism because too many teammates contend for resources
+
+```bash
+MODEL="opus"                      # Model for teammates (opus recommended)
+MAX_TEAMMATES=3                   # Maximum concurrent teammates
+COCKPIT_DEV_SERVER="npm run dev"  # Dev server command (tmux "services" window)
+COCKPIT_TEST_WATCHER="npm run test:watch"  # Test watcher (tmux "quality" window)
+COCKPIT_LOGS="tail -f logs/*.log" # Log tailing (tmux "monitor" window)
+COCKPIT_DB=""                     # Database command (tmux "services" window, pane 1)
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `MODEL` | `opus` | Model used for teammates |
+| `MAX_TEAMMATES` | `3` | Max concurrent teammates |
+| `COCKPIT_DEV_SERVER` | `""` | Command for dev server window |
+| `COCKPIT_TEST_WATCHER` | `""` | Command for test watcher window |
+| `COCKPIT_LOGS` | `""` | Command for log monitoring window |
+| `COCKPIT_DB` | `""` | Command for database service |
 
 ---
 
@@ -80,77 +103,67 @@ CHECKPOINT_INTERVAL=5         # Pause every N iterations (if mode=iterations)
 
 ```bash
 CONFESSION_MIN_CONFIDENCE=80    # 0-100, tasks below this are NOT complete
-MAX_CONSECUTIVE_FAILURES=3      # Circuit breaker threshold
-MAX_TASK_ATTEMPTS=3             # Exit if same task fails N times
+MAX_CONSECUTIVE_FAILURES=3      # Circuit breaker threshold (per teammate)
+MAX_TASK_ATTEMPTS=3             # Reject task after N failed attempts
 MAX_RUNTIME=0                   # Max seconds (0 = unlimited)
 ```
 
+The circuit breaker tracks failures **per teammate** in `.ralph/failures.json`. When a teammate hits MAX_CONSECUTIVE_FAILURES, the TeammateIdle hook allows it to idle (exit 0) instead of claiming more tasks.
+
 ---
 
-## AFK Mode Configuration
+## Memories (Guardrails.md)
 
-> **NOT IMPLEMENTED**: The following options are documented but not yet implemented in loop.sh.
-> Autonomous execution works by default - these notification options are planned for future versions.
+**Constraints:**
+- You SHOULD enable memories for complex tasks because guardrails.md captures patterns and prevents repeated mistakes
+- You SHOULD set MEMORIES_BUDGET based on task duration because long-running sessions accumulate more entries
 
 ```bash
-# NOT IMPLEMENTED - Planned for future release
-AFK_MODE=true                   # Enable AFK mode (not implemented)
-AFK_NOTIFICATION="slack"        # slack|email|none (not implemented)
-AFK_WEBHOOK_URL=""              # Slack webhook for notifications (not implemented)
+MEMORIES_ENABLED=true    # Enable/disable memory system
+MEMORIES_BUDGET=50       # Max entries before pruning oldest
 ```
 
----
-
-## Execution Modes Summary
-
-**Constraints:**
-- You SHOULD use frequent checkpoints for first-time users because learning requires observation
-- You MUST use checkpoint mode for risky tasks because human review catches critical errors
-- You MAY use 100% AFK when confident in quality gates because fresh context improves throughput
-
-| Mode | Description | Use When |
-|------|-------------|----------|
-| Autonomous | No interruptions | Overnight runs, high confidence |
-| Checkpoint (iterations) | Pause every N | Learning the system, want oversight |
-| Checkpoint (milestones) | Pause at modules | *NOT IMPLEMENTED* |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `MEMORIES_ENABLED` | `true` | Enable/disable the guardrails.md memory system. When false, teammates skip writing learned patterns and error signs |
+| `MEMORIES_BUDGET` | `50` | Maximum number of entries in guardrails.md before oldest entries are pruned. Prevents unbounded growth in long-running sessions |
 
 ---
 
-## Termination & Exit Codes
+## Exit Codes
 
 **Constraints:**
-- You MUST check errors.log after non-zero exit because root cause needs identification
-- You MUST fix underlying issue before restart because same failures will repeat
-- You SHOULD understand all exit codes because this guides recovery action
+- You MUST understand exit codes because they guide recovery actions
+- You MUST check logs after non-zero exit because root cause needs identification
 
 | Exit Code | Name | Trigger |
 |-----------|------|---------|
-| 0 | SUCCESS | `<promise>COMPLETE</promise>` confirmed twice |
-| 1 | ERROR | Validation failure, missing files |
-| 2 | CIRCUIT_BREAKER | 3 consecutive Claude failures |
-| 3 | MAX_ITERATIONS | User-defined iteration limit reached |
+| 0 | SUCCESS | All tasks completed, teammates idled |
+| 1 | ERROR | Validation failure, missing files, config error |
+| 2 | CIRCUIT_BREAKER | Per-teammate consecutive failures hit threshold |
 | 4 | MAX_RUNTIME | Runtime limit exceeded |
-| 6 | LOOP_THRASHING | Oscillating task pattern (A-B-A-B) |
-| 7 | TASKS_ABANDONED | Same task failed 3+ times |
-| 8 | CHECKPOINT_PAUSE | Checkpoint reached, waiting for resume |
-| 130 | INTERRUPTED | Ctrl+C (SIGINT) |
+| 130 | INTERRUPTED | User interrupt (Ctrl+C) or manual ABORT |
+
+**Manual abort**: Create `.ralph/ABORT` file → all teammates idle on next TeammateIdle check.
 
 ---
 
 ## Recovery Commands
 
 **Constraints:**
-- You MUST stop the loop before making changes because concurrent edits cause conflicts
-- You MUST re-run planning phase in interactive session because this restores context
+- You MUST stop execution before making changes because concurrent edits cause conflicts
 - You SHOULD use git reset only when necessary because this discards work
 
-If Ralph goes off-track, use from terminal (not monitoring session):
+If Ralph goes off-track:
 
 ```bash
-Ctrl+C                              # Stop the loop
-git reset --hard HEAD~N             # Revert N commits
-# Re-run planning phase in interactive session
-./loop.sh specs/{goal}/             # Resume building
+touch .ralph/ABORT                      # Graceful stop — teammates idle on next check
+# Wait for teammates to idle, then:
+rm .ralph/ABORT                         # Clear abort flag
+git reset --hard HEAD~N                 # Revert N commits if needed
+rm .ralph/failures.json                 # Reset circuit breakers
+# Re-launch cockpit
+bash .ralph/launch-build.sh
 ```
 
 ---
@@ -168,17 +181,17 @@ If quality gates fail when they shouldn't:
 
 If config changes don't take effect:
 - You SHOULD verify config.sh syntax because shell syntax errors prevent loading
-- You SHOULD check if loop was restarted because running loops don't reload config
+- You SHOULD check if cockpit was relaunched because running sessions don't reload config
 - You MUST source config.sh manually to test because this reveals parse errors
 
 ### Exit Codes Not Matching Expected
 
-If loop exits with unexpected code:
-- You SHOULD check status.json for detailed state because this reveals true cause
-- You SHOULD review logs/iteration.log for failure details because this shows progression
-- You MUST map exit code to table above because this guides recovery action
+If execution exits unexpectedly:
+- You SHOULD check `.ralph/failures.json` for circuit breaker state
+- You SHOULD review `.ralph/metrics.json` for failure patterns
+- You MUST check `guardrails.md` for accumulated error Signs
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Agent Teams configuration model*

@@ -2,21 +2,22 @@
 
 ## Overview
 
-Ralph-orchestrator supports two execution paths for implementing tasks. This reference clarifies when each is used and how they communicate with the orchestrator.
+Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assist) for user-present sessions. **Autonomous** (Agent Teams teammates) for parallel, hooks-gated execution via the Ghostty cockpit.
 
 ---
 
 ## Execution Path Comparison
 
-| Aspect | Interactive (sop-code-assist) | Autonomous (loop.sh workers) |
-|--------|-------------------------------|------------------------------|
-| **When used** | User present, learning, complex decisions | User away, batch processing |
-| **Invoker** | User manually or orchestrator in interactive mode | loop.sh in autonomous mode |
-| **Context** | Single session, full context retained | Fresh context each iteration |
-| **User interaction** | Confirms at each step | None after launch |
-| **Blocker handling** | AskUserQuestion | Document in blockers.md, exit cleanly |
-| **Communication** | Direct tool output | stdout signals + exit codes |
-| **Artifacts location** | `specs/{goal}/implementation/{task_name}/` | `specs/{goal}/implementation/{task_name}/` |
+| Aspect | Interactive (sop-code-assist) | Autonomous (Agent Teams) |
+|--------|-------------------------------|--------------------------|
+| **When used** | User present, learning, complex decisions | Batch processing, overnight, parallel tasks |
+| **Invoker** | User manually or orchestrator in interactive mode | launch-build.sh launched by ralph-orchestrator |
+| **Context** | Single session, full context retained | Persistent per teammate, compacted by Claude Code |
+| **User interaction** | Confirms at each step | None after cockpit launch |
+| **Parallelism** | Sequential (single session) | Parallel (up to MAX_TEAMMATES) |
+| **Blocker handling** | AskUserQuestion | Document in blockers.md, mark task BLOCKED, move to next |
+| **Quality gates** | Inline (teammate runs gates) | TaskCompleted hook validates automatically |
+| **Communication** | Direct tool output | SendMessage (teammate ↔ lead), guardrails.md (shared memory) |
 
 ---
 
@@ -43,74 +44,50 @@ Ralph-orchestrator supports two execution paths for implementing tasks. This ref
 **Artifacts created:**
 ```
 specs/{goal}/implementation/{task_name}/
-├── blockers.md     # Blockers (autonomous mode only, if blocked)
+├── blockers.md     # Blockers (if any)
 └── logs/           # Build outputs
 ```
 
 ---
 
-## Autonomous Path: loop.sh Workers
+## Autonomous Path: Agent Teams Teammates
 
-**Trigger**: `./loop.sh specs/{goal}/` launched by ralph-orchestrator.
+**Trigger**: `launch-build.sh` launched by ralph-orchestrator (Step 8).
 
 ```bash
-./loop.sh specs/user-auth/
+bash .ralph/launch-build.sh
 ```
 
 **Characteristics:**
-- User away (AFK mode)
-- No user interaction during execution
-- Fresh 200K context each iteration
-- Worker reads PROMPT_build.md instructions
-- State persisted via files
+- Persistent context per teammate (compacted by Claude Code, not fresh each task)
+- Parallel execution with up to MAX_TEAMMATES concurrent coordinators
+- Quality gates enforced via TaskCompleted hook (not inline)
+- TeammateIdle hook drives continuity (exit 2 = keep working)
+- Cockpit provides live visibility via tmux windows
 
-**Worker lifecycle:**
-1. Read guardrails.md (Signs from previous iterations)
-2. Read scratchpad.md (session state)
-3. Select next incomplete task from plan.md
-4. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
-5. Run quality gates
-6. Update state files
-7. Emit confession + task_completed signals
-8. Commit and exit
+**Teammate lifecycle:**
+1. Read `guardrails.md` (accumulated lessons from all teammates)
+2. Claim next PENDING task from Agent Teams task list
+3. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
+4. Run quality gates (triggered by TaskCompleted hook on completion)
+5. If gates pass: task accepted, failure counter reset, metrics updated
+6. If gates fail: task rejected with feedback, teammate fixes and retries
+7. Commit completed work
+8. TeammateIdle hook fires → claim next task (or idle if all done)
 
----
+**Communication mechanisms:**
 
-## Communication Mechanisms
-
-### Interactive Path
-
-Direct tool output and AskUserQuestion. No special signals needed.
-
-### Autonomous Path
-
-**stdout signals** (parsed by loop.sh):
-
-| Signal | Purpose | Format |
-|--------|---------|--------|
-| `> confession:` | Task completion status | `> confession: objective=[task], met=[Yes/No], confidence=[N], evidence=[proof]` |
-| `> task_completed:` | Mark task done | `> task_completed: [Task name from plan.md]` |
-| `> sdd:scenario` | SDD tracking | `> sdd:scenario {test_name}` |
-| `> sdd:satisfy` | SDD tracking | `> sdd:satisfy {test_name}` |
-| `<promise>COMPLETE</promise>` | All tasks done | Requires TWO consecutive signals for termination |
-
-**Exit codes** (from loop.sh):
-
-| Code | Name | Meaning |
-|------|------|---------|
-| 0 | SUCCESS | All tasks completed with double verification |
-| 1 | ERROR | Validation or setup failure |
-| 2 | CIRCUIT_BREAKER | Max consecutive failures reached |
-| 3 | MAX_ITERATIONS | Iteration limit reached |
-| 4 | MAX_RUNTIME | Runtime limit exceeded |
-| 6 | LOOP_THRASHING | Oscillating task pattern detected |
-| 7 | TASKS_ABANDONED | Same task failed repeatedly |
-| 8 | CHECKPOINT_PAUSE | Checkpoint reached, awaiting resume |
-| 130 | INTERRUPTED | User interrupt (Ctrl+C) |
+| Channel | Direction | Purpose |
+|---------|-----------|---------|
+| `SendMessage` | Teammate ↔ Lead | Direct instructions, status updates |
+| `guardrails.md` | All teammates (shared) | Accumulated error lessons, patterns |
+| `TaskList` | Lead reads | Progress tracking across all tasks |
+| `.ralph/metrics.json` | Hook writes, lead reads | Success/failure counts |
+| `.ralph/failures.json` | Hook writes, lead reads | Per-teammate failure tracking |
 
 ---
 
-## Blocker Handling by Path
+## Blocker Handling
 
 ### Interactive: Ask and Wait
 
@@ -122,7 +99,7 @@ When blocked:
 4. Continue execution
 ```
 
-### Autonomous: Document and Exit
+### Autonomous: Document and Move On
 
 ```text
 When blocked:
@@ -132,59 +109,60 @@ When blocked:
    - Full details
    - Suggested resolution
 2. Add Sign to guardrails.md if applicable
-3. Update scratchpad.md with blocker status
-4. Exit cleanly (let orchestrator handle recovery)
+3. Mark task as BLOCKED via TaskUpdate
+4. Claim next available task (teammates never stop on one blocker)
 ```
 
-**Critical**: Autonomous mode NEVER uses AskUserQuestion. The orchestrator detects issues via exit codes and can alert the user or attempt recovery.
+**Critical**: Autonomous teammates NEVER use AskUserQuestion. The lead detects issues via TaskList and can SendMessage to teammates or alert the user.
 
 ---
 
 ## State Files by Path
 
-Both paths use the same state files, but update frequency differs:
+Both paths use the same state files, but access patterns differ:
 
-| File | Interactive | Autonomous |
-|------|-------------|------------|
-| `scratchpad.md` | Updated on significant progress | Updated every iteration |
-| `guardrails.md` | Updated on errors | Updated on errors |
+| File | Interactive | Autonomous (Agent Teams) |
+|------|-------------|--------------------------|
+| `guardrails.md` | Updated on errors | Concurrent access (flock for writes) |
+| `.code-task.md` | Status header updated | Status header updated via TaskUpdate |
 | `blockers.md` | N/A | Created when blocked |
-| `plan.md` | Task completion | Task completion |
-| `.code-task.md` | Status header added | Status header added |
+| `.ralph/failures.json` | N/A | Per-teammate failure tracking |
+| `.ralph/metrics.json` | N/A | Task success/failure counts |
+| `AGENTS.md` | N/A | Read by all teammates at spawn |
 
 ---
 
 ## Choosing the Right Path
 
 ```
-Is user present?
+Is this ralph-orchestrator execution?
 │
-├── Yes → Interactive path (sop-code-assist)
-│   ├── Learning new patterns?
-│   ├── Complex decisions needed?
-│   └── Uncertain requirements?
+├── Yes → Autonomous path (Agent Teams) — default
+│   ├── Parallel, independent tasks
+│   ├── Quality gates via hooks
+│   └── Cockpit monitoring
 │
-└── No → Autonomous path (loop.sh)
-    ├── Clear requirements?
-    ├── Well-defined tasks?
-    └── Overnight/AFK execution?
+└── No → Interactive path (sop-code-assist)
+    ├── Single task, user present
+    ├── Learning new patterns
+    └── Complex decisions requiring user input
 ```
 
-**Default**: ralph-orchestrator launches autonomous path after planning phase completes.
+**Default**: ralph-orchestrator ALWAYS uses Agent Teams for execution (Step 8). Interactive path is for standalone sop-code-assist usage.
 
 ---
 
 ## Integration with ralph-orchestrator
 
-**Planning phase** (Steps 0-5):
+**Planning phase** (Steps 0-6):
 - Uses planning_mode selection (interactive/autonomous)
 - SOP skills operate according to selected mode
-- Human approves plan before execution
+- User approves plan at checkpoint (Step 6)
 
-**Execution phase** (Steps 6-7):
-- ALWAYS uses autonomous path via loop.sh
-- Optional checkpoints for user review
-- User monitors via status.json and logs
+**Execution phase** (Steps 7-8):
+- ALWAYS uses Agent Teams via launch-build.sh
+- Cockpit provides tmux windows for monitoring
+- Lead enters delegate mode (monitor only, no implementation)
 
 ```mermaid
 graph LR
@@ -193,9 +171,10 @@ graph LR
         B --> C[sop-task-generator]
     end
 
-    subgraph "Execution (ALWAYS Autonomous)"
-        C --> D[loop.sh]
-        D --> E[Worker iterations]
+    subgraph "Execution (ALWAYS Agent Teams)"
+        C --> D[launch-build.sh]
+        D --> E[Ghostty cockpit]
+        E --> F[Persistent teammates]
     end
 
     style D fill:#ffe1e1
@@ -205,18 +184,12 @@ graph LR
 
 ## Troubleshooting
 
-### Worker Not Completing Tasks
+### Teammate Not Claiming Tasks
 
-**Check stdout signals:**
-```bash
-grep "> confession:" logs/iteration.log
-grep "> task_completed:" logs/iteration.log
-```
-
-**Check exit codes:**
-```bash
-echo $?  # After loop.sh exits
-```
+**Check task list:**
+- Use `TaskList` to verify tasks exist with status PENDING
+- Verify `.code-task.md` files have `Status: PENDING` header
+- Check `.ralph/failures.json` for circuit breaker state
 
 ### Blockers Not Communicated
 
@@ -226,17 +199,18 @@ echo $?  # After loop.sh exits
 
 **For autonomous path:**
 - Check blockers.md in spec directory
-- Review scratchpad.md for blocker notes
-- Check guardrails.md for decision history
+- Use `TaskList` to find BLOCKED tasks
+- Review guardrails.md for decision history
+- Use `SendMessage` to query specific teammate
 
 ### State Inconsistency
 
 If paths produce conflicting state:
-- Autonomous path is authoritative during loop execution
+- Agent Teams teammates are authoritative during cockpit execution
 - Interactive path is authoritative during manual execution
 - Never run both simultaneously on same goal
 
 ---
 
-*Version: 1.0.0 | Created: 2026-01-30*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-10*
+*Agent Teams execution model*
