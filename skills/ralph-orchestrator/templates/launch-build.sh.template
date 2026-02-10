@@ -23,10 +23,6 @@ SESSION="ralph"
 # shellcheck source=/dev/null
 source "$PROJECT_DIR/.ralph/config.sh" 2>/dev/null || true
 
-# Coordinators compact at 60% to preserve context quality
-# (Default ~83.5% allows too much degradation for long-running sessions)
-export CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=60
-
 # Cockpit pane commands (empty = skip that window)
 DEV_SERVER="${COCKPIT_DEV_SERVER:-}"
 TEST_WATCHER="${COCKPIT_TEST_WATCHER:-}"

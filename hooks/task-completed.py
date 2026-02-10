@@ -132,7 +132,7 @@ def reset_failure(ralph_dir, teammate_name):
 # METRICS
 # ─────────────────────────────────────────────────────────────────
 
-def update_metrics(ralph_dir, success):
+def update_metrics(ralph_dir, success, teammate_name):
     """Update .ralph/metrics.json with task result (locked)."""
     metrics_path = ralph_dir / "metrics.json"
     try:
@@ -149,6 +149,14 @@ def update_metrics(ralph_dir, success):
         metrics["last_updated"] = time.strftime(
             "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
         )
+
+        # Per-teammate tracking (for rotation decisions)
+        per_teammate = metrics.get("per_teammate", {})
+        teammate_stats = per_teammate.get(teammate_name, {"completed": 0, "failed": 0})
+        key = "completed" if success else "failed"
+        teammate_stats[key] = teammate_stats.get(key, 0) + 1
+        per_teammate[teammate_name] = teammate_stats
+        metrics["per_teammate"] = per_teammate
 
         metrics_path.parent.mkdir(parents=True, exist_ok=True)
         with open(metrics_path, "w", encoding="utf-8") as f:
@@ -217,7 +225,7 @@ def main():
     # Prototype: skip all gates
     if config["QUALITY_LEVEL"] == "prototype":
         reset_failure(ralph_dir, teammate_name)
-        update_metrics(ralph_dir, success=True)
+        update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
         sys.exit(0)
 
     # Run quality gates in order
@@ -236,7 +244,7 @@ def main():
 
         if not passed:
             count = increment_failure(ralph_dir, teammate_name)
-            update_metrics(ralph_dir, success=False)
+            update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
             print(
                 f"Quality gate '{gate_name}' failed for: {task_subject}\n\n"
                 f"Output:\n{output}\n\n"
@@ -248,7 +256,7 @@ def main():
 
     # All gates passed
     reset_failure(ralph_dir, teammate_name)
-    update_metrics(ralph_dir, success=True)
+    update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
     sys.exit(0)
 
 

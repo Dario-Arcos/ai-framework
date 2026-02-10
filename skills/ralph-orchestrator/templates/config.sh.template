@@ -24,6 +24,7 @@ QUALITY_LEVEL="production"
 
 MODEL="opus"                      # Model for teammates
 MAX_TEAMMATES=2                   # Max concurrent teammates
+MAX_TASKS_PER_TEAMMATE=20         # Rotate coordinator after N completed tasks (0 = no rotation)
 
 # ─────────────────────────────────────────────────────────────────
 # QUALITY GATES

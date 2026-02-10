@@ -11,8 +11,9 @@ Non-ralph Agent Teams usage is transparent (immediate exit 0).
 Decision logic:
   1. ABORT file exists          → exit 0 (manual abort)
   2. Circuit breaker triggered  → exit 0 (consecutive failures exceeded)
-  3. Pending tasks remain       → exit 2 (keep working)
-  4. All tasks complete         → exit 0 (allow idle)
+  3. Rotation threshold reached → exit 0 (teammate writes handoff, lead respawns)
+  4. Pending tasks remain       → exit 2 (keep working)
+  5. All tasks complete         → exit 0 (allow idle)
 """
 import json
 import os
@@ -38,6 +39,21 @@ def load_max_failures(config_path):
         return 3
 
 
+def load_max_tasks_per_teammate(config_path):
+    """Extract MAX_TASKS_PER_TEAMMATE from bash config."""
+    try:
+        result = subprocess.run(
+            ["bash", "-c",
+             f"source '{config_path}' 2>/dev/null"
+             " && printf '%s' \"${MAX_TASKS_PER_TEAMMATE:-20}\""],
+            capture_output=True, text=True, timeout=5,
+        )
+        val = result.stdout.strip()
+        return int(val) if val.isdigit() else 20
+    except (subprocess.TimeoutExpired, OSError, ValueError):
+        return 20
+
+
 def read_failures(ralph_dir):
     """Read per-teammate failure counters from .ralph/failures.json."""
     failures_path = ralph_dir / "failures.json"
@@ -48,6 +64,21 @@ def read_failures(ralph_dir):
     except (json.JSONDecodeError, OSError):
         pass
     return {}
+
+
+def read_teammate_completed(ralph_dir, teammate_name):
+    """Read completed task count for a specific teammate from metrics.json."""
+    metrics_path = ralph_dir / "metrics.json"
+    try:
+        if metrics_path.exists():
+            with open(metrics_path, "r", encoding="utf-8") as f:
+                metrics = json.load(f)
+            per_teammate = metrics.get("per_teammate", {})
+            teammate_stats = per_teammate.get(teammate_name, {})
+            return teammate_stats.get("completed", 0)
+    except (json.JSONDecodeError, OSError):
+        pass
+    return 0
 
 
 def count_pending_tasks(cwd):
@@ -104,6 +135,19 @@ def main():
             file=sys.stderr,
         )
         sys.exit(0)
+
+    # Rotation threshold: rotate coordinator after N completed tasks
+    max_tasks = load_max_tasks_per_teammate(config_path)
+    if max_tasks > 0:
+        completed = read_teammate_completed(ralph_dir, teammate_name)
+        if completed >= max_tasks:
+            print(
+                f"Rotation threshold reached: {teammate_name} completed "
+                f"{completed}/{max_tasks} tasks. Write your handoff summary "
+                f"to .ralph/handoff-{teammate_name}.md, then go idle.",
+                file=sys.stderr,
+            )
+            sys.exit(0)
 
     # Count pending tasks
     pending = count_pending_tasks(cwd)

@@ -87,6 +87,7 @@ COCKPIT_DB=""                     # Database command (tmux "services" window, pa
 |--------|---------|-------------|
 | `MODEL` | `opus` | Model used for teammates |
 | `MAX_TEAMMATES` | `3` | Max concurrent teammates |
+| `MAX_TASKS_PER_TEAMMATE` | `20` | Rotate coordinator after N completed tasks. When a teammate reaches this threshold, the TeammateIdle hook allows it to go idle, it writes a handoff summary, and the lead spawns a replacement. Set to 0 to disable rotation. |
 | `COCKPIT_DEV_SERVER` | `""` | Command for dev server window |
 | `COCKPIT_TEST_WATCHER` | `""` | Command for test watcher window |
 | `COCKPIT_LOGS` | `""` | Command for log monitoring window |

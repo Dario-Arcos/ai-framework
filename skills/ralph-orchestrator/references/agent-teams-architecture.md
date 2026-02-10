@@ -117,7 +117,40 @@ The coordinator builds a prompt containing:
 | guardrails.md | ~2-10K | Accumulated lessons |
 | Available for SDD | ~147-170K | Implementation work |
 
-CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=60 keeps coordinator context clean.
+Coordinators use default compaction threshold (~95%). With rotation at 20 tasks, compaction is rarely needed.
+
+---
+
+## Coordinator Rotation
+
+Coordinators rotate after `MAX_TASKS_PER_TEAMMATE` completed tasks (default: 20) to prevent progressive context degradation.
+
+### Rotation lifecycle
+
+1. **Threshold reached** — TaskCompleted hook tracks per-teammate counts in `.ralph/metrics.json`
+2. **TeammateIdle hook** detects count >= threshold → exits 0 with rotation message
+3. **Coordinator writes handoff** — `.ralph/handoff-{name}.md` with: completed tasks, decisions, codebase state, warnings
+4. **Coordinator goes idle** — lead receives idle notification
+5. **Lead verifies** — reads metrics.json, confirms handoff file exists
+6. **Lead rotates** — sends `shutdown_request`, spawns replacement with `PROMPT_teammate.md`
+7. **Replacement orients** — reads guardrails.md + AGENTS.md + handoff files → full context recovery
+
+### Knowledge preservation across rotations
+
+| Mechanism | What survives | Scope |
+|-----------|--------------|-------|
+| `guardrails.md` | Gotchas, fixes, patterns | All teammates, all rotations |
+| `.ralph/handoff-{name}.md` | Task summaries, decisions, codebase state | Per-coordinator, read by replacement |
+| `.code-task.md` files | Task status + descriptions | Persistent on disk |
+| `git log` | What was actually implemented | Persistent in repo |
+| `AGENTS.md` | Project context, commands | Static, unchanged |
+
+### Why rotation works
+
+- Each replacement coordinator starts with ~20-30K of context (PROMPT + guardrails + handoff + AGENTS.md)
+- Leaves ~170K available for coordination work (~20 tasks × ~5-10K each)
+- Zero compaction needed within a single rotation cycle
+- Handoff files are additive: coordinator-3 reads handoffs from coordinators 1 and 2
 
 ---
 
@@ -174,6 +207,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
 | `AGENTS.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
 | `.ralph/config.sh` | Quality level, gates, cockpit services | Lead (Step 7) | Hooks, launch-build.sh |
+| `.ralph/handoff-{name}.md` | Rotation context transfer | Coordinator (before rotation) | Replacement coordinator |
 
 ---
 
@@ -201,5 +235,5 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 ---
 
-*Version: 2.1.0 | Updated: 2026-02-10*
-*Updated: coordinator + sub-agent pattern for fresh context per task*
+*Version: 2.2.0 | Updated: 2026-02-10*
+*Added: coordinator rotation with handoff summaries*

@@ -233,6 +233,16 @@ Update `.ralph/config.sh`. See [configuration-guide.md](references/configuration
 
 **If user asks to implement:** Redirect to teammates. Lead coordinates, doesn't implement.
 
+**Rotation handling:**
+When a teammate goes idle (TeammateIdle hook allows it), check `.ralph/metrics.json`:
+1. Read `per_teammate.{name}.completed` count
+2. If >= `MAX_TASKS_PER_TEAMMATE` from `.ralph/config.sh`:
+   - Verify `.ralph/handoff-{name}.md` exists (coordinator writes it before going idle)
+   - Send `shutdown_request` to the teammate
+   - Spawn replacement: `Task(subagent_type="general-purpose", team_name="ralph-{goal}", prompt=PROMPT_teammate.md content)`
+   - The replacement reads handoff files in Phase 1d, gaining predecessor's context
+3. If < threshold: teammate may have hit circuit breaker or finished all tasks — check accordingly
+
 **Completion flow:**
 1. All tasks complete — teammates go idle (TeammateIdle hook allows it)
 2. Lead verifies: all `.code-task.md` files have `Status: COMPLETED`
@@ -248,7 +258,7 @@ Update `.ralph/config.sh`. See [configuration-guide.md](references/configuration
 
 1. **Single Entry Point** — Invoke once, orchestrate everything. Never invoke SOP skills directly.
 2. **Checkpoint Before Execution** — Planning can be interactive OR autonomous, but user ALWAYS approves before execution begins.
-3. **Fresh Context + Guardrails = Compounding Intelligence** — Teammates coordinate; sub-agents implement with fresh 200K context per task. `guardrails.md` accumulates lessons across all tasks and teammates. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Persistent coordinator context + fresh implementation context = consistent quality at any task count.
+3. **Fresh Context + Guardrails = Compounding Intelligence** — Teammates coordinate; sub-agents implement with fresh 200K context per task. `guardrails.md` accumulates lessons across all tasks and teammates. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Coordinators rotate at task thresholds for fresh context; handoff summaries + guardrails.md preserve accumulated knowledge across rotations.
 4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the handoff mechanism. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
 
 ---
