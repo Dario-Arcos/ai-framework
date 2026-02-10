@@ -1,6 +1,5 @@
 ---
 name: scenario-driven-development
-version: 2.0.0
 description: SCENARIO→SATISFY→REFACTOR with convergence gates. Scenarios define expected behavior as end-to-end user stories; satisfaction replaces boolean pass/fail with probabilistic convergence. Use for all implementation work.
 ---
 

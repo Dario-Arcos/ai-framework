@@ -1,6 +1,5 @@
 ---
 name: verification-before-completion
-version: 1.0.0
 description: Evidence-based completion gate. Use before ANY claim that work is done, tests pass, or build succeeds.
 ---
 

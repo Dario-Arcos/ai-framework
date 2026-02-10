@@ -1,13 +1,6 @@
 ---
 name: context-engineering
-version: 1.0.0
-description: >
-  This skill should be used when the user asks to "design a system prompt",
-  "audit CLAUDE.md", "create AGENTS.md", "optimize context window",
-  "fix agent that ignores tools", "improve agent coherence", "build a docs index",
-  or when diagnosing why agents underperform despite correct instructions.
-  Provides the Three Laws of Context Delivery, attention budget management,
-  and long-horizon strategies for building high-performance AI agents.
+description: This skill should be used when the user asks to "design a system prompt", "audit CLAUDE.md", "create AGENTS.md", "optimize context window", "fix agent that ignores tools", "improve agent coherence", "build a docs index", or when diagnosing why agents underperform despite correct instructions. Provides the Three Laws of Context Delivery, attention budget management, and long-horizon strategies for building high-performance AI agents.
 ---
 
 # Context Engineering

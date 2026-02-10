@@ -1,12 +1,6 @@
 ---
 name: humanizer
-description: >
-  Remove signs of AI-generated writing from text. Use when editing or reviewing
-  text to make it sound more natural and human-written. Based on Wikipedia's
-  "Signs of AI writing" guide. Detects and fixes patterns in English and Spanish,
-  including: inflated symbolism, promotional language, superficial analyses, vague
-  attributions, AI vocabulary overuse, structural uniformity, gerundio abuse,
-  and formulaic connector phrases.
+description: Remove signs of AI-generated writing from text. Use when editing or reviewing text to make it sound more natural and human-written. Based on Wikipedia's "Signs of AI writing" guide. Detects and fixes patterns in English and Spanish, including inflated symbolism, promotional language, superficial analyses, vague attributions, AI vocabulary overuse, structural uniformity, gerundio abuse, and formulaic connector phrases.
 ---
 
 # Humanizer: Remove AI Writing Patterns

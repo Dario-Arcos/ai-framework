@@ -1,8 +1,6 @@
 ---
 name: commit
-allowed-tools: Bash(git *), Read, Grep
 description: Intelligent git commit with automatic grouping and quality checks
-argument-hint: "[TASK-ID] message" or "all changes" (e.g., "TRV-345 implementar validación")
 ---
 
 # Smart Git Commit
