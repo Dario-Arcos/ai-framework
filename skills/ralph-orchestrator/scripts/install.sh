@@ -69,8 +69,8 @@ DIRS=()
 
 # Templates to copy (source:dest)
 TEMPLATES=(
-    "templates/AGENTS.md.template:AGENTS.md"
-    "templates/guardrails.md.template:guardrails.md"
+    "templates/AGENTS.md.template:.ralph/agents.md"
+    "templates/guardrails.md.template:.ralph/guardrails.md"
     "templates/config.sh.template:.ralph/config.sh"
     "templates/launch-build.sh.template:.ralph/launch-build.sh"
 )
@@ -135,15 +135,15 @@ done
 chmod +x "$TARGET_DIR/.ralph/launch-build.sh" 2>/dev/null || true
 
 # Create directories
-mkdir -p "$TARGET_DIR/specs"
-mkdir -p "$TARGET_DIR/logs"
 mkdir -p "$TARGET_DIR/.ralph"
 
 echo ""
 echo -e "${GREEN}Installation complete!${NC}"
 echo ""
 echo "Configuration:"
-echo "  .ralph/config.sh         # Customize quality level and gates"
+echo "  .ralph/config.sh         # Quality level and gates"
+echo "  .ralph/agents.md         # Teammate operational context"
+echo "  .ralph/guardrails.md     # Shared memory across tasks"
 echo ""
 echo "Workflow:"
 echo "  1. Invoke /ralph-orchestrator to start planning"

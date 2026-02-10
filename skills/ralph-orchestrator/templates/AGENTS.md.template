@@ -11,6 +11,13 @@ Prefer retrieval-led reasoning. Read `.claude/rules/` for framework patterns.
 ## Environment
 [runtime, key dependencies]
 
+## Stack
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| [extracted from detailed-design.md Section 3.4 Technology Stack — ALL rows] |
+
+**You MUST use these technologies. Do NOT introduce alternatives without explicit justification.**
+
 ## Constraints
 [from specs/discovery.md]
 

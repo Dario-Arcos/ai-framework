@@ -12,7 +12,7 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 - **task_description** (required): Task to implement - file path, text, or URL
 - **mode** (optional, default: `interactive`): `interactive` or `autonomous`
 - **repo_root** (optional, default: cwd): Repository root path
-- **documentation_dir** (optional, default: `specs/{goal}/implementation/{task_name}`)
+- **documentation_dir** (optional, default: `.ralph/specs/{goal}/implementation/{task_name}`)
 - **task_name** (optional, auto-generated): Short descriptive name
 
 **Constraints:**
@@ -29,7 +29,7 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 
 <mode_autonomous>
 - Execute without user confirmation
-- Document decisions in guardrails.md
+- Document decisions in `.ralph/guardrails.md`
 - If blocked: document in blockers.md, exit cleanly
 - You MUST NOT use AskUserQuestion
 </mode_autonomous>
@@ -41,8 +41,8 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 Read context and prepare environment.
 
 - Create `{documentation_dir}/logs/` for build outputs
-- Read `guardrails.md` for lessons learned
-- Read `AGENTS.md` for build commands and constraints
+- Read `guardrails.md` for lessons learned (under ralph: `.ralph/guardrails.md`)
+- Read `AGENTS.md` for build commands and constraints (under ralph: `.ralph/agents.md`)
 - Read `.code-task.md` for requirements and acceptance criteria
 
 **Constraints:**
@@ -152,13 +152,13 @@ Brackets `[]` are LITERAL in markers.
 When invoked from ralph-orchestrator in autonomous mode:
 
 <at_startup>
-- Read `guardrails.md` for lessons
-- Read `AGENTS.md` for operational context
+- Read `.ralph/guardrails.md` for lessons
+- Read `.ralph/agents.md` for operational context
 - Use `QUALITY_LEVEL` and `GATE_*` from `.ralph/config.sh` if defined
 </at_startup>
 
 <at_completion>
-- Add memories to `guardrails.md`
+- Add memories to `.ralph/guardrails.md`
 - Emit confession and task_completed markers
 </at_completion>
 

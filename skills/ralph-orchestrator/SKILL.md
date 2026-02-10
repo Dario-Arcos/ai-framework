@@ -36,12 +36,12 @@ description: Use when building features requiring planning + autonomous executio
 
 ## Output
 
-- Artifacts from sop-discovery, sop-planning, sop-task-generator in `specs/{goal}/`
+- Artifacts from sop-discovery, sop-planning, sop-task-generator in `.ralph/specs/{goal}/`
 - Autonomous execution via Agent Teams — progress in `TaskList`, metrics in `.ralph/metrics.json`
 
 ## The Complete Flow
 
-1. **State Detection**: Scan specs/, detect phase, offer resume or new
+1. **State Detection**: Scan .ralph/specs/, detect phase, offer resume or new
 2. **Step 0**: Choose planning mode (Interactive/Autonomous)
 3. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
 4. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
@@ -60,7 +60,7 @@ description: Use when building features requiring planning + autonomous executio
 **Planning prerequisites (required now):**
 - [ ] `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment
 - [ ] `.ralph/config.sh` exists — if missing: copy from `templates/config.sh.template`
-- [ ] `guardrails.md` exists in project root — if missing: copy from `templates/guardrails.md.template`
+- [ ] `.ralph/guardrails.md` exists — if missing: copy from `templates/guardrails.md.template`
 
 **Execution prerequisites (required for Step 8):**
 - [ ] `tmux` installed (`which tmux`)
@@ -80,7 +80,7 @@ description: Use when building features requiring planning + autonomous executio
 
 ### State Detection
 
-Scan `specs/` for existing goals. For each (or `$ARGUMENTS` if provided), check artifacts:
+Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided), check artifacts:
 
 | Artifact | Detected Phase |
 |----------|----------------|
@@ -116,9 +116,9 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 
 ### Step 1: Validate Prerequisites and Detect Flow
 
-- [ ] `specs/{goal}/discovery.md` exists — If missing: Execute `sop-discovery`
-- [ ] `specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning`
-- [ ] `specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator`
+- [ ] `.ralph/specs/{goal}/discovery.md` exists — If missing: Execute `sop-discovery`
+- [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning`
+- [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator`
 
 **Detect Flow (Use AskUserQuestion):** Forward (build new) or Reverse (investigate existing).
 
@@ -130,7 +130,7 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 /sop-discovery goal_description="{goal}" mode={PLANNING_MODE}
 ```
 
-Output: `specs/{goal}/discovery.md` — Continue to Step 3.
+Output: `.ralph/specs/{goal}/discovery.md` — Continue to Step 3.
 
 ### Step 2B: Reverse Investigation
 
@@ -143,15 +143,15 @@ Ask user if continuing to Forward (interactive). In autonomous mode, continue by
 ### Step 3: Planning
 
 ```
-/sop-planning rough_idea="{goal}" discovery_path="specs/{goal}/discovery.md" project_dir="specs/{goal}" mode={PLANNING_MODE}
+/sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/discovery.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
-Output: `specs/{goal}/design/detailed-design.md` — Continue to Step 4.
+Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
 
 ### Step 4: Task Generation
 
 ```
-/sop-task-generator input="specs/{goal}/implementation/plan.md" mode={PLANNING_MODE}
+/sop-task-generator input=".ralph/specs/{goal}/implementation/plan.md" mode={PLANNING_MODE}
 ```
 
 Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
@@ -160,18 +160,20 @@ Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
 
 Populate `templates/AGENTS.md.template` with operational context for teammates.
 
-**Sources:** `specs/{goal}/discovery.md` (constraints, risks), `specs/{goal}/design/detailed-design.md` (architecture), manifest files (commands), `.ralph/config.sh` (quality).
+**Sources:** `.ralph/specs/{goal}/discovery.md` (constraints, risks), `.ralph/specs/{goal}/design/detailed-design.md` (architecture), manifest files (commands), `.ralph/config.sh` (quality).
+
+**Technology Stack**: Extract the complete Technology Stack table from `detailed-design.md` Section 3.4 and populate the `## Stack` section in AGENTS.md. Include ALL rows (runtime, frameworks, testing tools). This is the authoritative technology reference — teammates MUST follow it.
 
 - **Interactive**: Present draft, ask for approval/edits via AskUserQuestion.
 - **Autonomous**: Use Explore subagent to extract from sources. Generate without blocking.
 
-**Output:** `AGENTS.md` in project root — Continue to Step 6.
+**Output:** `.ralph/agents.md` — Continue to Step 6.
 
 ### Step 6: Plan Review Checkpoint
 
 **MANDATORY before execution, regardless of planning mode.**
 
-Present to user: planning mode used, artifacts generated (discovery, design, N task files, AGENTS.md), key decisions from design document, blockers found, task summary by step with complexity.
+Present to user: planning mode used, artifacts generated (discovery, design, N task files, `.ralph/agents.md`), key decisions from design document, blockers found, task summary by step with complexity.
 
 **Use AskUserQuestion:**
 ```text
@@ -211,8 +213,8 @@ If tmux was not installed during Infrastructure Setup, STOP here.
 Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ralph-orchestrator."
 
 **Prerequisites (all must be true):**
-- `specs/{goal}/implementation/plan.md` + `.code-task.md` files with `Status: PENDING`
-- `AGENTS.md` in project root, Plan Review passed (Step 6)
+- `.ralph/specs/{goal}/implementation/plan.md` + `.code-task.md` files with `Status: PENDING`
+- `.ralph/agents.md` exists, Plan Review passed (Step 6)
 - `tmux` installed, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` set
 
 **Actions:**
@@ -239,7 +241,7 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 
 **Tools allowed:**
 - `TaskList` — task progress
-- `Read("guardrails.md")` — lessons accumulated by teammates
+- `Read(".ralph/guardrails.md")` — lessons accumulated by teammates
 - `Read(".ralph/metrics.json")` — success/failure counts
 - `Read(".ralph/failures.json")` — per-teammate failure tracking
 - `SendMessage` — direct instructions to specific teammates

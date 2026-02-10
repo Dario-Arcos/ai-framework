@@ -16,13 +16,13 @@ This reference defines the state files used by Ralph for persistent state manage
 | File | Purpose | Lifecycle |
 |------|---------|-----------|
 | `.ralph/config.sh` | Project configuration | Project lifetime |
-| `AGENTS.md` | Operational guide (~50 lines) | Project lifetime |
-| `guardrails.md` | Signs (accumulated error lessons) | Current execution |
+| `.ralph/agents.md` | Operational guide (~50 lines) | Project lifetime |
+| `.ralph/guardrails.md` | Signs (accumulated error lessons) | Current execution |
 | `.ralph/failures.json` | Per-teammate failure tracking | Current execution |
 | `.ralph/metrics.json` | Task success/failure counts | Current execution |
-| `specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
-| `specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
-| `specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
+| `.ralph/specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
+| `.ralph/specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
+| `.ralph/specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
 | `*.code-task.md` | Individual task descriptions + status | Current goal |
 
 ---
@@ -31,10 +31,10 @@ This reference defines the state files used by Ralph for persistent state manage
 
 **Constraints:**
 - You MUST add memories when errors occur because this prevents repeat failures
-- You MUST read guardrails at task start because accumulated knowledge guides behavior
+- You MUST read .ralph/guardrails.md at task start because accumulated knowledge guides behavior
 - You MUST use flock for writes because multiple teammates access concurrently
 
-When errors occur, add to guardrails.md (in appropriate section: Fixes, Decisions, or Patterns):
+When errors occur, add to .ralph/guardrails.md (in appropriate section: Fixes, Decisions, or Patterns):
 
 ```markdown
 ### fix-{timestamp}-{hex}
@@ -42,7 +42,7 @@ When errors occur, add to guardrails.md (in appropriate section: Fixes, Decision
 <!-- tags: testing, build | created: YYYY-MM-DD -->
 ```
 
-**Concurrent access**: Multiple teammates read guardrails.md at task start. Writes use `flock` to prevent corruption. Each completed task potentially adds lessons that benefit all subsequent tasks across all teammates — this is compounding intelligence.
+**Concurrent access**: Multiple teammates read .ralph/guardrails.md at task start. Writes use `flock` to prevent corruption. Each completed task potentially adds lessons that benefit all subsequent tasks across all teammates — this is compounding intelligence.
 
 ---
 
@@ -123,7 +123,7 @@ Completed-At: 2026-02-10T14:30:00Z
 
 ## File Lifecycle Table
 
-| Phase | guardrails.md | failures.json | metrics.json | .code-task.md | AGENTS.md |
+| Phase | .ralph/guardrails.md | failures.json | metrics.json | .code-task.md | .ralph/agents.md |
 |-------|--------------|---------------|--------------|---------------|-----------|
 | Planning (Steps 0-6) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) |
 | Launch (Step 8) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates |
@@ -143,14 +143,14 @@ If state files become inconsistent:
 
 ### Signs Ignored by Teammates
 
-If same errors repeat despite Signs in guardrails.md:
+If same errors repeat despite Signs in .ralph/guardrails.md:
 - You SHOULD verify Sign format includes Trigger and Instruction
-- You SHOULD use `SendMessage` to remind specific teammate to re-read guardrails
+- You SHOULD use `SendMessage` to remind specific teammate to re-read .ralph/guardrails.md
 - You MUST review Sign clarity (vague instructions are ignored)
 
 ### Concurrent Write Conflicts
 
-If guardrails.md shows corruption:
+If .ralph/guardrails.md shows corruption:
 - You SHOULD verify flock is being used for writes
 - You SHOULD check for teammates writing without proper locking
 - You MUST restart affected teammates after fixing the file

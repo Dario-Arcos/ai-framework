@@ -15,8 +15,8 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 ### Missing guardrails.md
 
 - **Cause**: Partial installation
-- **Fix**: Copy from templates: `cp templates/guardrails.md.template guardrails.md`
-- **Verification**: File exists in project root
+- **Fix**: Copy from templates: `cp templates/guardrails.md.template .ralph/guardrails.md`
+- **Verification**: File exists at `.ralph/guardrails.md`
 
 ### tmux Not Installed
 
@@ -146,7 +146,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 ### Metrics Show High Failure Rate
 
 If success rate drops below 80%:
-- You SHOULD review guardrails.md for common issues
+- You SHOULD review `.ralph/guardrails.md` for common issues
 - You SHOULD check task sizing (may be too large)
 - You SHOULD verify gate commands work manually
 - You MAY reduce MAX_TEAMMATES to reduce resource contention
@@ -185,8 +185,8 @@ When something goes wrong:
 2. [ ] `Read(".ralph/failures.json")` — Which teammates are failing?
 3. [ ] `Read(".ralph/metrics.json")` — What's the success rate?
 4. [ ] Verify `.ralph/config.sh` — Is configuration correct?
-5. [ ] Check `guardrails.md` — Any known gotchas?
-6. [ ] Review `AGENTS.md` — Is project context complete?
+5. [ ] Check `.ralph/guardrails.md` — Any known gotchas?
+6. [ ] Review `.ralph/agents.md` — Is project context complete?
 
 ---
 

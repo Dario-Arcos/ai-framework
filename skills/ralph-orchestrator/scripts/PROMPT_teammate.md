@@ -13,7 +13,7 @@ After ~60% of 200K context, LLM output quality degrades cliff-edge. Sub-agents g
 ### 1a. Read Guardrails
 
 ```
-@guardrails.md
+@.ralph/guardrails.md
 ```
 
 Contains lessons from other teammates AND your own previous tasks. **Re-read before EVERY new task** — new entries may have been added.
@@ -25,7 +25,7 @@ Check `.ralph/config.sh` for: **QUALITY_LEVEL** (prototype|production|library), 
 ### 1c. Read Project Context
 
 ```
-@AGENTS.md
+@.ralph/agents.md
 ```
 
 Contains build commands, constraints, project structure. If missing, stop — planning phase incomplete.
@@ -52,8 +52,8 @@ If handoff files exist, you are replacing a previous coordinator. Read them — 
 
 Spawn a sub-agent to implement the task. Build the prompt from three sources:
 1. The task description (from TaskGet)
-2. The current `AGENTS.md` content (Read it, paste it)
-3. The current `guardrails.md` content (Read it, paste it)
+2. The current `.ralph/agents.md` content (Read it, paste it)
+3. The current `.ralph/guardrails.md` content (Read it, paste it)
 
 ### Sub-Agent Call
 
@@ -70,11 +70,11 @@ You are implementing a single task for a ralph-orchestrator build.
 ## Approach
 Use /sop-code-assist to implement this task. It handles: Explore > Plan > Code > Commit.
 
-## Project Context (AGENTS.md)
-{paste full AGENTS.md content}
+## Project Context (.ralph/agents.md)
+{paste full .ralph/agents.md content}
 
 ## Guardrails (lessons from previous tasks)
-{paste full guardrails.md content}
+{paste full .ralph/guardrails.md content}
 
 ## Scenario Strategy
 - This task's Scenario-Strategy: {read from .code-task.md Metadata}
@@ -114,7 +114,7 @@ After the sub-agent returns:
 
 ## Phase 6: Learn
 
-If you or the sub-agent discovered something non-obvious — a gotcha, a workaround, a pattern — append to `guardrails.md`:
+If you or the sub-agent discovered something non-obvious — a gotcha, a workaround, a pattern — append to `.ralph/guardrails.md`:
 
 ```markdown
 ### fix-{descriptive-slug}
@@ -182,7 +182,7 @@ tmux send-keys -t ralph:quality.0 "npm test" Enter     # Run tests
 ## Rules
 
 1. **ONE task at a time.** Complete fully before claiming next.
-2. **Re-read guardrails.md** before each new task.
+2. **Re-read .ralph/guardrails.md** before each new task.
 3. **NEVER implement code directly.** Always delegate to a sub-agent.
 4. **If blocked**: Document blocker, mark task BLOCKED, move to next available.
 5. **NEVER push to remote.** Only commit locally.

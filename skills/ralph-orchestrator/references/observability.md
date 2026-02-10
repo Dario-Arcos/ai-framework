@@ -18,7 +18,7 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 | `TaskList` | Real-time task progress (PENDING, IN_PROGRESS, COMPLETED, BLOCKED) | Lead tool call |
 | `.ralph/metrics.json` | Aggregate success/failure counts | `Read(".ralph/metrics.json")` |
 | `.ralph/failures.json` | Per-teammate failure tracking | `Read(".ralph/failures.json")` |
-| `guardrails.md` | Accumulated error lessons | `Read("guardrails.md")` |
+| `.ralph/guardrails.md` | Accumulated error lessons | `Read(".ralph/guardrails.md")` |
 | Cockpit windows | Live service output (dev server, tests, logs) | tmux capture-pane |
 
 ---
@@ -36,7 +36,7 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 1. TaskList → check task states
 2. Read(".ralph/metrics.json") → aggregate progress
 3. Read(".ralph/failures.json") → check for struggling teammates
-4. Read("guardrails.md") → review accumulated lessons
+4. Read(".ralph/guardrails.md") → review accumulated lessons
 5. If teammate struggling → SendMessage with guidance
 6. Repeat every few minutes
 ```
@@ -47,7 +47,7 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 |--------|---------|------------|--------|
 | Tasks completing | Steady progress | No completions for extended time | Check failures.json, SendMessage |
 | Failure count | 0-1 consecutive | 2+ consecutive per teammate | Review gate output, add Sign |
-| guardrails.md growth | Gradual, useful Signs | Rapid growth, repetitive Signs | Task may be too complex — consider splitting |
+| .ralph/guardrails.md growth | Gradual, useful Signs | Rapid growth, repetitive Signs | Task may be too complex — consider splitting |
 | Blocked tasks | Rare | Multiple tasks blocked | Review blockers.md, may need user input |
 
 ---
@@ -130,23 +130,23 @@ tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 
 **Constraints:**
 - You MUST check failures.json first because this shows which teammate and which gate failed
-- You MUST look for patterns in guardrails.md because repeated errors indicate systematic issues
+- You MUST look for patterns in .ralph/guardrails.md because repeated errors indicate systematic issues
 - You MUST NOT restart execution without diagnosing because same failures will repeat
 
 ### Diagnosis Steps
 
 1. `TaskList` — identify which tasks failed or are stuck
 2. `Read(".ralph/failures.json")` — which teammate is failing, what gate
-3. `Read("guardrails.md")` — are there relevant Signs already?
+3. `Read(".ralph/guardrails.md")` — are there relevant Signs already?
 4. `SendMessage` to struggling teammate — ask for status or provide guidance
-5. If systematic: add Sign to guardrails.md, all teammates benefit
+5. If systematic: add Sign to .ralph/guardrails.md, all teammates benefit
 
 ### Common Failure Patterns
 
 | Pattern | Symptom | Resolution |
 |---------|---------|------------|
 | Gate misconfiguration | All teammates fail same gate | Fix gate command in config.sh, relaunch |
-| Missing dependency | Build/test gates fail immediately | Install dependency, add to AGENTS.md |
+| Missing dependency | Build/test gates fail immediately | Install dependency, add to .ralph/agents.md |
 | Task too complex | Teammate cycles without completing | Split task into subtasks |
 | Flaky tests | Intermittent gate failures | Fix test, add Sign about flaky test |
 
@@ -173,7 +173,7 @@ If .ralph/metrics.json stops updating:
 ### High Failure Rate
 
 If success rate drops below 80%:
-- You SHOULD review guardrails.md for common issues
+- You SHOULD review .ralph/guardrails.md for common issues
 - You SHOULD check task sizing (may be too large)
 - You SHOULD verify gate commands work manually
 - You MAY reduce MAX_TEAMMATES to reduce contention

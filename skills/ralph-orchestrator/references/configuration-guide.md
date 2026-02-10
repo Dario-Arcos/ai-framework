@@ -213,7 +213,7 @@ If config changes don't take effect:
 If execution exits unexpectedly:
 - You SHOULD check `.ralph/failures.json` for circuit breaker state
 - You SHOULD review `.ralph/metrics.json` for failure patterns
-- You MUST check `guardrails.md` for accumulated error Signs
+- You MUST check `.ralph/guardrails.md` for accumulated error Signs
 
 ---
 

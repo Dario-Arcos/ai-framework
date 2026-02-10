@@ -30,7 +30,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 ## Parameters
 
 - **input** (required): Text description or file path to design/PDD document
-- **output_dir** (optional, default: specs/{goal}/implementation): Directory for task files
+- **output_dir** (optional, default: .ralph/specs/{goal}/implementation): Directory for task files
 - **step_number** (deprecated): In PDD mode, ALL steps are processed automatically. This parameter is only used for edge cases requiring single-step regeneration.
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Ask user questions, wait for approvals

@@ -28,7 +28,7 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 ## Parameters
 
 - **rough_idea** (required): Initial concept to develop. Accepts text, file path, or URL.
-- **project_dir** (optional, default: specs/{goal}): Directory for planning artifacts
+- **project_dir** (optional, default: .ralph/specs/{goal}): Directory for planning artifacts
 - **discovery_path** (optional, default: none - if not provided, starts fresh planning): Path to existing discovery.md to continue from
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Ask user questions, wait for confirmations
@@ -181,6 +181,11 @@ Present options to user:
 ### Step 4: Research Relevant Information
 
 1. Propose research plan (3-5 topics) based on requirements
+
+**Standard research topics to consider** (in addition to domain-specific):
+- Testing tooling (test runner, integration strategy, e2e framework) when the project will have automated tests
+- Build and bundling tools when the project produces distributable artifacts
+
 2. Ask: "Are there additional topics I should research?"
 3. For each topic, create `{project_dir}/research/{topic-name}.md` using `templates/research-template.md`
 4. After 2-3 research files: "Continue remaining topics or adjust focus?"

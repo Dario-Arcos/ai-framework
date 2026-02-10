@@ -31,13 +31,13 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 | Parameter confirmation | Ask user to confirm | Log and proceed |
 | Directory creation | Notify user | Log in commit message |
 | Instruction file selection | Present list, ask which to include | Auto-include CODEASSIST.md + core files |
-| Missing CODEASSIST.md | Offer to create template | Note in guardrails.md |
+| Missing CODEASSIST.md | Offer to create template | Note in .ralph/guardrails.md |
 
 ### Explore Phase
 
 | Action | Interactive | Autonomous |
 |--------|-------------|------|
-| Requirements analysis | Discuss with user, ask clarifying questions | Document analysis in guardrails.md |
+| Requirements analysis | Discuss with user, ask clarifying questions | Document analysis in .ralph/guardrails.md |
 | Pattern research | Share findings, ask if sufficient | Select most relevant patterns |
 | Ambiguous requirements | Ask user to clarify | Make reasonable assumption, document it |
 | Multiple valid approaches | Present options with pros/cons | Select best approach, document rationale |

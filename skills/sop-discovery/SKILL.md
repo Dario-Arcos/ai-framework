@@ -30,7 +30,7 @@ The discovery process is conversational and iterative. You will ask questions on
 ## Parameters
 
 - **goal_description** (required): Brief description of goal to explore. Accepts text, file path, or URL.
-- **project_dir** (optional, default: "specs/{goal}"): Output directory for discovery artifacts. The `{goal}` is derived from `goal_description`.
+- **project_dir** (optional, default: ".ralph/specs/{goal}"): Output directory for discovery artifacts. The `{goal}` is derived from `goal_description`.
 - **mode** (optional, default: "interactive"): Execution mode - "interactive" or "autonomous"
 
 ## Execution Modes

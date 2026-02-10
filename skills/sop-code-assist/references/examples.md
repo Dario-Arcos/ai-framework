@@ -12,7 +12,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 ```
 
 **Flow:**
-1. **Setup**: Creates `specs/logout-button/implementation/logout-button/`
+1. **Setup**: Creates `.ralph/specs/logout-button/implementation/logout-button/`
 2. **Explore**: Analyzes navbar component, existing auth patterns
 3. **Plan**: Designs scenario strategy (button renders, click logs out, redirect works)
 4. **Code**: SCENARIO -> SATISFY -> REFACTOR cycle
@@ -20,7 +20,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 
 **Artifacts Created:**
 ```text
-specs/{goal}/implementation/{task_name}/
+.ralph/specs/{goal}/implementation/{task_name}/
 ├── blockers.md     # Only if blocked (autonomous mode)
 └── logs/           # Build outputs
 ```
@@ -33,7 +33,7 @@ specs/{goal}/implementation/{task_name}/
 
 **Input:**
 ```bash
-/sop-code-assist task_description="specs/auth/implementation/step01/task-01.code-task.md"
+/sop-code-assist task_description=".ralph/specs/auth/implementation/step01/task-01.code-task.md"
 ```
 
 **Flow:**
@@ -83,17 +83,17 @@ specs/{goal}/implementation/{task_name}/
 
 **Input (via ralph-orchestrator):**
 ```
-task_description="specs/feature/implementation/step02/task-03-add-tests.code-task.md"
+task_description=".ralph/specs/feature/implementation/step02/task-03-add-tests.code-task.md"
 mode="autonomous"
 ```
 
 **Autonomous Flow:**
 - No user prompts during execution
-- All decisions documented in guardrails.md
+- All decisions documented in .ralph/guardrails.md
 - Errors trigger pause and documentation, not user interaction
 - Summary provided at completion
 
-**Decision Log Entry (guardrails.md):**
+**Decision Log Entry (.ralph/guardrails.md):**
 ```markdown
 ### Decision: Test Framework Selection
 - **Timestamp:** 2026-01-28T14:30:00

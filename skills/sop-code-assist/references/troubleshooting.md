@@ -43,7 +43,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Cause:** Type errors, missing imports, incompatible changes
 
-**Fix:** Check guardrails.md for last known good state, fix incrementally
+**Fix:** Check .ralph/guardrails.md for last known good state, fix incrementally
 
 **Common Build Failures:**
 
@@ -129,7 +129,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Cause:** Cannot resolve issue without user input
 
-**Fix:** Check guardrails.md for documented challenge, provide guidance
+**Fix:** Check .ralph/guardrails.md for documented challenge, provide guidance
 
 **Escalation Triggers:**
 - 3 failed attempts at same issue
@@ -158,7 +158,7 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ## Progress.md not tracking changes
 
-**Symptom:** guardrails.md empty or outdated
+**Symptom:** .ralph/guardrails.md empty or outdated
 
 **Cause:** Autonomous mode not logging, or file write failed
 

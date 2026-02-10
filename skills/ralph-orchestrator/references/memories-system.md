@@ -10,9 +10,9 @@ Ralph uses a **distributed memory architecture** where different types of learni
 
 | Component | Scope | Lifetime | Purpose |
 |-----------|-------|----------|---------|
-| `guardrails.md` | Team | Session | Fixes, decisions, patterns, current state (shared memory) |
-| `specs/design/` | Feature | Permanent | Architectural decisions |
-| `AGENTS.md` | Project | Permanent | Build commands, patterns, conventions |
+| `.ralph/guardrails.md` | Team | Session | Fixes, decisions, patterns, current state (shared memory) |
+| `.ralph/specs/design/` | Feature | Permanent | Architectural decisions |
+| `.ralph/agents.md` | Project | Permanent | Build commands, patterns, conventions |
 | Git history | All | Permanent | Complete audit trail |
 
 ## Structured Guardrails (New Format)
@@ -85,20 +85,20 @@ Legacy Signs format continues to work without modification.
 What kind of learning?
 │
 ├── Error/Gotcha encountered?
-│   └── → guardrails.md ## Fixes
+│   └── → .ralph/guardrails.md ## Fixes
 │
 ├── Architectural choice made?
-│   └── → guardrails.md ## Decisions (session)
-│   └── → specs/design/ (permanent)
+│   └── → .ralph/guardrails.md ## Decisions (session)
+│   └── → .ralph/specs/design/ (permanent)
 │
 ├── Convention/pattern discovered?
-│   └── → guardrails.md ## Patterns
+│   └── → .ralph/guardrails.md ## Patterns
 │
 ├── Progress/State for next task cycle?
-│   └── → guardrails.md (shared memory)
+│   └── → .ralph/guardrails.md (shared memory)
 │
 └── Permanent project-wide pattern?
-    └── → AGENTS.md
+    └── → .ralph/agents.md
 ```
 
 ## Related

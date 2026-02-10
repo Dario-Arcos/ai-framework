@@ -6,3 +6,10 @@
 /CLAUDE.md
 /hooks/*.db
 /hooks/__pycache__/
+
+# Ralph runtime (auto-ignored)
+/.ralph/failures.json
+/.ralph/metrics.json
+/.ralph/ABORT
+/.ralph/handoff-*.md
+/.ralph/logs/

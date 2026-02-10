@@ -68,7 +68,7 @@ graph TD
 
 **Input**: Rough idea or goal description
 
-**Output**: `specs/{goal}/discovery.md`
+**Output**: `.ralph/specs/{goal}/discovery.md`
 
 **What it contains**:
 - Problem statement
@@ -94,7 +94,7 @@ sop-discovery asks:
 - Multi-factor authentication needed?
 - Session management approach?
 
-Output: specs/user-auth/discovery.md
+Output: .ralph/specs/user-auth/discovery.md
 ```
 
 ---
@@ -119,7 +119,7 @@ Output: specs/user-auth/discovery.md
 - Processes: "Our deployment workflow"
 - Concepts: "Event sourcing pattern"
 
-**Output**: `specs/{investigation}/specs-generated/`
+**Output**: `.ralph/specs/{investigation}/specs-generated/`
 
 **What it contains**:
 - Artifact analysis
@@ -146,7 +146,7 @@ sop-reverse:
    - Migrating to new payment provider?
    - Adding new payment methods?
 
-Output: specs/payment-investigation/specs-generated/
+Output: .ralph/specs/payment-investigation/specs-generated/
 ├── architecture.md
 ├── integration-patterns.md
 ├── issues-found.md
@@ -170,15 +170,15 @@ User: "Continue to forward flow to add PayPal support"
 **When invoked**: After discovery (or after reverse if continuing)
 
 **Input**:
-- `specs/{goal}/discovery.md` (from sop-discovery)
-- OR `specs/{investigation}/specs-generated/` (from sop-reverse)
+- `.ralph/specs/{goal}/discovery.md` (from sop-discovery)
+- OR `.ralph/specs/{investigation}/specs-generated/` (from sop-reverse)
 - OR rough idea description
 
 **Output**:
-- `specs/{goal}/rough-idea.md`
-- `specs/{goal}/idea-honing.md` (Q&A log)
-- `specs/{goal}/research/*.md`
-- `specs/{goal}/design/detailed-design.md`
+- `.ralph/specs/{goal}/rough-idea.md`
+- `.ralph/specs/{goal}/idea-honing.md` (Q&A log)
+- `.ralph/specs/{goal}/research/*.md`
+- `.ralph/specs/{goal}/design/detailed-design.md`
 
 **What it contains**:
 
@@ -217,7 +217,7 @@ User: "Continue to forward flow to add PayPal support"
 
 **Example**:
 ```bash
-Input: specs/user-auth/discovery.md
+Input: .ralph/specs/user-auth/discovery.md
 
 sop-planning phases:
 
@@ -237,7 +237,7 @@ sop-planning phases:
    - Database: users table with hashed passwords
    - Security: bcrypt rounds=10, JWT expiry=15m
 
-Output: specs/user-auth/design/detailed-design.md
+Output: .ralph/specs/user-auth/design/detailed-design.md
 ```
 
 ---
@@ -270,7 +270,7 @@ Output: specs/user-auth/design/detailed-design.md
 **Output**:
 - Implementation code in repo_root
 - Test code in appropriate test directories
-- Artifacts in `specs/{goal}/implementation/{task_name}/`
+- Artifacts in `.ralph/specs/{goal}/implementation/{task_name}/`
 
 **Artifacts created**:
 - `blockers.md` - Blockers encountered (autonomous mode, if blocked)
@@ -285,10 +285,10 @@ Output: specs/user-auth/design/detailed-design.md
 **Example**:
 ```bash
 # Interactive mode for learning
-/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
+/sop-code-assist task_description=".ralph/specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
 
 # Auto mode for batch execution
-/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="autonomous"
+/sop-code-assist task_description=".ralph/specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="autonomous"
 ```
 
 **SDD Workflow**:
@@ -306,9 +306,9 @@ Output: specs/user-auth/design/detailed-design.md
 
 **When invoked**: After planning completes
 
-**Input**: `specs/{goal}/implementation/plan.md` (created by sop-planning)
+**Input**: `.ralph/specs/{goal}/implementation/plan.md` (created by sop-planning)
 
-**Output**: `specs/{goal}/implementation/step*/task-*.code-task.md` files
+**Output**: `.ralph/specs/{goal}/implementation/step*/task-*.code-task.md` files
 
 **What it contains**:
 - `.code-task.md` files for each task
@@ -332,7 +332,7 @@ Output: specs/user-auth/design/detailed-design.md
 
 **Example**:
 ```bash
-Input: specs/user-auth/design/detailed-design.md
+Input: .ralph/specs/user-auth/design/detailed-design.md
 
 sop-task-generator creates:
 
@@ -353,7 +353,7 @@ sop-task-generator creates:
 - [ ] Integration tests for auth endpoints | Size: L
 - [ ] Security tests for token validation | Size: M
 
-Output: specs/user-auth/implementation/plan.md
+Output: .ralph/specs/user-auth/implementation/plan.md
 ```
 
 ---
@@ -401,7 +401,7 @@ sequenceDiagram
     O->>U: Execution mode?
     U->>O: AFK, production quality
 
-    O->>C: Launch cockpit: bash .ralph/launch-build.sh specs/user-auth/
+    O->>C: Launch cockpit: bash .ralph/launch-build.sh .ralph/specs/user-auth/
     C->>S: Task 1
     S->>C: Complete
     C->>S: Task 2
@@ -469,25 +469,23 @@ sequenceDiagram
 
 ```
 project-root/
-├── specs/
-│   └── user-auth/                    # Goal name
-│       ├── discovery.md              # From sop-discovery
-│       ├── rough-idea.md             # From sop-planning
-│       ├── idea-honing.md            # From sop-planning
-│       ├── research/                 # From sop-planning
-│       │   ├── jwt-libraries.md
-│       │   └── password-hashing.md
-│       ├── design/                   # From sop-planning
-│       │   └── detailed-design.md
-│       └── implementation/           # From sop-task-generator
-│           └── plan.md
-│
 ├── .ralph/                           # Created by install.sh
 │   ├── config.sh
-│   └── templates/
-│
-├── AGENTS.md                         # Project context
-├── guardrails.md                     # Shared memory (error lessons, constraints, signs)
+│   ├── agents.md                     # Project context
+│   ├── guardrails.md                 # Shared memory (error lessons, constraints, signs)
+│   ├── templates/
+│   └── specs/
+│       └── user-auth/                # Goal name
+│           ├── discovery.md          # From sop-discovery
+│           ├── rough-idea.md         # From sop-planning
+│           ├── idea-honing.md        # From sop-planning
+│           ├── research/             # From sop-planning
+│           │   ├── jwt-libraries.md
+│           │   └── password-hashing.md
+│           ├── design/               # From sop-planning
+│           │   └── detailed-design.md
+│           └── implementation/       # From sop-task-generator
+│               └── plan.md
 │
 ├── logs/                             # Created during execution
 │   ├── task-cycle.log
@@ -517,13 +515,13 @@ project-root/
 
 ```javascript
 // sop-discovery outputs:
-specs/user-auth/discovery.md
+.ralph/specs/user-auth/discovery.md
 
 // Orchestrator invokes sop-planning with:
 {
   rough_idea: "user-auth",  // The goal name serves as rough idea
-  discovery_path: "specs/user-auth/discovery.md",
-  project_dir: "specs/user-auth"
+  discovery_path: ".ralph/specs/user-auth/discovery.md",
+  project_dir: ".ralph/specs/user-auth"
 }
 
 // sop-planning reads discovery context and proceeds
@@ -535,13 +533,13 @@ specs/user-auth/discovery.md
 
 ```javascript
 // sop-reverse outputs:
-specs/payment-investigation/specs-generated/
+.ralph/specs/payment-investigation/specs-generated/
 
 // Orchestrator invokes sop-planning with:
 {
   rough_idea: "Add retry mechanism to payment processing",
-  project_dir: "specs/payment-retry",
-  prior_investigation: "specs/payment-investigation/specs-generated/"
+  project_dir: ".ralph/specs/payment-retry",
+  prior_investigation: ".ralph/specs/payment-investigation/specs-generated/"
 }
 
 // sop-planning incorporates investigation findings
@@ -553,12 +551,12 @@ specs/payment-investigation/specs-generated/
 
 ```javascript
 // sop-planning outputs:
-specs/user-auth/design/detailed-design.md
+.ralph/specs/user-auth/design/detailed-design.md
 
 // Orchestrator invokes sop-task-generator with:
 {
-  input: "specs/user-auth/design/detailed-design.md",
-  output_dir: "specs/user-auth/implementation"
+  input: ".ralph/specs/user-auth/design/detailed-design.md",
+  output_dir: ".ralph/specs/user-auth/implementation"
 }
 
 // sop-task-generator reads design and generates tasks
@@ -570,7 +568,7 @@ specs/user-auth/design/detailed-design.md
 
 ```bash
 # sop-task-generator outputs:
-specs/user-auth/implementation/
+.ralph/specs/user-auth/implementation/
 ├── plan.md
 └── step01/
     ├── task-01-jwt-utils.code-task.md
@@ -578,12 +576,12 @@ specs/user-auth/implementation/
     └── task-03-middleware.code-task.md
 
 # For INTERACTIVE execution, use sop-code-assist skill:
-/sop-code-assist task_description="specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
+/sop-code-assist task_description=".ralph/specs/user-auth/implementation/step01/task-01-jwt-utils.code-task.md" mode="interactive"
 
 # sop-code-assist reads:
 # - The .code-task.md file (requirements)
-# - specs/user-auth/design/detailed-design.md (context)
-# - Creates specs/{goal}/implementation/{task_name}/ artifacts
+# - .ralph/specs/user-auth/design/detailed-design.md (context)
+# - Creates .ralph/specs/{goal}/implementation/{task_name}/ artifacts
 ```
 
 ### Task Generation → Execution (Agent Teams Cockpit)
@@ -592,26 +590,26 @@ specs/user-auth/implementation/
 
 ```bash
 # sop-task-generator outputs:
-specs/user-auth/implementation/plan.md
+.ralph/specs/user-auth/implementation/plan.md
 
 # Orchestrator launches the Agent Teams cockpit with:
-bash .ralph/launch-build.sh specs/user-auth/
+bash .ralph/launch-build.sh .ralph/specs/user-auth/
 
 # Teammates and sub-agents read:
-# - specs/user-auth/implementation/plan.md (tasks)
-# - specs/user-auth/implementation/step*/task-*.code-task.md (if exist)
-# - specs/user-auth/design/detailed-design.md (context)
-# - specs/user-auth/discovery.md (background)
-# - guardrails.md (shared memory across all agents)
+# - .ralph/specs/user-auth/implementation/plan.md (tasks)
+# - .ralph/specs/user-auth/implementation/step*/task-*.code-task.md (if exist)
+# - .ralph/specs/user-auth/design/detailed-design.md (context)
+# - .ralph/specs/user-auth/discovery.md (background)
+# - .ralph/guardrails.md (shared memory across all agents)
 ```
 
 **Note:** The cockpit operates in **SOP mode only**:
-- Reads `specs/{goal}/implementation/plan.md` (generated by sop-task-generator)
+- Reads `.ralph/specs/{goal}/implementation/plan.md` (generated by sop-task-generator)
 - Reads `.code-task.md` files for detailed task execution
 - Quality gates run via TaskCompleted hook (test → typecheck → lint → build)
 
 > **DEPRECATED**: Legacy `IMPLEMENTATION_PLAN.md` in project root is no longer supported.
-> All planning goes through the SOP structure: `specs/{goal}/implementation/plan.md`
+> All planning goes through the SOP structure: `.ralph/specs/{goal}/implementation/plan.md`
 
 ---
 
@@ -687,7 +685,7 @@ Task cycle 7: Tests fail (same issue)
 Human reviews logs, updates plan.md with clarification:
 "- [ ] Implement JWT generation - use RS256 algorithm, not HS256"
 
-Resume: bash .ralph/launch-build.sh specs/user-auth/
+Resume: bash .ralph/launch-build.sh .ralph/specs/user-auth/
 ```
 
 ---
@@ -749,26 +747,26 @@ Typical cost breakdown for medium-sized feature:
 
 ```bash
 # Goal 1: Authentication
-/ralph-orchestrator → Forward → specs/user-auth/
-bash .ralph/launch-build.sh specs/user-auth/
+/ralph-orchestrator → Forward → .ralph/specs/user-auth/
+bash .ralph/launch-build.sh .ralph/specs/user-auth/
 
 # Goal 2: User Profile (depends on auth)
-/ralph-orchestrator → Forward → specs/user-profile/
-# In planning, reference specs/user-auth/ for context
-bash .ralph/launch-build.sh specs/user-profile/
+/ralph-orchestrator → Forward → .ralph/specs/user-profile/
+# In planning, reference .ralph/specs/user-auth/ for context
+bash .ralph/launch-build.sh .ralph/specs/user-profile/
 ```
 
 ### Pattern 2: Iterative Improvement
 
 ```bash
 # Round 1: Basic auth
-/ralph-orchestrator → Forward → specs/auth-v1/
-bash .ralph/launch-build.sh specs/auth-v1/
+/ralph-orchestrator → Forward → .ralph/specs/auth-v1/
+bash .ralph/launch-build.sh .ralph/specs/auth-v1/
 
 # Round 2: Add MFA
-/ralph-orchestrator → Reverse → specs/auth-v1-investigation/
-→ Continue to Forward → specs/auth-mfa/
-bash .ralph/launch-build.sh specs/auth-mfa/
+/ralph-orchestrator → Reverse → .ralph/specs/auth-v1-investigation/
+→ Continue to Forward → .ralph/specs/auth-mfa/
+bash .ralph/launch-build.sh .ralph/specs/auth-mfa/
 ```
 
 ### Pattern 3: Research Then Build
@@ -776,14 +774,14 @@ bash .ralph/launch-build.sh specs/auth-mfa/
 ```bash
 # Research phase
 /ralph-orchestrator → Reverse → "Best practices for rate limiting"
-→ Creates specs/rate-limiting-research/
+→ Creates .ralph/specs/rate-limiting-research/
 
 # Stop at specs (no implementation)
 
 # Later, use findings
-/ralph-orchestrator → Forward → specs/api-rate-limiter/
-# In planning, reference specs/rate-limiting-research/
-bash .ralph/launch-build.sh specs/api-rate-limiter/
+/ralph-orchestrator → Forward → .ralph/specs/api-rate-limiter/
+# In planning, reference .ralph/specs/rate-limiting-research/
+bash .ralph/launch-build.sh .ralph/specs/api-rate-limiter/
 ```
 
 ---

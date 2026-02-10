@@ -26,7 +26,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 **Trigger**: Manual invocation or ralph-orchestrator in interactive mode.
 
 ```bash
-/sop-code-assist task="specs/user-auth/implementation/step01/task-01.code-task.md" mode="interactive"
+/sop-code-assist task=".ralph/specs/user-auth/implementation/step01/task-01.code-task.md" mode="interactive"
 ```
 
 **Characteristics:**
@@ -43,7 +43,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 
 **Artifacts created:**
 ```
-specs/{goal}/implementation/{task_name}/
+.ralph/specs/{goal}/implementation/{task_name}/
 ├── blockers.md     # Blockers (if any)
 └── logs/           # Build outputs
 ```
@@ -66,7 +66,7 @@ bash .ralph/launch-build.sh
 - Cockpit provides live visibility via tmux windows
 
 **Teammate lifecycle:**
-1. Read `guardrails.md` (accumulated lessons from all teammates)
+1. Read `.ralph/guardrails.md` (accumulated lessons from all teammates)
 2. Claim next PENDING task from Agent Teams task list
 3. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
 4. Run quality gates (triggered by TaskCompleted hook on completion)
@@ -80,7 +80,7 @@ bash .ralph/launch-build.sh
 | Channel | Direction | Purpose |
 |---------|-----------|---------|
 | `SendMessage` | Teammate ↔ Lead | Direct instructions, status updates |
-| `guardrails.md` | All teammates (shared) | Accumulated error lessons, patterns |
+| `.ralph/guardrails.md` | All teammates (shared) | Accumulated error lessons, patterns |
 | `TaskList` | Lead reads | Progress tracking across all tasks |
 | `.ralph/metrics.json` | Hook writes, lead reads | Success/failure counts |
 | `.ralph/failures.json` | Hook writes, lead reads | Per-teammate failure tracking |
@@ -108,7 +108,7 @@ When blocked:
    - Type (missing_dependency, test_failure, environment_issue)
    - Full details
    - Suggested resolution
-2. Add Sign to guardrails.md if applicable
+2. Add Sign to .ralph/guardrails.md if applicable
 3. Mark task as BLOCKED via TaskUpdate
 4. Claim next available task (teammates never stop on one blocker)
 ```
@@ -123,12 +123,12 @@ Both paths use the same state files, but access patterns differ:
 
 | File | Interactive | Autonomous (Agent Teams) |
 |------|-------------|--------------------------|
-| `guardrails.md` | Updated on errors | Concurrent access (flock for writes) |
+| `.ralph/guardrails.md` | Updated on errors | Concurrent access (flock for writes) |
 | `.code-task.md` | Status header updated | Status header updated via TaskUpdate |
 | `blockers.md` | N/A | Created when blocked |
 | `.ralph/failures.json` | N/A | Per-teammate failure tracking |
 | `.ralph/metrics.json` | N/A | Task success/failure counts |
-| `AGENTS.md` | N/A | Read by all teammates at spawn |
+| `.ralph/agents.md` | N/A | Read by all teammates at spawn |
 
 ---
 
@@ -200,7 +200,7 @@ graph LR
 **For autonomous path:**
 - Check blockers.md in spec directory
 - Use `TaskList` to find BLOCKED tasks
-- Review guardrails.md for decision history
+- Review .ralph/guardrails.md for decision history
 - Use `SendMessage` to query specific teammate
 
 ### State Inconsistency

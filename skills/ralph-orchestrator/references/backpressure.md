@@ -178,7 +178,7 @@ graph TD
 - You MUST NOT use prototype in production code because shortcuts accumulate debt
 - You SHOULD use library level for reusable code because polish matters for shared code
 
-Define expectations in AGENTS.md:
+Define expectations in `.ralph/agents.md`:
 
 | Level | Shortcuts OK | Tests Required | Polish Required |
 |-------|--------------|----------------|-----------------|
@@ -192,7 +192,7 @@ Define expectations in AGENTS.md:
 - **Production** - SDD mandatory, all gates must pass
 - **Library** - Full coverage, documentation, edge cases
 
-**Set in:** `AGENTS.md` -> Quality Level section
+**Set in:** `.ralph/agents.md` -> Quality Level section
 
 ---
 
@@ -288,7 +288,7 @@ After 3 consecutive failures, Agent Teams cockpit stops:
 ### Anti-patterns
 
 - 400-line plans
-- Research summaries in plan (move to specs/)
+- Research summaries in plan (move to .ralph/specs/)
 - Step-by-step implementation notes
 - Keeping completed tasks forever
 

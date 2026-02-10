@@ -19,7 +19,7 @@ Find uncovered code and write tests systematically.
 ### Setup
 
 ```markdown
-# specs/coverage.md
+# .ralph/specs/coverage.md
 Target: 90% line coverage
 Focus: src/core/*.ts (critical paths)
 Ignore: src/generated/*, *.test.ts
@@ -143,7 +143,7 @@ Define acceptance criteria upfront with a `passes` field.
 ### Setup
 
 ```markdown
-# specs/feature.md
+# .ralph/specs/feature.md
 ## Acceptance Criteria
 passes:
   - npm test -- --grep "feature-name"

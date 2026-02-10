@@ -48,7 +48,7 @@ Fires when a teammate is about to go idle. Decision by exit code:
 | `.ralph/ABORT` file exists | 0 | Manual abort — allow idle |
 | Teammate failures >= MAX_CONSECUTIVE_FAILURES | 0 | Circuit breaker — stop this teammate |
 | All `.code-task.md` COMPLETED | 0 | Work done — allow idle |
-| Pending tasks remain | 2 | Keep working: "Re-read guardrails.md. Claim next task." |
+| Pending tasks remain | 2 | Keep working: "Re-read .ralph/guardrails.md. Claim next task." |
 
 ### TaskCompleted
 
@@ -93,18 +93,18 @@ Sub-agents solve this: each task starts with a clean 200K window. The coordinato
 ### Coordinator lifecycle (per task)
 
 1. **Claim** — TaskList → TaskUpdate(status: in_progress)
-2. **Prepare context** — Read guardrails.md + AGENTS.md + task description
+2. **Prepare context** — Read .ralph/guardrails.md + .ralph/agents.md + task description
 3. **Delegate** — Task(subagent_type="general-purpose", mode="bypassPermissions") with full context
 4. **Verify** — Check git diff, cockpit status, test output
-5. **Learn** — Append to guardrails.md if non-obvious lesson found
+5. **Learn** — Append to .ralph/guardrails.md if non-obvious lesson found
 6. **Complete** — TaskUpdate(status: completed) → TaskCompleted hook runs gates
 
 ### Sub-agent prompt structure
 
 The coordinator builds a prompt containing:
 - Task description (full .code-task.md content)
-- AGENTS.md (project context, build commands, constraints)
-- guardrails.md (accumulated lessons from all teammates)
+- .ralph/agents.md (project context, build commands, constraints)
+- .ralph/guardrails.md (accumulated lessons from all teammates)
 - Instruction to use /sop-code-assist or follow SDD manually
 
 ### Context budget
@@ -113,8 +113,8 @@ The coordinator builds a prompt containing:
 |-----------|--------|--------|
 | System prompt + tools | ~20K | Claude Code |
 | Task description | ~5-15K | .code-task.md |
-| AGENTS.md | ~3-8K | Project context |
-| guardrails.md | ~2-10K | Accumulated lessons |
+| .ralph/agents.md | ~3-8K | Project context |
+| .ralph/guardrails.md | ~2-10K | Accumulated lessons |
 | Available for SDD | ~147-170K | Implementation work |
 
 Coordinators use default compaction threshold (~95%). With rotation at 20 tasks, compaction is rarely needed.
@@ -133,21 +133,21 @@ Coordinators rotate after `MAX_TASKS_PER_TEAMMATE` completed tasks (default: 20)
 4. **Coordinator goes idle** — lead receives idle notification
 5. **Lead verifies** — reads metrics.json, confirms handoff file exists
 6. **Lead rotates** — sends `shutdown_request`, spawns replacement with `PROMPT_teammate.md`
-7. **Replacement orients** — reads guardrails.md + AGENTS.md + handoff files → full context recovery
+7. **Replacement orients** — reads .ralph/guardrails.md + .ralph/agents.md + handoff files → full context recovery
 
 ### Knowledge preservation across rotations
 
 | Mechanism | What survives | Scope |
 |-----------|--------------|-------|
-| `guardrails.md` | Gotchas, fixes, patterns | All teammates, all rotations |
+| `.ralph/guardrails.md` | Gotchas, fixes, patterns | All teammates, all rotations |
 | `.ralph/handoff-{name}.md` | Task summaries, decisions, codebase state | Per-coordinator, read by replacement |
 | `.code-task.md` files | Task status + descriptions | Persistent on disk |
 | `git log` | What was actually implemented | Persistent in repo |
-| `AGENTS.md` | Project context, commands | Static, unchanged |
+| `.ralph/agents.md` | Project context, commands | Static, unchanged |
 
 ### Why rotation works
 
-- Each replacement coordinator starts with ~20-30K of context (PROMPT + guardrails + handoff + AGENTS.md)
+- Each replacement coordinator starts with ~20-30K of context (PROMPT + guardrails + handoff + agents.md)
 - Leaves ~170K available for coordination work (~20 tasks × ~5-10K each)
 - Zero compaction needed within a single rotation cycle
 - Handoff files are additive: coordinator-3 reads handoffs from coordinators 1 and 2
@@ -201,11 +201,11 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 | File | Purpose | Written By | Read By |
 |------|---------|------------|---------|
-| `guardrails.md` | Accumulated error lessons, patterns | Teammates (flock for writes) | All teammates at task start |
+| `.ralph/guardrails.md` | Accumulated error lessons, patterns | Teammates (flock for writes) | All teammates at task start |
 | `.code-task.md` | Task descriptions and status | Lead (create), teammates (status) | Teammates (claim), lead (monitor) |
 | `.ralph/failures.json` | Per-teammate consecutive failure count | TaskCompleted hook | TeammateIdle hook (circuit breaker) |
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
-| `AGENTS.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
+| `.ralph/agents.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
 | `.ralph/config.sh` | Quality level, gates, cockpit services | Lead (Step 7) | Hooks, launch-build.sh |
 | `.ralph/handoff-{name}.md` | Rotation context transfer | Coordinator (before rotation) | Replacement coordinator |
 
@@ -231,7 +231,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 | Ghostty | `open -na Ghostty.app` | `brew install --cask ghostty` |
 | Agent Teams flag | `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
 | Config file | `.ralph/config.sh` exists | Copy from `templates/config.sh.template` |
-| Guardrails | `guardrails.md` exists | Copy from `templates/guardrails.md.template` |
+| Guardrails | `.ralph/guardrails.md` exists | Copy from `templates/guardrails.md.template` |
 
 ---
 
