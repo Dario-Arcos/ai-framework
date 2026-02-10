@@ -1,208 +1,94 @@
 # Por qué AI Framework
 
-AI Framework es un plugin para Claude Code que convierte prompts sueltos en un proceso de ingeniería con quality gates automáticos, validación de seguridad y desarrollo guiado por scenarios. Esta página explica qué problema resuelve y cómo lo hace.
+Claude Code es capaz. El problema es que sus capacidades se degradan de formas predecibles cuando trabajas sin estructura, y la mayoría de esas degradaciones son invisibles hasta que ya es tarde.
 
 ---
 
-## El problema
+## Qué sale mal sin estructura
 
-Usar un LLM sin estructura produce patrones predecibles de degradación:
+Esto no es teórico. Son patrones que se repiten en sesiones reales:
 
-### Iteración sin arquitectura
+### El modelo deja de usar las herramientas que tiene
 
-```plaintext
-Request: "Implementa autenticación JWT"
-Output: Código funcional sin tests
-Request: "Agrega refresh tokens"
-Output: Modificación sin validación de regresión  // [!code warning]
-Request: "Agrega validación"
-Output: Parches sobre parches  // [!code error]
+Vercel midió esto en 2026: en el 56% de los casos, Claude no invocó skills disponibles aunque tenía acceso a ellos. El modelo tenía la documentación correcta a un tool call de distancia, pero decidió que no la necesitaba. El resultado fue código basado en APIs deprecadas que compilaba pero fallaba en runtime.
 
-Resultado: Código frágil, arquitectura ad-hoc, deuda técnica  // [!code error]
-```
+No es un bug. Es una limitación medida de cómo los modelos deciden cuándo usar herramientas.
 
-### Ausencia de quality gates
+### El contexto se degrada en sesiones largas
 
-- Tests como afterthought (si existen)
-- Security reviews manuales e inconsistentes
-- Complexity sin control (over-engineering o under-engineering)
-- Arquitectura que emerge sin diseño intencional
+Cada token en el context window compite por atención con todos los demás (escalamiento n² en la arquitectura de atención). En la práctica: las instrucciones que diste en el turno 3 se pierden para el turno 40. El modelo empieza a repetir búsquedas, olvida decisiones arquitectónicas, y la calidad cae sin que nadie lo note.
 
-::: danger Consecuencia
-Proyectos que funcionan en desarrollo pero fallan en producción.
-:::
+### "Funciona" no significa que funcione
+
+Le pides que implemente algo, te dice "listo", y el código se ve razonable. Pero no lo ejecutó. No verificó edge cases. No revisó que los scenarios previos sigan pasando. "It should work" es la frase más cara en ingeniería de software, y los modelos la usan todo el tiempo si no les exiges evidencia.
 
 ---
 
-## La solución
+## Qué hace el framework
 
-AI Framework aplica gobernanza basada en investigación validada:
+AI Framework es un plugin de Claude Code que inyecta gobernanza en cada sesión. No son sugerencias que el modelo puede ignorar — son constraints embebidos a nivel de system prompt que el modelo recibe antes de leer tu primer mensaje.
 
-### Fundamentos
+### Gobernanza constitucional
 
-::: info Context Engineering (Anthropic, 2025)
-Optimización de context windows:
-- Minimizar tokens, maximizar señal
-- Filtrado de false positives validado
-- Context loading just-in-time
-:::
+Al iniciar cada sesión, un hook de SessionStart lee un conjunto de constraints y los inyecta como contexto de sistema. El modelo recibe reglas como "nunca hagas push sin autorización" o "nunca empieces trabajo multi-step sin un task plan" como parte de su contexto base, no como una instrucción que puede decidir ignorar.
 
-::: info LLM Optimization (DeepMind OPRO, 2023)
-Técnicas con resultados medidos:
-- Framing sistemático: **+46.2 puntos** accuracy en el benchmark GSM8K
-- Multi-approach analysis: **+57.7% calidad** según el estudio ATLAS (2024)
-:::
+Esto se complementa con un mecanismo de enforcement que invierte la carga de prueba para usar skills: en vez de "¿debería invocar este skill?", el modelo opera con "solo salta el skill si estás seguro de que no aplica." Esto reduce el 56% de no-invocación que Vercel midió.
 
-::: info Scenario-Driven Development (basado en StrongDM Software Factory)
-Ciclo scenario-satisfy-refactor:
-- **40-80% reducción** en bugs según Microsoft Research (2008, estudio sobre TDD/BDD)
-- Prevención de regresiones mediante scenario-first
-:::
+### Scenario-Driven Development
 
-::: info Constitutional AI (Anthropic, 2022)
-Principios como enforcement automático:
-- Constraints no negociables (complexity budgets, SDD, reuse-first)
-- Separación de responsabilidades (Product, Design, Engineering, Security)
-- Audit trail para decisiones arquitectónicas
-:::
+El framework exige que definas qué debería pasar antes de escribir código. No tests — scenarios. La diferencia importa: un test dice `assert split(100, 20, 4) == 30.0`. Un scenario dice "4 amigos dividen $100 con 20% de propina, cada uno paga $30."
 
----
+El test se puede manipular (el modelo reescribe el assertion para que pase). El scenario no, porque vive fuera del código. El code-reviewer agent verifica que los scenarios se definieron antes de la implementación y detecta reward hacking — cuando el modelo reescribe validaciones para que coincidan con su output.
 
-## Arquitectura
+### Sub-agents con contexto limpio
 
-El framework aplica enforcement en tres capas:
+Cuando una tarea es compleja, el framework la delega a sub-agents que arrancan con un context window limpio de 200k tokens. El agente principal recibe un resumen de 1-2k tokens. Esto previene la degradación de contexto que ocurre cuando una sola sesión acumula 50k+ tokens de historial.
 
-::: details Constitutional Layer
-**Invariantes aplicadas automáticamente:**
-- Value/complexity ≥2x (beneficio debe justificar costo)
-- SDD mandatory (scenarios antes de código)
-- Complexity budgets (S≤80, M≤250, L≤600 líneas netas)
-:::
+### Agents especializados
 
-::: details Orchestration Layer
-**Componentes especializados:**
-- Specialized agents por dominio técnico
-- Workflow commands para ciclos reproducibles
-- Lifecycle hooks con interception points
-- Skills con workflows estructurados
-:::
+Seis agents se activan automáticamente según el contexto:
 
-::: details Execution Layer
-**Validación continua:**
-- Quality gates automáticos (security, performance, constitutional)
-- Ejecución paralela con manejo de dependencias
-- Audit trail completo
-:::
+- **code-reviewer** revisa después de cada implementación. Verifica que los scenarios se definieron primero y detecta reward hacking.
+- **systematic-debugger** exige diagnóstico en 4 fases antes de proponer cualquier fix. Previene el patrón de "cambiar cosas hasta que funcione."
+- **security-reviewer** analiza el diff de tu branch buscando vulnerabilidades explotables.
+- **edge-case-detector** busca boundary violations, race conditions, y resource leaks después de cada implementación.
+- **performance-engineer** analiza cuando hay bottlenecks o problemas de escalabilidad.
+- **code-simplifier** reduce complejidad preservando funcionalidad.
 
-La diferencia con otros enfoques: el framework aplica estas reglas automáticamente, no las sugiere.
+### Skills como workflows
+
+24 skills cubren el ciclo completo: desde brainstorming y discovery hasta implementación con SDD, commits inteligentes, y pull requests. Cada skill es un workflow estructurado que se carga cuando el contexto lo requiere — no un template estático.
+
+Ralph, el orchestrator, puede ejecutar proyectos multi-step de forma autónoma: planifica, genera tareas, ejecuta con verificación doble, y tiene circuit breakers que detienen la ejecución si detecta loops o thrashing.
 
 ---
 
-## Ejemplo: Autenticación
+## Qué cambia en la práctica
 
-::: code-group
+Sin framework, la dinámica es: tú le dices qué hacer, Claude lo hace, tú revisas, repites. Micro-gestión constante. Si te descuidas, el modelo toma atajos que no notas hasta producción.
 
-```plaintext [Sin Framework]
-Request: "Implementa JWT auth"
-Output: Código funcional sin tests  // [!code warning]
-Deploy: Funciona en desarrollo
-Production: Token expiration no validada → security breach  // [!code error]
-```
+Con framework, la dinámica cambia: tú defines qué quieres lograr, el framework se asegura de que el proceso sea riguroso. Los scenarios se definen antes del código. Los reviews pasan automáticamente. La evidencia de ejecución se exige antes de marcar algo como completo.
 
-```plaintext [Con Framework]
-Request: "Implementa JWT auth"
-SDD gate: Scenario definido antes de implementación  // [!code highlight]
-Security review: Detecta falta de token expiration → blocker  // [!code highlight]
-Constitutional check: +120 líneas (Size M, dentro de budget)  // [!code highlight]
-Output: Feature con tests, vulnerabilidad prevenida, complexity controlada
-```
-
-:::
-
-Qué se previene con este flujo:
-- Scenarios ausentes (SDD blocker)
-- Vulnerabilidades básicas (security review pre-merge)
-- Over-engineering (complexity budget)
-- Arquitectura inconsistente (agent orchestration)
+No es que Claude no pueda hacer buen trabajo sin esto. Es que la probabilidad de que lo haga consistentemente, sesión tras sesión, proyecto tras proyecto, sin estructura que lo gobierne, es baja. El framework sube esa probabilidad.
 
 ---
 
-## Transformación: Asistente a ingeniero
+## Fundamentos técnicos
 
-::: code-group
+El framework se apoya en investigación verificable:
 
-```plaintext [Asistente (vanilla)]
-Developer → "Haz X" → Claude hace X → "Ahora Y" → Claude hace Y
-            [Micro-gestión continua]  // [!code warning]
-```
-
-```plaintext [Ingeniero (framework)]
-Developer → "Objetivo: Sistema de autenticación"
-Framework + Claude:
-  ├─ Framing (¿JWT? ¿OAuth? ¿Refresh tokens?)  // [!code highlight]
-  ├─ Multi-approach ROI (beneficio vs complejidad)  // [!code highlight]
-  ├─ Implementación SDD (scenarios → código)  // [!code highlight]
-  ├─ Quality gates (security + code review + constitutional)  // [!code highlight]
-  └─ Despliegue (PR auto-creado, reviews aprobados)  // [!code highlight]
-
-[Developer: decisiones estratégicas | Claude: ejecución táctica]
-```
-
-:::
-
-::: tip Resultado
-El developer deja de micro-gestionar y se enfoca en decisiones de producto y arquitectura.
-:::
+- **Context engineering** (Anthropic, 2025): optimización de context windows. Contexto pasivo supera a retrieval activo. Un index comprimido de 8KB rinde igual que 40KB de documentación completa.
+- **Scenario-Driven Development** (basado en StrongDM Software Factory): scenarios como holdouts externos que el modelo no puede manipular, a diferencia de tests que viven dentro del código.
+- **Passive context superiority** (Vercel, 2026): AGENTS.md estáticos alcanzan 100% pass rate donde skills invocables logran 53%. La lección: embeber contexto funciona mejor que depender de que el modelo decida buscarlo.
 
 ---
 
-## De idea a producción
+## Siguiente paso
 
-::: code-group
-
-```plaintext [Ciclo Tradicional]
-Idea → Spec (días) → Design (días) → Dev (semanas) → QA (días)
-      [Humanos en cada paso · Errores acumulados · 1-2 meses]  // [!code warning]
-```
-
-```plaintext [Claude Code Vanilla]
-Idea → Claude genera → Developer corrige → Deploy (quizás)
-      [Rápido pero frágil · Sin tests · Días, calidad ?]  // [!code warning]
-```
-
-```plaintext [AI Framework]
-Idea → Diseño estructurado (minutos)  // [!code highlight]
-     → Plan de implementación (minutos)  // [!code highlight]
-     → Ejecución con SDD (horas)  // [!code highlight]
-     → Dual review → /pullrequest → Despliegue  // [!code highlight]
-
-[Guiado por humanos, ejecutado por IA]
-[Tests desde día 1 · Horas-días, production-ready]
-```
-
-:::
-
-### Comparación
-
-| Aspecto       | Sin Framework | Con Framework              |
-| ------------- | ------------- | -------------------------- |
-| Tests         | A veces       | Siempre (SDD enforced)     |
-| Seguridad     | Ad-hoc        | Automática (scanning)      |
-| Escalabilidad | Se degrada    | Se mantiene (patterns)     |
-| Compliance    | Manual        | Automático (budgets)       |
-
----
-
-## En resumen
-
-Claude Code tiene capacidades potentes, pero sin estructura produce resultados inconsistentes. AI Framework agrega esa estructura: quality gates que bloquean código sin tests, security reviews que detectan vulnerabilidades antes del merge, y complexity budgets que frenan el over-engineering.
-
-Tú decides qué construir. El framework se encarga de que el resultado sea production-ready.
-
-**Siguiente paso**: [Inicio rápido](./quickstart.md)
+[Inicio rápido](./quickstart.md)
 
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-02-10
 :::
