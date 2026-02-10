@@ -1,20 +1,12 @@
 ---
 name: humanizer
-version: 2.1.1
-description: |
+description: >
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
-  comprehensive "Signs of AI writing" guide. Detects and fixes patterns including:
-  inflated symbolism, promotional language, superficial -ing analyses, vague
-  attributions, em dash overuse, rule of three, AI vocabulary words, negative
-  parallelisms, and excessive conjunctive phrases.
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - AskUserQuestion
+  "Signs of AI writing" guide. Detects and fixes patterns in English and Spanish,
+  including: inflated symbolism, promotional language, superficial analyses, vague
+  attributions, AI vocabulary overuse, structural uniformity, gerundio abuse,
+  and formulaic connector phrases.
 ---
 
 # Humanizer: Remove AI Writing Patterns
@@ -389,6 +381,56 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ---
 
+## SPANISH-SPECIFIC PATTERNS
+
+Many English patterns (rule of three, negative parallelism, copula avoidance, vague attributions, generic conclusions) apply identically in Spanish with different vocabulary. The patterns below are unique to Spanish or have significantly different manifestation. For full details with before/after examples, see [references/spanish-patterns.md](references/spanish-patterns.md).
+
+### 25. Gerundio de posterioridad
+
+**Problem:** In Spanish, gerunds express simultaneous or prior action. Using them for posterior action ("logrando así", "posicionándose como") is grammatically incorrect per RAE. English -ing forms don't have this restriction, so LLMs trained on English transfer the error.
+
+**Words to watch:** logrando así, generando un impacto, posicionándose como, contribuyendo al desarrollo, convirtiendo esto en
+
+**Before:**
+> La empresa lanzó el producto en diciembre, posicionándose como líder del mercado en el primer trimestre.
+
+**After:**
+> La empresa lanzó el producto en diciembre y se convirtió en líder del mercado en el primer trimestre.
+
+### 26. Spanish AI vocabulary
+
+**Words to watch:** ámbito, panorama, paradigma, sinergia, ecosistema, robusto, holístico, transversal, integral, potenciar, impulsar, fomentar, articular, optimizar, alinear. Calques from English: "tapiz de emociones" (tapestry), "catalizar el cambio" (catalyze), "ahondar" (delve).
+
+### 27. Formulaic openings
+
+**Words to watch:** "En un mundo cada vez más...", "En la era de...", "En el contexto actual...", "En el panorama actual...", "A medida que avanzamos hacia..."
+
+### 28. Connector stuffing
+
+**Words to watch:** Cabe destacar que, Es importante señalar que, En este sentido, Asimismo, Del mismo modo, Por otro lado, No obstante, En consecuencia, En definitiva
+
+### 29. Importance inflation (Spanish)
+
+**Words to watch:** juega un papel fundamental/crucial, desempeña un rol determinante, resulta imprescindible, reviste especial importancia, constituye un pilar fundamental
+
+### 30. Adverb chains in -mente
+
+**Problem:** Spanish style guides limit -mente adverbs to one per paragraph. LLMs chain them: "fundamentalmente necesario implementar efectivamente las estrategias previamente diseñadas para significativamente mejorar..."
+
+### 31. Register inconsistency
+
+**Problem:** LLMs mix tú/usted/voseo within the same text, or produce "lab Spanish" that doesn't match any real dialect. A human writer maintains consistent register.
+
+### 32. Hedging with "poder"
+
+**Words to watch:** podría tener beneficios, puede contribuir a, podría representar, es posible que, cabe la posibilidad de que
+
+### 33. Generic positive closings (Spanish)
+
+**Words to watch:** Sin duda alguna, El futuro es prometedor, Queda claro que, Solo el tiempo dirá, El camino por recorrer es largo pero prometedor
+
+---
+
 ## Process
 
 1. Read the input text carefully
@@ -430,8 +472,9 @@ Provide:
 
 ---
 
-## Reference
+## References
 
-This skill is based on [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup. The patterns documented there come from observations of thousands of instances of AI-generated text on Wikipedia.
+- English patterns: [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup.
+- Spanish patterns: [references/spanish-patterns.md](references/spanish-patterns.md) — full details with before/after examples and academic sources (RAE, AESLA/RAEL, UCM, Fundación Comillas).
 
 Key insight from Wikipedia: "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
