@@ -332,7 +332,7 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
 
 **Example**:
 ```bash
-Input: .ralph/specs/user-auth/design/detailed-design.md
+Input: .ralph/specs/user-auth/implementation/plan.md
 
 sop-task-generator creates:
 
@@ -401,7 +401,7 @@ sequenceDiagram
     O->>U: Execution mode?
     U->>O: AFK, production quality
 
-    O->>C: Launch cockpit: bash .ralph/launch-build.sh .ralph/specs/user-auth/
+    O->>C: Launch cockpit: bash .ralph/launch-build.sh
     C->>S: Task 1
     S->>C: Complete
     C->>S: Task 2
@@ -473,7 +473,7 @@ project-root/
 │   ├── config.sh
 │   ├── agents.md                     # Project context
 │   ├── guardrails.md                 # Shared memory (error lessons, constraints, signs)
-│   ├── templates/
+│   ├── metrics.json                  # Created during execution
 │   └── specs/
 │       └── user-auth/                # Goal name
 │           ├── discovery.md          # From sop-discovery
@@ -486,10 +486,6 @@ project-root/
 │           │   └── detailed-design.md
 │           └── implementation/       # From sop-task-generator
 │               └── plan.md
-│
-├── logs/                             # Created during execution
-│   ├── task-cycle.log
-│   └── metrics.json
 │
 └── src/                              # Implementation output
     ├── routes/
@@ -555,7 +551,7 @@ project-root/
 
 // Orchestrator invokes sop-task-generator with:
 {
-  input: ".ralph/specs/user-auth/design/detailed-design.md",
+  input: ".ralph/specs/user-auth/implementation/plan.md",
   output_dir: ".ralph/specs/user-auth/implementation"
 }
 
@@ -593,7 +589,7 @@ project-root/
 .ralph/specs/user-auth/implementation/plan.md
 
 # Orchestrator launches the Agent Teams cockpit with:
-bash .ralph/launch-build.sh .ralph/specs/user-auth/
+bash .ralph/launch-build.sh
 
 # Teammates and sub-agents read:
 # - .ralph/specs/user-auth/implementation/plan.md (tasks)
@@ -685,7 +681,7 @@ Task cycle 7: Tests fail (same issue)
 Human reviews logs, updates plan.md with clarification:
 "- [ ] Implement JWT generation - use RS256 algorithm, not HS256"
 
-Resume: bash .ralph/launch-build.sh .ralph/specs/user-auth/
+Resume: bash .ralph/launch-build.sh
 ```
 
 ---
@@ -748,12 +744,12 @@ Typical cost breakdown for medium-sized feature:
 ```bash
 # Goal 1: Authentication
 /ralph-orchestrator → Forward → .ralph/specs/user-auth/
-bash .ralph/launch-build.sh .ralph/specs/user-auth/
+bash .ralph/launch-build.sh
 
 # Goal 2: User Profile (depends on auth)
 /ralph-orchestrator → Forward → .ralph/specs/user-profile/
 # In planning, reference .ralph/specs/user-auth/ for context
-bash .ralph/launch-build.sh .ralph/specs/user-profile/
+bash .ralph/launch-build.sh
 ```
 
 ### Pattern 2: Iterative Improvement
@@ -761,12 +757,12 @@ bash .ralph/launch-build.sh .ralph/specs/user-profile/
 ```bash
 # Round 1: Basic auth
 /ralph-orchestrator → Forward → .ralph/specs/auth-v1/
-bash .ralph/launch-build.sh .ralph/specs/auth-v1/
+bash .ralph/launch-build.sh
 
 # Round 2: Add MFA
 /ralph-orchestrator → Reverse → .ralph/specs/auth-v1-investigation/
 → Continue to Forward → .ralph/specs/auth-mfa/
-bash .ralph/launch-build.sh .ralph/specs/auth-mfa/
+bash .ralph/launch-build.sh
 ```
 
 ### Pattern 3: Research Then Build
@@ -781,7 +777,7 @@ bash .ralph/launch-build.sh .ralph/specs/auth-mfa/
 # Later, use findings
 /ralph-orchestrator → Forward → .ralph/specs/api-rate-limiter/
 # In planning, reference .ralph/specs/rate-limiting-research/
-bash .ralph/launch-build.sh .ralph/specs/api-rate-limiter/
+bash .ralph/launch-build.sh
 ```
 
 ---

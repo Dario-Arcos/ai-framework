@@ -439,7 +439,7 @@ All artifacts MUST be:
 ```text
 User: I want to build a caching layer for our API to reduce database load
 
-Claude: [Creates project structure in specs/api-caching-layer/]
+Claude: [Creates project structure in .ralph/specs/api-caching-layer/]
         [Asks: "Would you prefer to start with requirements clarification or research?"]
 
 User: Requirements first

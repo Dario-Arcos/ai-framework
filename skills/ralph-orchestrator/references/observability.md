@@ -86,16 +86,24 @@ tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 
 **Constraints:**
 - You SHOULD calculate success rate because this indicates execution health
-- You SHOULD track tasks_pending because zero pending with all completed means done
+- You SHOULD use per_teammate data for rotation decisions because it tracks individual performance
 
 ```json
 {
-  "tasks_completed": 8,
-  "tasks_failed": 2,
-  "tasks_pending": 5,
-  "gates_passed": 8,
-  "gates_failed": 3,
-  "last_updated": "2026-02-10T14:30:00Z"
+  "total_tasks": 10,
+  "successful_tasks": 8,
+  "failed_tasks": 2,
+  "last_updated": "2026-02-10T14:30:00Z",
+  "per_teammate": {
+    "teammate-1": {
+      "completed": 5,
+      "failed": 1
+    },
+    "teammate-2": {
+      "completed": 3,
+      "failed": 1
+    }
+  }
 }
 ```
 
@@ -103,9 +111,8 @@ tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 
 | Metric | Calculation | Healthy Threshold |
 |--------|-------------|-------------------|
-| Success rate | completed / (completed + failed) | > 80% |
-| Completion progress | completed / total tasks | Increasing |
-| Gate pass rate | gates_passed / (gates_passed + gates_failed) | > 75% |
+| Success rate | successful_tasks / total_tasks | > 80% |
+| Completion progress | successful_tasks / total_tasks | Increasing |
 
 ---
 
@@ -113,16 +120,14 @@ tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 
 ```json
 {
-  "teammate-uuid": {
-    "consecutive_failures": 2,
-    "last_failure": "Gate 'test' failed: 3 tests failing",
-    "total_failures": 5,
-    "total_successes": 8
-  }
+  "teammate-1": 2,
+  "teammate-2": 0
 }
 ```
 
-**Circuit breaker**: When `consecutive_failures >= MAX_CONSECUTIVE_FAILURES` (default 3), TeammateIdle hook exits 0, stopping that teammate.
+Each key is a teammate name, and the value is the consecutive failure count (integer). Reset to 0 on success.
+
+**Circuit breaker**: When consecutive failures >= MAX_CONSECUTIVE_FAILURES (default 3), TeammateIdle hook exits 0, stopping that teammate.
 
 ---
 

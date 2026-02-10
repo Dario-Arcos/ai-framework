@@ -33,7 +33,7 @@ Systematically investigate existing artifacts and generate structured specificat
 
 - **target** (required): Path, URL, or description of artifact to investigate
 - **target_type** (optional, default: auto-detect): Type of artifact - `codebase`, `api`, `documentation`, `process`, or `concept`
-- **output_dir** (optional, default: specs/{name}-{timestamp}): Directory for investigation output
+- **output_dir** (optional, default: .ralph/specs/{name}-{timestamp}): Directory for investigation output
 - **focus_areas** (optional, default: none - investigates all aspects if not specified): Specific aspects to prioritize (e.g., "auth flow", "data model")
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Confirm with user, ask clarifying questions
@@ -208,7 +208,7 @@ Output: Process flow diagrams, role responsibilities, bottleneck analysis
 
 ### Example 4: Autonomous Legacy System Analysis
 ```text
-/sop-reverse target="./monolith-app" mode="autonomous" output_dir="specs/monolith-audit"
+/sop-reverse target="./monolith-app" mode="autonomous" output_dir=".ralph/specs/monolith-audit"
 ```
 Output: Complete investigation without user interaction, deferred questions documented
 

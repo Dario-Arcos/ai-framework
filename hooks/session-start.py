@@ -46,6 +46,8 @@ CRITICAL_GITIGNORE_RULES = [
     "/.ralph/failures.json",
     "/.ralph/metrics.json",
     "/.ralph/ABORT",
+    "/.ralph/handoff-*.md",
+    "/.ralph/logs/",
 ]
 
 

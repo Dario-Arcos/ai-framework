@@ -19,7 +19,7 @@ Prefer retrieval-led reasoning. Read `.claude/rules/` for framework patterns.
 **You MUST use these technologies. Do NOT introduce alternatives without explicit justification.**
 
 ## Constraints
-[from specs/discovery.md]
+[from .ralph/specs/{goal}/discovery.md]
 
 ## Quality
 [from .ralph/config.sh: QUALITY_LEVEL, MIN_TEST_COVERAGE]

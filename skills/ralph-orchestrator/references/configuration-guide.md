@@ -59,12 +59,12 @@ Gates execute in order: **test → typecheck → lint → build**. First failure
 **Coverage Threshold:**
 
 ```bash
-MIN_TEST_COVERAGE=""  # Default: empty (no coverage check)
+MIN_TEST_COVERAGE=90  # Default: 90% (0-100, coverage below this blocks COMPLETE)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `MIN_TEST_COVERAGE` | `""` | Minimum test coverage percentage. When set, test gate validates coverage meets this threshold. Empty = no coverage enforcement |
+| `MIN_TEST_COVERAGE` | `90` | Minimum test coverage percentage (0-100). Test gate validates coverage meets this threshold. Coverage below this blocks COMPLETE |
 
 ---
 
@@ -76,7 +76,7 @@ MIN_TEST_COVERAGE=""  # Default: empty (no coverage check)
 
 ```bash
 MODEL="opus"                      # Model for teammates (opus recommended)
-MAX_TEAMMATES=3                   # Maximum concurrent teammates
+MAX_TEAMMATES=2                   # Maximum concurrent teammates
 COCKPIT_DEV_SERVER="npm run dev"  # Dev server command (tmux "services" window)
 COCKPIT_TEST_WATCHER="npm run test:watch"  # Test watcher (tmux "quality" window)
 COCKPIT_LOGS="tail -f logs/*.log" # Log tailing (tmux "monitor" window)
@@ -86,7 +86,7 @@ COCKPIT_DB=""                     # Database command (tmux "services" window, pa
 | Option | Default | Description |
 |--------|---------|-------------|
 | `MODEL` | `opus` | Model used for teammates |
-| `MAX_TEAMMATES` | `3` | Max concurrent teammates |
+| `MAX_TEAMMATES` | `2` | Max concurrent teammates |
 | `MAX_TASKS_PER_TEAMMATE` | `20` | Rotate coordinator after N completed tasks. When a teammate reaches this threshold, the TeammateIdle hook allows it to go idle, it writes a handoff summary, and the lead spawns a replacement. Set to 0 to disable rotation. |
 | `COCKPIT_DEV_SERVER` | `""` | Command for dev server window |
 | `COCKPIT_TEST_WATCHER` | `""` | Command for test watcher window |
@@ -144,13 +144,13 @@ The circuit breaker tracks failures **per teammate** in `.ralph/failures.json`. 
 
 ```bash
 MEMORIES_ENABLED=true    # Enable/disable memory system
-MEMORIES_BUDGET=50       # Max entries before pruning oldest
+MEMORIES_BUDGET=2000     # Max tokens to inject (~8000 chars)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `MEMORIES_ENABLED` | `true` | Enable/disable the guardrails.md memory system. When false, teammates skip writing learned patterns and error signs |
-| `MEMORIES_BUDGET` | `50` | Maximum number of entries in guardrails.md before oldest entries are pruned. Prevents unbounded growth in long-running sessions |
+| `MEMORIES_BUDGET` | `2000` | Maximum tokens to inject from guardrails.md (~8000 chars). Prevents unbounded context growth in long-running sessions |
 
 ---
 

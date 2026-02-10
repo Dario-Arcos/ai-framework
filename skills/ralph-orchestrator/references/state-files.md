@@ -53,24 +53,16 @@ Per-teammate consecutive failure counter, written by the TaskCompleted hook.
 **Format:**
 ```json
 {
-  "teammate-1-uuid": {
-    "consecutive_failures": 2,
-    "last_failure": "Gate 'test' failed: 3 tests failing",
-    "total_failures": 5,
-    "total_successes": 8
-  },
-  "teammate-2-uuid": {
-    "consecutive_failures": 0,
-    "last_failure": null,
-    "total_failures": 1,
-    "total_successes": 12
-  }
+  "teammate-1": 2,
+  "teammate-2": 0
 }
 ```
 
+Each key is a teammate name, and the value is the consecutive failure count (integer). Reset to 0 on success.
+
 **Behavior:**
-- TaskCompleted hook increments `consecutive_failures` on gate failure, resets to 0 on success
-- TeammateIdle hook reads this file — if `consecutive_failures >= MAX_CONSECUTIVE_FAILURES`, exits 0 (circuit breaker)
+- TaskCompleted hook increments the counter on gate failure, resets to 0 on success
+- TeammateIdle hook reads this file — if counter >= MAX_CONSECUTIVE_FAILURES, exits 0 (circuit breaker)
 - Lead monitors via `Read(".ralph/failures.json")` during Phase 2
 
 ---
@@ -82,12 +74,20 @@ Aggregate success/failure counts, written by the TaskCompleted hook.
 **Format:**
 ```json
 {
-  "tasks_completed": 8,
-  "tasks_failed": 2,
-  "tasks_pending": 5,
-  "gates_passed": 8,
-  "gates_failed": 3,
-  "last_updated": "2026-02-10T14:30:00Z"
+  "total_tasks": 10,
+  "successful_tasks": 8,
+  "failed_tasks": 2,
+  "last_updated": "2026-02-10T14:30:00Z",
+  "per_teammate": {
+    "teammate-1": {
+      "completed": 5,
+      "failed": 1
+    },
+    "teammate-2": {
+      "completed": 3,
+      "failed": 1
+    }
+  }
 }
 ```
 

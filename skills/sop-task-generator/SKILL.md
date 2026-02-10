@@ -84,7 +84,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 **Example output:**
 ```text
 Detected: PDD mode
-Source: specs/feature-x/plan.md
+Source: .ralph/specs/feature-x/plan.md
 Found: 5 implementation steps
 Action: Will generate 5 task files (one per step)
 ```
@@ -162,8 +162,8 @@ Action: Will generate 5 task files (one per step)
    - Scenario-Strategy: [required/not-applicable]
 
    Files to create:
-   - specs/{goal}/implementation/stepNN/task-01-{title}.code-task.md
-   - specs/{goal}/implementation/stepNN/task-02-{title}.code-task.md
+   - .ralph/specs/{goal}/implementation/stepNN/task-01-{title}.code-task.md
+   - .ralph/specs/{goal}/implementation/stepNN/task-02-{title}.code-task.md
 
    Approve task breakdown? (yes/no)
    ```
@@ -212,10 +212,10 @@ Each task MUST fit within one sub-agent context window. Validate before generati
 
 **You MUST generate a task file for EVERY step in the plan:**
 
-1. Read `specs/{goal}/implementation/plan.md`
+1. Read `.ralph/specs/{goal}/implementation/plan.md`
 2. Count total steps (N)
 3. For EACH step, create:
-   - Directory: `specs/{goal}/implementation/step{NN}/`
+   - Directory: `.ralph/specs/{goal}/implementation/step{NN}/`
    - File: `task-{NN}-{description}.code-task.md`
 4. Verify: N task files created = N steps in plan
 
@@ -450,14 +450,14 @@ Demo requirements by step:
 
 **Input:**
 ```text
-input: specs/auth-feature/plan.md
+input: .ralph/specs/auth-feature/plan.md
 ```
 
 **Detected:** PDD mode, 5 total steps
 
 **Generated (ALL steps upfront):**
 ```text
-specs/auth-feature/implementation/
+.ralph/specs/auth-feature/implementation/
 ├── step01/
 │   └── task-01-setup-auth-infrastructure.code-task.md
 ├── step02/
@@ -477,14 +477,14 @@ specs/auth-feature/implementation/
 **Input:**
 ```text
 input: "Add user profile editing with validation and profile picture upload"
-output_dir: specs/user-profile/tasks
+output_dir: .ralph/specs/user-profile/tasks
 ```
 
 **Detected:** Description mode, complex feature
 
 **Generated:**
 ```text
-specs/user-profile/tasks/
+.ralph/specs/user-profile/tasks/
 ├── task-01-profile-data-validation.code-task.md
 ├── task-02-profile-update-api.code-task.md
 └── task-03-profile-picture-upload.code-task.md
