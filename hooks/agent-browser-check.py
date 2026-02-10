@@ -2,7 +2,7 @@
 """SessionStart hook - Checks agent-browser CLI and syncs skill if missing.
 
 Ensures CLI is installed and skill is available at user level (~/.claude/skills/)
-via `npx skills` (Vercel's open skill ecosystem). Skill at user level is loaded
+by copying from the global npm package. Skill at user level is loaded
 automatically by Claude Code in all projects — no per-project copy needed.
 
 Performance: happy path is ~0.2ms (three stat calls, zero subprocesses).
@@ -22,13 +22,17 @@ CLAUDE_HOME = Path(
     os.environ.get("CLAUDE_CONFIG_DIR", "").strip()
     or Path.home() / ".claude"
 )
-SKILL_FILE = CLAUDE_HOME / "skills" / "agent-browser" / "SKILL.md"
+SKILL_DIR = CLAUDE_HOME / "skills" / "agent-browser"
+SKILL_FILE = SKILL_DIR / "SKILL.md"
 COOLDOWN_FILE = Path(tempfile.gettempdir()) / "agent-browser-sync-ts"
 SYNC_COOLDOWN_SECS = 3600
 
-SKILL_ADD_CMD = (
-    "npx -y skills add --global --yes vercel-labs/agent-browser"
-    " -s agent-browser -a claude-code"
+SKILL_COPY_CMD = (
+    'SKILL_SRC="$(npm root -g)/agent-browser/skills/agent-browser"'
+    ' && [ -d "$SKILL_SRC" ]'
+    f' && rm -rf "{SKILL_DIR}"'
+    f' && mkdir -p "{SKILL_DIR}"'
+    f' && cp -r "$SKILL_SRC/." "{SKILL_DIR}/"'
 )
 
 UPDATE_CHECK_FILE = Path(tempfile.gettempdir()) / "agent-browser-update-ts"
@@ -92,10 +96,10 @@ def touch_update_check():
 
 
 def sync_skill_background():
-    """Sync agent-browser skill to ~/.claude/skills/ via npx skills."""
+    """Copy agent-browser skill from global npm package to ~/.claude/skills/."""
     touch_cooldown()
     touch_update_check()  # fresh sync = latest version
-    return run_background(SKILL_ADD_CMD, "agent-browser-skill-sync.log")
+    return run_background(SKILL_COPY_CMD, "agent-browser-skill-sync.log")
 
 
 def is_update_due():
@@ -109,10 +113,10 @@ def is_update_due():
 
 
 def update_background():
-    """Auto-update skill (via npx skills update) and CLI in background."""
+    """Auto-update CLI via npm and re-sync skill in background."""
     touch_update_check()
 
-    cmd = "npx -y skills update 2>/dev/null; npm update -g agent-browser 2>/dev/null"
+    cmd = f"npm update -g agent-browser 2>/dev/null && {SKILL_COPY_CMD}"
     return run_background(cmd, "agent-browser-update.log")
 
 
@@ -120,7 +124,7 @@ def install_background():
     """Install CLI + browsers + skill in background."""
     touch_cooldown()
     touch_update_check()  # fresh install = latest version
-    cmd = f"npm install -g agent-browser && agent-browser install && {SKILL_ADD_CMD}"
+    cmd = f"npm install -g agent-browser && agent-browser install && {SKILL_COPY_CMD}"
     return run_background(cmd, "agent-browser-install.log")
 
 
