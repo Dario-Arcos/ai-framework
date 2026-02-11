@@ -6,12 +6,13 @@
 
 ## Overview
 
-Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with persistent, parallel teammates coordinated through hooks, shared state files, and a tmux cockpit running inside Ghostty.
+Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files, and a tmux cockpit running inside Ghostty.
 
 Key properties:
-- **3-layer execution** — lead monitors, teammates coordinate, sub-agents implement with fresh context
-- **Parallel execution** — up to MAX_TEAMMATES coordinators working concurrently
-- **Fresh context per task** — sub-agents get clean 200K windows, avoiding progressive degradation
+- **2-layer execution** — lead orchestrates, ephemeral teammates implement (1 task each) with fresh 200K context
+- **Parallel execution** — up to MAX_TEAMMATES concurrent teammates
+- **Fresh 200K context per task** — each teammate gets a clean context window, avoiding progressive degradation
+- **Reviewer validation** — after implementer completes and gates pass, a reviewer teammate validates SDD compliance
 - **Hook-based quality gates** — TaskCompleted validates, TeammateIdle drives continuity
 - **Cockpit visibility** — tmux windows for services, tests, logs, and shell access
 
@@ -29,7 +30,8 @@ hooks/teammate-idle.py ────── TeammateIdle hook (continuity + circui
 hooks/task-completed.py ───── TaskCompleted hook (quality gates + tracking)
 hooks/hooks.json ──────────── Hook registration
 
-scripts/PROMPT_teammate.md ── Teammate spawn prompt
+scripts/PROMPT_implementer.md ── Implementer teammate prompt
+scripts/PROMPT_reviewer.md ──── Reviewer teammate prompt
 templates/launch-build.sh.template ── Cockpit launcher source
 templates/config.sh.template ──────── Default configuration
 ```
@@ -66,47 +68,47 @@ Gates execute in order: **test → typecheck → lint → build**. First failure
 
 ## Execution Model
 
-Three-layer architecture that preserves fresh context for every task while maintaining parallel coordination.
+Two-layer architecture where the lead orchestrates and ephemeral teammates each handle exactly one task with fresh 200K context.
 
 ```
-Lead (delegate mode)
-├── Teammate-1 (coordinator, persistent)
-│   ├── Sub-agent: Task A (fresh 200K, implements, dies)
-│   ├── Sub-agent: Task D (fresh 200K, implements, dies)
-│   └── ...
-├── Teammate-2 (coordinator, persistent)
-│   ├── Sub-agent: Task B (fresh 200K, implements, dies)
-│   ├── Sub-agent: Task E (fresh 200K, implements, dies)
-│   └── ...
-└── Teammate-3 (coordinator, persistent)
-    ├── Sub-agent: Task C (fresh 200K, implements, dies)
-    └── ...
+Lead (pure orchestrator — reads only 8-word summaries, never code/diffs/reviews)
+├── Implementer-1 (ephemeral: spawn → implement Task A → complete → idle → shutdown)
+├── Implementer-2 (ephemeral: spawn → implement Task B → complete → idle → shutdown)
+├── Reviewer-1   (ephemeral: spawn → review Task A → write review → send summary → idle → shutdown)
+├── Implementer-3 (ephemeral: spawn → implement Task C → complete → idle → shutdown)
+├── Reviewer-2   (ephemeral: spawn → review Task B → write review → send summary → idle → shutdown)
+└── ...
 ```
 
-### Why sub-agents?
+### Why ephemeral teammates?
 
 LLM effective context is ~60% of the full window. For Opus (200K), quality degrades after ~120K tokens. Progressive compaction is lossy — each compaction loses detail, and after N compactions, early context is compressed N times.
 
-Sub-agents solve this: each task starts with a clean 200K window. The coordinator stays lightweight (claim → delegate → verify → learn), growing ~5-10K per task.
+Ephemeral teammates solve this: each task starts with a clean 200K window. No compaction needed, no context degradation.
 
-### Coordinator lifecycle (per task)
+### Implementer lifecycle
 
-1. **Claim** — TaskList → TaskUpdate(status: in_progress)
-2. **Prepare context** — Read .ralph/guardrails.md + .ralph/agents.md + task description
-3. **Delegate** — Task(subagent_type="general-purpose", mode="bypassPermissions") with full context
-4. **Verify** — Check git diff, cockpit status, test output
+1. **Spawn** — Lead creates teammate with task context via Task tool
+2. **Read context** — .ralph/guardrails.md + .ralph/agents.md + task description
+3. **Implement** — Follow SDD (SCENARIO → SATISFY → REFACTOR) with /sop-code-assist
+4. **Gates** — TaskCompleted hook runs quality gates (test → typecheck → lint → build)
 5. **Learn** — Append to .ralph/guardrails.md if non-obvious lesson found
-6. **Complete** — TaskUpdate(status: completed) → TaskCompleted hook runs gates
+6. **Complete** — TaskUpdate(status: completed), commit work
+7. **Idle → Shutdown** — Lead sends shutdown_request after completion
 
-### Sub-agent prompt structure
+### Reviewer lifecycle
 
-The coordinator builds a prompt containing:
-- Task description (full .code-task.md content)
-- .ralph/agents.md (project context, build commands, constraints)
-- .ralph/guardrails.md (accumulated lessons from all teammates)
-- Instruction to use /sop-code-assist or follow SDD manually
+1. **Spawn** — Lead creates reviewer teammate after implementer completes and gates pass
+2. **Review** — Validate SDD compliance via /sop-reviewer on the completed task
+3. **Write** — Save review to `.ralph/reviews/task-{id}-review.md`
+4. **Summarize** — Send 8-word summary to lead via SendMessage
+5. **Idle → Shutdown** — Lead sends shutdown_request after summary received
 
-### Context budget
+### Lead behavior
+
+The lead is a **pure orchestrator**: it reads only 8-word summaries from reviewers, never code, diffs, or full reviews. Decision-making is based on task status and summary signals.
+
+### Context budget (per teammate)
 
 | Component | Tokens | Source |
 |-----------|--------|--------|
@@ -116,40 +118,7 @@ The coordinator builds a prompt containing:
 | .ralph/guardrails.md | ~2-10K | Accumulated lessons |
 | Available for SDD | ~147-170K | Implementation work |
 
-Coordinators use default compaction threshold (~95%). With rotation at 20 tasks, compaction is rarely needed.
-
----
-
-## Coordinator Rotation
-
-Coordinators rotate after `MAX_TASKS_PER_TEAMMATE` completed tasks (default: 20) to prevent progressive context degradation.
-
-### Rotation lifecycle
-
-1. **Threshold reached** — TaskCompleted hook tracks per-teammate counts in `.ralph/metrics.json`
-2. **TeammateIdle hook** detects count >= threshold → exits 0 with rotation message
-3. **Coordinator writes handoff** — `.ralph/handoff-{name}.md` with: completed tasks, decisions, codebase state, warnings
-4. **Coordinator goes idle** — lead receives idle notification
-5. **Lead verifies** — reads metrics.json, confirms handoff file exists
-6. **Lead rotates** — sends `shutdown_request`, spawns replacement with `PROMPT_teammate.md`
-7. **Replacement orients** — reads .ralph/guardrails.md + .ralph/agents.md + handoff files → full context recovery
-
-### Knowledge preservation across rotations
-
-| Mechanism | What survives | Scope |
-|-----------|--------------|-------|
-| `.ralph/guardrails.md` | Gotchas, fixes, patterns | All teammates, all rotations |
-| `.ralph/handoff-{name}.md` | Task summaries, decisions, codebase state | Per-coordinator, read by replacement |
-| `.code-task.md` files | Task status + descriptions | Persistent on disk |
-| `git log` | What was actually implemented | Persistent in repo |
-| `.ralph/agents.md` | Project context, commands | Static, unchanged |
-
-### Why rotation works
-
-- Each replacement coordinator starts with ~20-30K of context (PROMPT + guardrails + handoff + agents.md)
-- Leaves ~170K available for coordination work (~20 tasks × ~5-10K each)
-- Zero compaction needed within a single rotation cycle
-- Handoff files are additive: coordinator-3 reads handoffs from coordinators 1 and 2
+Each teammate uses its full 200K context for a single task. No compaction needed.
 
 ---
 
@@ -171,9 +140,9 @@ Navigation: `Ctrl+B {N}` to switch windows (standard tmux prefix).
 
 ---
 
-## Coordinator Capabilities
+## Teammate Capabilities
 
-Coordinators (teammates) interact with the cockpit programmatically through tmux to monitor sub-agent work:
+Teammates interact with the cockpit programmatically through tmux:
 
 ### Eyes (capture-pane) — Read output from any window
 
@@ -208,7 +177,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
 | `.ralph/agents.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
 | `.ralph/config.sh` | Gates, cockpit services, safety settings | Lead (Step 7) | Hooks, launch-build.sh |
-| `.ralph/handoff-{name}.md` | Rotation context transfer | Coordinator (before rotation) | Replacement coordinator |
+| `.ralph/reviews/task-{id}-review.md` | SDD compliance review per task | Reviewer teammates | Lead (summary only) |
 
 ---
 
@@ -236,5 +205,5 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 ---
 
-*Version: 2.2.0 | Updated: 2026-02-10*
-*Added: coordinator rotation with handoff summaries*
+*Version: 3.0.0 | Updated: 2026-02-11*
+*Redesigned: 2-layer architecture (Lead → ephemeral implementer/reviewer teammates)*

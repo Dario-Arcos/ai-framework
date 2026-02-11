@@ -224,7 +224,16 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 2. `/ralph-orchestrator` auto-invoked — state detection routes to Step 8 continuation
 3. `TeamCreate(team_name="ralph-{goal-slug}")`
 4. For each `.code-task.md`: `TaskCreate` + `TaskUpdate(addBlockedBy=[...])` per `Blocked-By` field
-5. Spawn teammates (up to MAX_TEAMMATES) with `scripts/PROMPT_teammate.md`
+5. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
+   ```python
+   Task(
+       subagent_type="general-purpose",
+       team_name="ralph-{goal-slug}",
+       name="impl-{task-slug}",
+       mode="bypassPermissions",
+       prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}"
+   )
+   ```
 6. Enter monitoring mode (Phase 2)
 
 > Architecture details: [agent-teams-architecture.md](references/agent-teams-architecture.md)
@@ -233,7 +242,7 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 
 ## Phase 2: Monitoring
 
-**Role: MONITOR ONLY.** Lead in delegate mode — coordination tools only. No Write/Edit. No implement.
+**Role: PURE ORCHESTRATOR.** Lead coordinates via summaries only — never reads code, diffs, or review content.
 
 **Tools allowed:**
 - `TaskList` — task progress
@@ -244,20 +253,40 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 
 **If user asks to implement:** Redirect to teammates. Lead coordinates, doesn't implement.
 
-**Rotation handling:**
-When a teammate goes idle (TeammateIdle hook allows it), check `.ralph/metrics.json`:
-1. Read `per_teammate.{name}.completed` count
-2. If >= `MAX_TASKS_PER_TEAMMATE` from `.ralph/config.sh`:
-   - Verify `.ralph/handoff-{name}.md` exists (coordinator writes it before going idle)
-   - Send `shutdown_request` to the teammate
-   - Spawn replacement: `Task(subagent_type="general-purpose", team_name="ralph-{goal}", prompt=PROMPT_teammate.md content)`
-   - The replacement reads handoff files in Phase 1d, gaining predecessor's context
-3. If < threshold: teammate may have hit circuit breaker or finished all tasks — check accordingly
+**Implementer → Reviewer → Next cycle:**
+
+When an implementer goes idle (task completed, gates passed):
+1. Send `shutdown_request` to the implementer
+2. Spawn a reviewer teammate for the completed task:
+   ```python
+   Task(
+       subagent_type="general-purpose",
+       team_name="ralph-{goal-slug}",
+       name="rev-{task-slug}",
+       mode="bypassPermissions",
+       prompt=PROMPT_reviewer.md content + "\n\nYour assigned task ID: {taskId}\nTask file: {path_to_code_task_md}"
+   )
+   ```
+3. When reviewer goes idle — read 8-word summary from SendMessage:
+   - **PASS**: Confirm task done. Check newly unblocked tasks via `TaskList`. Spawn next implementer if unblocked tasks exist.
+   - **FAIL**: Send `shutdown_request` to reviewer. Spawn NEW implementer for the same task with review feedback:
+     ```python
+     Task(
+         subagent_type="general-purpose",
+         team_name="ralph-{goal-slug}",
+         name="impl-{task-slug}-r2",
+         mode="bypassPermissions",
+         prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
+     )
+     ```
+4. Send `shutdown_request` to reviewer after reporting
+
+**Lead NEVER reads:** review file content, code diffs, test output. Only 8-word summaries.
 
 **Completion flow:**
-1. All tasks complete — teammates go idle (TeammateIdle hook allows it)
+1. All tasks complete — all reviewers report PASS
 2. Lead verifies: all `.code-task.md` files have `Status: COMPLETED`
-3. Lead sends `shutdown_request` to each teammate
+3. Lead sends `shutdown_request` to any remaining teammates
 4. `TeamDelete` cleans up team resources
 5. Inform user: "Ejecucion completa. {N} tasks completadas. {metrics summary}."
 
@@ -269,8 +298,8 @@ When a teammate goes idle (TeammateIdle hook allows it), check `.ralph/metrics.j
 
 1. **Single Entry Point** — Invoke once, orchestrate everything. Never invoke SOP skills directly.
 2. **Checkpoint Before Execution** — Planning can be interactive OR autonomous, but user ALWAYS approves before execution begins.
-3. **Fresh Context + Guardrails = Compounding Intelligence** — Teammates coordinate; sub-agents implement with fresh 200K context per task. `guardrails.md` accumulates lessons across all tasks and teammates. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Coordinators rotate at task thresholds for fresh context; handoff summaries + guardrails.md preserve accumulated knowledge across rotations.
-4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the handoff mechanism. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
+3. **Fresh Context + Guardrails = Compounding Intelligence** — Each teammate gets fresh 200K context for a single task. `guardrails.md` accumulates lessons across all tasks. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Reviewer teammates validate SDD compliance after automated gates pass.
+4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the task contract. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
 
 ---
 

@@ -12,7 +12,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 |--------|-------------------------------|--------------------------|
 | **When used** | User present, learning, complex decisions | Batch processing, overnight, parallel tasks |
 | **Invoker** | User manually or orchestrator in interactive mode | launch-build.sh launched by ralph-orchestrator |
-| **Context** | Single session, full context retained | Persistent per teammate, compacted by Claude Code |
+| **Context** | Single session, full context retained | Fresh 200K context per task (ephemeral teammates) |
 | **User interaction** | Confirms at each step | None after cockpit launch |
 | **Parallelism** | Sequential (single session) | Parallel (up to MAX_TEAMMATES) |
 | **Blocker handling** | AskUserQuestion | Document in blockers.md, mark task BLOCKED, move to next |
@@ -59,21 +59,27 @@ bash .ralph/launch-build.sh
 ```
 
 **Characteristics:**
-- Persistent context per teammate (compacted by Claude Code, not fresh each task)
-- Parallel execution with up to MAX_TEAMMATES concurrent coordinators
+- Fresh 200K context per teammate (each teammate handles exactly 1 task, then shuts down)
+- Parallel execution with up to MAX_TEAMMATES concurrent teammates
 - Quality gates enforced via TaskCompleted hook (not inline)
 - TeammateIdle hook drives continuity (exit 2 = keep working)
 - Cockpit provides live visibility via tmux windows
 
-**Teammate lifecycle:**
-1. Read `.ralph/guardrails.md` (accumulated lessons from all teammates)
-2. Claim next PENDING task from Agent Teams task list
-3. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
-4. Run quality gates (triggered by TaskCompleted hook on completion)
-5. If gates pass: task accepted, failure counter reset, metrics updated
-6. If gates fail: task rejected with feedback, teammate fixes and retries
-7. Commit completed work
-8. TeammateIdle hook fires → claim next task (or idle if all done)
+**Implementer lifecycle:**
+1. Spawn with task context (guardrails.md + agents.md + task description)
+2. Implement with SDD (SCENARIO → SATISFY → REFACTOR)
+3. Run quality gates (triggered by TaskCompleted hook on completion)
+4. If gates pass: task accepted, failure counter reset, metrics updated
+5. If gates fail: task rejected with feedback, teammate fixes and retries
+6. Commit completed work
+7. Idle → lead sends shutdown_request
+
+**Reviewer lifecycle (after implementer completes + gates pass):**
+1. Spawn with review context (task description + diff)
+2. Validate SDD compliance via /sop-reviewer
+3. Write review to `.ralph/reviews/task-{id}-review.md`
+4. Send 8-word summary to lead via SendMessage
+5. Idle → lead sends shutdown_request
 
 **Communication mechanisms:**
 
@@ -174,7 +180,7 @@ graph LR
     subgraph "Execution (ALWAYS Agent Teams)"
         C --> D[launch-build.sh]
         D --> E[Ghostty cockpit]
-        E --> F[Persistent teammates]
+        E --> F[Ephemeral teammates]
     end
 
     style D fill:#ffe1e1

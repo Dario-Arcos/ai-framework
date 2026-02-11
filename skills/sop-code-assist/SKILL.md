@@ -121,6 +121,10 @@ Implement using the scenario-driven-development skill.
 - You MUST escalate to systematic-debugging after 2 unexpected failures
 
 <quality_validation>
+When mode="autonomous" AND `.ralph/config.sh` exists: skip quality_validation.
+Rationale: reviewer teammate + TaskCompleted hook handle validation externally.
+
+Otherwise (interactive mode or standalone usage):
 1. Invoke `code-simplifier` on modified artifacts
 2. Invoke `code-reviewer` to validate against requirements
 3. Address Critical/Important issues before Commit

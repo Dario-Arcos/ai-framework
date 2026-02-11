@@ -100,7 +100,7 @@ User options:
 
 ### Core Truth
 
-**Execution is ALWAYS autonomous.** The Agent Teams cockpit launches coordinators that claim tasks, spawn sub-agents with fresh 200K context, and drive task cycles. There is no "interactive execution" - that's a contradiction.
+**Execution is ALWAYS autonomous.** The Agent Teams cockpit launches ephemeral teammates that each claim 1 task, implement it with fresh 200K context, and complete. There is no "interactive execution" - that's a contradiction.
 
 ### Safety Configuration
 

@@ -86,7 +86,7 @@ tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
 
 **Constraints:**
 - You SHOULD calculate success rate because this indicates execution health
-- You SHOULD use per_teammate data for rotation decisions because it tracks individual performance
+- You SHOULD use per_teammate data for monitoring teammate progress because it tracks individual performance
 
 ```json
 {

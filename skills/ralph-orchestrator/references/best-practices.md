@@ -71,13 +71,13 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 After every session verify:
 1. `.ralph/guardrails.md` has new memories (if gotchas found)
-2. `.ralph/guardrails.md` reflects final state (shared memory across teammates and sub-agents)
+2. `.ralph/guardrails.md` reflects final state (shared memory across teammates and teammates)
 
 **Capture checklist:**
 | Artifact | Check | Purpose |
 |----------|-------|---------|
 | .ralph/guardrails.md | New memories added? | Prevent repeat mistakes |
-| .ralph/guardrails.md | State updated? | Shared memory for teammates and sub-agents |
+| .ralph/guardrails.md | State updated? | Shared memory for teammates and teammates |
 
 > Cross-reference: [state-files.md](state-files.md) for state file management.
 
@@ -107,7 +107,7 @@ After every session verify:
 |--------------|---------|----------|
 | Foreground launch | Timeout kills process | Use `run_in_background=true` |
 | Blocking monitors | Claude stuck waiting | Use `block=false` with TaskOutput |
-| Context pollution | Sub-agent context degraded | Update plan, don't pollute sub-agent |
+| Context pollution | Teammate context degraded | Update plan, don't pollute teammate |
 | Skip prerequisites | Missing SOP artifacts | Always validate Step 0 |
 | Ignore red flags | Issues compound | Intervene at first sign |
 
@@ -130,10 +130,10 @@ TaskOutput(task_id="{id}", block=false)
 **Context philosophy:**
 - 40-60% sweet spot emerges from atomic task design
 - INPUT-based control via auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`)
-- Fresh context via sub-agents — no OUTPUT measurement or context-based exits
+- Fresh context via teammates — no OUTPUT measurement or context-based exits
 
 **Knowledge artifacts:**
-- `.ralph/guardrails.md`: Warning signs, rules, and shared memory across teammates and sub-agents
+- `.ralph/guardrails.md`: Warning signs, rules, and shared memory across teammates and teammates
 
 ---
 

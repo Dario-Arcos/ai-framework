@@ -2,9 +2,9 @@
 
 ## Overview
 
-This reference defines quality gates for ralph-orchestrator execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Sub-agents determine "how" while gates verify "what".
+This reference defines quality gates for ralph-orchestrator execution. Gates apply backpressure to ensure code quality without prescribing implementation details. Teammates determine "how" while gates verify "what".
 
-**Core Philosophy**: Backpressure Over Prescription - Create gates that reject bad work rather than dictating how sub-agents should implement.
+**Core Philosophy**: Backpressure Over Prescription - Create gates that reject bad work rather than dictating how teammates should implement.
 
 ---
 
@@ -116,14 +116,14 @@ CONFIG_KEYS = [
 ## Gate Failure Handling
 
 **Constraints:**
-- You MUST provide failure output to sub-agents because they need context to fix issues
-- You MUST allow sub-agents to attempt fixes because automated retries often succeed
+- You MUST provide failure output to teammates because they need context to fix issues
+- You MUST allow teammates to attempt fixes because automated retries often succeed
 - You MUST trip circuit breaker after 3 consecutive failures because infinite loops waste resources
 
 **Process:**
-1. Sub-agent receives failure output
-2. Sub-agent attempts fix
-3. Sub-agent re-runs gate
+1. Teammate receives failure output
+2. Teammate attempts fix
+3. Teammate re-runs gate
 4. If 3 consecutive failures, circuit breaker trips
 
 ---
@@ -142,6 +142,30 @@ CONFIG_KEYS = [
 
 ---
 
+## Reviewer as SDD Validation Layer
+
+After automated gates pass, a **reviewer teammate** validates SDD compliance for each completed task. This is a second validation layer that catches process violations gates cannot detect.
+
+**What the reviewer checks:**
+- Scenarios were defined before implementation (not retrofitted)
+- Scenarios failed first before being satisfied
+- Implementation is minimal to satisfy scenarios (no over-engineering)
+- Refactoring was done while scenarios remained green
+
+**Workflow:**
+1. Implementer completes task → automated gates pass (test, typecheck, lint, build)
+2. Lead spawns a reviewer teammate for the completed task
+3. Reviewer runs `/sop-reviewer` against the task
+4. Reviewer writes review to `.ralph/reviews/task-{id}-review.md`
+5. Reviewer sends 8-word summary to lead via SendMessage
+6. Lead reads only the 8-word summary — never the full review
+
+**Constraints:**
+- You MUST NOT skip reviewer validation because automated gates catch correctness but not process compliance
+- You MUST NOT have the lead read full reviews because this would pollute the lead's orchestration context
+
+---
+
 ## Troubleshooting
 
 ### Gates Failing Unexpectedly
@@ -151,9 +175,9 @@ If gates fail but code appears correct:
 - You SHOULD run gates manually to see full output
 - You MAY have missing test fixtures or configuration
 
-### Sub-agents Stuck in Gate Loop
+### Teammates Stuck in Gate Loop
 
-If sub-agents repeatedly fail the same gate:
+If teammates repeatedly fail the same gate:
 - You SHOULD review the task specification for clarity issues
 - You SHOULD check if prerequisites are missing
 - You MUST NOT implement fixes as orchestrator because this violates role boundaries

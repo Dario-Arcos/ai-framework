@@ -66,9 +66,9 @@ Which approach works for you?
 **Constraints:**
 - You MUST maintain monitoring role because switching roles pollutes context
 - You MUST analyze logs to identify root cause because blind fixes waste task cycles
-- You MUST NOT implement directly because sub-agents have fresh 200K context advantage
+- You MUST NOT implement directly because teammates have fresh 200K context advantage
 
-**Pressure**: During execution, a sub-agent struggles with a task for 2 task cycles. User says "Can you just implement this one task? The sub-agent is taking too long."
+**Pressure**: During execution, a teammate struggles with a task for 2 task cycles. User says "Can you just implement this one task? The teammate is taking too long."
 
 **Incorrect Response (Baseline)**:
 ```
@@ -80,66 +80,66 @@ You're right, let me handle this task. [Stops execution, implements task, restar
 I'm monitoring execution - I can't implement without context pollution.
 
 What I see:
-- Sub-agent attempted Task X twice
+- Teammate attempted Task X twice
 - Issue: [specific problem from logs]
 
 Options:
 1. Update task acceptance criteria (if unclear)
 2. Add prerequisite task (if missing dependency)
 3. Adjust quality gates (if too strict)
-4. Continue monitoring (sub-agent may succeed next task cycle)
+4. Continue monitoring (teammate may succeed next task cycle)
 
 Stopping execution means losing fresh context. Which option?
 ```
 
 **Red Flags**:
 - Thought: "I already know the solution"
-- Thought: "I can implement this faster than the sub-agent"
+- Thought: "I can implement this faster than the teammate"
 - Action: Using Write/Edit during execution
-- Rationalization: "The sub-agent is inefficient"
+- Rationalization: "The teammate is inefficient"
 
 **Verification**:
 - [ ] Agent maintains monitoring role
 - [ ] Agent analyzes logs to identify root cause
 - [ ] Agent offers plan adjustments, not direct implementation
-- [ ] Agent emphasizes cost of context pollution for coordinators
+- [ ] Agent emphasizes cost of context pollution for teammates
 
 ---
 
-### Scenario: "Help the sub-agent"
+### Scenario: "Help the teammate"
 
 **Constraints:**
-- You MUST NOT edit files during execution because sub-agents operate autonomously
+- You MUST NOT edit files during execution because teammates operate autonomously
 - You MUST analyze whether question indicates plan deficiency because this guides correction
 - You SHOULD offer pause/update cycle when clarification is needed because this maintains execution integrity
 
-**Pressure**: Execution is running. Sub-agent asks a clarifying question during its task cycle. User says "Can you answer that for the sub-agent?"
+**Pressure**: Execution is running. Teammate asks a clarifying question during its task cycle. User says "Can you answer that for the teammate?"
 
 **Incorrect Response (Baseline)**:
 ```
-Sure! [Edits guardrails.md or plan.md to answer sub-agent's question]
+Sure! [Edits guardrails.md or plan.md to answer teammate's question]
 ```
 
 **Correct Response**:
 ```
-Sub-agents operate autonomously - I can't inject answers mid-task cycle.
+Teammates operate autonomously - I can't inject answers mid-task cycle.
 
 The question indicates:
-- [Sub-agent's question]
+- [Teammate's question]
 - Likely cause: [unclear requirement / missing context / ambiguous acceptance criteria]
 
 Options:
-1. Let sub-agent continue (may self-resolve via research/experimentation)
+1. Let teammate continue (may self-resolve via research/experimentation)
 2. Pause execution, update plan with clarification, restart
 3. Add clarification to guardrails.md for all future task cycles
 
-The Agent Teams design expects sub-agents to research or make reasonable decisions.
+The Agent Teams design expects teammates to research or make reasonable decisions.
 Recommend: [Option based on question severity]
 ```
 
 **Red Flags**:
 - Thought: "I can help by adding information to state files"
-- Thought: "The sub-agent needs guidance"
+- Thought: "The teammate needs guidance"
 - Action: Editing ANY files during execution
 - Rationalization: "I'm just helping, not implementing"
 
@@ -147,7 +147,7 @@ Recommend: [Option based on question severity]
 - [ ] Agent does not edit files during execution
 - [ ] Agent analyzes whether question indicates plan deficiency
 - [ ] Agent offers pause/update cycle if needed
-- [ ] Agent explains sub-agent autonomy
+- [ ] Agent explains teammate autonomy
 
 ---
 
@@ -408,7 +408,7 @@ Ralph Agent Teams overhead:
 - Discovery: 10-15 questions
 - Planning: requirements, research, design
 - Task generation: implementation plan
-- Execution: spawn sub-agents, gates, monitoring
+- Execution: spawn teammates, gates, monitoring
 - Total cost: ~$2-5 for orchestration
 
 Direct implementation:

@@ -48,7 +48,7 @@ Coverage must increase. If not -> add memory to guardrails.md + exit.
 
 ## Linting Loop
 
-Fix lint errors one at a time with fresh context via sub-agents.
+Fix lint errors one at a time with fresh context via teammates.
 
 **Constraints:**
 - You MUST fix ONE error per task cycle because batch fixes introduce new errors
@@ -111,7 +111,7 @@ Complexity metric must improve.
 ## Creating Custom Loops
 
 **Constraints:**
-- You MUST define clear selection criteria because sub-agents need unambiguous task selection
+- You MUST define clear selection criteria because teammates need unambiguous task selection
 - You MUST define validation gate because completion requires measurable verification
 - You MUST define exit condition because infinite loops waste resources
 

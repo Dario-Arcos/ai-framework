@@ -78,7 +78,7 @@ graph TD
 **Constraints:**
 - You MUST NOT skip referent discovery because proven patterns inform better designs
 - You MUST NOT skip planning if design doesn't exist because ad-hoc design leads to poor architecture
-- You MUST complete task generation before execution because coordinators and sub-agents need structured tasks
+- You MUST complete task generation before execution because teammates need structured tasks
 
 ```mermaid
 graph TD
@@ -305,7 +305,7 @@ Steps:
 
 **Constraints:**
 - You MUST NOT use ralph-orchestrator for 1-line fixes because 10x overhead wastes resources
-- You MUST NOT skip planning phase because confused sub-agents produce poor output
+- You MUST NOT skip planning phase because confused teammates produce poor output
 - You MUST NOT use Ralph on legacy code without first understanding it via standalone sop-reverse because changes break existing assumptions
 - You MUST NOT run a single team for XL tasks because unclear progress leads to stalled execution
 
@@ -321,7 +321,7 @@ Solution: Direct implementation for tasks < 3 steps
 
 ```
 Problem: "I'll just start the cockpit, I know what I want"
-Reality: Sub-agents confused, poor quality output
+Reality: Teammates confused, poor quality output
 Solution: Always complete planning first
 ```
 

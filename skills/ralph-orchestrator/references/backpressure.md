@@ -126,8 +126,8 @@ One task = one context window.
 
 Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges naturally from atomic task design.
 
-**INPUT-based control**: auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) manages context size between task cycles
-**No OUTPUT measurement**: We don't track or exit based on context percentage
+**Fresh 200K per teammate**: Each teammate is ephemeral — spawned for exactly 1 task with a clean 200K context window. No compaction needed, no progressive degradation.
+**No OUTPUT measurement**: We don't track or exit based on context percentage.
 
 ---
 
@@ -218,7 +218,7 @@ If circuit breaker triggers frequently:
 
 If tasks consistently fail to complete in one task cycle:
 - You SHOULD split task into smaller atomic parts
-- You SHOULD reduce exploration in `PROMPT_teammate.md`
+- You SHOULD reduce exploration scope in teammate prompts (`PROMPT_implementer.md`, `PROMPT_reviewer.md`)
 - You SHOULD use auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) to reduce context size
 
 ---

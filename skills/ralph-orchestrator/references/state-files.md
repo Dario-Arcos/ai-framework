@@ -20,6 +20,7 @@ This reference defines the state files used by Ralph for persistent state manage
 | `.ralph/guardrails.md` | Memories (fixes, decisions, patterns) | Current execution |
 | `.ralph/failures.json` | Per-teammate failure tracking | Current execution |
 | `.ralph/metrics.json` | Task success/failure counts | Current execution |
+| `.ralph/reviews/task-{id}-review.md` | SDD compliance reviews per task | Current execution |
 | `.ralph/specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
 | `.ralph/specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
 | `.ralph/specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
@@ -118,6 +119,28 @@ Completed-At: 2026-02-10T14:30:00Z
 ```
 
 **Blocked-By field**: Tasks can declare dependencies on other tasks. The lead uses `TaskUpdate(addBlockedBy=[...])` to enforce ordering in Agent Teams.
+
+---
+
+## Reviews Directory (.ralph/reviews/)
+
+SDD compliance reviews written by reviewer teammates after implementers complete tasks and automated gates pass.
+
+**Directory structure:**
+```
+.ralph/reviews/
+├── task-01-review.md
+├── task-02-review.md
+└── ...
+```
+
+**Format:** Each file contains the full review output from `/sop-reviewer`, including SDD compliance assessment, findings, and recommendations.
+
+**Behavior:**
+- Created by reviewer teammates (one per completed task)
+- Reviewer sends an 8-word summary to the lead via SendMessage
+- Lead reads only the summary — never the full review file
+- Preserved after execution for human inspection
 
 ---
 

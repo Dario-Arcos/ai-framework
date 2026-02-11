@@ -226,9 +226,9 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
 ### 3. sop-task-generator
 
 **Constraints:**
-- You MUST include acceptance criteria for each task because sub-agents need clear completion criteria
+- You MUST include acceptance criteria for each task because teammates need clear completion criteria
 - You MUST size tasks appropriately (M-size optimal) because oversized tasks exhaust context
-- You MUST NOT create tasks without file lists because sub-agents need to know scope
+- You MUST NOT create tasks without file lists because teammates need to know scope
 
 **Purpose**: Generate structured implementation tasks from design
 
@@ -366,7 +366,8 @@ sequenceDiagram
     participant P as sop-planning
     participant T as sop-task-generator
     participant C as Agent Teams Cockpit
-    participant S as Sub-agents
+    participant S as Teammates
+    participant Rev as Reviewer
 
     U->>O: /ralph-orchestrator
 
@@ -393,9 +394,11 @@ sequenceDiagram
     T-->>O: plan.md created
 
     O->>C: Launch cockpit: bash .ralph/launch-build.sh
-    C->>S: Task 1
-    S->>C: Complete
-    Note over C,S: Continues until all tasks done
+    C->>S: Task 1 (implementer)
+    S->>C: Complete + gates pass
+    C->>Rev: Review Task 1 (reviewer)
+    Rev->>C: 8-word summary
+    Note over C,S,Rev: Continues until all tasks implemented + reviewed
     C-->>O: All tasks completed
     O->>U: Implementation complete
 ```
@@ -419,8 +422,8 @@ sequenceDiagram
 ## Directory Structure After Full Flow
 
 **Constraints:**
-- You MUST maintain directory structure because teammates and sub-agents expect standard paths
-- You MUST NOT modify specs structure during execution because sub-agents read from fixed locations
+- You MUST maintain directory structure because teammates expect standard paths
+- You MUST NOT modify specs structure during execution because teammates read from fixed locations
 - You SHOULD commit specs before execution because this creates recovery point
 
 ```
@@ -460,8 +463,8 @@ project-root/
 ## Handoff Between Skills
 
 **Constraints:**
-- You MUST use file paths for handoff because this maintains separation of concerns
-- You MUST verify handoff files exist before proceeding because missing files cause failures
+- You MUST use file paths for skill-to-skill data transfer because this maintains separation of concerns
+- You MUST verify output files exist before proceeding because missing files cause failures
 
 ### Referent Discovery → Planning
 
@@ -533,7 +536,7 @@ project-root/
 # Orchestrator launches the Agent Teams cockpit with:
 bash .ralph/launch-build.sh
 
-# Teammates and sub-agents read:
+# Teammates read:
 # - .ralph/specs/user-auth/implementation/plan.md (tasks)
 # - .ralph/specs/user-auth/implementation/step*/task-*.code-task.md (if exist)
 # - .ralph/specs/user-auth/design/detailed-design.md (context)
@@ -607,7 +610,7 @@ Good task: "- [ ] Implement JWT token generation | Size: M
 
 ### Execution Failure
 
-**Symptom**: Sub-agent cannot complete task
+**Symptom**: Teammate cannot complete task
 
 **Detection**: Quality gates fail repeatedly (TaskCompleted hook)
 
@@ -749,9 +752,9 @@ If task list has many S-size tasks:
 - You SHOULD aim for 40-60% context usage per task
 - You MUST NOT create tasks smaller than single function implementation
 
-### Sub-agents Can't Find Context in Specs
+### Teammates Can't Find Context in Specs
 
-If sub-agents report missing information:
+If teammates report missing information:
 - You SHOULD verify detailed-design.md has all implementation details
 - You SHOULD add cross-references from plan.md to design files
 - You MUST update specs and restart the cockpit if information is truly missing
