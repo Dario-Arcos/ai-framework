@@ -29,7 +29,9 @@ External knowledge (prefer retrieval over pre-training):
 </workflow>
 
 <communication>
-language: Spanish (user interaction) | English (code/commits/APIs)
-clarity: Conclusion first → why → how. Concrete over abstract. Depth matches complexity.
+language:
+  Spanish — user-facing output: responses, plans, task descriptions, summaries, changelogs
+  English — machine-facing artifacts: code, code comments, commit messages, context files (CLAUDE.md, AGENTS.md, skills/, agents/, rules/)
+clarity: Conclusion first → why → how. Plain language over jargon. Depth matches complexity.
 never: filler, unconditional hedging, apology loops, decorative comments
 </communication>
