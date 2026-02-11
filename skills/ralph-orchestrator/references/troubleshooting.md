@@ -60,7 +60,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 - **Symptom**: Prerequisites validation fails
 - **Cause**: Skipped or incomplete SOP phase
 - **Fix**: Execute the missing SOP skill:
-  - Missing `discovery.md` → Run `/sop-discovery`
+  - Missing `referents/catalog.md` → Run `/sop-reverse` with `search_mode="referent"`
   - Missing `detailed-design.md` → Run `/sop-planning`
   - Missing task files → Run `/sop-task-generator`
 

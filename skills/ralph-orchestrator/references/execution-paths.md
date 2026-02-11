@@ -167,7 +167,7 @@ Is this ralph-orchestrator execution?
 ```mermaid
 graph LR
     subgraph "Planning (Interactive OR Autonomous)"
-        A[sop-discovery] --> B[sop-planning]
+        A[sop-reverse referent] --> B[sop-planning]
         B --> C[sop-task-generator]
     end
 

@@ -1,6 +1,6 @@
 ---
 name: ralph-orchestrator
-description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel teammates with persistent context improve quality. Orchestrates SOP skills (discovery, planning, task-generation) then launches Agent Teams cockpit.
+description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel teammates with persistent context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams cockpit.
 ---
 
 # Ralph Orchestrator
@@ -13,30 +13,14 @@ description: Use when building features requiring planning + autonomous executio
 - **Planning**: Interactive OR autonomous (user chooses)
 - **Execution**: ALWAYS autonomous — Agent Teams cockpit (tmux, Ghostty optional)
 
-## When to Use
-
-- New features or projects requiring multi-task implementation
-- Large implementation plans with parallelizable work
-- Overnight/AFK development with quality gates
-
-## When NOT to Use
-
-| Situation | Use Instead |
-|-----------|-------------|
-| Simple single-file change | Direct implementation |
-| Only debugging | `systematic-debugging` skill |
-| Only code review | `code-reviewer` agent or `pull-request` skill |
-| Research only, no implementation | `sop-reverse` alone |
-
 ## Parameters
 
 - **goal** (optional): High-level description. Asked in Step 1 if not provided.
-- **flow** (optional, default: `"forward"`): `forward` (build from scratch), `referent` (build with referents), or `reverse` (investigate only).
 - **planning_mode** (optional): `interactive` (default) or `autonomous`.
 
 ## Output
 
-- Artifacts from sop-discovery, sop-planning, sop-task-generator in `.ralph/specs/{goal}/`
+- Artifacts from sop-reverse, sop-planning, sop-task-generator in `.ralph/specs/{goal}/`
 - Autonomous execution via Agent Teams — progress in `TaskList`, metrics in `.ralph/metrics.json`
 
 **{goal} derivation:** Slugify `goal_description` to kebab-case (lowercase, spaces to hyphens, remove special chars, max 50 chars). Example: 'Add Real-Time Collaboration' becomes `add-real-time-collaboration`. All SOP skills MUST use this same derivation for pipeline continuity.
@@ -45,8 +29,8 @@ description: Use when building features requiring planning + autonomous executio
 
 1. **State Detection**: Scan .ralph/specs/, detect phase, offer resume or new
 2. **Step 0**: Choose planning mode (Interactive/Autonomous)
-3. **Step 1**: Validate prerequisites + detect flow (Forward/Referent/Reverse)
-4. **Step 2**: Discovery (`sop-discovery`) OR Referent Discovery (`sop-reverse referent`) OR Investigation (`sop-reverse`)
+3. **Step 1**: Validate prerequisites
+4. **Step 2**: Referent Discovery (`sop-reverse referent`)
 5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
 7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
@@ -90,21 +74,16 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | Any `*.code-task.md` with `Status: PENDING` | execution (Step 8) |
 | `implementation/plan.md` without task files | task-generator (Step 4) |
 | `design/detailed-design.md` | planning (Step 3) |
-| `discovery.md` | discovery-complete (Step 3) |
-| `investigation.md` + `specs-generated/` | reverse-complete (Step 3) |
 | `referents/catalog.md` | referent-complete (Step 3) |
-| `discovery.md` with `SPIKE_REQUIRED` | spike-required (Step 2) |
 | Nothing | NEW |
 
-If spike-required: present spikes to user (interactive) or document in blockers.md (autonomous). After spikes resolved, re-run sop-discovery.
-
-**Use AskUserQuestion** to confirm: resume from detected phase, choose goal if multiple, choose flow if NEW. Surface `blockers.md` content if exists. After confirmation, skip to detected phase.
+**Use AskUserQuestion** to confirm: resume from detected phase, or choose goal if multiple. Surface `blockers.md` content if exists. After confirmation, skip to detected phase.
 
 ### Convergence Model
-The SOP pipeline (discovery → planning → task-gen → execution) is conceptually a
+The SOP pipeline (referent discovery → planning → task-gen → execution) is conceptually a
 **convergence loop**, not a linear waterfall:
 - If execution reveals design gaps → loop back to planning
-- If planning reveals unknown risks → loop back to discovery
+- If planning reveals unknown risks → loop back to referent discovery
 - The State Detection table enables re-entry at any phase
 - Convergence = all .code-task.md files reach Status: COMPLETED with scenarios satisfied
 
@@ -128,33 +107,15 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 
 > Mode recommendations: [supervision-modes.md](references/supervision-modes.md)
 
-### Step 1: Validate Prerequisites and Detect Flow
+### Step 1: Validate Prerequisites
 
-- [ ] `.ralph/specs/{goal}/discovery.md` exists — If missing: Execute `sop-discovery`
+- [ ] `.ralph/specs/{goal}/referents/catalog.md` exists — If missing: Execute `sop-reverse` in referent mode (Step 2)
 - [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning`
 - [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator`
 
-**Detect Flow (Use AskUserQuestion):**
-```text
-Question: "Que tipo de proyecto es?"
-Header: "Route Selection"
-Options:
-- Build from scratch (Forward): Discovery → Planning → Execution. For new features without prior art.
-- Build with referents (Referent): Referent Discovery → Planning with inspiration → Execution. Find world-class implementations first, then design on proven patterns.
-- Investigate only (Reverse): Reverse engineering, no implementation follows. Understand existing artifacts.
-```
+**You MUST NOT** skip referent discovery, skip planning, or proceed with missing prerequisites.
 
-**You MUST NOT** skip discovery, skip planning, or proceed with missing prerequisites.
-
-### Step 2A: Discovery (Forward)
-
-```
-/sop-discovery goal_description="{goal}" mode={PLANNING_MODE}
-```
-
-Output: `.ralph/specs/{goal}/discovery.md` — Continue to Step 3.
-
-### Step 2B: Referent Discovery (Build with Referents)
+### Step 2: Referent Discovery
 
 ```
 /sop-reverse target="{concept}" search_mode="referent" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
@@ -162,31 +123,13 @@ Output: `.ralph/specs/{goal}/discovery.md` — Continue to Step 3.
 
 Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3 with referent patterns as planning input.
 
-### Step 2C: Reverse Investigation (Investigate Only)
-
-```
-/sop-reverse target="{path}" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
-```
-
-Ask user if continuing to Forward (interactive). In autonomous mode, continue by default.
-
 ### Step 3: Planning
 
-**Forward flow (build from scratch):**
-```
-/sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/discovery.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
-```
-
-**Referent flow (build with referents):**
 ```
 /sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
-Note: sop-planning receives `referents/extracted-patterns.md` as additional design context. The referent catalog provides proven patterns that inform architecture decisions.
 
-**Reverse flow (investigate only, continuing to build):**
-```
-/sop-planning rough_idea=".ralph/specs/{goal}/specs-generated/" discovery_path=".ralph/specs/{goal}/investigation.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
-```
+Note: sop-planning receives `referents/extracted-patterns.md` as additional design context. The referent catalog provides proven patterns that inform architecture decisions.
 
 Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
 
@@ -202,7 +145,7 @@ Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
 
 Populate `templates/AGENTS.md.template` with operational context for teammates.
 
-**Sources:** `.ralph/specs/{goal}/discovery.md` (constraints, risks), `.ralph/specs/{goal}/design/detailed-design.md` (architecture), manifest files (commands), `.ralph/config.sh` (quality).
+**Sources:** `.ralph/specs/{goal}/referents/catalog.md` (proven patterns, constraints), `.ralph/specs/{goal}/design/detailed-design.md` (architecture), manifest files (commands), `.ralph/config.sh` (quality).
 
 **Technology Stack**: Extract the complete Technology Stack table from `detailed-design.md` Section 3.4 and populate the `## Stack` section in AGENTS.md. Include ALL rows (runtime, frameworks, testing tools). This is the authoritative technology reference — teammates MUST follow it.
 
@@ -215,7 +158,7 @@ Populate `templates/AGENTS.md.template` with operational context for teammates.
 
 **MANDATORY before execution, regardless of planning mode.**
 
-Present to user: planning mode used, artifacts generated (discovery, design, N task files, `.ralph/agents.md`), key decisions from design document, blockers found, task summary by step with complexity.
+Present to user: planning mode used, artifacts generated (referent catalog, design, N task files, `.ralph/agents.md`), key decisions from design document, blockers found, task summary by step with complexity.
 
 **Use AskUserQuestion:**
 ```text
@@ -358,8 +301,7 @@ When a teammate goes idle (TeammateIdle hook allows it), check `.ralph/metrics.j
 
 | Skill | Step | Purpose |
 |-------|------|---------|
-| `sop-discovery` | 2A | Constraints, risks |
+| `sop-reverse` | 2 | Referent discovery |
 | `sop-planning` | 3 | Research, design |
 | `sop-task-generator` | 4 | Task files |
-| `sop-reverse` | 2B/2C | Referent discovery, Investigation |
 | `sop-code-assist` | Teammates | SDD implementation |

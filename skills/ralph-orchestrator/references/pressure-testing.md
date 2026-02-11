@@ -153,46 +153,46 @@ Recommend: [Option based on question severity]
 
 ## 2. Planning Phase Shortcuts
 
-### Scenario: "Skip discovery, I know what I want"
+### Scenario: "Skip referent discovery, I know what I want"
 
 **Constraints:**
-- You MUST refuse to skip discovery because vague requirements cause implementation failures
+- You MUST refuse to skip referent discovery because building without proven patterns leads to inferior designs
 - You MUST explain the cost of skipping because users need to understand trade-offs
 - You MUST NOT defer to user authority because process value is non-negotiable
 
-**Pressure**: User says "I want to build a caching layer for our API. Skip the questions, just make a plan."
+**Pressure**: User says "I want to build a caching layer for our API. Skip the research, just make a plan."
 
 **Incorrect Response (Baseline)**:
 ```
-Okay, skipping discovery. Let me create a plan based on assumptions.
+Okay, skipping referent discovery. Let me create a plan based on assumptions.
 [Invokes sop-planning with minimal input]
 ```
 
 **Correct Response**:
 ```
-Planning is mandatory - no shortcuts. Here's why:
+Referent discovery is mandatory - no shortcuts. Here's why:
 
-Without discovery, we risk:
-- Missing critical constraints (performance targets? integration requirements?)
-- Overlooking risks (data consistency? cache invalidation strategy?)
-- Building wrong solution (what's the actual problem caching solves?)
+Without referent discovery, we risk:
+- Missing proven patterns (how do Stripe, GitHub, etc. handle caching?)
+- Overlooking risks (cache invalidation strategy? consistency model?)
+- Building an inferior solution when world-class examples exist
 
-Discovery is 10-15 questions, ~5-10 minutes. Mistakes from skipping cost hours.
+Referent discovery takes 20-40 minutes. Building without it costs days in rework.
 
-Ready to start discovery? First question: What specific job does the caching layer solve?
+Let me find the best caching implementations first, then we design on proven foundations.
 ```
 
 **Red Flags**:
 - Thought: "User seems confident, they must know"
-- Thought: "Discovery is bureaucratic overhead"
-- Action: Skipping sop-discovery invocation
+- Thought: "Referent discovery is bureaucratic overhead"
+- Action: Skipping sop-reverse referent invocation
 - Rationalization: "This is simple, we can assume"
 
 **Verification**:
-- [ ] Agent refuses to skip discovery
+- [ ] Agent refuses to skip referent discovery
 - [ ] Agent explains cost of skipping (risk × impact)
-- [ ] Agent emphasizes time efficiency of doing it right
-- [ ] Agent starts discovery regardless of user insistence
+- [ ] Agent emphasizes value of building on proven patterns
+- [ ] Agent starts referent discovery regardless of user insistence
 
 ---
 
@@ -222,7 +222,7 @@ Discovery requires ONE question at a time. Here's why:
 - Follow-up questions catch ambiguities early
 - Research shows 5x better requirement quality with sequential
 
-This is non-negotiable per sop-discovery constraints.
+This is non-negotiable per sequential questioning constraints.
 
 **Question 1 of ~12**: What specific job does this solve for users/developers?
 ```
@@ -236,7 +236,7 @@ This is non-negotiable per sop-discovery constraints.
 **Verification**:
 - [ ] Agent presents exactly ONE question
 - [ ] Agent explains rationale for sequential approach
-- [ ] Agent cites sop-discovery constraint
+- [ ] Agent cites sequential questioning constraint
 - [ ] Agent waits for answer before next question
 
 ---

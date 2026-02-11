@@ -6,32 +6,28 @@ This reference provides decision flowcharts for choosing the right workflow appr
 
 ---
 
-## Flow Selection: Forward vs Reverse
+## Tool Selection: Ralph vs Standalone Skills
 
 **Constraints:**
-- You MUST use Forward Flow for new ideas because there's no existing artifact to investigate
-- You MUST use Reverse Flow when understanding existing code before improving because blind changes break assumptions
-- You SHOULD continue to Forward after Reverse if planning improvements because Reverse generates specs that feed planning
+- You MUST use Ralph for demanding tasks requiring exhaustive investigation and implementation because Ralph enforces referent discovery before design
+- You MUST use `sop-reverse` standalone for investigation-only tasks because Ralph always leads to implementation
+- You MUST NOT use Ralph for simple tasks because overhead exceeds benefit
 
 ```mermaid
 graph TD
-    Start[Starting a task] --> Q1{Do you have<br/>existing artifact<br/>to investigate?}
+    Start[Starting a task] --> Q1{Task complexity<br/>and type?}
 
-    Q1 -->|No, new idea| Forward[Forward Flow]
-    Q1 -->|Yes, existing code/docs| Q2{Purpose?}
+    Q1 -->|Complex build task| Ralph[Ralph Orchestrator]
+    Q1 -->|Investigation only| Standalone[sop-reverse standalone]
+    Q1 -->|Simple change| Direct[Direct implementation]
 
-    Q2 -->|Understand before improving| Reverse[Reverse Flow]
-    Q2 -->|Just improve it| Forward
+    Ralph --> RalphSteps[1. sop-reverse referent<br/>2. sop-planning<br/>3. sop-task-generator<br/>4. Agent Teams execution]
 
-    Forward --> FwdSteps[1. sop-discovery<br/>2. sop-planning<br/>3. sop-task-generator<br/>4. ralph-orchestrator execution]
+    Standalone --> StandaloneSteps[sop-reverse reverse/referent<br/>→ Analysis artifacts only]
 
-    Reverse --> RevSteps[1. sop-reverse<br/>2. Generate specs<br/>3. Continue to forward?]
-
-    RevSteps --> Q3{Continue?}
-    Q3 -->|Yes| FwdSteps
-    Q3 -->|No| Done1[Specs only]
-
-    FwdSteps --> Done2[Implementation complete]
+    RalphSteps --> Done1[Implementation complete]
+    StandaloneSteps --> Done2[Specs/analysis available]
+    Direct --> Done3[Change applied]
 ```
 
 ---
@@ -77,33 +73,30 @@ graph TD
 
 ---
 
-## Forward Flow Decision Points
+## Ralph Flow Decision Points
 
 **Constraints:**
-- You MUST NOT skip discovery if requirements are unclear because vague requirements cause rework
+- You MUST NOT skip referent discovery because proven patterns inform better designs
 - You MUST NOT skip planning if design doesn't exist because ad-hoc design leads to poor architecture
 - You MUST complete task generation before execution because coordinators and sub-agents need structured tasks
 
 ```mermaid
 graph TD
-    Idea[Have an idea] --> Q1{Requirements<br/>clear?}
+    Idea[Have an idea] --> Ref[sop-reverse referent<br/>Find world-class exemplars]
 
-    Q1 -->|No| Disc[Start with<br/>sop-discovery]
-    Q1 -->|Yes| Q2{Design<br/>exists?}
+    Ref --> Q1{Design<br/>exists?}
 
-    Disc --> Plan[sop-planning]
-
-    Q2 -->|No| Plan
-    Q2 -->|Yes| Q3{Tasks<br/>defined?}
+    Q1 -->|No| Plan[sop-planning]
+    Q1 -->|Yes| Q2{Tasks<br/>defined?}
 
     Plan --> Tasks[sop-task-generator]
 
-    Q3 -->|No| Tasks
-    Q3 -->|Yes| Exec[ralph-orchestrator execution]
+    Q2 -->|No| Tasks
+    Q2 -->|Yes| Exec[Agent Teams execution]
 
     Tasks --> Exec
 
-    style Disc fill:#fff4e1
+    style Ref fill:#f0ffe1
     style Plan fill:#e1f0ff
     style Tasks fill:#f0e1ff
     style Exec fill:#e1ffe1
@@ -111,14 +104,14 @@ graph TD
 
 ---
 
-## Reverse Flow Use Cases
+## Standalone sop-reverse Use Cases
 
 **Constraints:**
-- You MUST use Reverse Flow for legacy code before refactoring because understanding prevents breaking changes
-- You SHOULD use Reverse Flow for third-party library integration because patterns must be understood first
-- You MAY skip Reverse Flow for well-documented systems with clear architecture
+- You MUST use `sop-reverse` standalone (not Ralph) for investigation-only tasks because Ralph always leads to implementation
+- You SHOULD use `sop-reverse` standalone for legacy code understanding before refactoring because investigation may not require full Ralph
+- You MAY skip standalone investigation for well-documented systems with clear architecture
 
-**Use Reverse Flow when investigating:**
+**Use `sop-reverse` standalone when investigating:**
 
 ### Code Artifacts
 - Legacy codebase to understand before refactoring
@@ -149,9 +142,9 @@ graph TD
 ```mermaid
 graph LR
     A[Legacy auth system] --> B{Goal?}
-    B -->|Understand only| C[Reverse → Specs]
-    B -->|Improve it| D[Reverse → Specs → Forward]
-    B -->|Replace it| E[Forward from scratch]
+    B -->|Understand only| C[sop-reverse standalone → Specs]
+    B -->|Improve it| D[sop-reverse standalone → then Ralph]
+    B -->|Replace it| E[Ralph directly]
 
     style C fill:#e1f0ff
     style D fill:#ffe1e1
@@ -254,10 +247,10 @@ Situation: Build user profile page
 Complexity: Medium (4-6 files, tests, styling)
 Experience: Familiar with stack
 
-Decision: Forward Flow → production quality
+Decision: Ralph Orchestrator
 Steps:
-1. /ralph-orchestrator → Forward
-2. sop-discovery (15 min)
+1. /ralph-orchestrator goal="user profile page"
+2. sop-reverse referent (20-40 min) — find best profile page implementations
 3. sop-planning (30 min)
 4. sop-task-generator (10 min)
 5. Configure quality gates in .ralph/config.sh
@@ -271,13 +264,12 @@ Situation: Old payment processing module
 Complexity: High (unfamiliar code)
 Goal: Understand before migrating
 
-Decision: Reverse Flow → Specs only
+Decision: sop-reverse standalone (NOT Ralph)
 Steps:
-1. /ralph-orchestrator → Reverse
-2. sop-reverse → /path/to/payment-module
-3. Generate specs (automatic)
-4. Review findings
-5. Stop (no implementation yet)
+1. /sop-reverse target="/src/payments" search_mode="reverse"
+2. Analyze findings
+3. Review specs
+4. Later, use /ralph-orchestrator if building a replacement
 ```
 
 ### Scenario 3: Quick Bug Fix
@@ -298,10 +290,10 @@ Situation: Extract shared utilities into library
 Complexity: Large (15+ files)
 Risk: Breaking changes
 
-Decision: Forward Flow → strict safety limits
+Decision: Ralph Orchestrator with strict safety limits
 Steps:
-1. /ralph-orchestrator → Forward
-2. Planning phase (interactive)
+1. /ralph-orchestrator goal="extract shared utilities into library"
+2. Referent discovery + Planning phase (interactive)
 3. Configure: MAX_CONSECUTIVE_FAILURES=2 in .ralph/config.sh
 4. Monitor .ralph/metrics.json for progress
 5. Review .ralph/failures.json if issues arise
@@ -314,7 +306,7 @@ Steps:
 **Constraints:**
 - You MUST NOT use ralph-orchestrator for 1-line fixes because 10x overhead wastes resources
 - You MUST NOT skip planning phase because confused sub-agents produce poor output
-- You MUST NOT use Forward Flow on legacy code without understanding because changes break existing assumptions
+- You MUST NOT use Ralph on legacy code without first understanding it via standalone sop-reverse because changes break existing assumptions
 - You MUST NOT run a single team for XL tasks because unclear progress leads to stalled execution
 
 ### ❌ Using Ralph Agent Teams for Everything
@@ -333,12 +325,12 @@ Reality: Sub-agents confused, poor quality output
 Solution: Always complete planning first
 ```
 
-### ❌ Wrong Flow Direction
+### ❌ Using Ralph Without Understanding Legacy Code
 
 ```
-Problem: "Forward flow to improve legacy code without understanding it"
+Problem: "Ralph to improve legacy code without understanding it"
 Reality: Changes break existing assumptions
-Solution: Reverse → understand → Forward → improve
+Solution: sop-reverse standalone → understand → then Ralph to build improvements
 ```
 
 ### ❌ Task Too Large
@@ -355,11 +347,11 @@ Solution: Decompose into features, run multiple team sessions
 
 | If you... | Then use... |
 |-----------|-------------|
-| Have a new idea | Forward Flow |
-| Need to understand existing code | Reverse Flow |
-| Want to improve after understanding | Reverse → Forward |
+| Have a new idea to build | Ralph Orchestrator |
+| Need to understand existing code only | `sop-reverse` standalone |
+| Want to improve after understanding | `sop-reverse` standalone → then Ralph |
 | Task is trivial (< 3 steps) | Direct implementation |
-| Task is complex (> 5 steps) | Ralph Agent Teams |
+| Task is complex (> 5 steps) | Ralph Orchestrator |
 | First time using ralph-orchestrator | Strict safety limits (low MAX_CONSECUTIVE_FAILURES) |
 | High-risk task (auth, payments) | Strict safety limits + high GATE_COVERAGE |
 | Overnight development needed | Default safety limits |
@@ -369,12 +361,13 @@ Solution: Decompose into features, run multiple team sessions
 
 ## Troubleshooting
 
-### Unsure Which Flow to Use
+### Unsure Whether to Use Ralph
 
-If flow direction is unclear:
-- You SHOULD ask: "Do I need to understand something first?"
-- You SHOULD default to Reverse if existing artifact is involved
-- You MUST NOT proceed with Forward if requirements are vague
+If the right tool is unclear:
+- You SHOULD ask: "Am I building something, or just investigating?"
+- If building → use Ralph (referent discovery is automatic)
+- If investigating only → use `sop-reverse` standalone
+- You MUST NOT use Ralph for investigation-only tasks
 
 ### Task Size Ambiguous
 
@@ -392,5 +385,5 @@ If safety configuration is unclear:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.1.0 | Updated: 2026-02-11*
 *Compliant with strands-agents SOP format (RFC 2119)*

@@ -21,20 +21,9 @@ Ralph orchestrates SOP skills to transform ideas into implementations through a 
 ```mermaid
 graph TD
     subgraph "Planning Phase - Interactive"
-        A[/ralph-orchestrator invoked] --> B{Route?}
-        B -->|Build from scratch| C[sop-discovery]
-        B -->|Build with referents| R[sop-reverse referent]
-        B -->|Investigate only| D[sop-reverse reverse]
-
+        A[/ralph-orchestrator invoked] --> R[sop-reverse referent]
         R --> R2[referents/ catalog]
-        R2 --> H
-
-        D --> E[Generate specs]
-        E --> F{Continue?}
-        F -->|No| G[Done - Specs only]
-        F -->|Yes| C
-
-        C --> H[sop-planning]
+        R2 --> H[sop-planning]
         H --> I[sop-task-generator]
         I --> J[Configure execution]
     end
@@ -48,9 +37,7 @@ graph TD
     end
 
     style A fill:#e1f0ff
-    style C fill:#fff4e1
     style R fill:#f0ffe1
-    style D fill:#ffe1f0
     style H fill:#f0e1ff
     style I fill:#e1ffe1
     style K fill:#ffe1e1
@@ -60,65 +47,18 @@ graph TD
 
 ## SOP Skills in the Workflow
 
-### 1. sop-discovery
+### 1. sop-reverse (Referent Discovery)
 
 **Constraints:**
-- You MUST ask one question at a time because batched questions produce shallow answers
-- You MUST NOT proceed without answers to critical questions because vague requirements cause rework
-- You SHOULD capture all decisions in discovery.md because this creates an audit trail
-
-**Purpose**: Brainstorm constraints, risks, and prior art before planning
-
-**When invoked**: First step of Forward flow
-
-**Input**: Rough idea or goal description
-
-**Output**: `.ralph/specs/{goal}/discovery.md`
-
-**What it contains**:
-- Problem statement
-- Constraints (technical, resource, time)
-- Risks and mitigation strategies
-- Prior art and existing patterns
-- Success criteria
-- Open questions resolved
-
-**Duration**: 10-20 minutes
-
-**Interaction style**: Q&A, one question at a time
-
-**Example**:
-```bash
-User: "Build user authentication system"
-
-sop-discovery asks:
-- What authentication methods? (OAuth, JWT, session-based?)
-- What user data needs protection?
-- Integration with existing user table?
-- Password policy requirements?
-- Multi-factor authentication needed?
-- Session management approach?
-
-Output: .ralph/specs/user-auth/discovery.md
-```
-
----
-
-### 2. sop-reverse (Referent Discovery & Reverse Engineering)
-
-**Constraints:**
-- You MUST use sop-reverse when investigating existing artifacts because understanding prevents breaking changes
-- You MUST use sop-reverse in referent mode when building something new and world-class exemplars exist because building on proven patterns beats guessing
+- You MUST use sop-reverse in referent mode as the first step of every Ralph flow because building on proven patterns beats guessing
 - You MUST complete batch analysis before refinement questions because context informs follow-up
-- You SHOULD continue to forward flow when planning improvements because reverse generates specs that feed planning
+- You SHOULD use sop-reverse standalone (outside Ralph) for pure investigation or reverse engineering
 
-**Purpose**: Two complementary capabilities:
-1. **Referent Discovery** (`search_mode=referent`): Find world-class implementations before designing something new
-2. **Reverse Engineering** (`search_mode=reverse`): Investigate existing artifacts before improving them
+**Purpose**: Find world-class implementations before designing something new. Ralph ALWAYS uses referent mode (`search_mode=referent`).
 
-**When invoked**:
-- **Referent mode**: First step of "Build with referents" flow
-- **Reverse mode**: First step of "Investigate only" flow
+> **Note**: sop-reverse also supports `search_mode=reverse` for investigating existing artifacts, but that mode is used standalone — not as part of the Ralph flow. For investigation-only tasks, invoke `sop-reverse` directly instead of Ralph.
+
+**When invoked**: First step of the Ralph flow
 
 **Input**: Path to artifact, URL, concept name, or domain description
 
@@ -173,8 +113,8 @@ Output: .ralph/specs/payment-investigation/specs-generated/
 ├── issues-found.md
 └── improvement-opportunities.md
 
-User: "Continue to forward flow to add PayPal support"
-→ Proceeds to sop-planning with existing context
+User: "Now build PayPal support using Ralph"
+→ Proceeds to Ralph orchestrator, which runs referent discovery + planning
 ```
 
 **Example (Referent — discover before building)**:
@@ -200,7 +140,7 @@ Output: .ralph/specs/collab-engine/referents/
 
 ---
 
-### 3. sop-planning
+### 2. sop-planning
 
 **Constraints:**
 - You MUST validate discovery completeness before proceeding because incomplete discovery causes flawed designs
@@ -209,13 +149,11 @@ Output: .ralph/specs/collab-engine/referents/
 
 **Purpose**: Create detailed requirements, research, and design
 
-**When invoked**: After discovery, referent discovery, or reverse (if continuing)
+**When invoked**: After referent discovery (Step 2)
 
 **Input**:
-- `.ralph/specs/{goal}/discovery.md` (from sop-discovery — forward flow)
-- OR `.ralph/specs/{goal}/referents/catalog.md` (from sop-reverse referent — referent flow)
-- OR `.ralph/specs/{investigation}/specs-generated/` (from sop-reverse reverse — if continuing)
-- OR rough idea description
+- `.ralph/specs/{goal}/referents/catalog.md` (from sop-reverse referent mode)
+- Goal description as `rough_idea`
 
 **Output**:
 - `.ralph/specs/{goal}/rough-idea.md`
@@ -260,7 +198,7 @@ Output: .ralph/specs/collab-engine/referents/
 
 **Example**:
 ```bash
-Input: .ralph/specs/user-auth/discovery.md
+Input: .ralph/specs/user-auth/referents/catalog.md
 
 sop-planning phases:
 
@@ -285,7 +223,7 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
 
 ---
 
-### 4. sop-task-generator
+### 3. sop-task-generator
 
 **Constraints:**
 - You MUST include acceptance criteria for each task because sub-agents need clear completion criteria
@@ -296,7 +234,7 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
 
 ---
 
-### 5. sop-code-assist
+### 4. sop-code-assist
 
 **Constraints:**
 - You MUST implement scenarios BEFORE implementation code because SDD ensures testability
@@ -345,7 +283,7 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
 
 ---
 
-### 6. sop-task-generator (continued)
+### 5. sop-task-generator (continued)
 
 **When invoked**: After planning completes
 
@@ -413,62 +351,7 @@ sop-task-generator creates:
 
 ---
 
-## The Complete Forward Flow (Build from Scratch)
-
-**Constraints:**
-- You MUST complete each phase before proceeding because phases depend on prior outputs
-- You MUST wait for user approval at phase transitions because human judgment guides direction
-- You SHOULD present options at decision points because user choice determines outcome
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant O as Orchestrator
-    participant D as sop-discovery
-    participant P as sop-planning
-    participant T as sop-task-generator
-    participant C as Agent Teams Cockpit
-    participant S as Sub-agents
-
-    U->>O: /ralph-orchestrator
-    O->>U: Flow direction?
-    U->>O: Forward
-
-    O->>D: Invoke with goal
-    D->>U: What constraints?
-    U->>D: JWT, PostgreSQL
-    D->>U: Risk mitigation?
-    U->>D: Rate limiting
-    D-->>O: discovery.md created
-
-    O->>P: Invoke with discovery
-    P->>U: User schema fields?
-    U->>P: email, password, name
-    P->>U: Token expiration?
-    U->>P: 15 minutes
-    P-->>O: detailed-design.md created
-
-    O->>T: Invoke with design
-    T->>U: Approve task list?
-    U->>T: Approved
-    T-->>O: plan.md created
-
-    O->>U: Execution mode?
-    U->>O: autonomous, production quality
-
-    O->>C: Launch cockpit: bash .ralph/launch-build.sh
-    C->>S: Task 1
-    S->>C: Complete
-    C->>S: Task 2
-    S->>C: Complete
-    Note over C,S: Continues until all tasks done
-    C-->>O: All tasks completed
-    O->>U: Implementation complete
-```
-
----
-
-## The Complete Referent Flow (Build with Referents)
+## The Complete Ralph Flow
 
 **Constraints:**
 - You MUST complete referent discovery before planning because proven patterns inform better designs
@@ -486,8 +369,6 @@ sequenceDiagram
     participant S as Sub-agents
 
     U->>O: /ralph-orchestrator
-    O->>U: Route selection?
-    U->>O: Build with referents
 
     O->>R: Invoke with concept + search_mode=referent
     R->>U: What domain/concept?
@@ -521,63 +402,16 @@ sequenceDiagram
 
 **Invocation example:**
 ```bash
-# Step 1: Referent discovery
-/ralph-orchestrator goal="real-time collaboration engine" flow="referent"
+# Invoke Ralph — referent discovery happens automatically
+/ralph-orchestrator goal="real-time collaboration engine"
 
-# Orchestrator invokes:
+# Orchestrator invokes Step 2: Referent Discovery
 /sop-reverse target="real-time collaboration engine" search_mode="referent" output_dir=".ralph/specs/realtime-collab" mode={PLANNING_MODE}
 
-# Step 2: Planning with referent patterns
+# Orchestrator invokes Step 3: Planning with referent patterns
 /sop-planning rough_idea="real-time collaboration engine" discovery_path=".ralph/specs/realtime-collab/referents/catalog.md" project_dir=".ralph/specs/realtime-collab" mode={PLANNING_MODE}
 
-# Steps 3-8: Same as forward flow
-```
-
----
-
-## The Complete Reverse Flow (Investigate Only)
-
-**Constraints:**
-- You MUST complete batch analysis before refinement because context informs questions
-- You MUST ask user about continuing to forward flow because direction choice matters
-- You SHOULD preserve specs even without implementation because analysis has value
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant O as Orchestrator
-    participant R as sop-reverse
-    participant P as sop-planning
-    participant T as sop-task-generator
-    participant C as Agent Teams Cockpit
-
-    U->>O: /ralph-orchestrator
-    O->>U: Flow direction?
-    U->>O: Reverse
-
-    O->>R: Invoke
-    R->>U: What to investigate?
-    U->>R: /src/payments/
-
-    Note over R: Batch analysis (automatic)
-
-    R->>U: Focus on integration or error handling?
-    U->>R: Error handling
-    R->>U: Migrating providers?
-    U->>R: No, improving existing
-
-    R-->>O: specs-generated/ created
-
-    O->>U: Continue to forward flow?
-
-    alt User says Yes
-        U->>O: Yes, add retry mechanism
-        O->>P: Invoke with specs-generated
-        Note over P,T,C: Same as forward flow
-    else User says No
-        U->>O: No, just needed analysis
-        O->>U: Specs available for review
-    end
+# Steps 4-8: Task generation, AGENTS.md, review, configure, launch
 ```
 
 ---
@@ -598,7 +432,10 @@ project-root/
 │   ├── metrics.json                  # Created during execution
 │   └── specs/
 │       └── user-auth/                # Goal name
-│           ├── discovery.md          # From sop-discovery
+│           ├── referents/            # From sop-reverse (referent mode)
+│           │   ├── catalog.md
+│           │   ├── comparative-analysis.md
+│           │   └── extracted-patterns.md
 │           ├── rough-idea.md         # From sop-planning
 │           ├── idea-honing.md        # From sop-planning
 │           ├── research/             # From sop-planning
@@ -625,26 +462,6 @@ project-root/
 **Constraints:**
 - You MUST use file paths for handoff because this maintains separation of concerns
 - You MUST verify handoff files exist before proceeding because missing files cause failures
-- You SHOULD include prior investigation context because this informs planning
-
-### Discovery → Planning
-
-**Handoff mechanism**: File path + goal context
-
-```javascript
-// sop-discovery outputs:
-.ralph/specs/user-auth/discovery.md
-
-// Orchestrator invokes sop-planning with:
-{
-  rough_idea: "user-auth",  // The goal name serves as rough idea
-  discovery_path: ".ralph/specs/user-auth/discovery.md",
-  project_dir: ".ralph/specs/user-auth",
-  mode: "{PLANNING_MODE}"
-}
-
-// sop-planning reads discovery context and proceeds
-```
 
 ### Referent Discovery → Planning
 
@@ -664,20 +481,6 @@ project-root/
 
 // sop-planning reads catalog.md for proven patterns
 // sop-planning reads extracted-patterns.md for design foundations
-```
-
-### Reverse → Planning (if continuing)
-
-**Handoff mechanism**: Directory path + context
-
-```javascript
-// sop-reverse (reverse mode) outputs:
-.ralph/specs/payment-investigation/specs-generated/
-
-// Orchestrator invokes sop-planning with:
-/sop-planning rough_idea=".ralph/specs/{goal}/specs-generated/" discovery_path=".ralph/specs/{goal}/investigation.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
-
-// sop-planning incorporates investigation findings
 ```
 
 ### Planning → Task Generation
@@ -734,7 +537,7 @@ bash .ralph/launch-build.sh
 # - .ralph/specs/user-auth/implementation/plan.md (tasks)
 # - .ralph/specs/user-auth/implementation/step*/task-*.code-task.md (if exist)
 # - .ralph/specs/user-auth/design/detailed-design.md (context)
-# - .ralph/specs/user-auth/discovery.md (background)
+# - .ralph/specs/user-auth/referents/catalog.md (proven patterns)
 # - .ralph/guardrails.md (shared memory across all agents)
 ```
 
@@ -755,18 +558,18 @@ bash .ralph/launch-build.sh
 - You MUST NOT proceed with vague requirements because this causes implementation confusion
 - You SHOULD trigger research when knowledge is missing because informed decisions require investigation
 
-### Discovery Incomplete
+### Referent Discovery Incomplete
 
-**Symptom**: User skips questions or provides vague answers
+**Symptom**: Too few referents identified or shallow analysis
 
-**Detection**: sop-discovery validation
+**Detection**: sop-reverse validation — catalog.md missing or incomplete
 
-**Action**: Ask follow-up questions, refuse to proceed without clarity
+**Action**: Expand referent search, add more exemplars, deepen analysis
 
 **Example**:
 ```
-User: "Authentication, you know"
-Discovery: "I need specifics. OAuth, JWT, session-based, or other?"
+Referent search: "Only found 1 referent for real-time collaboration"
+Action: "Expand search — look for Yjs, Automerge, ShareDB, Liveblocks, Convergence"
 ```
 
 ### Planning Without Sufficient Research
@@ -854,19 +657,19 @@ Typical cost breakdown for medium-sized feature:
 
 | Phase | Duration | Tokens | Cost |
 |-------|----------|--------|------|
-| sop-discovery | 15 min | ~20K | $0.10 |
+| sop-reverse (referent) | 20-40 min | ~30K | $0.15 |
 | sop-planning | 30 min | ~40K | $0.20 |
 | sop-task-generator | 10 min | ~15K | $0.08 |
 | Configuration | 5 min | ~5K | $0.02 |
-| **Planning Total** | **60 min** | **~80K** | **$0.40** |
+| **Planning Total** | **65-85 min** | **~90K** | **$0.45** |
 | | | | |
 | Execution (10 tasks) | 3 hours | ~500K | $2.50 |
-| **Total** | **~4 hours** | **~580K** | **~$2.90** |
+| **Total** | **~4-5 hours** | **~590K** | **~$2.95** |
 
 **ROI Comparison**:
 - Manual implementation: ~8 hours developer time
-- Agent Teams cockpit: ~1 hour human time + ~3 hours autonomous
-- Cost: $2.90 vs $400+ developer cost
+- Agent Teams cockpit: ~1-1.5 hours human time + ~3 hours autonomous
+- Cost: $2.95 vs $400+ developer cost
 - Quality: SDD enforced, all gates passed
 
 ---
@@ -876,17 +679,18 @@ Typical cost breakdown for medium-sized feature:
 **Constraints:**
 - You MUST complete one goal before starting dependent goal because context from prior work informs later work
 - You SHOULD reference prior specs when building dependent features because this maintains consistency
-- You MAY use reverse flow for research without implementation because analysis has standalone value
+- You MAY use sop-reverse standalone for research without implementation because analysis has standalone value
 
 ### Pattern 1: Multi-Goal Projects
 
 ```bash
 # Goal 1: Authentication
-/ralph-orchestrator → Forward → .ralph/specs/user-auth/
+/ralph-orchestrator goal="user authentication system"
+→ Referent discovery → Planning → Execution
 bash .ralph/launch-build.sh
 
 # Goal 2: User Profile (depends on auth)
-/ralph-orchestrator → Forward → .ralph/specs/user-profile/
+/ralph-orchestrator goal="user profile management"
 # In planning, reference .ralph/specs/user-auth/ for context
 bash .ralph/launch-build.sh
 ```
@@ -895,38 +699,28 @@ bash .ralph/launch-build.sh
 
 ```bash
 # Round 1: Basic auth
-/ralph-orchestrator → Forward → .ralph/specs/auth-v1/
+/ralph-orchestrator goal="basic authentication"
 bash .ralph/launch-build.sh
 
-# Round 2: Add MFA
-/ralph-orchestrator → Reverse → .ralph/specs/auth-v1-investigation/
-→ Continue to Forward → .ralph/specs/auth-mfa/
-bash .ralph/launch-build.sh
-```
+# Round 2: Add MFA (use sop-reverse standalone to investigate v1, then Ralph for building)
+/sop-reverse target="/src/auth" search_mode="reverse"
+→ Understand existing auth implementation
 
-### Pattern 3: Referent-Driven Build (Gene Transfusion)
-
-```bash
-# Find world-class referents, then build on their patterns
-/ralph-orchestrator → Referent → "real-time collaboration engine"
-→ Creates .ralph/specs/realtime-collab/referents/
-→ Automatically continues to sop-planning with referent patterns
-→ Design decisions grounded in proven implementations
+/ralph-orchestrator goal="add MFA to authentication"
+→ Referent discovery finds best MFA implementations → Planning → Execution
 bash .ralph/launch-build.sh
 ```
 
-### Pattern 4: Research Then Build
+### Pattern 3: Research Then Build
 
 ```bash
-# Research phase (investigate only, no implementation)
-/ralph-orchestrator → Reverse → "Best practices for rate limiting"
-→ Creates .ralph/specs/rate-limiting-research/
+# Research phase (standalone sop-reverse, not Ralph)
+/sop-reverse target="rate limiting best practices" search_mode="referent"
+→ Creates analysis artifacts for reference
 
-# Stop at specs (no implementation)
-
-# Later, use findings
-/ralph-orchestrator → Forward → .ralph/specs/api-rate-limiter/
-# In planning, reference .ralph/specs/rate-limiting-research/
+# Later, build with Ralph
+/ralph-orchestrator goal="API rate limiter"
+# In planning, reference prior research artifacts
 bash .ralph/launch-build.sh
 ```
 
@@ -934,12 +728,12 @@ bash .ralph/launch-build.sh
 
 ## Troubleshooting
 
-### Discovery Takes Too Long
+### Referent Discovery Takes Too Long
 
-If discovery exceeds 20 minutes:
-- You SHOULD time-box discovery to 20 minutes
-- You SHOULD capture remaining questions in "Future Considerations"
-- You MUST NOT skip critical constraints regardless of time pressure
+If referent discovery exceeds 40 minutes:
+- You SHOULD time-box referent discovery to 40 minutes
+- You SHOULD limit the number of referents analyzed (3-5 is optimal)
+- You MUST NOT skip comparative analysis regardless of time pressure
 
 ### Planning Generates Too Much Research
 
@@ -966,12 +760,12 @@ If sub-agents report missing information:
 
 ## Related Documentation
 
-- [mode-selection.md](mode-selection.md) - Choosing Forward vs Referent vs Reverse
+- [mode-selection.md](mode-selection.md) - Choosing when to use Ralph vs direct implementation
 - [supervision-modes.md](supervision-modes.md) - Autonomous vs Checkpoint execution
 - [observability.md](observability.md) - Monitoring during execution
 - [backpressure.md](backpressure.md) - Quality gates and checkpoints
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-11*
+*Version: 2.1.0 | Updated: 2026-02-11*
 *Compliant with strands-agents SOP format (RFC 2119)*
