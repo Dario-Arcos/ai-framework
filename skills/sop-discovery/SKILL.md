@@ -61,7 +61,7 @@ For AI agents executing discovery as part of larger workflow.
 **Autonomous defaults:**
 - Time: Unlimited (loop will manage iterations)
 - Complexity: Infer from project scope
-- Quality: Match QUALITY_LEVEL from AGENTS.md
+- Quality: Production standard (SDD mandatory, all gates must pass)
 - Breaks: Not applicable
 
 **Autonomous Mode Constraints (MUST follow):**

@@ -61,12 +61,6 @@ fi
 
 echo ""
 
-# Files to copy (none — templates handle all distribution)
-FILES=()
-
-# Directories to copy (none — no script libraries needed)
-DIRS=()
-
 # Templates to copy (source:dest)
 TEMPLATES=(
     "templates/AGENTS.md.template:.ralph/agents.md"
@@ -74,41 +68,6 @@ TEMPLATES=(
     "templates/config.sh.template:.ralph/config.sh"
     "templates/launch-build.sh.template:.ralph/launch-build.sh"
 )
-
-# Copy files
-if [ ${#FILES[@]} -gt 0 ]; then
-    echo "Copying files..."
-    for file in "${FILES[@]}"; do
-        src="$SKILL_DIR/$file"
-        dest="$TARGET_DIR/$(basename "$file")"
-
-        if [ -f "$src" ]; then
-            cp "$src" "$dest"
-            echo -e "  ${GREEN}✓${NC} $(basename "$file")"
-        else
-            echo -e "  ${YELLOW}⚠${NC} $(basename "$file") not found, skipping"
-        fi
-    done
-    echo ""
-fi
-
-# Copy directories
-if [ ${#DIRS[@]} -gt 0 ]; then
-    echo "Copying directories..."
-    for dir in "${DIRS[@]}"; do
-        src="$SKILL_DIR/$dir"
-        dest="$TARGET_DIR/$(basename "$dir")"
-
-        if [ -d "$src" ]; then
-            cp -r "$src" "$dest"
-            chmod +x "$dest"/*.sh 2>/dev/null || true
-            echo -e "  ${GREEN}✓${NC} $(basename "$dir")/ ($(ls -1 "$dest" | wc -l | tr -d ' ') files)"
-        else
-            echo -e "  ${YELLOW}⚠${NC} $(basename "$dir")/ not found, skipping"
-        fi
-    done
-    echo ""
-fi
 
 # Create directories
 mkdir -p "$TARGET_DIR/.ralph"

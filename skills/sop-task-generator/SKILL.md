@@ -7,7 +7,7 @@ description: Use when converting designs, PDD plans, or descriptions into struct
 
 ## Overview
 
-Generate structured code task files from descriptions or PDD (Problem-Driven Development) plans, based on Amazon's code-task-generator SOP.
+Generate structured code task files from descriptions or PDD (Prompt-Driven Development) plans, based on Amazon's code-task-generator SOP.
 
 This skill creates well-formed implementation tasks that can be executed by sop-code-assist or other execution agents, ensuring consistent task structure and complete requirements specification.
 

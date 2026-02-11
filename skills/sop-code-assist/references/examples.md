@@ -95,12 +95,9 @@ mode="autonomous"
 
 **Decision Log Entry (.ralph/guardrails.md):**
 ```markdown
-### Decision: Test Framework Selection
-- **Timestamp:** 2026-01-28T14:30:00
-- **Context:** Project has both pytest and unittest installed
-- **Analysis:** Existing tests use pytest patterns (fixtures, parametrize)
-- **Chosen:** pytest
-- **Rationale:** Consistency with existing test suite
+### decision-1706454600-a3f2
+> Project has both pytest and unittest installed. Existing tests use pytest patterns (fixtures, parametrize). Chose pytest for consistency with existing test suite.
+<!-- tags: test-framework | created: 2026-01-28 -->
 ```
 
 ---
@@ -130,9 +127,7 @@ mode="autonomous"
 
 **Error Handling (Autonomous):**
 ```markdown
-### Challenge: Missing Dependency
-- **Error:** ModuleNotFoundError: No module named 'redis'
-- **Analysis:** Redis not in project dependencies, in-memory cache exists
-- **Resolution:** Using existing InMemoryCache class
-- **Rationale:** Matches existing patterns, avoids new dependency
+### fix-1706454700-b4e1
+> ModuleNotFoundError: No module named 'redis'. Redis not in project dependencies, in-memory cache exists. Using existing InMemoryCache class — matches existing patterns, avoids new dependency.
+<!-- tags: missing-dependency, caching | created: 2026-01-28 -->
 ```

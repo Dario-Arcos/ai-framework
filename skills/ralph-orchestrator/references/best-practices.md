@@ -70,13 +70,13 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 ## Knowledge Capture
 
 After every session verify:
-1. `.ralph/guardrails.md` has new Signs (if gotchas found)
+1. `.ralph/guardrails.md` has new memories (if gotchas found)
 2. `.ralph/guardrails.md` reflects final state (shared memory across teammates and sub-agents)
 
 **Capture checklist:**
 | Artifact | Check | Purpose |
 |----------|-------|---------|
-| .ralph/guardrails.md | New Signs added? | Prevent repeat mistakes |
+| .ralph/guardrails.md | New memories added? | Prevent repeat mistakes |
 | .ralph/guardrails.md | State updated? | Shared memory for teammates and sub-agents |
 
 > Cross-reference: [state-files.md](state-files.md) for state file management.
@@ -134,3 +134,7 @@ TaskOutput(task_id="{id}", block=false)
 
 **Knowledge artifacts:**
 - `.ralph/guardrails.md`: Warning signs, rules, and shared memory across teammates and sub-agents
+
+---
+
+*Version: 2.0.0 | Updated: 2026-02-11*

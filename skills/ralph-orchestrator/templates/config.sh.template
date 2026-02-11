@@ -4,18 +4,8 @@
 # Modify as needed for your project
 #
 # Usage Constraints:
-# - You MUST set QUALITY_LEVEL because this determines enforcement behavior
-# - You MUST configure GATE_* commands for your stack because defaults are Node.js
+# - GATE_* commands are auto-derived from Technology Stack during planning (Step 7)
 # - You MAY adjust safety limits but exercise caution because these prevent runaway teammates
-
-# ─────────────────────────────────────────────────────────────────
-# QUALITY LEVEL
-# ─────────────────────────────────────────────────────────────────
-# prototype: Skip tests, fast iteration, commit freely
-# production: SDD mandatory, all gates must pass (DEFAULT)
-# library: Full coverage + docs + edge cases + examples
-
-QUALITY_LEVEL="production"
 
 # ─────────────────────────────────────────────────────────────────
 # AGENT TEAMS

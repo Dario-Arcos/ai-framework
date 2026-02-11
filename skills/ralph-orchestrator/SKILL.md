@@ -39,6 +39,8 @@ description: Use when building features requiring planning + autonomous executio
 - Artifacts from sop-discovery, sop-planning, sop-task-generator in `.ralph/specs/{goal}/`
 - Autonomous execution via Agent Teams — progress in `TaskList`, metrics in `.ralph/metrics.json`
 
+**{goal} derivation:** Slugify `goal_description` to kebab-case (lowercase, spaces to hyphens, remove special chars, max 50 chars). Example: 'Add Real-Time Collaboration' becomes `add-real-time-collaboration`. All SOP skills MUST use this same derivation for pipeline continuity.
+
 ## The Complete Flow
 
 1. **State Detection**: Scan .ralph/specs/, detect phase, offer resume or new
@@ -48,7 +50,7 @@ description: Use when building features requiring planning + autonomous executio
 5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
 7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
-8. **Step 7**: Configure execution (quality level, cockpit services, checkpoints)
+8. **Step 7**: Configure execution (quality gates, cockpit services, checkpoints)
 9. **Step 8**: Launch Agent Teams cockpit
 
 ---
@@ -90,7 +92,10 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | `design/detailed-design.md` | planning (Step 3) |
 | `discovery.md` | discovery-complete (Step 3) |
 | `investigation.md` + `specs-generated/` | reverse-complete (Step 3) |
+| `discovery.md` with `SPIKE_REQUIRED` | spike-required (Step 2) |
 | Nothing | NEW |
+
+If spike-required: present spikes to user (interactive) or document in blockers.md (autonomous). After spikes resolved, re-run sop-discovery.
 
 **Use AskUserQuestion** to confirm: resume from detected phase, choose goal if multiple, choose flow if NEW. Surface `blockers.md` content if exists. After confirmation, skip to detected phase.
 
@@ -135,15 +140,21 @@ Output: `.ralph/specs/{goal}/discovery.md` — Continue to Step 3.
 ### Step 2B: Reverse Investigation
 
 ```
-/sop-reverse target="{path}" mode={PLANNING_MODE}
+/sop-reverse target="{path}" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
 Ask user if continuing to Forward (interactive). In autonomous mode, continue by default.
 
 ### Step 3: Planning
 
+**Forward flow:**
 ```
 /sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/discovery.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
+```
+
+**Reverse flow:**
+```
+/sop-planning rough_idea=".ralph/specs/{goal}/specs-generated/" discovery_path=".ralph/specs/{goal}/investigation.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
 Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
@@ -188,12 +199,23 @@ Options:
 
 ### Step 7: Configure Execution
 
-**Use AskUserQuestion (2 questions):**
+**Use AskUserQuestion (1 question):**
 
 | Question | Options |
 |----------|---------|
-| Quality Level | **Production** (Recommended) / Prototype / Library |
 | Checkpoints | **None** (Recommended) / Every N tasks |
+
+**Derive quality gates from Technology Stack** in `detailed-design.md` Section 3.4 (automatic — no user input). Read `.ralph/config.sh` and populate all `GATE_*` variables for the chosen technologies:
+
+| Config Variable | Derived From |
+|-----------------|-------------|
+| `GATE_TEST` | Unit Testing technology |
+| `GATE_COVERAGE` | Unit Testing technology + coverage flag |
+| `GATE_TYPECHECK` | Language toolchain (empty for compiled languages) |
+| `GATE_LINT` | Language linter |
+| `GATE_BUILD` | Build/bundling tool (empty if none) |
+
+Empty string = gate skipped. See `.ralph/config.sh` comments for stack-specific examples.
 
 **Configure cockpit services** — prompt user for optional commands:
 
@@ -204,7 +226,7 @@ Options:
 | Logs | `tail -f logs/*.log` | `COCKPIT_LOGS` |
 | Database | `docker-compose up -d postgres` | `COCKPIT_DB` |
 
-Update `.ralph/config.sh`. See [configuration-guide.md](references/configuration-guide.md) for all options.
+Update `.ralph/config.sh` with derived gates and user selections. See [configuration-guide.md](references/configuration-guide.md) for all options.
 
 ### Step 8: Launch Execution
 
@@ -220,8 +242,8 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 **Actions:**
 
 1. Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
-2. Launch: `Bash(command="bash .ralph/launch-build.sh")`
-3. Inform user: "Cockpit lanzado en tmux. `team` (Ctrl+B 0): Lead + teammates, `services` (Ctrl+B 1): Dev server + DB, `quality` (Ctrl+B 2): Test watcher, `monitor` (Ctrl+B 3): Logs, `shell` (Ctrl+B 4): Terminal libre."
+2. Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
+3. Inform user: "Cockpit lanzado en tmux. `team` is always window 0 (Lead + teammates). `shell` is always the last window (terminal libre). Middle windows (`services`, `quality`, `monitor`) are created only if their COCKPIT_* variables are configured in .ralph/config.sh."
 
 **In the tmux session** (automatic via launch-build.sh):
 1. Claude Code starts with `--teammate-mode tmux`

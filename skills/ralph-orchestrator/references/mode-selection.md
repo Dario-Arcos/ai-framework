@@ -260,7 +260,7 @@ Steps:
 2. sop-discovery (15 min)
 3. sop-planning (30 min)
 4. sop-task-generator (10 min)
-5. Configure: QUALITY_LEVEL="production" in .ralph/config.sh
+5. Configure quality gates in .ralph/config.sh
 6. Launch and monitor
 ```
 

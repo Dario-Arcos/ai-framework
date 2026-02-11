@@ -39,6 +39,8 @@ Systematically investigate existing artifacts and generate structured specificat
   - `interactive`: Confirm with user, ask clarifying questions
   - `autonomous`: Complete investigation without interaction
 
+**{name} derivation:** When `output_dir` is not provided, `{name}` is derived from `target` using the same kebab-case slugification as ralph-orchestrator's `{goal}`. When invoked by ralph-orchestrator, `output_dir` is always provided explicitly.
+
 **Constraints for parameter acquisition:**
 - You MUST validate that target path exists or URL is accessible because invalid targets waste investigation time
 - You MUST auto-detect target_type if not specified because manual specification is error-prone
@@ -145,6 +147,8 @@ The `specs-generated/` output is designed to feed into sop-planning as the `roug
 - Use `specs-generated/` directory contents as `rough_idea` input to sop-planning
 - Alternatively, `investigation.md` serves as a discovery.md equivalent and can be passed as `discovery_path`
 - Example: `/sop-planning rough_idea="./specs-generated/" discovery_path="./investigation.md"`
+
+Note: `investigation.md` has a different structure than `discovery.md` from sop-discovery. When passed as `discovery_path` to sop-planning, the planning skill should extract problem definition, constraints, and risks from the investigation's Executive Summary, Detailed Findings, and Observations sections respectively.
 
 This enables the complete reverse-to-forward flow: investigate existing artifacts, then plan improvements based on documented findings.
 

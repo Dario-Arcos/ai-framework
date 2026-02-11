@@ -120,5 +120,5 @@ If the user requests you implement directly:
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 2.0.0 | Updated: 2026-02-11*
 *Compliant with strands-agents SOP format (RFC 2119)*

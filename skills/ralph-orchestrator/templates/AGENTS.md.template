@@ -22,7 +22,7 @@ Prefer retrieval-led reasoning. Read `.claude/rules/` for framework patterns.
 [from .ralph/specs/{goal}/discovery.md]
 
 ## Quality
-[from .ralph/config.sh: QUALITY_LEVEL, MIN_TEST_COVERAGE]
+[from .ralph/config.sh: MIN_TEST_COVERAGE]
 
 ## Gotchas
 <!-- Populated during execution -->

@@ -35,33 +35,7 @@ This reference defines the complete directory structure and file templates for s
 - You MUST include target and type metadata because this provides context
 - You SHOULD include diagrams where applicable because visual aids improve understanding
 
-```markdown
-# Investigation: [Artifact Name]
-
-**Target**: [path/url/description]
-**Type**: [codebase|api|documentation|process|concept]
-**Date**: [generated date]
-
-## Executive Summary
-[High-level overview of findings]
-
-## Detailed Findings
-
-### [Category 1]
-[Findings with evidence]
-
-### [Category 2]
-[Findings with evidence]
-
-## Observations
-[Patterns, anomalies, notable items]
-
-## Questions for Refinement
-[Items needing clarification]
-
-## Diagrams
-[Mermaid diagrams where applicable]
-```
+See `templates/investigation-output.md.template` for the full investigation.md structure.
 
 ---
 

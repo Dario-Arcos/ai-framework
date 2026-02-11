@@ -20,7 +20,7 @@ Contains lessons from other teammates AND your own previous tasks. **Re-read bef
 
 ### 1b. Load Configuration
 
-Check `.ralph/config.sh` for: **QUALITY_LEVEL** (prototype|production|library), **GATE_\*** (validation commands), **MAX_CONSECUTIVE_FAILURES** (circuit breaker).
+Check `.ralph/config.sh` for: **GATE_\*** (validation commands), **MAX_CONSECUTIVE_FAILURES** (circuit breaker).
 
 ### 1c. Read Project Context
 
@@ -82,10 +82,11 @@ Use /sop-code-assist mode="autonomous" to implement this task. The autonomous mo
 - If `not-applicable`: No SDD. Implement directly. No scenarios needed.
 
 ## Rules
-- Commit with: git add -A && git commit -m "type(scope): description"
+- Commit with: git add <modified-files> && git commit -m "type(scope): description"
+  Stage only files modified by this task. Never use `git add -A`.
 - Do NOT push to remote.
 - Follow SDD: SCENARIO (define observable behavior) > SATISFY (converge) > REFACTOR.
-- If QUALITY_LEVEL=prototype or Scenario-Strategy=not-applicable, skip scenario definition — implement directly.
+- If Scenario-Strategy=not-applicable, skip scenario definition — implement directly.
 """
 )
 ```

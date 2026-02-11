@@ -10,7 +10,7 @@ This reference defines the quality gates that reject incomplete work in Ralph. B
 
 **Constraints:**
 - You MUST pass all gates before commit because partial passes indicate incomplete work
-- You MUST NOT skip gates in production/library mode because quality is mandatory
+- You MUST NOT skip gates because quality is mandatory
 - You SHOULD configure gates for your stack because defaults may not match your tooling
 
 ```bash
@@ -54,8 +54,8 @@ MAX_CONSECUTIVE_FAILURES=3
 
 **Use when adjusting:**
 - Lower (2) for high-risk tasks where early stopping matters
-- Default (3) for production work
-- Higher (5) for experimental/prototype work where some failures are expected
+- Default (3) for standard work
+- Higher (5) for exploratory tasks where some failures are expected
 
 ---
 
@@ -64,7 +64,7 @@ MAX_CONSECUTIVE_FAILURES=3
 **Constraints:**
 - You MUST understand all backpressure levels because each serves different purpose
 - You MUST NOT override circuit breaker without diagnosis because repeated failures indicate issues
-- You SHOULD trust quality gates in production mode because they enforce standards
+- You SHOULD trust quality gates because they enforce standards
 
 Ralph implements backpressure at multiple levels:
 
@@ -95,31 +95,6 @@ graph TD
 |-------|-----------|---------|--------|
 | **Task** | Quality gates | Gate fails | Reject task completion (exit 2), teammate retries |
 | **Circuit breaker** | MAX_CONSECUTIVE_FAILURES | N consecutive failures | Teammate goes idle (exit 0) |
-
----
-
-## Quality Levels
-
-**Constraints:**
-- You MUST set quality level before execution because it determines gate behavior
-- You MUST NOT use prototype in production code because shortcuts accumulate debt
-- You SHOULD use library level for reusable code because polish matters for shared code
-
-Define expectations in `.ralph/config.sh` (`QUALITY_LEVEL` variable):
-
-| Level | Shortcuts OK | Tests Required | Polish Required |
-|-------|--------------|----------------|-----------------|
-| **Prototype** | Yes | No | No |
-| **Production** | No | Yes | Some |
-| **Library** | No | Yes | Yes |
-
-### Behavior by Level
-
-- **Prototype** - Fast iteration, skip backpressure gates
-- **Production** - SDD mandatory, all gates must pass
-- **Library** - Full coverage, documentation, edge cases
-
-**Set in:** `.ralph/config.sh` (`QUALITY_LEVEL`)
 
 ---
 
@@ -159,7 +134,7 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 ## Gutter Detection
 
 **Constraints:**
-- You MUST add Sign and exit if stuck because continued attempts waste resources
+- You MUST add memory to guardrails.md and exit if stuck because continued attempts waste resources
 - You MUST NOT retry same failed command more than 3 times because systematic issues need different approach
 - You SHOULD recognize file modification cycles because oscillation indicates confusion
 
@@ -168,7 +143,7 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 - Same file modified 5+ times
 - No progress in 30 minutes
 
-**Recovery:** Add Sign -> Exit -> Fresh approach next task cycle.
+**Recovery:** Add memory to guardrails.md -> Exit -> Fresh approach next task cycle.
 
 ---
 

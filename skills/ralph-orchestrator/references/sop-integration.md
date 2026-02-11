@@ -319,41 +319,53 @@ Output: .ralph/specs/user-auth/design/detailed-design.md
   - Acceptance criteria
   - Dependencies (if any)
 
-**Task format**:
+**Task format**: Individual `.code-task.md` files with structured metadata:
 ```markdown
-- [ ] Implement JWT token generation | Size: M | Files: 2
-  Create utils/jwt.ts with sign() and verify() functions.
-  Tests must validate token structure and expiration.
+## Status: PENDING
+## Blocked-By:
+## Completed:
+
+# Task: Implement JWT token generation
+
+## Description
+Create utils/jwt.ts with sign() and verify() functions.
+
+## Acceptance Criteria
+1. **Token Generation**
+   - Given valid user credentials
+   - When sign() is called
+   - Then a valid JWT is returned with correct claims
+
+## Metadata
+- **Complexity**: Medium
+- **Scenario-Strategy**: required
+- **Files to Modify**: src/utils/jwt.ts
 ```
 
 **Duration**: 5-15 minutes
 
 **Interaction style**: Mostly automatic with approval checkpoints
 
-**Example**:
+**Output**: Individual `.code-task.md` files per task in `step*/` subdirectories:
 ```bash
 Input: .ralph/specs/user-auth/implementation/plan.md
 
 sop-task-generator creates:
 
-## Implementation Plan
-
-### Setup
-- [ ] Install dependencies: jsonwebtoken, bcrypt | Size: S
-- [ ] Create database migration for users table | Size: S
-
-### Authentication
-- [ ] Implement password hashing utilities | Size: M
-- [ ] Create login endpoint with JWT generation | Size: M
-- [ ] Add token validation middleware | Size: M
-- [ ] Implement token refresh endpoint | Size: S
-
-### Testing
-- [ ] Unit tests for JWT utilities | Size: M
-- [ ] Integration tests for auth endpoints | Size: L
-- [ ] Security tests for token validation | Size: M
-
-Output: .ralph/specs/user-auth/implementation/plan.md
+.ralph/specs/user-auth/implementation/
+├── plan.md
+├── step01/
+│   ├── task-01-install-dependencies.code-task.md
+│   └── task-02-create-migration.code-task.md
+├── step02/
+│   ├── task-01-password-hashing.code-task.md
+│   ├── task-02-login-endpoint.code-task.md
+│   ├── task-03-token-middleware.code-task.md
+│   └── task-04-refresh-endpoint.code-task.md
+└── step03/
+    ├── task-01-jwt-unit-tests.code-task.md
+    ├── task-02-auth-integration-tests.code-task.md
+    └── task-03-security-tests.code-task.md
 ```
 
 ---
@@ -532,11 +544,7 @@ project-root/
 .ralph/specs/payment-investigation/specs-generated/
 
 // Orchestrator invokes sop-planning with:
-{
-  rough_idea: "Add retry mechanism to payment processing",
-  project_dir: ".ralph/specs/payment-retry",
-  discovery_path: ".ralph/specs/payment-investigation/specs-generated/"
-}
+/sop-planning rough_idea=".ralph/specs/{goal}/specs-generated/" discovery_path=".ralph/specs/{goal}/investigation.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 
 // sop-planning incorporates investigation findings
 ```
@@ -709,7 +717,7 @@ Each phase has validation:
 **Constraints:**
 - You SHOULD estimate costs before starting because this sets expectations
 - You SHOULD compare with manual implementation because this justifies approach
-- You MAY adjust quality level based on ROI because prototype mode reduces cost
+- You MUST NOT reduce quality gates to cut costs because production excellence is non-negotiable
 
 Typical cost breakdown for medium-sized feature:
 
@@ -823,5 +831,5 @@ If sub-agents report missing information:
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 2.0.0 | Updated: 2026-02-11*
 *Compliant with strands-agents SOP format (RFC 2119)*

@@ -154,7 +154,7 @@ When invoked from ralph-orchestrator in autonomous mode:
 <at_startup>
 - Read `.ralph/guardrails.md` for lessons
 - Read `.ralph/agents.md` for operational context
-- Use `QUALITY_LEVEL` and `GATE_*` from `.ralph/config.sh` if defined
+- Use `GATE_*` from `.ralph/config.sh` if defined
 </at_startup>
 
 <at_completion>

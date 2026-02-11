@@ -267,7 +267,7 @@ sequenceDiagram
 | Cache | {cache_technology} | {cache_rationale} |
 | Message Queue | {message_queue_technology} | {message_queue_rationale} |
 | Deployment | {deployment_technology} | {deployment_rationale} |
-| Test Runner | {test_runner_technology} | {test_runner_rationale} |
+| Unit Testing | {unit_testing_technology} | {unit_testing_rationale} |
 | Integration Testing | {integration_testing_technology} | {integration_testing_rationale} |
 | E2E | {e2e_technology} | {e2e_rationale} |
 

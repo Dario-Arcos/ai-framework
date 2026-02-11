@@ -6,33 +6,14 @@ This reference defines ralph configuration options in `.ralph/config.sh`. Config
 
 ---
 
-## Quality Levels
-
-**Constraints:**
-- You MUST set quality level before execution because it determines gate behavior
-- You MUST NOT use prototype in production code because shortcuts accumulate debt
-- You SHOULD use library level for reusable code because polish matters for shared code
-
-```bash
-QUALITY_LEVEL="production"  # Default
-```
-
-| Level | Behavior |
-|-------|----------|
-| `prototype` | Skip all gates, commit freely |
-| `production` | SDD mandatory, all gates must pass |
-| `library` | Full coverage + docs + edge cases |
-
----
-
 ## Backpressure Gates
 
 **Constraints:**
-- You MUST configure gates for your stack because defaults may not match your tooling
+- Gates are auto-derived from Technology Stack in `detailed-design.md` during Step 7 (Configure Execution)
 - You MUST pass all gates before commit because partial passes indicate incomplete work
 - You SHOULD leave unused gates empty because non-existent commands cause failures
 
-Customize for your stack:
+Examples by stack:
 
 ```bash
 # JavaScript/TypeScript
@@ -121,15 +102,7 @@ The `Scenario-Strategy` field in `.code-task.md` files controls whether GATE_TES
 | `required` (default) | All gates run. SDD mandatory. |
 | `not-applicable` | GATE_TEST skipped. GATE_TYPECHECK, GATE_LINT, GATE_BUILD still run. |
 
-**Interaction with QUALITY_LEVEL:**
-
-| QUALITY_LEVEL | Scenario-Strategy | Result |
-|---|---|---|
-| `prototype` | any | All gates skipped (prototype overrides everything) |
-| `production` | `required` | Full SDD + all gates |
-| `production` | `not-applicable` | No SDD, skip GATE_TEST, other gates run |
-| `library` | `required` | Full SDD + all gates + coverage |
-| `library` | `not-applicable` | Skip GATE_TEST, other gates + coverage |
+All tasks run full SDD + all gates. Tasks with `Scenario-Strategy: not-applicable` skip GATE_TEST but other gates still run.
 
 The `sop-task-generator` classifies tasks automatically. When in doubt, it defaults to `required` (safe default). The `task-completed.py` hook reads the field at gate execution time.
 
@@ -225,7 +198,7 @@ If config changes don't take effect:
 If execution exits unexpectedly:
 - You SHOULD check `.ralph/failures.json` for circuit breaker state
 - You SHOULD review `.ralph/metrics.json` for failure patterns
-- You MUST check `.ralph/guardrails.md` for accumulated error Signs
+- You MUST check `.ralph/guardrails.md` for accumulated memories
 
 ---
 

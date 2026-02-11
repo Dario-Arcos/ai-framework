@@ -87,13 +87,13 @@ This reference covers common issues encountered during sop-code-assist execution
 
 ---
 
-## Context.md missing key information
+## Task file missing key information
 
 **Symptom:** Implementation decisions made without sufficient context
 
 **Cause:** Explore phase incomplete or rushed
 
-**Fix:** Re-run explore phase, use CODEASSIST.md for guidance
+**Fix:** Re-run explore phase, verify .code-task.md has sufficient context
 
 **What .code-task.md MUST contain:**
 - [ ] Project structure overview
@@ -143,9 +143,9 @@ This reference covers common issues encountered during sop-code-assist execution
 
 **Symptom:** Code doesn't match project style
 
-**Cause:** Explored wrong files or missed CODEASSIST.md
+**Cause:** Explored wrong files or missed .code-task.md context
 
-**Fix:** Check CODEASSIST.md, refactor to match conventions
+**Fix:** Check .code-task.md and .ralph/agents.md, refactor to match conventions
 
 **Convention Checklist:**
 - [ ] Naming (camelCase vs snake_case)

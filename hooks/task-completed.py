@@ -9,10 +9,9 @@ Guard: only activates in ralph-orchestrator projects (.ralph/config.sh).
 Non-ralph Agent Teams usage is transparent (immediate exit 0).
 
 Decision logic:
-  1. prototype quality  → exit 0 (skip all gates)
-  2. Run gates in order → first failure = exit 2 + increment failures.json
-  3. Coverage gate      → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
-  4. All gates pass     → exit 0 + reset failures.json + update metrics.json
+  1. Run gates in order → first failure = exit 2 + increment failures.json
+  2. Coverage gate      → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
+  3. All gates pass     → exit 0 + reset failures.json + update metrics.json
 """
 import fcntl
 import json
@@ -29,7 +28,6 @@ from pathlib import Path
 # ─────────────────────────────────────────────────────────────────
 
 CONFIG_KEYS = [
-    "QUALITY_LEVEL",
     "GATE_TEST",
     "GATE_TYPECHECK",
     "GATE_LINT",
@@ -39,7 +37,6 @@ CONFIG_KEYS = [
 ]
 
 CONFIG_DEFAULTS = {
-    "QUALITY_LEVEL": "production",
     "GATE_TEST": "npm test",
     "GATE_TYPECHECK": "npm run typecheck",
     "GATE_LINT": "npm run lint",
@@ -285,12 +282,6 @@ def main():
 
     # Load config
     config = load_config(config_path)
-
-    # Prototype: skip all gates
-    if config["QUALITY_LEVEL"] == "prototype":
-        reset_failure(ralph_dir, teammate_name)
-        update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
-        sys.exit(0)
 
     # Run quality gates in order (skip GATE_TEST for not-applicable tasks)
     gates = []

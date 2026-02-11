@@ -57,7 +57,6 @@ Fires when a teammate marks a task complete. Decision by exit code:
 | Condition | Exit | Effect |
 |-----------|------|--------|
 | Not a ralph project | 0 | Pass-through |
-| QUALITY_LEVEL=prototype | 0 | Skip all gates — accept task |
 | All gates pass | 0 | Reset failure counter, update metrics, accept task |
 | Any gate fails | 2 | Reject: "Gate '{name}' failed. Fix before completing." |
 
@@ -160,11 +159,13 @@ Coordinators rotate after `MAX_TASKS_PER_TEAMMATE` completed tasks (default: 20)
 tmux session: "ralph"
 
 Window 0 "team"     → Claude Code lead + teammate panes (Agent Teams auto-splits)
-Window 1 "services" → COCKPIT_DEV_SERVER + COCKPIT_DB (if configured)
-Window 2 "quality"  → COCKPIT_TEST_WATCHER (if configured)
-Window 3 "monitor"  → COCKPIT_LOGS (if configured)
-Window 4 "shell"    → Free terminal for manual commands
+Window ? "services" → COCKPIT_DEV_SERVER + COCKPIT_DB (if configured)
+Window ? "quality"  → COCKPIT_TEST_WATCHER (if configured)
+Window ? "monitor"  → COCKPIT_LOGS (if configured)
+Window N "shell"    → Free terminal for manual commands (always last)
 ```
+
+Window numbers depend on configured services. `team` is always window 0, `shell` is always the last window. Middle windows (`services`, `quality`, `monitor`) are created only if their COCKPIT_* variables are configured.
 
 Navigation: `Ctrl+B {N}` to switch windows (standard tmux prefix).
 
@@ -206,7 +207,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 | `.ralph/failures.json` | Per-teammate consecutive failure count | TaskCompleted hook | TeammateIdle hook (circuit breaker) |
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
 | `.ralph/agents.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
-| `.ralph/config.sh` | Quality level, gates, cockpit services | Lead (Step 7) | Hooks, launch-build.sh |
+| `.ralph/config.sh` | Gates, cockpit services, safety settings | Lead (Step 7) | Hooks, launch-build.sh |
 | `.ralph/handoff-{name}.md` | Rotation context transfer | Coordinator (before rotation) | Replacement coordinator |
 
 ---

@@ -11,7 +11,7 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 ## Available Gates
 
 **Constraints:**
-- You MUST configure appropriate gates for your quality level because missing gates allow defects through
+- You MUST configure all gates for your stack because missing gates allow defects through
 - You SHOULD use project-specific commands because generic commands may miss project conventions
 
 | Gate | Purpose | Example Command |
@@ -23,22 +23,7 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 
 ---
 
-## Gate Configuration by Quality Level
-
-### Prototype
-
-**Constraints:**
-- You MAY skip all gates when rapid iteration is required
-- You MUST NOT use prototype level for production code because untested code causes production failures
-
-```bash
-QUALITY_LEVEL="prototype"
-# All gates skipped
-# Commits freely
-# Use for: rapid iteration, proof of concept
-```
-
-### Production (Default)
+## Gate Configuration
 
 **Constraints:**
 - You MUST pass GATE_TEST before committing because untested code has higher defect rates
@@ -46,29 +31,14 @@ QUALITY_LEVEL="prototype"
 - You MUST pass GATE_LINT because style violations reduce code readability
 - You MUST pass GATE_BUILD because build failures indicate broken code
 
+All gates are required. SDD is mandatory. There is one quality standard: production excellence.
+
 ```bash
-QUALITY_LEVEL="production"
+# All gates required for every task
 # GATE_TEST: Required
 # GATE_TYPECHECK: Required
 # GATE_LINT: Required
 # GATE_BUILD: Required
-# Use for: most development work
-```
-
-### Library
-
-**Constraints:**
-- You MUST achieve 100% test coverage because library users depend on complete testing
-- You MUST complete documentation because undocumented libraries cannot be adopted
-- You MUST test edge cases because library users encounter scenarios you didn't anticipate
-
-```bash
-QUALITY_LEVEL="library"
-# All production gates PLUS:
-# - 100% test coverage required
-# - Documentation must be complete
-# - Edge cases must be tested
-# Use for: published packages, critical infrastructure
 ```
 
 ---
@@ -92,7 +62,7 @@ If any gate fails, the `task-completed.py` hook returns exit 2 with failure outp
 ## SDD Gate Enforcement
 
 **Constraints:**
-- You MUST write scenarios before implementation in production/library mode because SDD ensures testable design
+- You MUST write scenarios before implementation because SDD ensures testable design
 - You MUST see scenario fail first (scenario) because passing scenarios prove nothing without failure
 - You MUST implement minimal code to satisfy (satisfy) because over-implementation adds unnecessary complexity
 - You MUST refactor while satisfied because refactoring on unsatisfied risks breaking functionality
@@ -136,7 +106,6 @@ GATE_E2E="npm run e2e"
 ```python
 # In hooks/task-completed.py — add to CONFIG_KEYS and gate execution
 CONFIG_KEYS = [
-    "QUALITY_LEVEL",
     "GATE_TEST", "GATE_TYPECHECK", "GATE_LINT", "GATE_BUILD",
     "GATE_E2E",  # ← add here
 ]

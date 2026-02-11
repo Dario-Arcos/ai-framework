@@ -108,7 +108,7 @@ When blocked:
    - Type (missing_dependency, test_failure, environment_issue)
    - Full details
    - Suggested resolution
-2. Add Sign to .ralph/guardrails.md if applicable
+2. Add memory to .ralph/guardrails.md if applicable
 3. Mark task as BLOCKED via TaskUpdate
 4. Claim next available task (teammates never stop on one blocker)
 ```

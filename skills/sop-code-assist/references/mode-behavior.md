@@ -30,8 +30,7 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 |--------|-------------|------|
 | Parameter confirmation | Ask user to confirm | Log and proceed |
 | Directory creation | Notify user | Log in commit message |
-| Instruction file selection | Present list, ask which to include | Auto-include CODEASSIST.md + core files |
-| Missing CODEASSIST.md | Offer to create template | Note in .ralph/guardrails.md |
+| Instruction file selection | Present list, ask which to include | Auto-include .code-task.md + core files |
 
 ### Explore Phase
 
@@ -219,7 +218,7 @@ When blocked in autonomous mode:
 ## In blockers.md
 ### Blocker Encountered
 - **Timestamp:** [ISO timestamp]
-- **Type:** missing_dependency | test_failure | environment_issue
+- **Type:** missing_dependency | test_failure | environment_issue | ambiguity | other
 - **Details:** [Full description]
 - **Attempted Resolution:** [What was tried]
 - **Suggested Action:** [How orchestrator can resolve]
@@ -227,7 +226,7 @@ When blocked in autonomous mode:
 
 The blocker details in blockers.md follow this structure to enable machine-readable parsing if needed:
 - **Timestamp:** ISO 8601 format
-- **Type:** Categorized (missing_dependency, test_failure, environment_issue)
+- **Type:** Categorized (missing_dependency, test_failure, environment_issue, ambiguity, other)
 - **Suggested Action:** Concrete next step for resolution
 
 #### Why This Matters
@@ -255,24 +254,6 @@ After resolution, would you like to continue in autonomous or interactive mode?"
 ```
 
 ## Configuration
-
-### CODEASSIST.md Integration
-
-Projects can override default mode behavior in CODEASSIST.md:
-
-```markdown
-## Mode Overrides
-
-### Force Interactive For
-- Security-related changes
-- Database schema modifications
-- API contract changes
-
-### Force Autonomous For
-- Test file updates only
-- Documentation updates
-- Style/formatting changes
-```
 
 ## Summary
 

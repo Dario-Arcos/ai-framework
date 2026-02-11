@@ -15,6 +15,7 @@ Decision logic:
   4. Pending tasks remain       → exit 2 (keep working)
   5. All tasks complete         → exit 0 (allow idle)
 """
+import fcntl
 import json
 import os
 import subprocess
@@ -60,7 +61,10 @@ def read_failures(ralph_dir):
     try:
         if failures_path.exists():
             with open(failures_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                data = json.load(f)
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                return data
     except (json.JSONDecodeError, OSError):
         pass
     return {}

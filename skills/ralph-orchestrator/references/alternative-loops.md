@@ -41,7 +41,7 @@ Parse coverage report, select ONE uncovered function.
 SDD still applies: scenario must fail first, then pass.
 
 ## Phase 3: Validate
-Coverage must increase. If not -> Sign + exit.
+Coverage must increase. If not -> add memory to guardrails.md + exit.
 ```
 
 ---
@@ -70,7 +70,7 @@ Fix ONE error completely. Don't batch.
 
 ## Validation
 Lint error count must decrease by >=1.
-Same error type appearing -> Sign + exit.
+Same error type appearing -> add memory to guardrails.md + exit.
 ```
 
 ---
@@ -167,7 +167,7 @@ passes:
 If coverage remains stagnant:
 - You SHOULD verify test actually runs the target code
 - You SHOULD check coverage tool configuration includes target files
-- You MUST exit with Sign if same function fails 3 times
+- You MUST exit with memory to guardrails.md if same function fails 3 times
 
 ### Lint Loop Creates New Errors
 
@@ -185,5 +185,5 @@ If custom loop runs indefinitely:
 
 ---
 
-*Version: 1.1.0 | Updated: 2026-01-27*
+*Version: 2.0.0 | Updated: 2026-02-11*
 *Compliant with strands-agents SOP format (RFC 2119)*

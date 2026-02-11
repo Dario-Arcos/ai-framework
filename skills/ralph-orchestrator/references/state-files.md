@@ -17,7 +17,7 @@ This reference defines the state files used by Ralph for persistent state manage
 |------|---------|-----------|
 | `.ralph/config.sh` | Project configuration | Project lifetime |
 | `.ralph/agents.md` | Operational guide (~50 lines) | Project lifetime |
-| `.ralph/guardrails.md` | Signs (accumulated error lessons) | Current execution |
+| `.ralph/guardrails.md` | Memories (fixes, decisions, patterns) | Current execution |
 | `.ralph/failures.json` | Per-teammate failure tracking | Current execution |
 | `.ralph/metrics.json` | Task success/failure counts | Current execution |
 | `.ralph/specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
@@ -141,12 +141,12 @@ If state files become inconsistent:
 - You MUST NOT continue execution with corrupted state
 - You SHOULD reset `.ralph/failures.json` if circuit breaker is stuck
 
-### Signs Ignored by Teammates
+### Memories Ignored by Teammates
 
-If same errors repeat despite Signs in .ralph/guardrails.md:
-- You SHOULD verify Sign format includes Trigger and Instruction
+If same errors repeat despite memories in .ralph/guardrails.md:
+- You SHOULD verify memory format includes ID and content (see memories-system.md)
 - You SHOULD use `SendMessage` to remind specific teammate to re-read .ralph/guardrails.md
-- You MUST review Sign clarity (vague instructions are ignored)
+- You MUST review memory clarity (vague instructions are ignored)
 
 ### Concurrent Write Conflicts
 

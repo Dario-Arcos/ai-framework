@@ -46,8 +46,8 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 | Signal | Healthy | Concerning | Action |
 |--------|---------|------------|--------|
 | Tasks completing | Steady progress | No completions for extended time | Check failures.json, SendMessage |
-| Failure count | 0-1 consecutive | 2+ consecutive per teammate | Review gate output, add Sign |
-| .ralph/guardrails.md growth | Gradual, useful Signs | Rapid growth, repetitive Signs | Task may be too complex — consider splitting |
+| Failure count | 0-1 consecutive | 2+ consecutive per teammate | Review gate output, add memory to guardrails.md |
+| .ralph/guardrails.md growth | Gradual, useful memories | Rapid growth, repetitive memories | Task may be too complex — consider splitting |
 | Blocked tasks | Rare | Multiple tasks blocked | Review blockers.md, may need user input |
 
 ---
@@ -142,9 +142,9 @@ Each key is a teammate name, and the value is the consecutive failure count (int
 
 1. `TaskList` — identify which tasks failed or are stuck
 2. `Read(".ralph/failures.json")` — which teammate is failing, what gate
-3. `Read(".ralph/guardrails.md")` — are there relevant Signs already?
+3. `Read(".ralph/guardrails.md")` — are there relevant memories already?
 4. `SendMessage` to struggling teammate — ask for status or provide guidance
-5. If systematic: add Sign to .ralph/guardrails.md, all teammates benefit
+5. If systematic: add memory to .ralph/guardrails.md, all teammates benefit
 
 ### Common Failure Patterns
 
@@ -153,7 +153,7 @@ Each key is a teammate name, and the value is the consecutive failure count (int
 | Gate misconfiguration | All teammates fail same gate | Fix gate command in config.sh, relaunch |
 | Missing dependency | Build/test gates fail immediately | Install dependency, add to .ralph/agents.md |
 | Task too complex | Teammate cycles without completing | Split task into subtasks |
-| Flaky tests | Intermittent gate failures | Fix test, add Sign about flaky test |
+| Flaky tests | Intermittent gate failures | Fix test, add memory about flaky test |
 
 ---
 
