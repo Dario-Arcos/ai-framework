@@ -100,3 +100,7 @@ Extract:
 - **Framework idioms**: how the project uses its framework (conventional vs custom)
 - **API type**: REST / GraphQL / gRPC / WebSocket / CLI (from routes, schemas, commands)
 - **Domain concepts**: key business entities, terminology used in variable/type names → project.md
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

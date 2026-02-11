@@ -135,7 +135,7 @@ MEMORIES_BUDGET=2000     # Max tokens to inject (~8000 chars)
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `MEMORIES_ENABLED` | `true` | Enable/disable the guardrails.md memory system. When false, teammates skip writing learned patterns and error signs |
+| `MEMORIES_ENABLED` | `true` | Enable/disable the guardrails.md memory system. When false, teammates skip writing learned patterns and error patterns |
 | `MEMORIES_BUDGET` | `2000` | Maximum tokens to inject from guardrails.md (~8000 chars). Prevents unbounded context growth in long-running sessions |
 
 ---

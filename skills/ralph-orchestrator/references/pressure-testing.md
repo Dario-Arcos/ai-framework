@@ -4,7 +4,7 @@
 
 This reference documents adversarial scenarios to validate ralph-orchestrator orchestrator behavior and ensure role boundaries are maintained. Understanding pressure testing is essential for verifying agent compliance under stress.
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-02-11
 
 ---
 

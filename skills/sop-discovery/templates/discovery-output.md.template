@@ -148,7 +148,7 @@ Captures problem definition, constraints, risks, and prior art before planning.
 
 1. **Review this discovery document** with stakeholders
 2. **Execute recommended spikes** (if any) before planning
-3. **Proceed to planning phase** using `sop-planning` skill to create detailed Problem Definition Document (PDD)
+3. **Proceed to planning phase** using `sop-planning` skill to create detailed implementation plan
 
 ---
 

@@ -26,3 +26,7 @@ For tasks with branching logic, guide Claude through decision points:
 2. Creation workflow: [steps]
 3. Editing workflow: [steps]
 ```
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

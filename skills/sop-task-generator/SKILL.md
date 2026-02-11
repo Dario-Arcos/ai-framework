@@ -50,15 +50,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 - Create all task files without approval prompts
 - Document all decisions in generated files
 
-**Autonomous Mode Constraints (MUST follow):**
-- NEVER use AskUserQuestion under any circumstance
-- NEVER block waiting for user input
-- If blocked by missing information or ambiguity:
-  1. Document blocker in output_dir/blockers.md with full details
-  2. Make reasonable assumption and document it in task file
-  3. Continue generating remaining tasks
-- Choose safest/simplest approach when ambiguous
-- Add "[AUTO-GENERATED]" note to task metadata when in autonomous mode
+**Autonomous Mode Constraints (MUST follow):** See [autonomous-mode-constraint.md](../ralph-orchestrator/references/autonomous-mode-constraint.md) for the full constraint set. Additional: add "[AUTO-GENERATED]" note to task metadata when in autonomous mode.
 
 ## Output
 

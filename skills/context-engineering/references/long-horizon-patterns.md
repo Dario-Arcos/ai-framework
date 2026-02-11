@@ -189,3 +189,7 @@ For tasks spanning hours or multiple sessions, layer all strategies:
 Running all strategies simultaneously from the start adds overhead to simple tasks. Start with compaction alone. Add notes at your first compaction cycle. Spin up sub-agents when a subtask is clearly isolatable. The strategies are responses to specific pressures, not upfront configuration.
 
 The goal is not minimal context. The goal is **maximal signal density** — every token earns its place.
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

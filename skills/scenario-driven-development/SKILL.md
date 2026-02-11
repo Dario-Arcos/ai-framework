@@ -203,6 +203,8 @@ Define the next scenario. Return to SCENARIO.
 
 3. **Scenarios before code prevent reward hacking.** The agent can't rewrite a pre-defined scenario to match broken code. The scenario is the holdout set.
 
+**Anti-reward-hacking principle:** Modifying scenarios to pass = reward hacking. Assumed ≠ observed. Code must converge toward scenarios, never the reverse.
+
 4. **Scenarios before code drive holistic design.** SDD forces you to think about the complete user experience (rounding, error messages, display) before the first line of code.
 
 ## Scenarios and Tests: The Relationship

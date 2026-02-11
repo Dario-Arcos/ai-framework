@@ -60,3 +60,7 @@ Explicit type:
 - **Multiple commits**: 2+ categories with 2+ files each OR any security files
 - **Single commit**: Only one significant category OR limited changes
 - Processing order: security → config → docs → test → main
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

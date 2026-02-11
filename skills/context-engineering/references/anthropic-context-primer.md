@@ -64,3 +64,7 @@ Most effective agents combine:
 > Find the smallest set of high-signal tokens that maximize the likelihood of the desired outcome.
 
 Every technique in this skill — passive context, indexes, compaction, sub-agents — serves this single objective.
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

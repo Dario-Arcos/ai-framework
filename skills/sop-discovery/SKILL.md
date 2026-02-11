@@ -64,14 +64,7 @@ For AI agents executing discovery as part of larger workflow.
 - Quality: Production standard (SDD mandatory, all gates must pass)
 - Breaks: Not applicable
 
-**Autonomous Mode Constraints (MUST follow):**
-- NEVER use AskUserQuestion under any circumstance
-- NEVER block waiting for user input
-- If blocked by missing information or ambiguity:
-  1. Document blocker in `{project_dir}/blockers.md` with full context
-  2. Make reasonable assumption and document rationale
-  3. Continue with discovery process
-- Choose safest/simplest approach when ambiguous
+**Autonomous Mode Constraints (MUST follow):** See [autonomous-mode-constraint.md](../ralph-orchestrator/references/autonomous-mode-constraint.md) for the full constraint set. Use `{project_dir}/blockers.md` as the blocker output path.
 
 ### Mode Detection
 
@@ -277,7 +270,7 @@ See `templates/discovery-output.md.template` for summary structure.
 
 Once the discovery document is complete, you **SHOULD** suggest one of the following next steps:
 
-1. **Proceed to Planning** - Use the `sop-planning` skill to create a detailed Problem Definition Document (PDD)
+1. **Proceed to Planning** - Use the `sop-planning` skill to create a detailed implementation plan
 2. **Execute Spikes** - Time-box exploration of high-uncertainty areas before planning
 3. **Refine Scope** - If constraints or risks suggest the goal is too large, work with the user to decompose it
 
@@ -350,7 +343,7 @@ Let me start by understanding the problem better.
 
 ## Related Skills
 
-- **sop-planning** - Next phase: create detailed Problem Definition Document
+- **sop-planning** - Next phase: create detailed implementation plan
 - **sop-task-generator** - After planning: generate implementation tasks
 - **brainstorming** - Alternative exploratory approach for simpler features
 - **ralph-orchestrator** - Autonomous implementation after planning

@@ -273,3 +273,7 @@ Sources: RAE (Real Academia Española), AESLA/RAEL linguistic study, Wikipedia W
 - [Genbeta - Palabras que delatan ChatGPT](https://www.genbeta.com/inteligencia-artificial/estas-palabras-frases-tus-textos-dejan-claro-has-usado-chatgpt)
 - [Infobae - Señales de texto escrito por IA](https://www.infobae.com/tecno/2025/03/29/cinco-senales-en-un-mensaje-que-indican-que-fue-escrito-por-una-ia-no-por-una-persona/)
 - [Fundación Comillas - Gerundio de posterioridad](https://fundacioncomillas.es/2019/09/26/gerundio-de-posterioridad/)
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

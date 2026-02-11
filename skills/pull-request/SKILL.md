@@ -111,7 +111,7 @@ Commits:
 
 **Review A: Code Quality & Architecture**
 
-Dispatch `ai-framework:code-reviewer` agent with these parameters (matches template at `requesting-code-review/code-reviewer.md`):
+Dispatch `ai-framework:code-reviewer` agent with these parameters:
 
 - DESCRIPTION: `{commit_count} commits for PR to {target_branch}: {first_commit}`
 - PLAN_REFERENCE: `Pre-PR quality gate validation before merge to {target_branch}`

@@ -94,3 +94,7 @@ Hardening steps:
 2. **Compress aggressively**: an index pointing to retrievable files works as well as full docs
 3. **Test with evals targeting unknown APIs**: that's where documentation access is most valuable
 4. **Structure docs for retrieval**: agents should find and read specific files, not need everything upfront
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

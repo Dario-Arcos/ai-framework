@@ -97,6 +97,12 @@ Implement using the scenario-driven-development skill.
 - Follow its Gate Functions at each phase transition
 - After all tests pass, run quality validation
 
+#### Anti-Reward-Hacking Constraint
+- NEVER modify existing tests to make them pass new code
+- NEVER weaken acceptance criteria to match implementation limitations
+- Scenarios are holdout sets: code must converge toward them, not the reverse
+- If a scenario cannot be satisfied, escalate as blocker — do not adjust the scenario
+
 <failure_escalation>
 **IF** during SDD you hit unexpected failures (scenario unclear, stuck at SATISFY after 2 attempts, build breaks for unknown cause):
 
@@ -124,6 +130,14 @@ Implement using the scenario-driven-development skill.
 > sdd:scenario {scenario_name}
 > sdd:satisfy {scenario_name}
 </autonomous_signals>
+
+### Satisfaction Model
+Satisfaction is NOT boolean (green/red). It is convergence:
+- Run scenarios → observe trajectories → measure fraction satisfying intent
+- A scenario "satisfies" when the observable behavior matches the acceptance criteria
+  across multiple execution paths, not just the happy path
+- Report satisfaction as [M/N scenarios satisfied] — partial satisfaction is valid signal
+- The SDD cycle runs UNTIL satisfaction converges (scenarios pass AND STAY PASSING)
 
 ### 5. Commit
 

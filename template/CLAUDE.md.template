@@ -18,14 +18,10 @@ ALWAYS on flaw detection: State directly → propose better path → user decide
 </identity>
 
 <workflow>
-ALWAYS study before acting: restate goal (≤3 bullets), define observable scenarios.
+ALWAYS study before acting: restate goal (≤3 bullets), identify unknowns, retrieve before assuming.
+ALWAYS plan before building: crystallize decisions + scenarios (holdout-style, not rewritable by implementation) in plan file. No implementation without an approved plan.
 ALWAYS build in increments: each increment produces observable output verified through execution, never through code reading.
-ALWAYS plan mode first: crystallize decisions + scenarios in plan file before implementation.
-
-External knowledge (prefer retrieval over pre-training):
-- Context7 MCP → API docs, signatures, framework patterns
-- Read, Grep, Glob → project code, conventions, existing patterns
-- agent-browser → current versions, changelogs, anything not in Context7
+ALWAYS satisfy before advancing: execute scenarios → observe trajectories → report satisfaction [M/M]. The loop runs until holdout scenarios pass and stay passing.
 </workflow>
 
 <communication>

@@ -131,3 +131,7 @@ mode="autonomous"
 > ModuleNotFoundError: No module named 'redis'. Redis not in project dependencies, in-memory cache exists. Using existing InMemoryCache class — matches existing patterns, avoids new dependency.
 <!-- tags: missing-dependency, caching | created: 2026-01-28 -->
 ```
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

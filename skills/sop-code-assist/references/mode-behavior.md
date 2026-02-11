@@ -264,3 +264,7 @@ After resolution, would you like to continue in autonomous or interactive mode?"
 | **Errors** | Discuss with user | Attempt to resolve, escalate if stuck |
 | **Progress** | Verbal updates | Written in commit message |
 | **Best For** | Learning, uncertainty, high risk | Batch processing, routine, time-sensitive |
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

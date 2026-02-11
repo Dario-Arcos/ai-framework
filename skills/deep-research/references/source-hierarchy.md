@@ -41,3 +41,7 @@ agent-browser screenshot sec-results.png
 agent-browser state save session.json   # After login
 agent-browser state load session.json   # Resume later
 ```
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

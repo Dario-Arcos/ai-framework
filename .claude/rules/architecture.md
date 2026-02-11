@@ -8,7 +8,7 @@
 ## Layers
 ```
 agents/           # Specialized reasoning modules (6 .md files, auto-delegated)
-skills/           # Workflow commands (25 dirs, each self-contained: SKILL.md + references/)
+skills/           # Workflow commands (24 dirs, each self-contained: SKILL.md + references/)
 hooks/            # Lifecycle automation (Python + Shell, triggered by hooks.json)
 template/         # Distributed to target projects on install (.claude/, CLAUDE.md, .gitignore)
 human-handbook/   # VitePress documentation site (not runtime code)
@@ -28,7 +28,8 @@ scripts/          # Build utilities (sync-versions.cjs)
 SessionStart → hooks (sync templates, inject skill enforcement, check browser)
   → User invokes /skill-name or agent auto-delegates
   → Skill SKILL.md loaded → execution (may spawn subagents)
-  → Agent validates output (code-reviewer, security-reviewer)
+  → TeammateIdle → leader assigns new work or shuts down teammate
+  → TaskCompleted → agent validates output (code-reviewer, security-reviewer)
   → SessionStop → notify.sh
 ```
 

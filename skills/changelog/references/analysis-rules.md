@@ -43,3 +43,7 @@ NO tres entradas separadas.
 ```
 
 Criterios: mismo módulo/componente, mismo PR asociado, mismo scope funcional.
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

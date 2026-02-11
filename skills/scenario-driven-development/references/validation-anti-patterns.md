@@ -397,3 +397,7 @@ You're in an anti-pattern if:
 - An agent modified existing scenarios to make them pass (reward hacking)
 - Code returns technically-correct-but-wrong values (precision hacking)
 - A single hardcoded return value satisfies the scenario (oracle hacking)
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

@@ -42,3 +42,7 @@ Claude: "What are the constraints? And the risks? And prior art you know of?"
 ---
 
 *This protocol applies to ALL discovery steps that involve user questioning.*
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

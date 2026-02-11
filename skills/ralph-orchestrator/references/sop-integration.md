@@ -21,9 +21,13 @@ Ralph orchestrates SOP skills to transform ideas into implementations through a 
 ```mermaid
 graph TD
     subgraph "Planning Phase - Interactive"
-        A[/ralph-orchestrator invoked] --> B{Flow?}
-        B -->|Forward| C[sop-discovery]
-        B -->|Reverse| D[sop-reverse]
+        A[/ralph-orchestrator invoked] --> B{Route?}
+        B -->|Build from scratch| C[sop-discovery]
+        B -->|Build with referents| R[sop-reverse referent]
+        B -->|Investigate only| D[sop-reverse reverse]
+
+        R --> R2[referents/ catalog]
+        R2 --> H
 
         D --> E[Generate specs]
         E --> F{Continue?}
@@ -45,6 +49,7 @@ graph TD
 
     style A fill:#e1f0ff
     style C fill:#fff4e1
+    style R fill:#f0ffe1
     style D fill:#ffe1f0
     style H fill:#f0e1ff
     style I fill:#e1ffe1
@@ -99,18 +104,23 @@ Output: .ralph/specs/user-auth/discovery.md
 
 ---
 
-### 2. sop-reverse (Alternative Entry Point)
+### 2. sop-reverse (Referent Discovery & Reverse Engineering)
 
 **Constraints:**
 - You MUST use sop-reverse when investigating existing artifacts because understanding prevents breaking changes
+- You MUST use sop-reverse in referent mode when building something new and world-class exemplars exist because building on proven patterns beats guessing
 - You MUST complete batch analysis before refinement questions because context informs follow-up
 - You SHOULD continue to forward flow when planning improvements because reverse generates specs that feed planning
 
-**Purpose**: Investigate existing artifacts before improving them
+**Purpose**: Two complementary capabilities:
+1. **Referent Discovery** (`search_mode=referent`): Find world-class implementations before designing something new
+2. **Reverse Engineering** (`search_mode=reverse`): Investigate existing artifacts before improving them
 
-**When invoked**: First step of Reverse flow
+**When invoked**:
+- **Referent mode**: First step of "Build with referents" flow
+- **Reverse mode**: First step of "Investigate only" flow
 
-**Input**: Path to artifact, URL, or description
+**Input**: Path to artifact, URL, concept name, or domain description
 
 **Artifacts supported**:
 - Codebase: `/path/to/repo`
@@ -118,27 +128,38 @@ Output: .ralph/specs/user-auth/discovery.md
 - Design documents: `/path/to/docs/`
 - Processes: "Our deployment workflow"
 - Concepts: "Event sourcing pattern"
+- Domains for referent search: "real-time collaboration", "developer API with excellent DX"
 
-**Output**: `.ralph/specs/{investigation}/specs-generated/`
+**Output**:
+- **Reverse mode**: `.ralph/specs/{investigation}/specs-generated/`
+- **Referent mode**: `.ralph/specs/{goal}/referents/`
 
 **What it contains**:
+
+*Reverse mode:*
 - Artifact analysis
 - Architecture patterns found
 - Dependencies discovered
 - Issues and improvements identified
 - Generated specifications
 
-**Duration**: 20-40 minutes (varies by artifact size)
+*Referent mode:*
+- Per-referent analysis files
+- Comparative analysis across referents
+- Extracted patterns ready for adoption
+- Catalog with scores and recommendations
+
+**Duration**: 20-40 minutes (varies by artifact size and number of referents)
 
 **Interaction style**:
 - Batch analysis (automatic)
 - Interactive refinement (one question at a time)
 
-**Example**:
+**Example (Reverse — investigate existing)**:
 ```bash
 User: "Investigate legacy payment processing module"
 
-sop-reverse:
+sop-reverse (search_mode=reverse):
 1. Analyzes /src/payments/ (automatic)
 2. Discovers: Stripe integration, manual retry logic, no tests
 3. Asks refinement questions:
@@ -156,6 +177,27 @@ User: "Continue to forward flow to add PayPal support"
 → Proceeds to sop-planning with existing context
 ```
 
+**Example (Referent — discover before building)**:
+```bash
+User: "Build a real-time collaboration engine"
+
+sop-reverse (search_mode=referent):
+1. Identifies referents: Yjs, Automerge, ShareDB, Liveblocks
+2. Analyzes each: architecture, CRDT approach, API design, performance
+3. Comparative synthesis: pattern frequency, best-of-breed per aspect
+4. Extracts adoptable patterns
+
+Output: .ralph/specs/collab-engine/referents/
+├── catalog.md
+├── yjs-analysis.md
+├── automerge-analysis.md
+├── sharedb-analysis.md
+├── comparative-analysis.md
+└── extracted-patterns.md
+
+→ Proceeds to sop-planning with referent patterns as design foundation
+```
+
 ---
 
 ### 3. sop-planning
@@ -167,11 +209,12 @@ User: "Continue to forward flow to add PayPal support"
 
 **Purpose**: Create detailed requirements, research, and design
 
-**When invoked**: After discovery (or after reverse if continuing)
+**When invoked**: After discovery, referent discovery, or reverse (if continuing)
 
 **Input**:
-- `.ralph/specs/{goal}/discovery.md` (from sop-discovery)
-- OR `.ralph/specs/{investigation}/specs-generated/` (from sop-reverse)
+- `.ralph/specs/{goal}/discovery.md` (from sop-discovery — forward flow)
+- OR `.ralph/specs/{goal}/referents/catalog.md` (from sop-reverse referent — referent flow)
+- OR `.ralph/specs/{investigation}/specs-generated/` (from sop-reverse reverse — if continuing)
 - OR rough idea description
 
 **Output**:
@@ -370,7 +413,7 @@ sop-task-generator creates:
 
 ---
 
-## The Complete Forward Flow
+## The Complete Forward Flow (Build from Scratch)
 
 **Constraints:**
 - You MUST complete each phase before proceeding because phases depend on prior outputs
@@ -411,7 +454,7 @@ sequenceDiagram
     T-->>O: plan.md created
 
     O->>U: Execution mode?
-    U->>O: AFK, production quality
+    U->>O: autonomous, production quality
 
     O->>C: Launch cockpit: bash .ralph/launch-build.sh
     C->>S: Task 1
@@ -425,7 +468,74 @@ sequenceDiagram
 
 ---
 
-## The Complete Reverse Flow
+## The Complete Referent Flow (Build with Referents)
+
+**Constraints:**
+- You MUST complete referent discovery before planning because proven patterns inform better designs
+- You MUST analyze multiple referents because single-referent analysis risks cargo-culting
+- You SHOULD extract patterns into structured format because raw analysis is harder to consume during planning
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant O as Orchestrator
+    participant R as sop-reverse (referent)
+    participant P as sop-planning
+    participant T as sop-task-generator
+    participant C as Agent Teams Cockpit
+    participant S as Sub-agents
+
+    U->>O: /ralph-orchestrator
+    O->>U: Route selection?
+    U->>O: Build with referents
+
+    O->>R: Invoke with concept + search_mode=referent
+    R->>U: What domain/concept?
+    U->>R: Real-time collaboration engine
+
+    Note over R: Identify referents (Yjs, Automerge, ShareDB...)
+    Note over R: Analyze each referent
+    Note over R: Comparative synthesis
+
+    R->>U: Best foundation: Yjs for CRDT, Liveblocks for API DX
+    R-->>O: referents/ catalog created
+
+    O->>P: Invoke with referent catalog
+    Note over P: Planning uses extracted patterns as design input
+    P->>U: Architecture based on Yjs CRDT pattern?
+    U->>P: Yes, with custom awareness protocol
+    P-->>O: detailed-design.md created
+
+    O->>T: Invoke with design
+    T->>U: Approve task list?
+    U->>T: Approved
+    T-->>O: plan.md created
+
+    O->>C: Launch cockpit: bash .ralph/launch-build.sh
+    C->>S: Task 1
+    S->>C: Complete
+    Note over C,S: Continues until all tasks done
+    C-->>O: All tasks completed
+    O->>U: Implementation complete
+```
+
+**Invocation example:**
+```bash
+# Step 1: Referent discovery
+/ralph-orchestrator goal="real-time collaboration engine" flow="referent"
+
+# Orchestrator invokes:
+/sop-reverse target="real-time collaboration engine" search_mode="referent" output_dir=".ralph/specs/realtime-collab" mode={PLANNING_MODE}
+
+# Step 2: Planning with referent patterns
+/sop-planning rough_idea="real-time collaboration engine" discovery_path=".ralph/specs/realtime-collab/referents/catalog.md" project_dir=".ralph/specs/realtime-collab" mode={PLANNING_MODE}
+
+# Steps 3-8: Same as forward flow
+```
+
+---
+
+## The Complete Reverse Flow (Investigate Only)
 
 **Constraints:**
 - You MUST complete batch analysis before refinement because context informs questions
@@ -484,7 +594,7 @@ project-root/
 ├── .ralph/                           # Created by install.sh
 │   ├── config.sh
 │   ├── agents.md                     # Project context
-│   ├── guardrails.md                 # Shared memory (error lessons, constraints, signs)
+│   ├── guardrails.md                 # Shared memory (error lessons, constraints, patterns)
 │   ├── metrics.json                  # Created during execution
 │   └── specs/
 │       └── user-auth/                # Goal name
@@ -529,10 +639,31 @@ project-root/
 {
   rough_idea: "user-auth",  // The goal name serves as rough idea
   discovery_path: ".ralph/specs/user-auth/discovery.md",
-  project_dir: ".ralph/specs/user-auth"
+  project_dir: ".ralph/specs/user-auth",
+  mode: "{PLANNING_MODE}"
 }
 
 // sop-planning reads discovery context and proceeds
+```
+
+### Referent Discovery → Planning
+
+**Handoff mechanism**: Referent catalog + extracted patterns
+
+```javascript
+// sop-reverse (referent mode) outputs:
+.ralph/specs/realtime-collab/referents/
+├── catalog.md                  // Summary + recommendation
+├── yjs-analysis.md             // Per-referent analysis
+├── automerge-analysis.md
+├── comparative-analysis.md     // Cross-referent comparison
+└── extracted-patterns.md       // Ready-to-adopt patterns
+
+// Orchestrator invokes sop-planning with:
+/sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
+
+// sop-planning reads catalog.md for proven patterns
+// sop-planning reads extracted-patterns.md for design foundations
 ```
 
 ### Reverse → Planning (if continuing)
@@ -540,7 +671,7 @@ project-root/
 **Handoff mechanism**: Directory path + context
 
 ```javascript
-// sop-reverse outputs:
+// sop-reverse (reverse mode) outputs:
 .ralph/specs/payment-investigation/specs-generated/
 
 // Orchestrator invokes sop-planning with:
@@ -560,7 +691,7 @@ project-root/
 // Orchestrator invokes sop-task-generator with:
 {
   input: ".ralph/specs/user-auth/implementation/plan.md",
-  output_dir: ".ralph/specs/user-auth/implementation"
+  mode: "{PLANNING_MODE}"
 }
 
 // sop-task-generator reads design and generates tasks
@@ -773,10 +904,21 @@ bash .ralph/launch-build.sh
 bash .ralph/launch-build.sh
 ```
 
-### Pattern 3: Research Then Build
+### Pattern 3: Referent-Driven Build (Gene Transfusion)
 
 ```bash
-# Research phase
+# Find world-class referents, then build on their patterns
+/ralph-orchestrator → Referent → "real-time collaboration engine"
+→ Creates .ralph/specs/realtime-collab/referents/
+→ Automatically continues to sop-planning with referent patterns
+→ Design decisions grounded in proven implementations
+bash .ralph/launch-build.sh
+```
+
+### Pattern 4: Research Then Build
+
+```bash
+# Research phase (investigate only, no implementation)
 /ralph-orchestrator → Reverse → "Best practices for rate limiting"
 → Creates .ralph/specs/rate-limiting-research/
 
@@ -824,7 +966,7 @@ If sub-agents report missing information:
 
 ## Related Documentation
 
-- [mode-selection.md](mode-selection.md) - Choosing Forward vs Reverse
+- [mode-selection.md](mode-selection.md) - Choosing Forward vs Referent vs Reverse
 - [supervision-modes.md](supervision-modes.md) - Autonomous vs Checkpoint execution
 - [observability.md](observability.md) - Monitoring during execution
 - [backpressure.md](backpressure.md) - Quality gates and checkpoints

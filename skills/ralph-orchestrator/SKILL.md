@@ -31,7 +31,7 @@ description: Use when building features requiring planning + autonomous executio
 ## Parameters
 
 - **goal** (optional): High-level description. Asked in Step 1 if not provided.
-- **flow** (optional, default: `"forward"`): `forward` (new) or `reverse` (investigate existing).
+- **flow** (optional, default: `"forward"`): `forward` (build from scratch), `referent` (build with referents), or `reverse` (investigate only).
 - **planning_mode** (optional): `interactive` (default) or `autonomous`.
 
 ## Output
@@ -45,8 +45,8 @@ description: Use when building features requiring planning + autonomous executio
 
 1. **State Detection**: Scan .ralph/specs/, detect phase, offer resume or new
 2. **Step 0**: Choose planning mode (Interactive/Autonomous)
-3. **Step 1**: Validate prerequisites + detect flow (Forward/Reverse)
-4. **Step 2**: Discovery (`sop-discovery`) OR Investigation (`sop-reverse`)
+3. **Step 1**: Validate prerequisites + detect flow (Forward/Referent/Reverse)
+4. **Step 2**: Discovery (`sop-discovery`) OR Referent Discovery (`sop-reverse referent`) OR Investigation (`sop-reverse`)
 5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
 7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
@@ -92,12 +92,21 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | `design/detailed-design.md` | planning (Step 3) |
 | `discovery.md` | discovery-complete (Step 3) |
 | `investigation.md` + `specs-generated/` | reverse-complete (Step 3) |
+| `referents/catalog.md` | referent-complete (Step 3) |
 | `discovery.md` with `SPIKE_REQUIRED` | spike-required (Step 2) |
 | Nothing | NEW |
 
 If spike-required: present spikes to user (interactive) or document in blockers.md (autonomous). After spikes resolved, re-run sop-discovery.
 
 **Use AskUserQuestion** to confirm: resume from detected phase, choose goal if multiple, choose flow if NEW. Surface `blockers.md` content if exists. After confirmation, skip to detected phase.
+
+### Convergence Model
+The SOP pipeline (discovery → planning → task-gen → execution) is conceptually a
+**convergence loop**, not a linear waterfall:
+- If execution reveals design gaps → loop back to planning
+- If planning reveals unknown risks → loop back to discovery
+- The State Detection table enables re-entry at any phase
+- Convergence = all .code-task.md files reach Status: COMPLETED with scenarios satisfied
 
 ### Step 0: Choose Planning Mode
 
@@ -125,7 +134,15 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 - [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning`
 - [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator`
 
-**Detect Flow (Use AskUserQuestion):** Forward (build new) or Reverse (investigate existing).
+**Detect Flow (Use AskUserQuestion):**
+```text
+Question: "Que tipo de proyecto es?"
+Header: "Route Selection"
+Options:
+- Build from scratch (Forward): Discovery → Planning → Execution. For new features without prior art.
+- Build with referents (Referent): Referent Discovery → Planning with inspiration → Execution. Find world-class implementations first, then design on proven patterns.
+- Investigate only (Reverse): Reverse engineering, no implementation follows. Understand existing artifacts.
+```
 
 **You MUST NOT** skip discovery, skip planning, or proceed with missing prerequisites.
 
@@ -137,7 +154,15 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 
 Output: `.ralph/specs/{goal}/discovery.md` — Continue to Step 3.
 
-### Step 2B: Reverse Investigation
+### Step 2B: Referent Discovery (Build with Referents)
+
+```
+/sop-reverse target="{concept}" search_mode="referent" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
+```
+
+Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3 with referent patterns as planning input.
+
+### Step 2C: Reverse Investigation (Investigate Only)
 
 ```
 /sop-reverse target="{path}" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
@@ -147,12 +172,18 @@ Ask user if continuing to Forward (interactive). In autonomous mode, continue by
 
 ### Step 3: Planning
 
-**Forward flow:**
+**Forward flow (build from scratch):**
 ```
 /sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/discovery.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
-**Reverse flow:**
+**Referent flow (build with referents):**
+```
+/sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
+```
+Note: sop-planning receives `referents/extracted-patterns.md` as additional design context. The referent catalog provides proven patterns that inform architecture decisions.
+
+**Reverse flow (investigate only, continuing to build):**
 ```
 /sop-planning rough_idea=".ralph/specs/{goal}/specs-generated/" discovery_path=".ralph/specs/{goal}/investigation.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
@@ -330,5 +361,5 @@ When a teammate goes idle (TeammateIdle hook allows it), check `.ralph/metrics.j
 | `sop-discovery` | 2A | Constraints, risks |
 | `sop-planning` | 3 | Research, design |
 | `sop-task-generator` | 4 | Task files |
-| `sop-reverse` | 2B | Investigation |
+| `sop-reverse` | 2B/2C | Referent discovery, Investigation |
 | `sop-code-assist` | Teammates | SDD implementation |

@@ -141,3 +141,7 @@ Each file targets ~25-40 lines. Total budget: <2000 tokens across all 4 files.
 | "Use tabs, 2 spaces" | "Tabs for indentation (configured in .editorconfig)" | "Follow consistent formatting" |
 | "Import React from 'react'" | "ESM imports, aliased paths via tsconfig" | "Use standard imports" |
 | "Run `npx jest --coverage`" | "`npm test` — Jest with coverage" | "Run the test suite" |
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*

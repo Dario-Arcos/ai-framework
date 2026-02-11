@@ -60,15 +60,7 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 - When multiple approaches exist, choose most conservative and document why
 - Generate complete artifacts in single pass
 
-**Autonomous Mode Constraints (MUST follow):**
-- NEVER use AskUserQuestion under any circumstance
-- NEVER block waiting for user input
-- If blocked by missing information or ambiguity:
-  1. Document blocker in `{project_dir}/blockers.md` with full details
-  2. Make reasonable assumption OR skip section with "[BLOCKED: reason]"
-  3. Continue with remaining work
-- Choose safest/simplest approach when ambiguous
-- Document all assumptions in artifacts
+**Autonomous Mode Constraints (MUST follow):** See [autonomous-mode-constraint.md](../ralph-orchestrator/references/autonomous-mode-constraint.md) for the full constraint set. Additional: may skip sections with "[BLOCKED: reason]" when assumption is not possible.
 
 ## Output Structure
 ```text

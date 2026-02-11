@@ -497,7 +497,7 @@ Investiga sistemas existentes y genera specs.
 
 ### sop-planning
 
-Transforma ideas en diseños implementables. Metodología PDD.
+Transforma ideas en diseños implementables. Metodología PDD (Prompt-Driven Development).
 
 **Fases:** Requirements → Research → Design → Implementation plan
 

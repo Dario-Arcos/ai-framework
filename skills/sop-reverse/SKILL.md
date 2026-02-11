@@ -1,18 +1,28 @@
 ---
 name: sop-reverse
-description: Use when inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration. Investigates existing artifacts and generates structured specifications.
+description: Use when finding world-class referents before building something new, inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration. Discovers exemplar implementations AND investigates existing artifacts to generate structured specifications.
 ---
 
-# SOP Reverse Engineering
+# SOP Referent Discovery & Reverse Engineering
 
 ## Overview
 
-Systematically investigate existing artifacts and generate structured specifications from them. This is the "reverse" flow: understanding what exists and documenting it for future development.
+Two complementary capabilities in one skill:
+
+1. **Referent Discovery**: Before building something new, find world-class implementations, extract their patterns, and build on proven foundations. This is the "Gene Transfusion" technique — absorbing excellence from exemplar projects before designing your own.
+2. **Reverse Engineering**: Systematically investigate existing artifacts and generate structured specifications from them. Understanding what exists and documenting it for future development.
 
 **Note**: This is NOT just for code. It works with ANY artifact: codebases, APIs, documentation, processes, or abstract concepts.
 
 ## When to Use
 
+### Referent Discovery (pre-build)
+- Finding world-class referents before building something new
+- Analyzing state-of-the-art implementations as inspiration for new work
+- Discovering patterns from exemplar codebases/projects before design phase
+- Benchmarking against best-in-class solutions in a domain
+
+### Reverse Engineering (investigate existing)
 - Inheriting a codebase without documentation
 - Integrating with third-party APIs
 - Understanding existing processes before improving them
@@ -26,13 +36,15 @@ Systematically investigate existing artifacts and generate structured specificat
 - Simple tasks with clear requirements (use direct implementation)
 - Code you just wrote (you already understand it)
 - Well-documented systems (just read the docs)
-- When you need to create something new (use sop-planning instead)
 - Quick fixes or bug patches (use systematic-debugging)
 
 ## Parameters
 
-- **target** (required): Path, URL, or description of artifact to investigate
+- **target** (required): Path, URL, concept name, or description of artifact to investigate. For referent discovery, this can be a concept or domain (e.g., "real-time collaboration", "event sourcing frameworks")
 - **target_type** (optional, default: auto-detect): Type of artifact - `codebase`, `api`, `documentation`, `process`, or `concept`
+- **search_mode** (optional, default: `reverse`): Determines the skill's primary objective
+  - `reverse`: Classic reverse engineering — investigate a specific existing artifact
+  - `referent`: Referent discovery — search for world-class implementations of a concept, analyze their patterns, and catalog lessons for new design
 - **output_dir** (optional, default: .ralph/specs/{name}-{timestamp}): Directory for investigation output
 - **focus_areas** (optional, default: none - investigates all aspects if not specified): Specific aspects to prioritize (e.g., "auth flow", "data model")
 - **mode** (optional, default: `interactive`): Execution mode
@@ -62,17 +74,66 @@ Systematically investigate existing artifacts and generate structured specificat
 - You MUST generate specs immediately after batch analysis because autonomous mode should complete without delay
 - You MUST document what would have been asked in `investigation.md` because deferred questions enable future follow-up
 
-**Autonomous Mode Constraints (MUST follow):**
-- NEVER use AskUserQuestion under any circumstance
-- NEVER block waiting for user input
-- If blocked by ambiguous artifact type or missing access:
-  1. Document blocker in `{output_dir}/blockers.md` with full details
-  2. Make best-effort determination and document reasoning
-  3. Continue with investigation
-- Choose most common/conservative interpretation when ambiguous
-- Document all assumptions in investigation.md
+**Autonomous Mode Constraints (MUST follow):** See [autonomous-mode-constraint.md](../ralph-orchestrator/references/autonomous-mode-constraint.md) for the full constraint set. Additional: document all assumptions in `investigation.md`.
 
-## The Investigation Process
+## The Referent Discovery Process (search_mode=referent)
+
+When `search_mode=referent`, the skill searches for world-class implementations of a concept rather than analyzing a single artifact. The goal is to build a catalog of patterns and lessons before designing something new.
+
+### Step R1: Define Search Scope
+
+You MUST clarify what concept, domain, or capability the user wants referents for because vague searches produce irrelevant results. You MUST identify 3-5 candidate referent projects/implementations because comparison requires multiple data points.
+
+**Sources for referent identification:**
+- User-provided URLs or project names
+- Context7 documentation for framework-specific patterns
+- agent-browser for current state-of-the-art implementations
+- Known exemplar projects in the domain
+
+### Step R2: Analyze Each Referent
+
+For each identified referent, you MUST produce a structured analysis because uniform analysis enables comparison:
+
+- **Architecture patterns**: How is the system structured?
+- **Key design decisions**: What tradeoffs were made and why?
+- **Strengths**: What makes this implementation world-class?
+- **Weaknesses**: Where does it fall short or over-engineer?
+- **Extractable patterns**: What specific patterns can be adopted?
+
+### Step R3: Comparative Synthesis
+
+You MUST produce a comparative analysis across all referents because synthesis is the primary value of referent discovery:
+
+- Pattern frequency: Which patterns appear across multiple referents?
+- Best-of-breed selection: Which referent excels at which aspect?
+- Anti-patterns: What pitfalls do referents reveal?
+- Recommended foundation: Which referent (or combination) provides the best starting point?
+
+### Step R4: Generate Referent Catalog
+
+Output the `referents/` directory with structured findings that feed into sop-planning.
+
+### Referent Discovery Output
+
+```text
+{output_dir}/
+├── referents/                    # Referent discovery catalog
+│   ├── catalog.md                # Summary: all referents, scores, recommendation
+│   ├── {referent-1}-analysis.md  # Per-referent detailed analysis
+│   ├── {referent-2}-analysis.md
+│   ├── comparative-analysis.md   # Cross-referent pattern comparison
+│   └── extracted-patterns.md     # Patterns ready to adopt in new design
+├── investigation.md              # Search process and methodology
+├── recommendations.md            # Which patterns to adopt and why
+└── summary.md                    # Executive overview and next steps
+```
+
+**Handoff to sop-planning:** The `referents/` directory contents serve as high-quality input for sop-planning. Use `referents/extracted-patterns.md` as the foundation for design decisions, and `referents/catalog.md` as the `discovery_path` equivalent:
+- Example: `/sop-planning rough_idea="{goal}" discovery_path="{output_dir}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}`
+
+---
+
+## The Investigation Process (search_mode=reverse)
 
 ### Step 1: Identify Target Type
 
@@ -154,6 +215,7 @@ This enables the complete reverse-to-forward flow: investigate existing artifact
 
 ## Output Structure
 
+### Reverse Engineering (search_mode=reverse)
 ```text
 {output_dir}/
 ├── investigation.md          # Raw findings and analysis
@@ -161,6 +223,19 @@ This enables the complete reverse-to-forward flow: investigate existing artifact
 ├── recommendations.md        # Improvement suggestions
 ├── summary.md                # Overview and next steps
 └── artifacts/                # Supporting materials
+```
+
+### Referent Discovery (search_mode=referent)
+```text
+{output_dir}/
+├── referents/                    # Referent discovery catalog
+│   ├── catalog.md                # Summary: all referents, scores, recommendation
+│   ├── {referent-name}-analysis.md  # Per-referent detailed analysis
+│   ├── comparative-analysis.md   # Cross-referent pattern comparison
+│   └── extracted-patterns.md     # Patterns ready to adopt in new design
+├── investigation.md              # Search process and methodology
+├── recommendations.md            # Which patterns to adopt and why
+└── summary.md                    # Executive overview and next steps
 ```
 
 See [references/output-structure.md](references/output-structure.md) for complete structure and templates.
@@ -175,6 +250,8 @@ See [references/output-structure.md](references/output-structure.md) for complet
 | Spec Compatibility | Generate specs compatible with sop-planning |
 | User Control | Confirm type, confirm refinement complete, confirm forward flow |
 | Transparency | Show evidence, list what was analyzed, acknowledge limitations |
+| Referents Before Design | When building new, find world-class exemplars first — build on proven patterns, not guesswork |
+| Comparative Analysis | Multiple referents enable pattern extraction; single referent risks cargo-culting |
 
 ## Troubleshooting
 
@@ -216,15 +293,43 @@ Output: Process flow diagrams, role responsibilities, bottleneck analysis
 ```
 Output: Complete investigation without user interaction, deferred questions documented
 
+### Example 5: Referent Discovery Before Building
+```text
+/sop-reverse target="real-time collaboration engine" search_mode="referent" focus_areas="CRDT,operational-transform"
+```
+Output: `referents/` catalog with analysis of Yjs, Automerge, ShareDB; comparative patterns; recommended foundation
+
+### Example 6: Referent Discovery for API Design
+```text
+/sop-reverse target="developer API with excellent DX" search_mode="referent" focus_areas="auth,pagination,error-handling"
+```
+Output: Analysis of Stripe, GitHub, Twilio APIs; extracted DX patterns; design recommendations
+
+### Example 7: Referent-Driven Architecture
+```text
+/sop-reverse target="event-driven microservices" search_mode="referent" mode="autonomous" output_dir=".ralph/specs/event-arch-referents"
+```
+Output: Autonomous catalog of exemplar event architectures; pattern extraction for new design
+
 ## Integration with Forward Flow
 
+### Reverse Engineering → Forward
 After investigation completes, specs in `specs-generated/` feed into sop-planning:
 
 ```text
-sop-reverse -> sop-planning -> sop-task-generator -> ralph-orchestrator
+sop-reverse (reverse) -> sop-planning -> sop-task-generator -> ralph-orchestrator
 ```
 
 This creates a complete loop: understand what exists, plan improvements, generate tasks, execute.
+
+### Referent Discovery → Forward
+After referent discovery completes, the `referents/` catalog feeds into sop-planning as high-quality design input:
+
+```text
+sop-reverse (referent) -> sop-planning (with referent patterns) -> sop-task-generator -> ralph-orchestrator
+```
+
+This creates the "Gene Transfusion" loop: find the best, extract their patterns, design on proven foundations, execute.
 
 ## References
 
@@ -235,4 +340,4 @@ This creates a complete loop: understand what exists, plan improvements, generat
 
 ---
 
-*Part of the SOP framework: sop-reverse -> sop-planning -> sop-task-generator -> ralph-orchestrator*
+*Part of the SOP framework: sop-reverse (referent|reverse) -> sop-planning -> sop-task-generator -> ralph-orchestrator*

@@ -87,3 +87,7 @@ Report NOT ready if: any material claim lacks citation, confidence ratings missi
 | **Conflicting authoritative sources** | Document both, mark as Uncertain |
 | **Insufficient sources found** | Expand to Tier 3, note coverage gap |
 | **Browser navigation fails** | Use `--headed` to debug, retry |
+
+---
+
+*Version: 1.0.0 | Updated: 2026-02-11*
