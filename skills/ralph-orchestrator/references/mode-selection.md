@@ -220,11 +220,11 @@ graph LR
 **Constraints:**
 - You MUST configure safety limits before execution because defaults may not match your risk tolerance
 - You MUST review `.ralph/config.sh` for high-risk tasks because auth/payments need tighter limits
-- You MAY adjust MAX_CONSECUTIVE_FAILURES and MAX_TASK_ATTEMPTS based on task complexity
+- You MAY adjust MAX_CONSECUTIVE_FAILURES based on task complexity
 
 After planning, configure safety limits in `.ralph/config.sh`:
 
-> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). Safety is enforced by circuit breakers and retry limits, not by human pauses.
+> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). Safety is enforced by circuit breakers, not by human pauses.
 
 ```mermaid
 graph TD
@@ -232,9 +232,9 @@ graph TD
 
     Config --> Q1{Task risk?}
 
-    Q1 -->|High<br/>Auth/Payments| Strict[Strict limits<br/>MAX_CONSECUTIVE_FAILURES=2<br/>MAX_TASK_ATTEMPTS=2]
-    Q1 -->|Normal| Default[Default limits<br/>MAX_CONSECUTIVE_FAILURES=3<br/>MAX_TASK_ATTEMPTS=3]
-    Q1 -->|Low/Familiar| Relaxed[Relaxed limits<br/>MAX_CONSECUTIVE_FAILURES=5<br/>MAX_TASK_ATTEMPTS=5]
+    Q1 -->|High<br/>Auth/Payments| Strict[Strict limits<br/>MAX_CONSECUTIVE_FAILURES=2]
+    Q1 -->|Normal| Default[Default limits<br/>MAX_CONSECUTIVE_FAILURES=3]
+    Q1 -->|Low/Familiar| Relaxed[Relaxed limits<br/>MAX_CONSECUTIVE_FAILURES=5]
 
     Strict --> Launch[Launch Agent Teams cockpit]
     Default --> Launch
@@ -302,7 +302,7 @@ Decision: Forward Flow → strict safety limits
 Steps:
 1. /ralph-orchestrator → Forward
 2. Planning phase (interactive)
-3. Configure: MAX_CONSECUTIVE_FAILURES=2, MAX_TASK_ATTEMPTS=2 in .ralph/config.sh
+3. Configure: MAX_CONSECUTIVE_FAILURES=2 in .ralph/config.sh
 4. Monitor .ralph/metrics.json for progress
 5. Review .ralph/failures.json if issues arise
 ```
@@ -361,8 +361,8 @@ Solution: Decompose into features, run multiple team sessions
 | Task is trivial (< 3 steps) | Direct implementation |
 | Task is complex (> 5 steps) | Ralph Agent Teams |
 | First time using ralph-orchestrator | Strict safety limits (low MAX_CONSECUTIVE_FAILURES) |
-| High-risk task (auth, payments) | Strict safety limits + high MIN_TEST_COVERAGE |
-| Overnight development needed | Default safety limits + MAX_RUNTIME set |
+| High-risk task (auth, payments) | Strict safety limits + high GATE_COVERAGE |
+| Overnight development needed | Default safety limits |
 | Learning codebase patterns | Start strict, relax limits as confidence grows |
 
 ---

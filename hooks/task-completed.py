@@ -11,11 +11,13 @@ Non-ralph Agent Teams usage is transparent (immediate exit 0).
 Decision logic:
   1. prototype quality  → exit 0 (skip all gates)
   2. Run gates in order → first failure = exit 2 + increment failures.json
-  3. All gates pass     → exit 0 + reset failures.json + update metrics.json
+  3. Coverage gate      → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
+  4. All gates pass     → exit 0 + reset failures.json + update metrics.json
 """
 import fcntl
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -32,6 +34,8 @@ CONFIG_KEYS = [
     "GATE_TYPECHECK",
     "GATE_LINT",
     "GATE_BUILD",
+    "GATE_COVERAGE",
+    "MIN_TEST_COVERAGE",
 ]
 
 CONFIG_DEFAULTS = {
@@ -40,6 +44,8 @@ CONFIG_DEFAULTS = {
     "GATE_TYPECHECK": "npm run typecheck",
     "GATE_LINT": "npm run lint",
     "GATE_BUILD": "npm run build",
+    "GATE_COVERAGE": "",
+    "MIN_TEST_COVERAGE": "0",
 }
 
 
@@ -197,6 +203,35 @@ def run_gate(name, command, cwd):
         return False, f"Gate '{name}' failed to execute: {e}"
 
 
+def extract_coverage_pct(output):
+    """Extract coverage percentage from command output.
+
+    Supports common formats:
+    - Jest/Vitest: "All files | 85.71 | ..."
+    - Istanbul/c8: "Statements : 85.71%"
+    - pytest-cov:  "TOTAL    100    15    85%"
+    - Go:          "coverage: 85.0% of statements"
+    - Generic:     "NN.N%" near coverage-related keywords
+
+    Returns float percentage or None if not found.
+    """
+    patterns = [
+        r"All files?\s*\|\s*(\d+\.?\d*)",
+        r"Statements\s*:\s*(\d+\.?\d*)%",
+        r"TOTAL\s+\d+\s+\d+\s+(\d+)%",
+        r"coverage:\s*(\d+\.?\d*)%",
+        r"(?i)(?:total|overall|all).*?(\d+\.?\d*)%",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, output)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                continue
+    return None
+
+
 def find_scenario_strategy(cwd, task_subject):
     """Find Scenario-Strategy from .code-task.md matching task_subject.
 
@@ -280,6 +315,43 @@ def main():
                 f"Quality gate '{gate_name}' failed for: {task_subject}\n\n"
                 f"Output:\n{output}\n\n"
                 f"Fix the issue before completing this task. "
+                f"(consecutive failures: {count})",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+    # Coverage gate (after quality gates pass)
+    try:
+        min_coverage = int(config["MIN_TEST_COVERAGE"])
+    except (ValueError, TypeError):
+        min_coverage = 0
+
+    coverage_cmd = config["GATE_COVERAGE"]
+
+    if min_coverage > 0 and coverage_cmd:
+        passed, output = run_gate("coverage", coverage_cmd, cwd)
+
+        if not passed:
+            count = increment_failure(ralph_dir, teammate_name)
+            update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
+            print(
+                f"Coverage gate failed for: {task_subject}\n\n"
+                f"Output:\n{output}\n\n"
+                f"Fix the coverage command before completing this task. "
+                f"(consecutive failures: {count})",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+        pct = extract_coverage_pct(output)
+        if pct is not None and pct < min_coverage:
+            count = increment_failure(ralph_dir, teammate_name)
+            update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
+            print(
+                f"Coverage below threshold for: {task_subject}\n\n"
+                f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\n"
+                f"Output:\n{output}\n\n"
+                f"Increase test coverage before completing this task. "
                 f"(consecutive failures: {count})",
                 file=sys.stderr,
             )

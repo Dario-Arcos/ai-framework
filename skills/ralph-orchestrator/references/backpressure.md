@@ -40,17 +40,11 @@ In `.ralph/config.sh`:
 ```bash
 # Circuit breaker: stop teammate after N consecutive gate failures
 MAX_CONSECUTIVE_FAILURES=3
-
-# Task retry limit: max attempts per task before escalating
-MAX_TASK_ATTEMPTS=3
-
-# Runtime limit (0 = unlimited)
-MAX_RUNTIME=0
 ```
 
 ### Safety Mechanisms
 
-#### 1. Circuit Breaker (Consecutive Failures)
+#### Circuit Breaker (Consecutive Failures)
 
 **Behavior:**
 - Tracks consecutive gate failures per teammate in `.ralph/failures.json`
@@ -62,18 +56,6 @@ MAX_RUNTIME=0
 - Lower (2) for high-risk tasks where early stopping matters
 - Default (3) for production work
 - Higher (5) for experimental/prototype work where some failures are expected
-
-#### 2. Task Retry Limit (Per-Task Attempts)
-
-**Behavior:**
-- Each task can be attempted up to `MAX_TASK_ATTEMPTS` times
-- After exhausting attempts, the task is escalated
-- Prevents a single difficult task from blocking all progress
-
-**Use when adjusting:**
-- Lower (2) for tasks that should succeed on first or second try
-- Default (3) for normal development
-- Higher (5) for complex tasks where iteration is expected
 
 ---
 
@@ -94,21 +76,17 @@ graph TD
 
     D --> E{Circuit breaker?}
     E -->|MAX_CONSECUTIVE_FAILURES hit| F[Teammate goes idle<br/>Exit 0]
-    E -->|OK| G{Task retry limit?}
+    E -->|OK| G{Pending tasks?}
 
-    G -->|MAX_TASK_ATTEMPTS hit| H[Task escalated<br/>Move to next task]
-    G -->|OK| I{Pending tasks?}
-
-    I -->|Yes| J[Claim next task<br/>Exit 2 from teammate-idle]
-    I -->|No| K[All done<br/>Exit 0]
+    G -->|Yes| H[Claim next task<br/>Exit 2 from teammate-idle]
+    G -->|No| I[All done<br/>Exit 0]
 
     C --> A
 
     style C fill:#ffe1e1
     style F fill:#ffe1e1
-    style H fill:#fff4e1
-    style K fill:#e1ffe1
-    style J fill:#e1ffe1
+    style I fill:#e1ffe1
+    style H fill:#e1ffe1
 ```
 
 ### Backpressure Levels
@@ -116,7 +94,6 @@ graph TD
 | Level | Mechanism | Trigger | Action |
 |-------|-----------|---------|--------|
 | **Task** | Quality gates | Gate fails | Reject task completion (exit 2), teammate retries |
-| **Task retry** | MAX_TASK_ATTEMPTS | Same task fails N times | Task escalated, teammate moves on |
 | **Circuit breaker** | MAX_CONSECUTIVE_FAILURES | N consecutive failures | Teammate goes idle (exit 0) |
 
 ---

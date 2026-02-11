@@ -41,7 +41,7 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 - Control is INPUT-based (trim guardrails before each task cycle)
 - No post-hoc measurement or exit conditions based on context percentage
 
-**Configuration**: Use MAX_CONSECUTIVE_FAILURES (circuit breaker), MAX_TASK_ATTEMPTS (retry limit per task), and MAX_RUNTIME (time limit) for limits, not context percentages.
+**Configuration**: Use MAX_CONSECUTIVE_FAILURES (circuit breaker) for safety limits, not context percentages.
 
 > Cross-reference: [configuration-guide.md](configuration-guide.md) for all configuration options.
 > Cross-reference: [backpressure.md](backpressure.md) for backpressure handling.

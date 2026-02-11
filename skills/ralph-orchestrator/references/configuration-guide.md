@@ -56,15 +56,32 @@ GATE_BUILD="go build ./..."
 
 Gates execute in order: **test → typecheck → lint → build**. First failure stops the chain (TaskCompleted hook).
 
-**Coverage Threshold:**
+**Coverage Enforcement:**
 
 ```bash
-MIN_TEST_COVERAGE=90  # Default: 90% (0-100, coverage below this blocks COMPLETE)
+GATE_COVERAGE=""          # Command that outputs coverage data (empty = disabled)
+MIN_TEST_COVERAGE=90      # Default: 90% (0-100, coverage below this blocks COMPLETE)
 ```
+
+When `MIN_TEST_COVERAGE` > 0 **and** `GATE_COVERAGE` is set, the `task-completed.py` hook runs the coverage command, parses its output for a percentage, and blocks completion if coverage is below the threshold (exit 2).
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `MIN_TEST_COVERAGE` | `90` | Minimum test coverage percentage (0-100). Test gate validates coverage meets this threshold. Coverage below this blocks COMPLETE |
+| `GATE_COVERAGE` | `""` | Command that outputs coverage data. The hook parses its output for a percentage and compares against `MIN_TEST_COVERAGE`. Empty string disables coverage enforcement |
+| `MIN_TEST_COVERAGE` | `90` | Minimum test coverage percentage (0-100). Requires `GATE_COVERAGE` to be set for enforcement. Coverage below this blocks COMPLETE |
+
+**Stack examples for `GATE_COVERAGE`:**
+
+```bash
+# JavaScript/TypeScript (Vitest)
+GATE_COVERAGE="npx vitest run --coverage"
+
+# Python (pytest-cov)
+GATE_COVERAGE="pytest --cov --cov-report=term"
+
+# Go
+GATE_COVERAGE="go test -cover ./..."
+```
 
 ---
 
@@ -118,18 +135,14 @@ The `sop-task-generator` classifies tasks automatically. When in doubt, it defau
 
 ---
 
-## Safety Settings (Circuit Breakers)
+## Safety Settings (Circuit Breaker)
 
 **Constraints:**
 - You MUST NOT disable circuit breaker because it protects against runaway failures
 - You MUST set reasonable thresholds because too low causes premature stops
-- You SHOULD tune based on task complexity because complex tasks may need more attempts
 
 ```bash
-CONFESSION_MIN_CONFIDENCE=80    # 0-100, tasks below this are NOT complete
 MAX_CONSECUTIVE_FAILURES=3      # Circuit breaker threshold (per teammate)
-MAX_TASK_ATTEMPTS=3             # Reject task after N failed attempts
-MAX_RUNTIME=0                   # Max seconds (0 = unlimited)
 ```
 
 The circuit breaker tracks failures **per teammate** in `.ralph/failures.json`. When a teammate hits MAX_CONSECUTIVE_FAILURES, the TeammateIdle hook allows it to idle (exit 0) instead of claiming more tasks.
@@ -164,8 +177,7 @@ MEMORIES_BUDGET=2000     # Max tokens to inject (~8000 chars)
 |-----------|------|---------|
 | 0 | SUCCESS | All tasks completed, teammates idled |
 | 1 | ERROR | Validation failure, missing files, config error |
-| 2 | CIRCUIT_BREAKER | Per-teammate consecutive failures hit threshold |
-| 4 | MAX_RUNTIME | Runtime limit exceeded |
+| 2 | GATE_FAILURE | Quality gate or coverage gate failure |
 | 130 | INTERRUPTED | User interrupt (Ctrl+C) or manual ABORT |
 
 **Manual abort**: Create `.ralph/ABORT` file → all teammates idle on next TeammateIdle check.

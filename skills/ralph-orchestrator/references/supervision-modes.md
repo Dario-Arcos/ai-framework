@@ -22,7 +22,7 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 │  PHASE 2: EXECUTION                                             │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │  Mode: ALWAYS AUTONOMOUS (Agent Teams cockpit)           │    │
-│  │  Safety: Circuit breaker + task retry limits             │    │
+│  │  Safety: Circuit breaker + quality gates                  │    │
 │  │  Duration: 1-8 hours                                    │    │
 │  └─────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
@@ -109,10 +109,8 @@ Execution runs autonomously until all tasks complete or a safety limit is reache
 | Option | Variable | Default | Behavior |
 |--------|----------|---------|----------|
 | **Circuit breaker** | `MAX_CONSECUTIVE_FAILURES` | 3 | Stop teammate after N consecutive gate failures |
-| **Task retry limit** | `MAX_TASK_ATTEMPTS` | 3 | Max retries per task before escalating |
-| **Confidence gate** | `CONFESSION_MIN_CONFIDENCE` | 80 | Tasks below this confidence are NOT complete |
-| **Coverage gate** | `MIN_TEST_COVERAGE` | 90 | Coverage below this blocks completion |
-| **Runtime limit** | `MAX_RUNTIME` | 0 (unlimited) | Max seconds per session |
+| **Coverage command** | `GATE_COVERAGE` | `""` (disabled) | Command that outputs coverage data. Parsed for percentage and compared against `MIN_TEST_COVERAGE` |
+| **Coverage gate** | `MIN_TEST_COVERAGE` | 90 | Coverage below this blocks completion. Requires `GATE_COVERAGE` to be set |
 
 ### Configuration Example
 
@@ -121,10 +119,10 @@ Execution runs autonomously until all tasks complete or a safety limit is reache
 
 # Safety limits
 MAX_CONSECUTIVE_FAILURES=3   # Circuit breaker threshold
-MAX_TASK_ATTEMPTS=3           # Max retries per task
-CONFESSION_MIN_CONFIDENCE=80  # Minimum confidence to accept
-MIN_TEST_COVERAGE=90          # Minimum coverage to accept
-MAX_RUNTIME=0                 # 0 = unlimited, or seconds (e.g., 3600 = 1 hour)
+
+# Coverage enforcement (GATE_COVERAGE must be set for MIN_TEST_COVERAGE to apply)
+GATE_COVERAGE=""              # e.g., "npx vitest run --coverage" or "pytest --cov --cov-report=term"
+MIN_TEST_COVERAGE=90          # Minimum coverage to accept (0-100)
 ```
 
 ---
@@ -136,8 +134,8 @@ These protections are always active during execution:
 | Feature | Trigger | Action |
 |---------|---------|--------|
 | **Circuit breaker** | `MAX_CONSECUTIVE_FAILURES` consecutive failures | Teammate goes idle (exit 0 via teammate-idle hook) |
-| **Task retry limit** | Same task fails `MAX_TASK_ATTEMPTS` times | Task escalated, teammate moves on |
-| **Quality gates** | Test/lint/build failure | Reject task completion (exit 2), teammate retries |
+| **Quality gates** | Test/typecheck/lint/build failure | Reject task completion (exit 2), teammate retries |
+| **Coverage gate** | Coverage below `MIN_TEST_COVERAGE` (when `GATE_COVERAGE` set) | Reject task completion (exit 2) |
 
 ---
 
@@ -147,13 +145,13 @@ These protections are always active during execution:
 
 **Wrong:** "I want human-in-the-loop execution where I review each task."
 
-**Right:** Execution is always autonomous. The Agent Teams cockpit runs teammates that claim tasks, execute them, and pass quality gates. Safety is enforced by circuit breakers and retry limits, not by human pauses.
+**Right:** Execution is always autonomous. The Agent Teams cockpit runs teammates that claim tasks, execute them, and pass quality gates. Safety is enforced by circuit breakers and quality gates, not by human pauses.
 
 ### "AFK vs HITL"
 
 **Wrong:** "AFK and HITL are two different execution modes."
 
-**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. Safety nets (MAX_CONSECUTIVE_FAILURES, MAX_TASK_ATTEMPTS) protect against runaway failures. You review results when execution completes.
+**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. Safety nets (MAX_CONSECUTIVE_FAILURES, quality gates) protect against runaway failures. You review results when execution completes.
 
 ### "Autonomous Planning = No Control"
 
@@ -206,8 +204,8 @@ Planning            Planning
 ┌─────────────────────────────┐
 │ Safety nets active:         │
 │ - Circuit breaker (failures)│
-│ - Task retry limits         │
 │ - Quality gates per task    │
+│ - Coverage gate (optional)  │
 └─────────────────────────────┘
 ```
 

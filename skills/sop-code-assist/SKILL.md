@@ -176,12 +176,10 @@ When invoked from ralph-orchestrator in autonomous mode:
 - guardrails.md updates
 
 **ralph-orchestrator owns:**
-- Task selection
-- `<promise>COMPLETE</promise>` signal
-- Quality gates execution
+- Task selection and assignment
+- Task completion (TaskUpdate status="completed")
+- Quality gates execution (TaskCompleted hook)
 - plan.md updates
-
-You MUST NOT emit `<promise>COMPLETE</promise>` — that's the orchestrator's job.
 
 ## Output
 

@@ -61,15 +61,26 @@ GATE_BUILD="npm run build"
 # ─────────────────────────────────────────────────────────────────
 # SAFETY
 # ─────────────────────────────────────────────────────────────────
-# Circuit breaker, retries, confidence, coverage, and runtime limits
+# Circuit breaker and coverage enforcement
 # SHOULD NOT lower these without good reason because they prevent runaway teammates
 
 MAX_CONSECUTIVE_FAILURES=3        # Exit after N consecutive failures per teammate
-MAX_TASK_ATTEMPTS=3               # Max retries per task before escalating
-CONFESSION_MIN_CONFIDENCE=80      # 0-100, tasks below this are NOT complete
-MIN_TEST_COVERAGE=90              # 0-100, coverage below this blocks COMPLETE
-MAX_RUNTIME=0                     # Max seconds per session (0 = unlimited)
-# MAX_RUNTIME=3600                # Example: 1 hour limit
+
+# ─────────────────────────────────────────────────────────────────
+# COVERAGE ENFORCEMENT
+# ─────────────────────────────────────────────────────────────────
+# GATE_COVERAGE runs after quality gates pass. The hook parses its output
+# for a coverage percentage and compares against MIN_TEST_COVERAGE.
+# Both must be set for enforcement — empty GATE_COVERAGE = no enforcement.
+
+MIN_TEST_COVERAGE=90              # Minimum coverage % (0 = disabled)
+GATE_COVERAGE=""                  # Command that outputs coverage data
+#
+# Examples:
+#   GATE_COVERAGE="npx vitest run --coverage"
+#   GATE_COVERAGE="npx jest --coverage"
+#   GATE_COVERAGE="pytest --cov --cov-report=term"
+#   GATE_COVERAGE="go test -cover ./..."
 
 # ─────────────────────────────────────────────────────────────────
 # MEMORIES
