@@ -21,7 +21,6 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `pull-request` | PR con quality gate integrado | Listo para crear pull request |
 | `frontend-design` | Diseño UI distintivo | Construir o estilizar UI (web, mobile, posters) |
 | `humanizer` | Elimina patrones de texto AI | Escribir o editar prosa (docs, UI copy, mensajes) |
-| `claude-code-expert` | Investiga docs oficiales Claude Code | Pregunta sobre features, APIs, skills, hooks, MCP |
 | `skill-creator` | Crear skills nuevas | Creando o actualizando un skill |
 | `context-engineering` | Optimizar prompts y CLAUDE.md | System prompts, agent architecture |
 | `agent-browser` | Browser automation con Playwright | Cualquier interacción web (research, E2E, scraping) |
@@ -150,28 +149,6 @@ Quality gate para PRs: code review + security review + observaciones.
 :::
 
 **Requisitos:** git, gh CLI
-
----
-
-## claude-code-expert
-
-Genera componentes Claude Code consultando docs oficiales primero.
-
-```
-"Crea agent para optimización PostgreSQL"
-```
-
-::: warning Training desactualizado
-Usa `agent-browser` para consultar https://code.claude.com/docs. Nunca confía en memoria.
-:::
-
-**Flujo:**
-1. Abre docs oficiales, navega a sección relevante
-2. Extrae syntax actual y campos requeridos
-3. Analiza patterns del proyecto
-4. Genera con 6 quality gates
-
-**Output:** `.claude/agents/*.md`, `skills/*/SKILL.md`, `hooks/*.py`
 
 ---
 
