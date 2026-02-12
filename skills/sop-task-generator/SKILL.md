@@ -71,7 +71,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 **Constraints:**
 - In interactive mode: Inform user of detected mode, wait for acknowledgment
 - In autonomous mode: Log detected mode, proceed immediately
-- You MUST NOT proceed without acknowledgment in interactive mode because proceeding without user awareness may generate tasks for incorrect input interpretation
+- You MUST NOT proceed without acknowledgment in interactive mode
 
 **Example output:**
 ```text
@@ -167,7 +167,7 @@ Action: Will generate 5 task files (one per step)
 **Constraints:**
 - In interactive mode: Present breakdown, wait for explicit approval
 - In autonomous mode: Log breakdown, proceed to generation immediately
-- You MUST NOT generate files before user approval in interactive mode because generating unapproved files creates artifacts that may need deletion or cause confusion
+- You MUST NOT generate files before user approval in interactive mode
 
 ### Step 5: Validate Task Atomicity
 
@@ -198,7 +198,7 @@ Each task MUST fit within one sub-agent context window. Validate before generati
 **Constraints:**
 - In **interactive mode**: Present validation results, ask user to approve splits.
 - In **autonomous mode**: Apply splits automatically, document rationale in task description.
-- You MUST NOT skip atomicity validation because oversized tasks degrade sub-agent output quality
+- You MUST NOT skip atomicity validation
 
 ### Task File Generation Requirements (PDD Mode)
 
@@ -225,10 +225,10 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 - [ ] Task numbering matches step numbering
 
 **You MUST NOT:**
-- Create only the first task and leave others for later because incomplete task generation leaves orchestrator without full execution scope
-- Generate tasks ad-hoc during execution because ad-hoc generation causes inconsistent scope and missed dependencies
-- Skip steps that seem "simple" because simplicity is subjective and skipped steps create gaps in the execution sequence
-- Ask which step to process (process ALL of them) because selective processing defeats the purpose of complete upfront task generation
+- Create only the first task and leave others for later
+- Generate tasks ad-hoc during execution
+- Skip steps that seem "simple"
+- Ask which step to process (process ALL of them)
 
 ### Step 6: Generate Tasks
 
@@ -384,7 +384,7 @@ Generates:
 **Constraints:**
 - You MUST follow the exact task file format
 - You MUST include all required sections (Description, Background, Reference Documentation, etc.)
-- You MUST NOT place tasks in wrong directory structure because incorrect placement breaks orchestrator discovery and task sequencing
+- You MUST NOT place tasks in wrong directory structure
 
 ### Step 7: Report Results
 

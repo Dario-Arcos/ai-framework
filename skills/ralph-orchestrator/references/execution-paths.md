@@ -11,7 +11,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 | Aspect | Interactive (sop-code-assist) | Autonomous (Agent Teams) |
 |--------|-------------------------------|--------------------------|
 | **When used** | User present, learning, complex decisions | Batch processing, overnight, parallel tasks |
-| **Invoker** | User manually or orchestrator in interactive mode | launch-build.sh launched by ralph-orchestrator |
+| **Invoker** | User manually or orchestrator in interactive mode | Same session continues from Step 7 (launch-build.sh for service windows only) |
 | **Context** | Single session, full context retained | Fresh 200K context per task (ephemeral teammates) |
 | **User interaction** | Confirms at each step | None after cockpit launch |
 | **Parallelism** | Sequential (single session) | Parallel (up to MAX_TEAMMATES) |
@@ -52,9 +52,10 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 
 ## Autonomous Path: Agent Teams Teammates
 
-**Trigger**: `launch-build.sh` launched by ralph-orchestrator (Step 8).
+**Trigger**: Same session continues from Step 7. Plan mode pre-flight → user approval → TeamCreate + spawn teammates.
 
 ```bash
+# Service windows only (if tmux + COCKPIT_* configured):
 bash .ralph/launch-build.sh
 ```
 
@@ -166,8 +167,8 @@ Is this ralph-orchestrator execution?
 - User approves plan at checkpoint (Step 6)
 
 **Execution phase** (Steps 7-8):
-- ALWAYS uses Agent Teams via launch-build.sh
-- Cockpit provides tmux windows for monitoring
+- ALWAYS uses Agent Teams in the same session. launch-build.sh creates optional service windows (if tmux available and COCKPIT_* configured).
+- Cockpit provides tmux service windows for monitoring
 - Lead enters delegate mode (monitor only, no implementation)
 
 ```mermaid
@@ -177,13 +178,16 @@ graph LR
         B --> C[sop-task-generator]
     end
 
-    subgraph "Execution (ALWAYS Agent Teams)"
-        C --> D[launch-build.sh]
-        D --> E[tmux cockpit]
-        E --> F[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
+    subgraph "Execution (ALWAYS Agent Teams — same session)"
+        C --> D[EnterPlanMode pre-flight]
+        D --> E[ExitPlanMode approval]
+        E --> F[launch-build.sh<br/>service windows only]
+        E --> G[TeamCreate + spawn]
+        G --> H[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
     end
 
     style D fill:#ffe1e1
+    style E fill:#ffe1e1
 ```
 
 ---

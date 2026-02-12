@@ -7,7 +7,7 @@ description: Use when transforming a rough idea into implementation-ready design
 
 ## Overview
 
-This skill implements PDD (Prompt-Driven Development) methodology, transforming rough ideas into detailed, implementation-ready designs through structured clarification, research, and design phases.
+Transforms rough ideas into detailed, implementation-ready designs through structured clarification, research, and design phases.
 
 ## When to Use
 
@@ -37,8 +37,8 @@ This skill implements PDD (Prompt-Driven Development) methodology, transforming 
 ### Existing Data Protection
 
 **You MUST NOT:**
-- Overwrite an existing project directory without explicit user confirmation (interactive mode) because overwriting destroys prior work and may lose valuable context or decisions
-- Proceed if the default project directory contains files (interactive mode) because proceeding may corrupt or conflict with existing planning artifacts
+- Overwrite an existing project directory without explicit user confirmation (interactive mode)
+- Proceed if the default project directory contains files (interactive mode)
 
 **You MUST:**
 - Check if `{project_dir}` exists before creating it
@@ -131,7 +131,7 @@ Present options to user:
 **Constraints:**
 - In interactive mode: Present both options, wait for explicit user choice
 - In autonomous mode: Choose Option A (requirements first) by default, document choice
-- You MUST NOT assume user preference in interactive mode because assumptions bypass user agency and may commit to unwanted approaches
+- You MUST NOT assume user preference in interactive mode
 
 **Verification**: User has explicitly chosen Option A or B (interactive) or choice documented (autonomous).
 
@@ -161,7 +161,7 @@ Present options to user:
 **Constraints:**
 - In interactive mode: Ask ONE question at a time, wait for user response
 - In autonomous mode: Generate comprehensive Q&A pairs based on rough idea, document assumptions
-- You MUST NOT pre-populate answers or assume user intent in interactive mode because pre-populated answers bias responses and miss user-specific requirements
+- You MUST NOT pre-populate answers or assume user intent in interactive mode
 - You MUST append each Q&A pair to `idea-honing.md` immediately
 - You SHOULD adapt follow-up questions based on previous answers (interactive)
 - You MAY suggest options when user is unsure (interactive)
@@ -215,7 +215,7 @@ Present options:
 - You MUST create a summary of current state
 - In interactive mode: Present all three options, wait for explicit user choice
 - In autonomous mode: Proceed to design (Option A) by default, document decision
-- You MUST NOT proceed to design without user explicitly choosing Option A in interactive mode because premature design without alignment wastes effort on potentially wrong direction
+- You MUST NOT proceed to design without user explicitly choosing Option A in interactive mode
 
 **Verification**: User has explicitly chosen Option A (interactive) or decision documented (autonomous).
 
@@ -306,7 +306,7 @@ Create `{project_dir}/implementation/plan.md`:
 - You MUST include complexity estimate (S/M/L/XL) for each step
 - You MUST keep each step <= M complexity, completable in <= 2 hours
 - You MUST generate 5-15 steps total
-- You MUST NOT include steps that depend on future steps because forward dependencies create circular blocks that halt execution
+- You MUST NOT include steps that depend on future steps
 - In interactive mode: Wait for user review and approval
 - In autonomous mode: Generate complete plan, flag any steps with uncertainty
 
@@ -409,10 +409,10 @@ All artifacts MUST be:
 - Periodically check: "Should I continue or adjust direction?"
 
 **Interactive Mode MUST NOT**:
-- Proceed to next phase without explicit user approval because unauthorized transitions may implement wrong requirements
-- Pre-populate answers or assume user intent because this biases discovery and misses user-specific constraints
-- Create implementation plan before design is approved because implementing unapproved designs wastes effort and creates rework
-- Skip any of the 8 steps (unless user explicitly requests) because each step builds essential context for subsequent phases
+- Proceed to next phase without explicit user approval
+- Pre-populate answers or assume user intent
+- Create implementation plan before design is approved
+- Skip any of the 8 steps (unless user explicitly requests)
 
 **Autonomous Mode MUST**:
 - Document all decisions and rationale in artifacts
@@ -422,9 +422,9 @@ All artifacts MUST be:
 - Write blockers to `{project_dir}/blockers.md` when stuck
 
 **Autonomous Mode MUST NOT**:
-- Use AskUserQuestion tool under any circumstance because autonomous mode requires uninterrupted execution for orchestrator integration
-- Block or pause waiting for user input because blocking breaks the autonomous execution loop and stalls the orchestrator
-- Leave phases incomplete without documenting why because undocumented incompleteness prevents orchestrator recovery and debugging
+- Use AskUserQuestion tool under any circumstance
+- Block or pause waiting for user input
+- Leave phases incomplete without documenting why
 
 ## Example Invocation
 

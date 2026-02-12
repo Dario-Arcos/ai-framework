@@ -6,7 +6,7 @@
 
 ## Overview
 
-Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files, and a tmux cockpit (Ghostty attaches as optional viewer).
+Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files. The lead runs in the current session; tmux provides optional cockpit service windows (Ghostty as viewer).
 
 Key properties:
 - **2-layer execution** — lead orchestrates, ephemeral teammates implement (1 task each) with fresh 200K context
@@ -22,7 +22,7 @@ Key properties:
 
 ```
 .ralph/config.sh ──────────── Configuration (quality, gates, cockpit services)
-.ralph/launch-build.sh ────── Ghostty + tmux launcher (copied from template)
+.ralph/launch-build.sh ────── Service windows launcher (tmux, if COCKPIT_* configured)
 .ralph/failures.json ──────── Per-teammate failure counters (written by hooks)
 .ralph/metrics.json ───────── Task success/failure metrics (written by hooks)
 
@@ -124,16 +124,15 @@ Each teammate uses its full 200K context for a single task. No compaction needed
 ## Cockpit Layout
 
 ```
-tmux session: "ralph"
+tmux session: "ralph" (service windows only — lead runs in current session)
 
-Window 0 "team"     → Claude Code lead + teammate panes (Agent Teams auto-splits)
 Window ? "services" → COCKPIT_DEV_SERVER + COCKPIT_DB (if configured)
 Window ? "quality"  → COCKPIT_TEST_WATCHER (if configured)
 Window ? "monitor"  → COCKPIT_LOGS (if configured)
-Window N "shell"    → Free terminal for manual commands (always last)
+Window N "shell"    → Free terminal (if any service configured)
 ```
 
-Window numbers depend on configured services. `team` is always window 0, `shell` is always the last window. Middle windows (`services`, `quality`, `monitor`) are created only if their COCKPIT_* variables are configured.
+Windows are created only if COCKPIT_* variables are configured in .ralph/config.sh. If no services configured, no tmux session is created. The lead runs in the current terminal session, not inside tmux.
 
 Navigation: `Ctrl+B {N}` to switch windows (standard tmux prefix).
 
@@ -196,7 +195,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 | Requirement | Check | Install |
 |-------------|-------|---------|
-| tmux | `which tmux` | `brew install tmux` |
+| tmux | `which tmux` | `brew install tmux` (Recommended — without tmux: teammates run in-process) |
 | Ghostty | `open -na Ghostty.app` | `brew install --cask ghostty` |
 | Agent Teams flag | `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
 | Config file | `.ralph/config.sh` exists | Copy from `templates/config.sh.template` |

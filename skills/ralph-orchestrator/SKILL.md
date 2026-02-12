@@ -11,7 +11,7 @@ description: Use when building features requiring planning + autonomous executio
 ## Overview
 
 - **Planning**: Interactive OR autonomous (user chooses)
-- **Execution**: ALWAYS autonomous — Agent Teams cockpit (tmux, Ghostty optional)
+- **Execution**: ALWAYS autonomous — Agent Teams in same session (tmux recommended for cockpit)
 
 ## Parameters
 
@@ -35,7 +35,7 @@ description: Use when building features requiring planning + autonomous executio
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
 7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
 8. **Step 7**: Configure execution (quality gates, cockpit services, checkpoints)
-9. **Step 8**: Launch Agent Teams cockpit
+9. **Step 8**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
 
 ---
 
@@ -49,13 +49,13 @@ description: Use when building features requiring planning + autonomous executio
 - [ ] `.ralph/guardrails.md` exists — if missing: copy from `templates/guardrails.md.template`
 
 **Execution prerequisites (required for Step 8):**
-- [ ] `tmux` installed (`which tmux`)
+- [ ] `tmux` installed (`which tmux`) — **Recommended (default teammate mode)**
   - If missing: **Use AskUserQuestion**:
-    Question: "tmux no esta instalado. Es requerido para ejecutar. Quieres instalarlo?"
+    Question: "tmux no esta instalado. Es el modo recomendado para Agent Teams (split-panes para cada teammate, cockpit de servicios). Sin el, los teammates corren como sub-agentes in-process (menos visibilidad). Quieres instalarlo?"
     Header: "tmux"
     Options:
     - Instalar ahora (Recommended): Ejecuta brew install tmux (macOS) / sudo apt install tmux (Linux)
-    - Continuar sin tmux: Solo planificacion disponible (Steps 0-7)
+    - Continuar sin tmux: Modo in-process (teammates como sub-agentes, sin split-panes ni cockpit)
 
 **Recommended (cockpit viewer):**
 - [ ] Ghostty (macOS) — terminal dedicada para visualizar e intervenir en el cockpit
@@ -65,6 +65,10 @@ description: Use when building features requiring planning + autonomous executio
     Options:
     - Instalar ahora (Recommended): Ejecuta brew install --cask ghostty
     - Continuar sin Ghostty: El cockpit corre en tmux. Conectate manualmente con `tmux attach -t ralph-{goal}` desde una terminal externa.
+
+**Teammate mode** (automatic — no user input):
+- tmux installed → teammates use split-panes, cockpit service windows available
+- tmux NOT installed → teammates run in-process (sub-agents, no cockpit)
 
 **You MUST** verify planning prerequisites before planning. **You MUST NOT** proceed to Step 8 without execution prerequisites.
 
@@ -208,33 +212,36 @@ Empty string = gate skipped. See `.ralph/config.sh` comments for stack-specific 
 
 Update `.ralph/config.sh` with derived gates and user selections. See [configuration-guide.md](references/configuration-guide.md) for all options.
 
-### Step 8: Launch Execution
-
-**You MUST NOT launch Step 8 without tmux.** There is no headless mode.
-If tmux was not installed during Infrastructure Setup, STOP here.
-Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ralph-orchestrator."
+### Step 8: Execute via Agent Teams
 
 **Prerequisites (all must be true):**
 - `.ralph/specs/{goal}/implementation/plan.md` + `.code-task.md` files with `Status: PENDING`
 - `.ralph/agents.md` exists, Plan Review passed (Step 6)
-- `tmux` installed, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` set
+- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` set
 
-**Actions:**
+**Pre-flight (Plan Mode):**
 
-1. Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
-2. Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
-3. Inform user: "Cockpit lanzado en tmux. `team` is always window 0 (Lead + teammates). `shell` is always the last window (terminal libre). Middle windows (`services`, `quality`, `monitor`) are created only if their COCKPIT_* variables are configured in .ralph/config.sh."
+1. Call `EnterPlanMode` — restricts session to read-only, preventing accidental edits.
+2. Build execution plan (read-only):
+   a. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
+   b. Map dependencies: parse `Blocked-By` references from each `.code-task.md`
+   c. Determine teammate mode: tmux if installed, in-process otherwise
+   d. If tmux available and COCKPIT_* services configured: note service windows to create
+   e. Summarize: N tasks, dependency graph, teammate mode, quality gates from config.sh
+3. Write execution plan to plan file (task list, dependencies, teammate mode, gates).
+4. Call `ExitPlanMode` — user approves the execution plan.
 
-**In the tmux session** (automatic via launch-build.sh):
+**Launch (after plan approval):**
 
-1. Claude Code starts with `--teammate-mode tmux`
-2. `/ralph-orchestrator` auto-invoked — state detection routes to Step 8 continuation
-3. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
-4. `TeamCreate(team_name="ralph-{goal-slug}")`
-5. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
-6. Build dependency mapping: `.code-task.md` `Blocked-By` references → Agent Teams taskIds via metadata lookup
-7. `TaskUpdate(addBlockedBy=[...])` for each task with dependencies
-8. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
+1. If tmux available and COCKPIT_* services configured:
+   - Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
+   - Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
+   - This creates ONLY service windows (dev server, test watcher, logs, DB) — NOT a Claude Code instance
+2. `TeamCreate(team_name="ralph-{goal-slug}")`
+3. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
+4. Build dependency mapping: `.code-task.md` `Blocked-By` references → Agent Teams taskIds via metadata lookup
+5. `TaskUpdate(addBlockedBy=[...])` for each task with dependencies
+6. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
    ```python
    Task(
        subagent_type="general-purpose",
@@ -244,7 +251,9 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}"
    )
    ```
-9. Enter monitoring mode (Phase 2)
+7. Enter monitoring mode
+
+> If tmux NOT available: teammates run in-process (sub-agents). No cockpit service windows. Execution works — less visibility.
 
 > Architecture details: [agent-teams-architecture.md](references/agent-teams-architecture.md)
 

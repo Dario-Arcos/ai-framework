@@ -7,14 +7,11 @@
 
 ## Task Cycle Execution
 
-**Agent Teams cockpit launch:**
-```bash
-# Correct: Launch via Agent Teams cockpit
-Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
-
-# Incorrect: Foreground execution risks timeout
-Bash(command="bash .ralph/launch-build.sh")  # May be killed by timeout
-```
+**Agent Teams execution (same-session):**
+- Service windows (if tmux + COCKPIT_* configured):
+  `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
+- Team setup (lead does directly):
+  `TeamCreate(team_name="ralph-{goal-slug}")` → `TaskCreate` per task → spawn
 
 **Monitor without blocking:**
 ```bash
@@ -120,16 +117,17 @@ After every session verify:
 
 **Essential commands:**
 ```bash
-# Launch Agent Teams cockpit
+# Service windows (if tmux + COCKPIT_* configured):
 Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
 
-# Check task progress
+# Team setup (lead does directly in same session):
+TeamCreate(team_name="ralph-{goal-slug}")
+TaskCreate(subject="...", description="...")  # per .code-task.md
+Task(subagent_type="general-purpose", team_name="...", name="impl-{slug}", ...)
+
+# Monitoring:
 TaskList()
-
-# Read specific task details
 TaskGet(taskId)
-
-# Read metrics
 Read(".ralph/metrics.json")
 ```
 

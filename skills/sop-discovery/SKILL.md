@@ -96,8 +96,8 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 - You MUST confirm the extracted goal with user before proceeding
 
 **You MUST NOT:**
-- Skip context gathering even if the goal seems simple because missing context leads to incomplete discovery and costly rework later
-- Make assumptions about the existing codebase without verification because assumptions often prove incorrect and derail planning
+- Skip context gathering even if the goal seems simple
+- Make assumptions about the existing codebase without verification
 
 ### Step 2: Initial Process Planning [INTERACTIVE ONLY]
 
@@ -110,7 +110,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Constraints:**
 - You MUST ask the user which option they prefer
 - You MUST wait for explicit user selection before proceeding
-- You MUST NOT assume a default without user confirmation because user preferences vary and assuming may waste effort on unwanted approaches
+- You MUST NOT assume a default without user confirmation
 - You MAY explain trade-offs: "Option A works better when the goal is unclear. Option B works better when you have domain knowledge to share."
 
 **Verification**: User has explicitly chosen Option A or B.
@@ -138,7 +138,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- Skip any of these questions because each captures essential context that shapes subsequent planning decisions
+- Skip any of these questions
 
 ### Step 4: Constraints Identification
 
@@ -162,7 +162,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- Make assumptions about constraints because undiscovered constraints surface late and cause expensive rework or project failure
+- Make assumptions about constraints
 
 ### Step 5: Risk Analysis
 
@@ -246,9 +246,9 @@ See `templates/discovery-output.md.template` for summary structure.
 **Autonomous mode**: Skip user confirmation. Return discovery document path and signal ready for next phase.
 
 **You MUST NOT:**
-- Skip any sections in the final document because incomplete discovery leads to incomplete planning and missed requirements
-- Leave placeholder text without real content because placeholders signal unfinished work and mislead downstream phases
-- Claim the discovery is complete if any section is missing because incomplete discovery documents undermine planning reliability
+- Skip any sections in the final document
+- Leave placeholder text without real content
+- Claim the discovery is complete if any section is missing
 
 ## Key Principles
 
@@ -275,8 +275,8 @@ Once the discovery document is complete, you **SHOULD** suggest one of the follo
 3. **Refine Scope** - If constraints or risks suggest the goal is too large, work with the user to decompose it
 
 **You MUST NOT:**
-- Jump directly to implementation without planning because skipping planning leads to unstructured work, scope creep, and technical debt
-- Proceed without user confirmation on next steps [INTERACTIVE ONLY] because user may need to review, adjust scope, or involve stakeholders before continuing
+- Jump directly to implementation without planning
+- Proceed without user confirmation on next steps [INTERACTIVE ONLY]
 
 **Autonomous mode behavior:**
 - Auto-proceed to `sop-planning` unless spikes are required
