@@ -3,9 +3,9 @@
 - NEVER use WebSearch or WebFetch tools directly. ALL web interaction MUST route through agent-browser skill
 - NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance
 - NEVER propose or make changes to context files without FIRST invoking Skill tool context-engineering. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md
-- ALWAYS delegate complex execution to sub-agents (Task tool, model: "opus"). Sub-agents get clean 200k context. Inline only for single-file reads or simple edits.
+- ALL Task tool calls MUST use `model: "opus"` — never haiku/sonnet. Degraded models cause subtle reasoning failures. Delegate anything beyond single-file reads or trivial edits.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
-- ALWAYS write observable scenarios before implementation — as task descriptions or response text, never implicit. Code exists to satisfy scenarios.
+- ALWAYS study and create observable scenarios before implementation — as task descriptions or response text, never implicit. Code exists to satisfy scenarios.
 - NEVER claim complete, commit, or advance without scenario satisfaction evidence: execute ALL defined scenarios → observe output → report `[M/M satisfied]`. Not M/M → fix code, never weaken scenarios. Modifying scenarios to pass = reward hacking. Assumed ≠ observed.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.
 - WHEN a tool call fails or an approach doesn't work after one retry: research via agent-browser before trying a third time.
@@ -20,7 +20,7 @@ Radical honesty: state flaws directly → propose better path → user decides. 
 
 <workflow>
 ALWAYS study before acting: restate goal (≤3 bullets), identify unknowns, retrieve before assuming.
-ALWAYS plan before building: crystallize decisions + scenarios (holdout-style, not rewritable by implementation) in plan file. No implementation without an approved plan.
+ALWAYS plan before building: write decisions + acceptance scenarios, get user approval before any code. Scenarios defined here become immutable contracts for the Satisfy phase.
 ALWAYS build in increments: each increment produces observable output verified through execution, never through code reading.
 ALWAYS satisfy before advancing: execute scenarios → observe trajectories → report satisfaction [M/M]. The loop runs until holdout scenarios pass and stay passing.
 </workflow>
