@@ -139,7 +139,7 @@ Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3 with ref
 /sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
-Note: sop-planning receives `referents/extracted-patterns.md` as additional design context. The referent catalog provides proven patterns that inform architecture decisions.
+sop-planning reads `extracted-patterns.md` from the `referents/` directory when `discovery_path` points within it. Verified: sop-planning Step 1 constraint.
 
 Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
 
@@ -155,9 +155,13 @@ Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
 
 Populate `templates/AGENTS.md.template` with operational context for teammates.
 
-**Sources:** `.ralph/specs/{goal}/referents/catalog.md` (proven patterns, constraints), `.ralph/specs/{goal}/design/detailed-design.md` (architecture), manifest files (commands), `.ralph/config.sh` (quality).
+**Sources:** `.ralph/specs/{goal}/referents/catalog.md` (constraints, recommendation), `.ralph/specs/{goal}/referents/extracted-patterns.md` (patterns to adopt), `.ralph/specs/{goal}/design/detailed-design.md` (architecture, data models), manifest files (commands), `.ralph/config.sh` (quality).
 
-**Technology Stack**: Extract the complete Technology Stack table from `detailed-design.md` Section 3.4 and populate the `## Stack` section in AGENTS.md. Include ALL rows (runtime, frameworks, testing tools). This is the authoritative technology reference — teammates MUST follow it.
+**Population instructions:**
+1. **Stack**: Extract the complete Technology Stack table from `detailed-design.md` Section 3.4. Include ALL rows. This is the authoritative technology reference.
+2. **Design Reference**: Generate a compressed index of `detailed-design.md` — list section headers (§3.1 System Context, §5 Data Models, etc.) with a 1-line summary each. Include the full path to the design file.
+3. **Constraints**: Extract the Recommendation and key constraints from `referents/catalog.md`.
+4. **Patterns**: Extract pattern names and 1-line descriptions from `referents/extracted-patterns.md`.
 
 - **Interactive**: Present draft, ask for approval/edits via AskUserQuestion.
 - **Autonomous**: Use Explore subagent to extract from sources. Generate without blocking.
@@ -275,7 +279,14 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 
 **State machine — Implementer → Reviewer → Next cycle:**
 
-WHEN implementer goes idle (task completed, gates passed):
+WHEN implementer goes idle — read 8-word summary from SendMessage:
+
+IF summary starts with "BLOCKED:":
+1. Send `shutdown_request` to the implementer
+2. Read `{documentation_dir}/blockers.md` (path from task metadata: `.ralph/specs/{goal}/implementation/{task_name}/blockers.md`)
+3. Surface blocker content to user via text output. Do NOT spawn reviewer — wait for blocker resolution.
+
+OTHERWISE (task completed, gates passed):
 1. Send `shutdown_request` to the implementer
 2. Spawn a reviewer teammate for the completed task:
    ```python
@@ -301,6 +312,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
    )
    ```
+6. IF BLOCKED: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface blocker to user via text output. Do NOT spawn new teammate until blocker resolved.
 
 **Completion flow:**
 1. All tasks complete — all reviewers report PASS

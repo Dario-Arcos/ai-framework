@@ -21,7 +21,7 @@ This reference defines the state files used by Ralph for persistent state manage
 | `.ralph/failures.json` | Per-teammate failure tracking | Current execution |
 | `.ralph/metrics.json` | Task success/failure counts | Current execution |
 | `.ralph/reviews/task-{id}-review.md` | SDD compliance reviews per task | Current execution |
-| `.ralph/specs/{goal}/discovery.md` | Problem definition, constraints | Current goal |
+| `.ralph/specs/{goal}/referents/catalog.md` | Referent recommendation, constraints | Current goal |
 | `.ralph/specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
 | `.ralph/specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
 | `*.code-task.md` | Individual task descriptions + status | Current goal |

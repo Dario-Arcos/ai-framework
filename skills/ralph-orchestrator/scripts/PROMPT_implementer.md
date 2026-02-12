@@ -74,5 +74,5 @@ Then go idle. Your work is done.
 1. **ONE task only.** You MUST NOT claim additional tasks after completing yours.
 2. **NEVER push to remote.** Only commit locally.
 3. **NEVER modify files outside your current task's scope.**
-4. **If blocked:** Document blocker, mark task BLOCKED, go idle. Lead will handle.
+4. **If blocked:** Document blocker to `{documentation_dir}/blockers.md`, send 8-word summary to lead via SendMessage starting with "BLOCKED:" (e.g., "BLOCKED: missing database schema, cannot generate migrations"), mark task BLOCKED, go idle. Lead will handle.
 5. **Gate failure:** Fix issues from TaskCompleted hook feedback, do not ignore gates.

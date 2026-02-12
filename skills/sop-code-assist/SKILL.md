@@ -44,10 +44,12 @@ Read context and prepare environment.
 - Read `guardrails.md` for lessons learned (under ralph: `.ralph/guardrails.md`)
 - Read `AGENTS.md` for build commands and constraints (under ralph: `.ralph/agents.md`)
 - Read `.code-task.md` for requirements and acceptance criteria
+- Read all files listed in `Reference Documentation` and `Files to Read` sections of `.code-task.md`
 
 **Constraints:**
 - You MUST read AGENTS.md before any implementation
 - You MUST read guardrails.md to avoid repeating past mistakes
+- You MUST read all files listed in the task's `Reference Documentation` section
 
 ### 2. Explore
 

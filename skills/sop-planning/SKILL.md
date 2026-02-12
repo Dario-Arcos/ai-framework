@@ -117,6 +117,7 @@ Create directory structure and populate initial artifacts:
 - You MUST create all directories in the structure
 - You MUST populate rough-idea.md with the input parameter content
 - You MUST use templates when available
+- If `discovery_path` points to a file within a `referents/` directory, you MUST also read `extracted-patterns.md` from that directory. Use extracted patterns as design input for architecture decisions in Step 6.
 
 **Verification**: All directories exist and rough-idea.md is populated.
 
@@ -250,6 +251,7 @@ Create `{project_dir}/design/detailed-design.md` using `templates/detailed-desig
 - You MUST include all required sections in the design document
 - You MUST include at least 2 mermaid diagrams
 - You MUST reference research findings when making design decisions
+- You MUST reference extracted patterns (from `referents/extracted-patterns.md`, if read in Step 1) when making architecture decisions
 - In interactive mode: Wait for explicit design approval before proceeding
 - In autonomous mode: Generate complete design, document any assumptions made
 

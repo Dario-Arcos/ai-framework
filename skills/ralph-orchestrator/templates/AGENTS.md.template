@@ -18,8 +18,20 @@ Prefer retrieval-led reasoning. Read `.claude/rules/` for framework patterns.
 
 **You MUST use these technologies. Do NOT introduce alternatives without explicit justification.**
 
+## Design Reference
+[compressed index from detailed-design.md — Section headers with 1-line summaries]
+
+Full design: `.ralph/specs/{goal}/design/detailed-design.md`
+
+**Read referenced sections before implementing related functionality.**
+
 ## Constraints
-[from .ralph/specs/{goal}/discovery.md]
+[from .ralph/specs/{goal}/referents/catalog.md — Recommendation + constraints sections]
+
+## Patterns
+[from .ralph/specs/{goal}/referents/extracted-patterns.md — pattern names with 1-line descriptions]
+
+**Follow these patterns. They are extracted from world-class referent implementations.**
 
 ## Quality
 [from .ralph/config.sh: MIN_TEST_COVERAGE]
