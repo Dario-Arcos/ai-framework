@@ -115,22 +115,31 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────
-# OPEN VIEWER (Ghostty optional — tmux is the execution layer)
+# OPEN VIEWER (Ghostty recommended — tmux is the execution layer)
 # ─────────────────────────────────────────────────────────────────
-# Ghostty attaches to tmux for better terminal rendering.
-# Agent Teams split-panes run inside tmux natively.
-# Ghostty is a viewer, not required for execution.
+# Ghostty opens a dedicated window to visualize and interact with the cockpit.
+# Without it, the cockpit runs headless in tmux — agents work fine,
+# but you need to manually attach from an external terminal to observe/intervene.
 
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    if [ -d "/Applications/Ghostty.app" ]; then
-        open -na Ghostty.app --args \
-            --title="Ralph Cockpit: $(basename "$PROJECT_DIR")" \
-            -e "tmux attach -t $SESSION"
-    else
-        echo "Ghostty not found. Attaching to tmux directly."
-        echo "Windows: Ctrl+B {N} (0=team, 1=services, 2=quality, 3=monitor, 4=shell)"
-        tmux attach -t "$SESSION"
-    fi
+if [[ "$(uname -s)" == "Darwin" ]] && [ -d "/Applications/Ghostty.app" ]; then
+    open -na Ghostty.app --args \
+        --title="Ralph Cockpit: $(basename "$PROJECT_DIR")" \
+        -e "tmux attach -t $SESSION"
 else
-    tmux attach -t "$SESSION"
+    echo ""
+    echo "══════════════════════════════════════════════════════════"
+    echo "  Ralph cockpit running in tmux session: $SESSION"
+    echo "══════════════════════════════════════════════════════════"
+    echo ""
+    echo "  Agents are working. To observe the cockpit, run from"
+    echo "  an EXTERNAL terminal (not this one):"
+    echo ""
+    echo "    tmux attach -t $SESSION"
+    echo ""
+    echo "  Windows: Ctrl+B {N}"
+    echo "    0=team  1=services  2=quality  3=monitor  last=shell"
+    echo ""
+    echo "  TIP: Install Ghostty for automatic cockpit viewer:"
+    echo "    brew install --cask ghostty"
+    echo "══════════════════════════════════════════════════════════"
 fi

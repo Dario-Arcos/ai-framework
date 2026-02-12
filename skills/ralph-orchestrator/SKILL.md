@@ -57,8 +57,14 @@ description: Use when building features requiring planning + autonomous executio
     - Instalar ahora (Recommended): Ejecuta brew install tmux (macOS) / sudo apt install tmux (Linux)
     - Continuar sin tmux: Solo planificacion disponible (Steps 0-7)
 
-**Optional (presentation):**
-- [ ] Ghostty (macOS) — mejora UX, no requerido. Fallback: tmux attach en terminal actual
+**Recommended (cockpit viewer):**
+- [ ] Ghostty (macOS) — terminal dedicada para visualizar e intervenir en el cockpit
+  - If missing: **Use AskUserQuestion**:
+    Question: "Ghostty no esta instalado. Sin el, el cockpit se abrira en tu terminal actual (puede quedar 'atrapada' si estas en un IDE). Altamente recomendado para visualizar e intervenir."
+    Header: "Ghostty"
+    Options:
+    - Instalar ahora (Recommended): Ejecuta brew install --cask ghostty
+    - Continuar sin Ghostty: El cockpit corre en tmux. Conectate manualmente con `tmux attach -t ralph-{goal}` desde una terminal externa.
 
 **You MUST** verify planning prerequisites before planning. **You MUST NOT** proceed to Step 8 without execution prerequisites.
 
