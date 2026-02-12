@@ -79,56 +79,45 @@ def load_config(config_path):
 
 
 # ─────────────────────────────────────────────────────────────────
-# FAILURES TRACKING (with file locking)
+# FAILURES TRACKING (atomic read-modify-write with LOCK_EX)
 # ─────────────────────────────────────────────────────────────────
 
 def _failures_path(ralph_dir):
     return ralph_dir / "failures.json"
 
 
-def read_failures(ralph_dir):
-    """Read per-teammate failure counters."""
-    path = _failures_path(ralph_dir)
-    try:
-        if path.exists():
-            with open(path, "r", encoding="utf-8") as f:
-                fcntl.flock(f, fcntl.LOCK_SH)
-                data = json.load(f)
-                fcntl.flock(f, fcntl.LOCK_UN)
-                return data
-    except (json.JSONDecodeError, OSError):
-        pass
-    return {}
+def _atomic_update_failures(ralph_dir, teammate_name, operation):
+    """Atomic read-modify-write for per-teammate failure counters.
 
-
-def write_failures(ralph_dir, failures):
-    """Write failure counters atomically with exclusive lock."""
+    Args:
+        operation: "increment" or "reset"
+    Returns:
+        int: current failure count after operation
+    """
     path = _failures_path(ralph_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, "a+", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
-            json.dump(failures, f, indent=2)
+            f.seek(0)
+            raw = f.read()
+            try:
+                data = json.loads(raw) if raw.strip() else {}
+            except json.JSONDecodeError:
+                data = {}
+
+            if operation == "increment":
+                data[teammate_name] = data.get(teammate_name, 0) + 1
+            elif operation == "reset":
+                data[teammate_name] = 0
+
+            f.seek(0)
+            f.truncate()
+            json.dump(data, f, indent=2)
             f.write("\n")
-            fcntl.flock(f, fcntl.LOCK_UN)
+            return data.get(teammate_name, 0)
     except OSError:
-        pass
-
-
-def increment_failure(ralph_dir, teammate_name):
-    """Increment failure counter for a teammate."""
-    failures = read_failures(ralph_dir)
-    failures[teammate_name] = failures.get(teammate_name, 0) + 1
-    write_failures(ralph_dir, failures)
-    return failures[teammate_name]
-
-
-def reset_failure(ralph_dir, teammate_name):
-    """Reset failure counter for a teammate (on success)."""
-    failures = read_failures(ralph_dir)
-    if teammate_name in failures:
-        failures[teammate_name] = 0
-        write_failures(ralph_dir, failures)
+        return 0
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -136,37 +125,37 @@ def reset_failure(ralph_dir, teammate_name):
 # ─────────────────────────────────────────────────────────────────
 
 def update_metrics(ralph_dir, success, teammate_name):
-    """Update .ralph/metrics.json with task result (locked)."""
+    """Atomic read-modify-write for .ralph/metrics.json."""
     metrics_path = ralph_dir / "metrics.json"
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        metrics = {}
-        if metrics_path.exists():
-            with open(metrics_path, "r", encoding="utf-8") as f:
-                fcntl.flock(f, fcntl.LOCK_SH)
-                metrics = json.load(f)
-                fcntl.flock(f, fcntl.LOCK_UN)
-
-        metrics["total_tasks"] = metrics.get("total_tasks", 0) + 1
-        key = "successful_tasks" if success else "failed_tasks"
-        metrics[key] = metrics.get(key, 0) + 1
-        metrics["last_updated"] = time.strftime(
-            "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
-        )
-
-        # Per-teammate tracking (for rotation decisions)
-        per_teammate = metrics.get("per_teammate", {})
-        teammate_stats = per_teammate.get(teammate_name, {"completed": 0, "failed": 0})
-        key = "completed" if success else "failed"
-        teammate_stats[key] = teammate_stats.get(key, 0) + 1
-        per_teammate[teammate_name] = teammate_stats
-        metrics["per_teammate"] = per_teammate
-
-        metrics_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(metrics_path, "w", encoding="utf-8") as f:
+        with open(metrics_path, "a+", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
+            f.seek(0)
+            raw = f.read()
+            try:
+                metrics = json.loads(raw) if raw.strip() else {}
+            except json.JSONDecodeError:
+                metrics = {}
+
+            metrics["total_tasks"] = metrics.get("total_tasks", 0) + 1
+            key = "successful_tasks" if success else "failed_tasks"
+            metrics[key] = metrics.get(key, 0) + 1
+            metrics["last_updated"] = time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+            )
+
+            per_teammate = metrics.get("per_teammate", {})
+            teammate_stats = per_teammate.get(teammate_name, {"completed": 0, "failed": 0})
+            stat_key = "completed" if success else "failed"
+            teammate_stats[stat_key] = teammate_stats.get(stat_key, 0) + 1
+            per_teammate[teammate_name] = teammate_stats
+            metrics["per_teammate"] = per_teammate
+
+            f.seek(0)
+            f.truncate()
             json.dump(metrics, f, indent=2)
             f.write("\n")
-            fcntl.flock(f, fcntl.LOCK_UN)
     except (json.JSONDecodeError, OSError):
         pass
 
@@ -229,11 +218,22 @@ def extract_coverage_pct(output):
     return None
 
 
-def find_scenario_strategy(cwd, task_subject):
-    """Find Scenario-Strategy from .code-task.md matching task_subject.
+def find_scenario_strategy(cwd, task_subject, task_description=""):
+    """Find Scenario-Strategy from task description or .code-task.md files.
 
+    Primary: Parse from task_description (contains full task content including metadata).
+    Fallback: Grep .code-task.md files by task_subject.
     Returns 'not-applicable' or 'required' (default if not found).
     """
+    # Primary: check task_description for Scenario-Strategy metadata
+    if task_description:
+        for line in task_description.splitlines():
+            if "Scenario-Strategy" in line:
+                if "not-applicable" in line:
+                    return "not-applicable"
+                return "required"
+
+    # Fallback: grep .code-task.md files
     try:
         result = subprocess.run(
             ["grep", "-rFl", f"# Task: {task_subject}", "--include=*.code-task.md", "."],
@@ -271,7 +271,8 @@ def main():
 
     cwd = input_data.get("cwd", os.getcwd())
     task_subject = input_data.get("task_subject", "unknown task")
-    scenario_strategy = find_scenario_strategy(cwd, task_subject)
+    task_description = input_data.get("task_description", "")
+    scenario_strategy = find_scenario_strategy(cwd, task_subject, task_description)
     teammate_name = input_data.get("teammate_name", "unknown")
 
     # Guard: not a ralph-orchestrator project
@@ -300,7 +301,7 @@ def main():
         passed, output = run_gate(gate_name, gate_cmd, cwd)
 
         if not passed:
-            count = increment_failure(ralph_dir, teammate_name)
+            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
             print(
                 f"Quality gate '{gate_name}' failed for: {task_subject}\n\n"
@@ -323,7 +324,7 @@ def main():
         passed, output = run_gate("coverage", coverage_cmd, cwd)
 
         if not passed:
-            count = increment_failure(ralph_dir, teammate_name)
+            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
             print(
                 f"Coverage gate failed for: {task_subject}\n\n"
@@ -336,7 +337,7 @@ def main():
 
         pct = extract_coverage_pct(output)
         if pct is not None and pct < min_coverage:
-            count = increment_failure(ralph_dir, teammate_name)
+            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
             print(
                 f"Coverage below threshold for: {task_subject}\n\n"
@@ -349,7 +350,7 @@ def main():
             sys.exit(2)
 
     # All gates passed
-    reset_failure(ralph_dir, teammate_name)
+    _atomic_update_failures(ralph_dir, teammate_name, "reset")
     update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
     sys.exit(0)
 

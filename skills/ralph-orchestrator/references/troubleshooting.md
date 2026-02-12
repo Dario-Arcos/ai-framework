@@ -117,8 +117,8 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 ### Orchestrator Tempted to Implement
 
 - **Symptom**: Lead wants to write code directly instead of delegating
-- **Fix**: Remember — teammates have persistent context and dedicated focus. Lead coordinates, doesn't implement.
-- **Response template**: *"Teammates have persistent context and dedicated focus. Your role is coordination. Use SendMessage to guide them."*
+- **Fix**: Remember — each teammate gets fresh 200K context and dedicated focus on a single task. Lead coordinates, doesn't implement.
+- **Response template**: *"Each teammate has fresh 200K context for their task. Your role is coordination. Use SendMessage to guide them."*
 
 ### Circuit Breaker Triggered
 

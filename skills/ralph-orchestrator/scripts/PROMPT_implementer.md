@@ -51,7 +51,7 @@ If your task prompt includes a review feedback path (`.ralph/reviews/task-{id}-r
 1. Update the `.code-task.md` file: set `## Status: COMPLETED` and `## Completed: YYYY-MM-DD`.
 2. Mark task complete: `TaskUpdate(taskId, status="completed")`.
 3. The **TaskCompleted hook** runs quality gates automatically (test, typecheck, lint, build). If gates fail, you receive feedback — fix the issues and retry.
-4. Send 8-word summary to lead via SendMessage (e.g., "Task 3: implemented auth middleware, tests passing, committed").
+4. Send 8-word summary to lead via SendMessage (e.g., "Task 3: implemented auth middleware, tests passing, committed"). Then go idle. The lead will handle your shutdown.
 
 ---
 

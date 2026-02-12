@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assist) for user-present sessions. **Autonomous** (Agent Teams teammates) for parallel, hooks-gated execution via the Ghostty cockpit.
+Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assist) for user-present sessions. **Autonomous** (Agent Teams teammates) for parallel, hooks-gated execution via the tmux cockpit (Ghostty optional viewer).
 
 ---
 
@@ -62,7 +62,7 @@ bash .ralph/launch-build.sh
 - Fresh 200K context per teammate (each teammate handles exactly 1 task, then shuts down)
 - Parallel execution with up to MAX_TEAMMATES concurrent teammates
 - Quality gates enforced via TaskCompleted hook (not inline)
-- TeammateIdle hook drives continuity (exit 2 = keep working)
+- TeammateIdle hook provides safety (circuit breaker + abort). Lead drives the implementer→reviewer→next cycle.
 - Cockpit provides live visibility via tmux windows
 
 **Implementer lifecycle:**
@@ -75,7 +75,7 @@ bash .ralph/launch-build.sh
 7. Idle → lead sends shutdown_request
 
 **Reviewer lifecycle (after implementer completes + gates pass):**
-1. Spawn with review context (task description + diff)
+1. Spawn with review context (task file path + agents.md)
 2. Validate SDD compliance via /sop-reviewer
 3. Write review to `.ralph/reviews/task-{id}-review.md`
 4. Send 8-word summary to lead via SendMessage
@@ -179,8 +179,8 @@ graph LR
 
     subgraph "Execution (ALWAYS Agent Teams)"
         C --> D[launch-build.sh]
-        D --> E[Ghostty cockpit]
-        E --> F[Ephemeral teammates]
+        D --> E[tmux cockpit]
+        E --> F[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
     end
 
     style D fill:#ffe1e1

@@ -76,16 +76,15 @@ graph TD
 
     D --> E{Circuit breaker?}
     E -->|MAX_CONSECUTIVE_FAILURES hit| F[Teammate goes idle<br/>Exit 0]
-    E -->|OK| G{Pending tasks?}
+    E -->|OK| G[Teammate goes idle<br/>Exit 0]
 
-    G -->|Yes| H[Claim next task<br/>Exit 2 from teammate-idle]
-    G -->|No| I[All done<br/>Exit 0]
+    G --> H[Lead spawns next<br/>teammate if tasks remain]
 
     C --> A
 
     style C fill:#ffe1e1
     style F fill:#ffe1e1
-    style I fill:#e1ffe1
+    style G fill:#e1ffe1
     style H fill:#e1ffe1
 ```
 

@@ -159,10 +159,10 @@ Each key is a teammate name, and the value is the consecutive failure count (int
 
 ## Context Philosophy
 
-Agent Teams teammates have persistent context (compacted by Claude Code). Unlike iteration-based models, there is no context truncation between tasks. Observability focuses on **task outcomes** (metrics.json) and **accumulated lessons** (guardrails.md), not context percentages.
+Agent Teams teammates have fresh context per task (ephemeral teammates). Each teammate gets a clean 200K window for exactly one task. No compaction needed. Observability focuses on **task outcomes** (metrics.json) and **accumulated lessons** (guardrails.md), not context percentages.
 
 **Track**: Task completion rate, gate pass rate, failure patterns.
-**Ignore**: Context size, token counts (managed internally by Claude Code).
+**Ignore**: Context size, token counts (each teammate starts fresh — no degradation to monitor).
 
 ---
 

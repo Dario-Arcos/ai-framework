@@ -1,6 +1,6 @@
 ---
 name: ralph-orchestrator
-description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel teammates with persistent context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams cockpit.
+description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel ephemeral teammates with fresh 200K context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams cockpit.
 ---
 
 # Ralph Orchestrator
@@ -220,11 +220,15 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 3. Inform user: "Cockpit lanzado en tmux. `team` is always window 0 (Lead + teammates). `shell` is always the last window (terminal libre). Middle windows (`services`, `quality`, `monitor`) are created only if their COCKPIT_* variables are configured in .ralph/config.sh."
 
 **In the tmux session** (automatic via launch-build.sh):
+
 1. Claude Code starts with `--teammate-mode tmux`
 2. `/ralph-orchestrator` auto-invoked — state detection routes to Step 8 continuation
-3. `TeamCreate(team_name="ralph-{goal-slug}")`
-4. For each `.code-task.md`: `TaskCreate` + `TaskUpdate(addBlockedBy=[...])` per `Blocked-By` field
-5. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
+3. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
+4. `TeamCreate(team_name="ralph-{goal-slug}")`
+5. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
+6. Build dependency mapping: `.code-task.md` `Blocked-By` references → Agent Teams taskIds via metadata lookup
+7. `TaskUpdate(addBlockedBy=[...])` for each task with dependencies
+8. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
    ```python
    Task(
        subagent_type="general-purpose",
@@ -234,7 +238,7 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}"
    )
    ```
-6. Enter monitoring mode (Phase 2)
+9. Enter monitoring mode (Phase 2)
 
 > Architecture details: [agent-teams-architecture.md](references/agent-teams-architecture.md)
 
@@ -242,10 +246,11 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 
 ## Phase 2: Monitoring
 
-**Role: PURE ORCHESTRATOR.** Lead coordinates via summaries only — never reads code, diffs, or review content.
+**Role: PURE ORCHESTRATOR.** Lead coordinates via summaries only — never reads code, diffs, or full review content.
 
 **Tools allowed:**
 - `TaskList` — task progress
+- `TaskGet(taskId)` — read task metadata (codeTaskFile, codeTaskStep)
 - `Read(".ralph/guardrails.md")` — lessons accumulated by teammates
 - `Read(".ralph/metrics.json")` — success/failure counts
 - `Read(".ralph/failures.json")` — per-teammate failure tracking
@@ -253,9 +258,9 @@ Inform user: "Planificacion completa. Para ejecutar, instala tmux y reinicia /ra
 
 **If user asks to implement:** Redirect to teammates. Lead coordinates, doesn't implement.
 
-**Implementer → Reviewer → Next cycle:**
+**State machine — Implementer → Reviewer → Next cycle:**
 
-When an implementer goes idle (task completed, gates passed):
+WHEN implementer goes idle (task completed, gates passed):
 1. Send `shutdown_request` to the implementer
 2. Spawn a reviewer teammate for the completed task:
    ```python
@@ -267,21 +272,20 @@ When an implementer goes idle (task completed, gates passed):
        prompt=PROMPT_reviewer.md content + "\n\nYour assigned task ID: {taskId}\nTask file: {path_to_code_task_md}"
    )
    ```
-3. When reviewer goes idle — read 8-word summary from SendMessage:
-   - **PASS**: Confirm task done. Check newly unblocked tasks via `TaskList`. Spawn next implementer if unblocked tasks exist.
-   - **FAIL**: Send `shutdown_request` to reviewer. Spawn NEW implementer for the same task with review feedback:
-     ```python
-     Task(
-         subagent_type="general-purpose",
-         team_name="ralph-{goal-slug}",
-         name="impl-{task-slug}-r2",
-         mode="bypassPermissions",
-         prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
-     )
-     ```
-4. Send `shutdown_request` to reviewer after reporting
 
-**Lead NEVER reads:** review file content, code diffs, test output. Only 8-word summaries.
+WHEN reviewer goes idle — read 8-word summary from SendMessage:
+3. Send `shutdown_request` to the reviewer
+4. IF PASS: Mark `.code-task.md` as COMPLETED → `TaskList` for newly unblocked tasks → spawn next implementer if unblocked tasks exist
+5. IF FAIL: Spawn NEW implementer for the same task with review feedback:
+   ```python
+   Task(
+       subagent_type="general-purpose",
+       team_name="ralph-{goal-slug}",
+       name="impl-{task-slug}-r2",
+       mode="bypassPermissions",
+       prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
+   )
+   ```
 
 **Completion flow:**
 1. All tasks complete — all reviewers report PASS

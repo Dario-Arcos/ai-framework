@@ -18,11 +18,14 @@ Bash(command="bash .ralph/launch-build.sh")  # May be killed by timeout
 
 **Monitor without blocking:**
 ```bash
-# Check status via TaskList
+# Check task progress
 TaskList()
 
-# Read teammate output
-TaskOutput(task_id="{id}", block=false)
+# Read specific task details
+TaskGet(taskId)
+
+# Read metrics
+Read(".ralph/metrics.json")
 
 # DO NOT use these (they block):
 # tail -f logs/current.log  # Blocks indefinitely
@@ -106,7 +109,7 @@ After every session verify:
 | Anti-Pattern | Problem | Solution |
 |--------------|---------|----------|
 | Foreground launch | Timeout kills process | Use `run_in_background=true` |
-| Blocking monitors | Claude stuck waiting | Use `block=false` with TaskOutput |
+| Blocking monitors | Claude stuck waiting | Use `TaskList` + `TaskGet` + `Read` for monitoring |
 | Context pollution | Teammate context degraded | Update plan, don't pollute teammate |
 | Skip prerequisites | Missing SOP artifacts | Always validate Step 0 |
 | Ignore red flags | Issues compound | Intervene at first sign |
@@ -120,11 +123,14 @@ After every session verify:
 # Launch Agent Teams cockpit
 Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
 
-# Check status via TaskList
+# Check task progress
 TaskList()
 
-# Read teammate output
-TaskOutput(task_id="{id}", block=false)
+# Read specific task details
+TaskGet(taskId)
+
+# Read metrics
+Read(".ralph/metrics.json")
 ```
 
 **Context philosophy:**

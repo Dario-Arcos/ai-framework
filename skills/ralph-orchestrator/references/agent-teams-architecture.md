@@ -1,19 +1,19 @@
 # Agent Teams Architecture
 
-> Execution engine for ralph-orchestrator Step 8. Ghostty cockpit + Claude Code Agent Teams + tmux.
+> Execution engine for ralph-orchestrator Step 8. tmux cockpit + Claude Code Agent Teams (Ghostty optional viewer).
 
 ---
 
 ## Overview
 
-Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files, and a tmux cockpit running inside Ghostty.
+Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files, and a tmux cockpit (Ghostty attaches as optional viewer).
 
 Key properties:
 - **2-layer execution** — lead orchestrates, ephemeral teammates implement (1 task each) with fresh 200K context
 - **Parallel execution** — up to MAX_TEAMMATES concurrent teammates
 - **Fresh 200K context per task** — each teammate gets a clean context window, avoiding progressive degradation
 - **Reviewer validation** — after implementer completes and gates pass, a reviewer teammate validates SDD compliance
-- **Hook-based quality gates** — TaskCompleted validates, TeammateIdle drives continuity
+- **Hook-based quality gates** — TaskCompleted validates, TeammateIdle provides safety (circuit breaker + abort)
 - **Cockpit visibility** — tmux windows for services, tests, logs, and shell access
 
 ---
@@ -49,8 +49,7 @@ Fires when a teammate is about to go idle. Decision by exit code:
 | Not a ralph project (.ralph/config.sh missing) | 0 | Pass-through (not a ralph session) |
 | `.ralph/ABORT` file exists | 0 | Manual abort — allow idle |
 | Teammate failures >= MAX_CONSECUTIVE_FAILURES | 0 | Circuit breaker — stop this teammate |
-| All `.code-task.md` COMPLETED | 0 | Work done — allow idle |
-| Pending tasks remain | 2 | Keep working: "Re-read .ralph/guardrails.md. Claim next task." |
+| Default: all checks pass | 0 | Allow idle — lead manages flow |
 
 ### TaskCompleted
 
@@ -142,7 +141,7 @@ Navigation: `Ctrl+B {N}` to switch windows (standard tmux prefix).
 
 ## Teammate Capabilities
 
-Teammates interact with the cockpit programmatically through tmux:
+Teammates can observe cockpit service windows through tmux (for reading dev server output, test results, etc.):
 
 ### Eyes (capture-pane) — Read output from any window
 

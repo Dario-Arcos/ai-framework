@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""TeammateIdle hook — keeps ralph-orchestrator teammates working.
+"""TeammateIdle hook — safety net for ralph-orchestrator teammates.
 
 Fires when an Agent Teams teammate is about to go idle.
-Exit 2 = teammate receives stderr as feedback and continues working.
-Exit 0 = teammate goes idle normally.
+Exit 0 = teammate goes idle normally. The LEAD manages task flow.
 
 Guard: only activates in ralph-orchestrator projects (.ralph/config.sh).
 Non-ralph Agent Teams usage is transparent (immediate exit 0).
@@ -11,8 +10,7 @@ Non-ralph Agent Teams usage is transparent (immediate exit 0).
 Decision logic:
   1. ABORT file exists          → exit 0 (manual abort)
   2. Circuit breaker triggered  → exit 0 (consecutive failures exceeded)
-  3. Pending tasks remain       → exit 2 (keep working)
-  4. All tasks complete         → exit 0 (allow idle)
+  3. Default                    → exit 0 (allow idle, lead assigns work)
 """
 import fcntl
 import json
@@ -54,28 +52,6 @@ def read_failures(ralph_dir):
     return {}
 
 
-def count_pending_tasks(cwd):
-    """Count .code-task.md files with Status: PENDING or IN_PROGRESS.
-
-    Returns:
-        int: number of pending/in-progress tasks, or -1 on error.
-    """
-    try:
-        result = subprocess.run(
-            [
-                "grep", "-rlE",
-                "Status: (PENDING|IN_PROGRESS)",
-                "--include=*.code-task.md",
-                ".",
-            ],
-            capture_output=True, text=True, cwd=cwd, timeout=10,
-        )
-        lines = [l for l in result.stdout.strip().split("\n") if l]
-        return len(lines)
-    except (subprocess.TimeoutExpired, OSError):
-        return -1  # error → assume tasks remain (safe default)
-
-
 def main():
     """Main hook logic."""
     # Read input from stdin (hook protocol)
@@ -109,18 +85,8 @@ def main():
         )
         sys.exit(0)
 
-    # Count pending tasks
-    pending = count_pending_tasks(cwd)
-    if pending == 0:
-        sys.exit(0)  # all done → allow idle
-
-    # Tasks remain → keep working
-    print(
-        "Re-read guardrails.md for latest lessons from other teammates. "
-        "Claim your next task from the task list.",
-        file=sys.stderr,
-    )
-    sys.exit(2)
+    # Default: allow idle — lead manages task assignment
+    sys.exit(0)
 
 
 if __name__ == "__main__":
