@@ -91,7 +91,8 @@ def ensure_gitignore_rules(plugin_root, project_dir):
 
     Strategy:
         1. If no .gitignore: copy template
-        2. If .gitignore exists: migrate old patterns, then append missing rules
+        2. If .gitignore exists: migrate old patterns, add missing rules,
+           write full file once (idempotent against concurrent runs)
     """
     template_gitignore = plugin_root / "template" / "gitignore.template"
     project_gitignore = project_dir / ".gitignore"
@@ -108,11 +109,10 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         with open(project_gitignore, "r", encoding="utf-8") as f:
             content = f.read()
 
+        original = content
+
         # Migrate /.claude/ → /.claude/* so negation patterns work
-        content, migrated = migrate_claude_gitignore(content)
-        if migrated:
-            with open(project_gitignore, "w", encoding="utf-8") as f:
-                f.write(content)
+        content, _ = migrate_claude_gitignore(content)
 
         missing_rules = [
             rule for rule in CRITICAL_GITIGNORE_RULES
@@ -120,12 +120,15 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         ]
 
         if missing_rules:
-            with open(project_gitignore, "a", encoding="utf-8") as f:
-                if content and not content.endswith("\n"):
-                    f.write("\n")
-                f.write("\n# AI Framework runtime files (auto-added)\n")
-                for rule in missing_rules:
-                    f.write(rule + "\n")
+            if content and not content.endswith("\n"):
+                content += "\n"
+            content += "\n# AI Framework runtime files (auto-added)\n"
+            for rule in missing_rules:
+                content += rule + "\n"
+
+        if content != original:
+            with open(project_gitignore, "w", encoding="utf-8") as f:
+                f.write(content)
 
     except (OSError, IOError):
         pass
