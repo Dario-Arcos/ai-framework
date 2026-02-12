@@ -141,7 +141,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
   - `TaskList` — real-time task states
   - `Read(".ralph/metrics.json")` — aggregate counts
   - `Read(".ralph/failures.json")` — per-teammate failures
-  - `tmux capture-pane -p -t ralph:team.0` — team window output
+  - `tmux capture-pane -p -t ralph:services.0` — dev server output
 
 ### Metrics Show High Failure Rate
 

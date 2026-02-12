@@ -195,7 +195,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 | Requirement | Check | Install |
 |-------------|-------|---------|
-| tmux | `which tmux` | `brew install tmux` (Recommended — without tmux: teammates run in-process) |
+| tmux | `which tmux` | `brew install tmux` (Optional — enables cockpit service windows for monitoring) |
 | Ghostty | `open -na Ghostty.app` | `brew install --cask ghostty` |
 | Agent Teams flag | `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
 | Config file | `.ralph/config.sh` exists | Copy from `templates/config.sh.template` |

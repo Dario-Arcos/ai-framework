@@ -49,13 +49,13 @@ description: Use when building features requiring planning + autonomous executio
 - [ ] `.ralph/guardrails.md` exists — if missing: copy from `templates/guardrails.md.template`
 
 **Execution prerequisites (required for Step 8):**
-- [ ] `tmux` installed (`which tmux`) — **Recommended (default teammate mode)**
+- [ ] `tmux` installed (`which tmux`) — **Optional (cockpit monitoring)**
   - If missing: **Use AskUserQuestion**:
-    Question: "tmux no esta instalado. Es el modo recomendado para Agent Teams (split-panes para cada teammate, cockpit de servicios). Sin el, los teammates corren como sub-agentes in-process (menos visibilidad). Quieres instalarlo?"
+    Question: "tmux no esta instalado. Con tmux, los servicios del proyecto (dev server, tests, logs) corren en ventanas dedicadas visibles en Ghostty. Sin el, la ejecucion funciona igual pero sin cockpit visual."
     Header: "tmux"
     Options:
     - Instalar ahora (Recommended): Ejecuta brew install tmux (macOS) / sudo apt install tmux (Linux)
-    - Continuar sin tmux: Modo in-process (teammates como sub-agentes, sin split-panes ni cockpit)
+    - Continuar sin tmux: Sin cockpit visual. Ejecucion funciona normalmente.
 
 **Recommended (cockpit viewer):**
 - [ ] Ghostty (macOS) — terminal dedicada para visualizar e intervenir en el cockpit
@@ -66,9 +66,10 @@ description: Use when building features requiring planning + autonomous executio
     - Instalar ahora (Recommended): Ejecuta brew install --cask ghostty
     - Continuar sin Ghostty: El cockpit corre en tmux. Conectate manualmente con `tmux attach -t ralph-{goal}` desde una terminal externa.
 
-**Teammate mode** (automatic — no user input):
-- tmux installed → teammates use split-panes, cockpit service windows available
-- tmux NOT installed → teammates run in-process (sub-agents, no cockpit)
+**Teammate mode**: always in-process (teammates run as sub-agents in the current session).
+**Cockpit** (automatic — no user input):
+- tmux installed → service windows created (dev server, tests, logs). Ghostty opens as viewer if available.
+- tmux NOT installed → no cockpit. Execution works normally; monitor via TaskList and state files.
 
 **You MUST** verify planning prerequisites before planning. **You MUST NOT** proceed to Step 8 without execution prerequisites.
 
@@ -229,10 +230,9 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 2. Build execution plan (read-only):
    a. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
    b. Map dependencies: parse `Blocked-By` references from each `.code-task.md`
-   c. Determine teammate mode: tmux if installed, in-process otherwise
-   d. If tmux available and COCKPIT_* services configured: note service windows to create
-   e. Summarize: N tasks, dependency graph, teammate mode, quality gates from config.sh
-3. Write execution plan to plan file (task list, dependencies, teammate mode, gates).
+   c. If tmux available and COCKPIT_* services configured: note service windows to create
+   d. Summarize: N tasks, dependency graph, quality gates from config.sh, cockpit services (if any)
+3. Write execution plan to plan file (task list, dependencies, gates, cockpit config).
 4. Call `ExitPlanMode` — user approves the execution plan.
 
 **Launch (after plan approval):**
@@ -257,7 +257,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
    ```
 7. Enter monitoring mode
 
-> If tmux NOT available: teammates run in-process (sub-agents). No cockpit service windows. Execution works — less visibility.
+> If tmux NOT available: no cockpit service windows. Monitor via TaskList, metrics.json, and failures.json.
 
 > Architecture details: [agent-teams-architecture.md](references/agent-teams-architecture.md)
 

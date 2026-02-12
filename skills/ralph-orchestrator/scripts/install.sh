@@ -38,9 +38,9 @@ echo "Preflight checks..."
 if command -v tmux > /dev/null 2>&1; then
     echo -e "  ${GREEN}✓${NC} tmux found ($(tmux -V))"
 else
-    echo -e "  ${RED}✗${NC} tmux not installed — REQUIRED for execution"
+    echo -e "  ${YELLOW}⊘${NC} tmux not installed (optional — enables cockpit service windows)"
     echo "    Install: brew install tmux (macOS) / sudo apt install tmux (Linux)"
-    echo "    Without tmux, ralph can only plan (Steps 0-7)"
+    echo "    Without tmux, execution works normally but without visual cockpit"
 fi
 
 if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
