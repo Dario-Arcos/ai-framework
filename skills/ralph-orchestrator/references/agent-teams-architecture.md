@@ -25,6 +25,7 @@ Key properties:
 .ralph/launch-build.sh ────── Service windows launcher (tmux, if COCKPIT_* configured)
 .ralph/failures.json ──────── Per-teammate failure counters (written by hooks)
 .ralph/metrics.json ───────── Task success/failure metrics (written by hooks)
+.ralph/specs/{goal}/implementation/execution-runbook.md ── Orchestrator instructions (generated post-approval, survives compression)
 
 hooks/teammate-idle.py ────── TeammateIdle hook (continuity + circuit breaker)
 hooks/task-completed.py ───── TaskCompleted hook (quality gates + tracking)
@@ -34,6 +35,7 @@ scripts/PROMPT_implementer.md ── Implementer teammate prompt
 scripts/PROMPT_reviewer.md ──── Reviewer teammate prompt
 templates/launch-build.sh.template ── Cockpit launcher source
 templates/config.sh.template ──────── Default configuration
+templates/execution-runbook.md.template ── Orchestrator runbook source
 ```
 
 ---

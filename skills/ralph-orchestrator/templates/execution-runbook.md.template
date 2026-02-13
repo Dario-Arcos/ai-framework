@@ -1,0 +1,161 @@
+# Execution Runbook
+
+> **You are the ORCHESTRATOR.** Teammates implement. You coordinate.
+> Read this file completely. Follow every instruction. Do NOT implement tasks yourself.
+> **If your context was compressed**, re-read this file — it contains all orchestration instructions.
+
+---
+
+## 1. Team Configuration
+
+<!-- Fill with concrete values from config.sh and goal derivation -->
+
+- **Team name**: `ralph-{goal-slug}`
+- **MAX_TEAMMATES**: (from config.sh)
+- **Model**: (from config.sh)
+
+## 2. Task Registry
+
+<!-- One row per .code-task.md file. Paths must be absolute or repo-relative. -->
+
+| Step | File | Blocked-By | Title |
+|------|------|------------|-------|
+<!-- Populate from .ralph/specs/{goal}/implementation/step*/*.code-task.md -->
+
+## 3. Quality Gates
+
+<!-- Copy from .ralph/config.sh — only non-empty gates -->
+
+| Gate | Command |
+|------|---------|
+<!-- e.g. GATE_TEST | node --test test/**/*.test.js -->
+
+## 4. Launch Procedure
+
+Execute these steps IN ORDER:
+
+### 4.1 Cockpit (if tmux available AND COCKPIT_* services configured)
+
+Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`.
+Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`.
+This creates ONLY service windows — NOT a Claude Code instance.
+
+If tmux NOT available or no COCKPIT_* configured: skip this step. Monitor via `TaskList`, `Read(".ralph/metrics.json")`, and `Read(".ralph/failures.json")` instead.
+
+### 4.2 Create Team
+
+```
+TeamCreate(team_name="{team-name}")
+```
+
+### 4.3 Create Tasks
+
+For each row in the Task Registry:
+
+```
+TaskCreate(
+  subject="Task {step}: {title}",
+  description=<Read FULL content of the file in File column>,
+  metadata={"codeTaskFile": "{file_path}", "codeTaskStep": {step}},
+  activeForm="Implementing {title}"
+)
+```
+
+### 4.4 Map Dependencies
+
+After ALL tasks are created, map step numbers to Agent Teams task IDs using the Task Registry.
+For each task with Blocked-By entries:
+
+```
+TaskUpdate(taskId="{task_id}", addBlockedBy=[{blocked_by_task_ids}])
+```
+
+### 4.5 Spawn Initial Implementers
+
+For each unblocked PENDING task (up to MAX_TEAMMATES concurrent):
+
+```
+Task(
+  subagent_type="general-purpose",
+  team_name="{team-name}",
+  name="impl-{task-slug}",
+  mode="bypassPermissions",
+  model="{model}",
+  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {task_id}"
+)
+```
+
+## 5. Monitoring Protocol
+
+**Role: PURE ORCHESTRATOR.** Read only 8-word summaries — never code, diffs, or full reviews.
+
+**Tools allowed:**
+- `TaskList` — task progress
+- `TaskGet(taskId)` — task metadata (codeTaskFile, codeTaskStep)
+- `Read(".ralph/guardrails.md")` — lessons accumulated by teammates
+- `Read(".ralph/metrics.json")` — success/failure counts
+- `Read(".ralph/failures.json")` — per-teammate failure tracking
+- `SendMessage` — direct instructions to specific teammates
+
+**If user asks to implement:** Redirect to teammates. You coordinate, never implement.
+
+### State Machine
+
+**WHEN implementer goes idle** — read 8-word summary from SendMessage:
+
+**IF summary starts with "BLOCKED:":**
+1. Send `shutdown_request` to the implementer
+2. Read blockers.md from the task's step directory: `.ralph/specs/{goal}/implementation/{step_dir}/blockers.md`
+3. Surface blocker content to user. Do NOT spawn reviewer — wait for resolution.
+
+**OTHERWISE (task completed, gates passed):**
+1. Send `shutdown_request` to the implementer
+2. Spawn reviewer for the completed task:
+
+```
+Task(
+  subagent_type="general-purpose",
+  team_name="{team-name}",
+  name="rev-{task-slug}",
+  mode="bypassPermissions",
+  model="{model}",
+  prompt=<Section 8: Reviewer Prompt below> + "\n\nYour assigned task ID: {task_id}\nTask file: {code_task_path}"
+)
+```
+
+**WHEN reviewer goes idle** — read 8-word summary:
+
+1. Send `shutdown_request` to the reviewer
+
+2. **IF PASS**: Update `.code-task.md` file: set `## Status: COMPLETED` and `## Completed: {date}`. Run `TaskList` for newly unblocked tasks. Spawn next implementer(s) if available.
+
+3. **IF FAIL**: Spawn NEW implementer for the same task with review feedback:
+
+```
+Task(
+  subagent_type="general-purpose",
+  team_name="{team-name}",
+  name="impl-{task-slug}-r{N}",
+  mode="bypassPermissions",
+  model="{model}",
+  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {task_id}\nReview feedback: .ralph/reviews/task-{task_id}-review.md"
+)
+```
+
+4. **IF BLOCKED**: Read `.ralph/reviews/task-{task_id}-blockers.md`. Surface to user.
+
+## 6. Completion
+
+1. All tasks complete — all reviewers report PASS
+2. Verify: all `.code-task.md` files have `Status: COMPLETED`
+3. Send `shutdown_request` to any remaining teammates
+4. `TeamDelete` to clean up team resources
+5. Report to user: "Ejecucion completa. {N} tasks completadas." + metrics summary from `.ralph/metrics.json`
+
+## 7. Implementer Prompt
+
+<!-- Inline full content of scripts/PROMPT_implementer.md here during generation -->
+
+## 8. Reviewer Prompt
+
+<!-- Inline full content of scripts/PROMPT_reviewer.md here during generation -->

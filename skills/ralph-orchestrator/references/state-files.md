@@ -25,6 +25,7 @@ This reference defines the state files used by Ralph for persistent state manage
 | `.ralph/specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
 | `.ralph/specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
 | `*.code-task.md` | Individual task descriptions + status | Current goal |
+| `.ralph/specs/{goal}/implementation/execution-runbook.md` | Orchestrator instructions (survives context compression) | Current goal |
 
 ---
 
@@ -146,12 +147,13 @@ SDD compliance reviews written by reviewer teammates after implementers complete
 
 ## File Lifecycle Table
 
-| Phase | .ralph/guardrails.md | failures.json | metrics.json | .code-task.md | .ralph/agents.md |
-|-------|--------------|---------------|--------------|---------------|-----------|
-| Planning (Steps 0-6) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) |
-| Launch (Step 8) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates |
-| Execution | Append (flock) | Updated per task | Updated per task | Status updated | Read-only |
-| Completion | Preserved | Preserved | Preserved | All COMPLETED | Preserved |
+| Phase | .ralph/guardrails.md | failures.json | metrics.json | .code-task.md | .ralph/agents.md | execution-runbook.md |
+|-------|--------------|---------------|--------------|---------------|-----------|-------------|
+| Planning (Steps 0-6) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) | — |
+| Post-approval (Step 8) | — | — | — | — | — | Generated (materialized from template) |
+| Launch (Step 8) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates | Read by orchestrator |
+| Execution | Append (flock) | Updated per task | Updated per task | Status updated | Read-only | Re-read after compression |
+| Completion | Preserved | Preserved | Preserved | All COMPLETED | Preserved | Preserved |
 
 ---
 

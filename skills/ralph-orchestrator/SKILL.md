@@ -230,12 +230,48 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 2. Build execution plan (read-only):
    a. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
    b. Map dependencies: parse `Blocked-By` references from each `.code-task.md`
-   c. If tmux available and COCKPIT_* services configured: note service windows to create
-   d. Summarize: N tasks, dependency graph, quality gates from config.sh, cockpit services (if any)
-3. Write execution plan to plan file (task list, dependencies, gates, cockpit config).
+   c. Read `.ralph/config.sh` for quality gates, MAX_TEAMMATES, and MODEL
+   d. If tmux available and COCKPIT_* services configured: note service windows to create
+   e. Resolve absolute paths for these ralph-orchestrator plugin files:
+      - `templates/execution-runbook.md.template`
+      - `scripts/PROMPT_implementer.md`
+      - `scripts/PROMPT_reviewer.md`
+3. Write execution plan to plan file with THREE sections:
+   a. **Summary** (for human review): N tasks, dependency graph, quality gates, cockpit services
+   b. **Execution Data** (concrete values — drives runbook generation after approval):
+      - Team name: `ralph-{concrete-goal-slug}`
+      - MAX_TEAMMATES: {value from config.sh}
+      - MODEL: {value from config.sh}
+      - Task Registry table: `| Step | File (absolute path) | Blocked-By | Title |`
+      - Quality Gates table: `| Gate | Command |` (non-empty gates only)
+      - File Paths (absolute): runbook template, implementer prompt, reviewer prompt
+      - Goal directory: `.ralph/specs/{goal}`
+   c. **Post-Approval Directive** (MUST be last section — survives context compression):
+      ```
+      ## Post-Approval Execution
+      After this plan is approved, IMMEDIATELY:
+      1. Generate execution runbook:
+         - Read runbook template from: {absolute_template_path}
+         - Read implementer prompt from: {absolute_implementer_prompt_path}
+         - Read reviewer prompt from: {absolute_reviewer_prompt_path}
+         - Populate ALL template sections with Execution Data values above
+         - Section 7: inline FULL implementer prompt content
+         - Section 8: inline FULL reviewer prompt content
+         - Write populated runbook to: {goal_dir}/implementation/execution-runbook.md
+      2. Read the generated execution-runbook.md
+      3. Follow EVERY instruction in the runbook
+      4. You are the ORCHESTRATOR — teammates implement, you coordinate
+      ```
 4. Call `ExitPlanMode` — user approves the execution plan.
 
 **Launch (after plan approval):**
+
+> Execute the Post-Approval Directive from the approved plan. The directive carries absolute
+> file paths and concrete values — it is self-contained and survives context compression.
+> Generate the runbook first (plan mode write restrictions are now lifted), then read and
+> execute it. The runbook is the single source of truth during execution.
+> If context compresses during monitoring, re-read the runbook to recover all instructions.
+> The canonical source for runbook content is below and in Phase 2. See `templates/execution-runbook.md.template` for structure.
 
 1. If tmux available and COCKPIT_* services configured:
    - Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
@@ -252,6 +288,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
        team_name="ralph-{goal-slug}",
        name="impl-{task-slug}",
        mode="bypassPermissions",
+       model="{model}",
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}"
    )
    ```
@@ -295,6 +332,7 @@ OTHERWISE (task completed, gates passed):
        team_name="ralph-{goal-slug}",
        name="rev-{task-slug}",
        mode="bypassPermissions",
+       model="{model}",
        prompt=PROMPT_reviewer.md content + "\n\nYour assigned task ID: {taskId}\nTask file: {path_to_code_task_md}"
    )
    ```
@@ -309,6 +347,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
        team_name="ralph-{goal-slug}",
        name="impl-{task-slug}-r2",
        mode="bypassPermissions",
+       model="{model}",
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
    )
    ```

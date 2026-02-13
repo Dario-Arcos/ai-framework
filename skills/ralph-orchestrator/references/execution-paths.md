@@ -52,7 +52,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 
 ## Autonomous Path: Agent Teams Teammates
 
-**Trigger**: Same session continues from Step 7. Plan mode pre-flight → user approval → TeamCreate + spawn teammates.
+**Trigger**: Same session continues from Step 7. Plan mode pre-flight builds plan with execution data → user approval → generates `execution-runbook.md` from template → orchestrator reads runbook → TeamCreate + spawn teammates.
 
 ```bash
 # Service windows only (if tmux + COCKPIT_* configured):
@@ -136,6 +136,7 @@ Both paths use the same state files, but access patterns differ:
 | `.ralph/failures.json` | N/A | Per-teammate failure tracking |
 | `.ralph/metrics.json` | N/A | Task success/failure counts |
 | `.ralph/agents.md` | N/A | Read by all teammates at spawn |
+| `execution-runbook.md` | N/A | Generated and read by orchestrator after plan approval (survives compression) |
 
 ---
 
@@ -179,15 +180,19 @@ graph LR
     end
 
     subgraph "Execution (ALWAYS Agent Teams — same session)"
-        C --> D[EnterPlanMode pre-flight]
+        C --> D[EnterPlanMode pre-flight<br/>build plan + execution data]
         D --> E[ExitPlanMode approval]
-        E --> F[launch-build.sh<br/>service windows only]
-        E --> G[TeamCreate + spawn]
+        E --> W[Generate execution-runbook.md<br/>from template + plan data]
+        W --> R[Read execution-runbook.md<br/>survives context compression]
+        R --> F[launch-build.sh<br/>service windows only]
+        R --> G[TeamCreate + spawn]
         G --> H[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
     end
 
     style D fill:#ffe1e1
     style E fill:#ffe1e1
+    style W fill:#e1ffe1
+    style R fill:#e1ffe1
 ```
 
 ---
