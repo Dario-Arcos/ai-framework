@@ -56,18 +56,27 @@ Al iniciar Claude Code después de instalar el plugin, los hooks ejecutan autom�
 
 1. **`session-start.py`** — Sincroniza templates del framework al proyecto (instantáneo)
 2. **`agent-browser-check.py`** — Instala `agent-browser` CLI + navegador Chromium en background (~30-60s)
+3. **`memory-check.py`** — Detecta reglas de proyecto faltantes u obsoletas y sugiere ejecutar `/project-init`
 
 Vas a ver estos mensajes en el status de sesión:
 
 ::: code-group
-```txt [Primera sesión]
+```txt [Primera sesión (sin /project-init)]
 AI Framework: ✓ Templates synced
 agent-browser: installing          # ← Instalación en progreso
+# Claude te preguntará si quieres ejecutar /project-init
 ```
 
-```txt [Sesión posterior]
+```txt [Sesión posterior (con reglas)]
 AI Framework: ✓ Templates synced
 agent-browser: ready               # ← Listo para usar
+# Sin mensajes extra — reglas están al día
+```
+
+```txt [Reglas obsoletas]
+AI Framework: ✓ Templates synced
+agent-browser: ready
+# Claude sugiere ejecutar /project-init (manifests cambiaron o reglas >90 días)
 ```
 :::
 
@@ -96,6 +105,7 @@ La plataforma principal es **macOS**. En Linux y Windows funciona con limitacion
 |------|:-----:|:-----:|:-------:|
 | `session-start.py` | ✅ | ✅ | ✅ |
 | `agent-browser-check.py` | ✅ | ✅ | ⚠️ |
+| `memory-check.py` | ✅ | ✅ | ✅ |
 | `notify.sh` | ✅ | ➖ | ➖ |
 
 ::: details Detalles por hook
@@ -103,6 +113,8 @@ La plataforma principal es **macOS**. En Linux y Windows funciona con limitacion
 **session-start.py** — Python puro, 100% cross-platform. Sincroniza templates y `.gitignore`.
 
 **agent-browser-check.py** — Usa `sh -c` para lanzar procesos en background. En macOS/Linux funciona nativamente. En Windows puede fallar si no hay shell POSIX disponible (Git Bash, WSL).
+
+**memory-check.py** — Python puro, 100% cross-platform. Solo usa `os.stat()` para comparar timestamps (sin lectura de archivos). Detecta 3 niveles: reglas faltantes, manifests modificados después de la última generación, y reglas con >90 días de antigüedad.
 
 **notify.sh** — Notificaciones nativas macOS (`afplay` para sonido, `osascript` para visual). En Linux y Windows se salta silenciosamente (`exit 0`). No afecta la funcionalidad del framework.
 :::
@@ -149,7 +161,7 @@ En la primera sesión, ejecuta:
 /project-init
 ```
 
-Genera reglas en `docs/claude-rules/` (para compartir con el equipo) y las sincroniza a `.claude/rules/` (copia local).
+Genera reglas de contexto en `.claude/rules/` — Claude las carga automáticamente en cada sesión.
 
 ::: details Gestión de plugins
 ```bash
@@ -228,5 +240,5 @@ cat /tmp/agent-browser-update.log
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-02-13
 :::
