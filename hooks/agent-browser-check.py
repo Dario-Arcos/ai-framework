@@ -5,18 +5,27 @@ Ensures CLI is installed and skill is available at user level (~/.claude/skills/
 by copying from the global npm package. Skill at user level is loaded
 automatically by Claude Code in all projects — no per-project copy needed.
 
+Also cleans up orphan agent-browser daemons from previous sessions.
+Daemons have no idle timeout and survive terminal close, accumulating
+until memory is exhausted. Cleanup here is safe because agent-browser
+auto-restarts its daemon on the next command (~200ms penalty, once).
+
 Performance: happy path is ~0.2ms (three stat calls, zero subprocesses).
+Daemon cleanup adds ~17ms (one pgrep call; pkill only if orphans found).
 Sync/install only triggers on first-ever setup, with 1h cooldown on retries.
 Auto-update checks CLI + skill every 24h in a detached background process.
 """
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
+
+AGENT_BROWSER_DIR = Path.home() / ".agent-browser"
 
 CLAUDE_HOME = Path(
     os.environ.get("CLAUDE_CONFIG_DIR", "").strip()
@@ -128,6 +137,40 @@ def install_background():
     return run_background(cmd, "agent-browser-install.log")
 
 
+def cleanup_orphan_daemons():
+    """Kill agent-browser daemons left by previous sessions.
+
+    Scans PID files in ~/.agent-browser/ and kills processes that are still
+    alive. Then removes stale PID/sock files. Returns the number of daemons
+    killed. Safe to call unconditionally — agent-browser auto-restarts its
+    daemon on the next command.
+    """
+    killed = 0
+    try:
+        if not AGENT_BROWSER_DIR.is_dir():
+            return 0
+        for pid_file in AGENT_BROWSER_DIR.glob("*.pid"):
+            try:
+                pid = int(pid_file.read_text().strip())
+                os.kill(pid, signal.SIGTERM)
+                killed += 1
+            except (ValueError, ProcessLookupError, PermissionError):
+                pass
+            # Clean up PID + sock regardless (stale or just killed)
+            try:
+                pid_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+            sock_file = pid_file.with_suffix(".sock")
+            try:
+                sock_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+    except OSError:
+        pass
+    return killed
+
+
 def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
@@ -140,6 +183,7 @@ def consume_stdin():
 def main():
     """Main hook logic."""
     consume_stdin()
+    cleanup_orphan_daemons()
 
     skip_install = os.environ.get(
         "AI_FRAMEWORK_SKIP_BROWSER_INSTALL", ""
