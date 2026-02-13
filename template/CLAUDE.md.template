@@ -1,6 +1,6 @@
 <constraints>
-- ALWAYS define observable scenarios before writing any code — as task descriptions or response text, never implicit. Code exists to satisfy scenarios; scenarios never exist to justify code.
-- NEVER claim complete, commit, or advance without executing ALL scenarios → observing output → reporting [M/M satisfied]. Not M/M → fix code, never weaken scenarios. Modifying scenarios to pass = reward hacking. Assumed ≠ observed.
+- ALWAYS define observable scenarios before writing any code — as task descriptions or response text, never implicit. Encode scenarios as failing tests before implementation code. Scenario → Test → Code. Code exists to satisfy scenarios; scenarios never exist to justify code.
+- NEVER claim complete, commit, or advance without executing ALL scenarios → observing output → reporting [M/M satisfied]. Not M/M → fix code, never weaken scenarios or tests. Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
 - NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.

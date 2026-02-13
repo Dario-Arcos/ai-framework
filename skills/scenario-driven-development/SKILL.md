@@ -1,6 +1,6 @@
 ---
 name: scenario-driven-development
-description: SCENARIO→SATISFY→REFACTOR with convergence gates. Scenarios define expected behavior as end-to-end user stories; satisfaction replaces boolean pass/fail with probabilistic convergence. Use for all implementation work.
+description: ALWAYS Use for all implementation work. SCENARIO→SATISFY→REFACTOR with convergence gates. Scenarios define expected behavior as end-to-end user stories; satisfaction replaces boolean pass/fail with probabilistic convergence. 
 ---
 
 # Scenario-Driven Development
@@ -11,7 +11,7 @@ Code written without scenarios confirms what you built. Scenarios defined before
 
 **Core principle:** Define the scenario first as an end-to-end user story, converge until behavior satisfies intent, refactor. Every time. No exceptions.
 
-**This methodology is NOT Test-Driven Development.** TDD optimizes for assertion-passing; SDD optimizes for user satisfaction. Tests are tools within SDD, not the primary driver.
+**SDD extends test-first development.** Scenarios ground tests in user intent; satisfaction replaces boolean pass/fail with probabilistic convergence. Hierarchy: Scenario (defines intent) → Test (encodes scenario) → Code (satisfies test).
 
 ## The Iron Law
 
@@ -72,15 +72,16 @@ Code is treated analogously to ML model weights: internal structure is opaque. C
 
 ```mermaid
 graph LR
-    A[Define Scenario] --> B[Write Code]
-    B --> C{Behavior Satisfies?}
-    C -->|No| B
-    C -->|Yes| D[Refactor]
-    D --> E{Still Satisfied?}
-    E -->|Yes| F[Next Scenario]
-    E -->|No| G[Undo Refactor]
-    G --> D
-    F --> A
+    A[Define Scenario] --> B[Write Failing Test]
+    B --> C[Write Code]
+    C --> D{Behavior Satisfies?}
+    D -->|No| C
+    D -->|Yes| E[Refactor]
+    E --> F{Still Satisfied?}
+    F -->|Yes| G[Next Scenario]
+    F -->|No| H[Undo Refactor]
+    H --> E
+    G --> A
 ```
 
 ### SCENARIO — Define Observable Behavior
@@ -120,17 +121,19 @@ If ANY gate fails, you cannot proceed to SATISFY.
 
 ### SATISFY — Converge Until Behavior Satisfies Intent
 
-Write code and iterate until the scenario's observable behavior genuinely satisfies the user's intent.
+Encode the scenario as a failing test, then write code and iterate until the scenario's observable behavior genuinely satisfies the user's intent.
 
 **You MUST:**
-1. Write code that addresses the scenario's observable behavior
-2. Validate through execution (run tests, scripts, or behavioral checks)
-3. Ask: "Would this genuinely satisfy a user?" — not just "Does this pass?"
-4. Consider edge cases that the scenario implies but doesn't explicitly state
-5. Handle floating-point, rounding, and display concerns proactively
+1. Encode the scenario as a failing test before writing implementation code
+2. Write code that addresses the scenario's observable behavior
+3. Validate through execution (run tests, scripts, or behavioral checks)
+4. Ask: "Would this genuinely satisfy a user?" — not just "Does this pass?"
+5. Consider edge cases that the scenario implies but doesn't explicitly state
+6. Handle floating-point, rounding, and display concerns proactively
 
 **Convergence Gate — Verify SATISFY:**
 ```
+□ Scenario was encoded as a failing test before implementation code
 □ Code was written AFTER the scenario was defined
 □ Behavior was validated through execution (not just reading code)
 □ Validation output was observed (not assumed)
@@ -203,7 +206,7 @@ Define the next scenario. Return to SCENARIO.
 
 3. **Scenarios before code prevent reward hacking.** The agent can't rewrite a pre-defined scenario to match broken code. The scenario is the holdout set.
 
-**Anti-reward-hacking principle:** Modifying scenarios to pass = reward hacking. Assumed ≠ observed. Code must converge toward scenarios, never the reverse.
+**Anti-reward-hacking principle:** Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed. Code must converge toward scenarios and tests, never the reverse.
 
 4. **Scenarios before code drive holistic design.** SDD forces you to think about the complete user experience (rounding, error messages, display) before the first line of code.
 
@@ -246,8 +249,10 @@ Tests implement scenarios. But satisfaction goes beyond what tests check:
 
 If you catch yourself:
 - Writing production code without a defined scenario
+- Writing implementation code without a failing test encoding the scenario
 - Defining scenarios that describe implementation instead of user experience
 - Satisfying a scenario by gaming the assertion instead of implementing real behavior
+- Weakening, deleting, or loosening a test to make code pass
 - Writing "just a little more" code beyond what the scenario requires
 - Skipping validation ("I know it satisfies")
 - Defining scenarios so narrow they can't catch semantic bugs
@@ -315,7 +320,7 @@ Gate: Added type hints, docstring, and round() for monetary precision — behavi
 3. Define SCENARIO 3 as test → requires ceiling for "nobody underpays" → add `math.ceil` → passes
 4. Define SCENARIO 4 as test → requires validation → add ValueError → passes
 
-**Notice:** Scenario 2 naturally drove the `round()` addition because "pays $56.05" is a statement about what the user sees, not what the assertion checks. A test-first approach might have missed this because `assert tip == 8.549999999999999` would never be written.
+**Notice:** Scenario 2 naturally drove the `round()` addition because "pays $56.05" is a statement about what the user sees, not what the assertion checks. A bare assertion like `assert tip == 8.549999999999999` would never be written — the scenario demands human-readable monetary values.
 
 ## Verification Checklist
 
@@ -324,7 +329,9 @@ Before claiming implementation is complete:
 ```
 □ Every production function is covered by at least one scenario
 □ Every scenario was defined BEFORE its corresponding production code
+□ Every scenario was encoded as a failing test BEFORE implementation code
 □ Every scenario was validated through execution (not assumed)
+□ No test was weakened, deleted, or loosened to make code pass
 □ All scenarios satisfy simultaneously (no order dependency)
 □ Satisfaction goes beyond assertion-passing (floating-point, display, UX considered)
 □ Edge cases from scenarios are covered (null, empty, boundary, error)
