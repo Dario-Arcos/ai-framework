@@ -175,8 +175,8 @@ Present options to user:
 
 1. Propose research plan (3-5 topics) based on requirements
 
-**Standard research topics to consider** (in addition to domain-specific):
-- Testing tooling (test runner, integration strategy, e2e framework) when the project will have automated tests
+**Standard research topics** (in addition to domain-specific):
+- Testing architecture (test runner, integration strategy — real dependencies vs mocks, e2e framework, test infrastructure like containers or fixtures)
 - Build and bundling tools when the project produces distributable artifacts
 
 2. Ask: "Are there additional topics I should research?"

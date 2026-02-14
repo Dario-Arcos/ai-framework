@@ -96,6 +96,7 @@ For each identified referent, you MUST produce a structured analysis:
 
 - **Architecture patterns**: How is the system structured?
 - **Key design decisions**: What tradeoffs were made and why?
+- **Testing approach**: How is the system tested? What infrastructure supports integration testing (containers, fixtures, real dependencies vs mocks)?
 - **Strengths**: What makes this implementation world-class?
 - **Weaknesses**: Where does it fall short or over-engineer?
 - **Extractable patterns**: What specific patterns can be adopted?
