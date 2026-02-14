@@ -10,8 +10,8 @@ Daemons have no idle timeout and survive terminal close, accumulating
 until memory is exhausted. Cleanup here is safe because agent-browser
 auto-restarts its daemon on the next command (~200ms penalty, once).
 
-Performance: happy path is ~0.2ms (three stat calls, zero subprocesses).
-Daemon cleanup adds ~17ms (one pgrep call; pkill only if orphans found).
+Performance: happy path ~0.3ms (glob + stat calls, zero subprocesses).
+Daemon cleanup ~0.1ms normal (PID file I/O); ~19ms only if orphan sockets found.
 Sync/install only triggers on first-ever setup, with 1h cooldown on retries.
 Auto-update checks CLI + skill every 24h in a detached background process.
 """
@@ -45,7 +45,7 @@ SKILL_COPY_CMD = (
 )
 
 UPDATE_CHECK_FILE = Path(tempfile.gettempdir()) / "agent-browser-update-ts"
-UPDATE_CHECK_SECS = 86400  # 24h
+UPDATE_CHECK_SECS = 86400
 
 
 def is_installed():
@@ -107,7 +107,7 @@ def touch_update_check():
 def sync_skill_background():
     """Copy agent-browser skill from global npm package to ~/.claude/skills/."""
     touch_cooldown()
-    touch_update_check()  # fresh sync = latest version
+    touch_update_check()
     return run_background(SKILL_COPY_CMD, "agent-browser-skill-sync.log")
 
 
@@ -118,7 +118,7 @@ def is_update_due():
             return (time.time() - UPDATE_CHECK_FILE.stat().st_mtime) >= UPDATE_CHECK_SECS
     except OSError:
         pass
-    return True  # no timestamp = never checked = due
+    return True
 
 
 def update_background():
@@ -132,43 +132,46 @@ def update_background():
 def install_background():
     """Install CLI + browsers + skill in background."""
     touch_cooldown()
-    touch_update_check()  # fresh install = latest version
+    touch_update_check()
     cmd = f"npm install -g agent-browser && agent-browser install && {SKILL_COPY_CMD}"
     return run_background(cmd, "agent-browser-install.log")
+
+
+SESSION_EXTS = (".pid", ".sock", ".port", ".stream")
 
 
 def cleanup_orphan_daemons():
     """Kill agent-browser daemons left by previous sessions.
 
-    Scans PID files in ~/.agent-browser/ and kills processes that are still
-    alive. Then removes stale PID/sock files. Returns the number of daemons
-    killed. Safe to call unconditionally — agent-browser auto-restarts its
-    daemon on the next command.
+    Phase 1 — PID files: read PID, SIGTERM, remove session files. ~0.1ms.
+    Phase 2 — pkill fallback: only if orphan .sock files remain after Phase 1
+              (daemon that lost its PID file via crash/kill -9). ~19ms, rare.
+
+    Safe to call unconditionally — agent-browser auto-restarts on next command.
     """
-    killed = 0
-    try:
-        if not AGENT_BROWSER_DIR.is_dir():
-            return 0
-        for pid_file in AGENT_BROWSER_DIR.glob("*.pid"):
+    if not AGENT_BROWSER_DIR.is_dir():
+        return
+
+    for pf in AGENT_BROWSER_DIR.glob("*.pid"):
+        try:
+            os.kill(int(pf.read_text().strip()), signal.SIGTERM)
+        except (ValueError, ProcessLookupError, PermissionError, OSError):
+            pass
+        for ext in SESSION_EXTS:
             try:
-                pid = int(pid_file.read_text().strip())
-                os.kill(pid, signal.SIGTERM)
-                killed += 1
-            except (ValueError, ProcessLookupError, PermissionError):
-                pass
-            # Clean up PID + sock regardless (stale or just killed)
-            try:
-                pid_file.unlink(missing_ok=True)
+                pf.with_suffix(ext).unlink(missing_ok=True)
             except OSError:
                 pass
-            sock_file = pid_file.with_suffix(".sock")
-            try:
-                sock_file.unlink(missing_ok=True)
-            except OSError:
-                pass
-    except OSError:
-        pass
-    return killed
+
+    # pkill fallback: orphan sockets indicate a daemon that lost its PID file
+    if any(AGENT_BROWSER_DIR.glob("*.sock")) and sys.platform in ("darwin", "linux"):
+        try:
+            subprocess.run(
+                ["pkill", "-TERM", "-f", f"agent-browser-{sys.platform}"],
+                capture_output=True, timeout=5,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            pass
 
 
 def consume_stdin():
@@ -181,7 +184,7 @@ def consume_stdin():
 
 
 def main():
-    """Main hook logic."""
+    """Entry point."""
     consume_stdin()
     cleanup_orphan_daemons()
 
