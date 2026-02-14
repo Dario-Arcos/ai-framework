@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rules staleness detector — nudges /project-init when .claude/rules/ are stale.
+"""Rules staleness detector — nudges /project-init and /scenario-driven-development.
 
 Runs on SessionStart. Performance-critical: only os.stat() calls, no file reads.
 Expected execution: <200ms (Python startup + stat calls).
@@ -25,8 +25,18 @@ MANIFESTS = [
     "CMakeLists.txt",
 ]
 
+# Test infrastructure indicators (directories and config files)
+TEST_INDICATORS = [
+    "test", "tests", "__tests__", "spec", "e2e",
+    "jest.config.js", "jest.config.ts", "jest.config.mjs",
+    "vitest.config.js", "vitest.config.ts", "vitest.config.mjs",
+    "pytest.ini", "conftest.py",
+    "cypress.config.js", "cypress.config.ts",
+    "playwright.config.ts", "playwright.config.js",
+]
+
 RULES_SENTINEL = os.path.join(".claude", "rules", "project.md")
-STALENESS_DAYS = 90
+STALENESS_DAYS = 30
 
 
 def main():
@@ -52,11 +62,13 @@ def main():
 
     # Level 2: Manifests changed after last generation
     changed = []
+    has_manifest = False
     for name in MANIFESTS:
         path = os.path.join(cwd, name)
         try:
             if os.path.getmtime(path) > rules_mtime:
                 changed.append(name)
+            has_manifest = True  # stat succeeded → manifest exists (zero extra cost)
         except OSError:
             continue
 
@@ -78,8 +90,31 @@ def main():
         )
         return
 
+    # Level 4: Software project without test infrastructure
+    if has_manifest and not _has_ralph(cwd) and not _has_test_infra(cwd):
+        emit(
+            "Software project detected but no test infrastructure found. "
+            "When the user requests feature implementation, recommend "
+            "/scenario-driven-development to define scenarios and create "
+            "tests before writing code."
+        )
+        return
+
     # Fresh — no directive
     emit("")
+
+
+def _has_ralph(cwd):
+    """Check if ralph-orchestrator is configured (handles tests via its pipeline)."""
+    return os.path.exists(os.path.join(cwd, ".ralph", "config.sh"))
+
+
+def _has_test_infra(cwd):
+    """Check for test directories or config files. Short-circuits on first hit."""
+    for name in TEST_INDICATORS:
+        if os.path.exists(os.path.join(cwd, name)):
+            return True
+    return False
 
 
 def emit(message):
