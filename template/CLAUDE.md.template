@@ -1,9 +1,13 @@
 <constraints>
 - ALWAYS define observable scenarios before writing any code — as task descriptions or response text, never implicit. Encode scenarios as failing tests before implementation code. Scenario → Test → Code. Code exists to satisfy scenarios; scenarios never exist to justify code.
 - NEVER claim complete, commit, or advance without executing ALL scenarios → observing output → reporting [M/M satisfied]. Not M/M → fix code, never weaken scenarios or tests. Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed.
+- ALWAYS invoke matching skills before acting — skills encode current methodology that supersedes training. When uncertain, invoke; false positives are cheap, missed skills are expensive.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
 - NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.
+- ALWAYS optimize for world-class performance: efficient algorithms, minimal re-renders, optimized queries, lazy loading. "Works" is insufficient — it must be fast. Profile before assuming.
+- WHEN building web/mobile: validate runtime with agent-browser (console, errors) — zero console errors is a completion requirement. iOS flows → `-p ios`. Unhandled errors and failed requests are defects.
+- WHEN building UI: world-class aesthetics, not generic AI output. No heavy card borders, no default shadows, no Inter/Roboto/system font defaults. Distinctive typography, cohesive color, intentional whitespace. Invoke frontend-design skill for new components or pages.
 - ALL Task tool calls MUST use `model: "opus"` — never haiku/sonnet. Degraded models cause subtle reasoning failures. Delegate anything beyond single-file reads or trivial edits.
 - WHEN context is long: same rigor as turn one — re-read files before editing, re-execute before claiming done.
 - WHEN a tool call fails or an approach doesn't work after one retry: research via agent-browser before trying a third time.

@@ -96,6 +96,8 @@ Assess convergence per criterion — every acceptance criterion must be satisfie
 - Floating-point and rounding: display precision matches user expectations
 - UX completeness: user-facing behavior is coherent end-to-end
 - Real behavior: test code exercises actual implementation, not mocks or stubs
+- Runtime cleanliness (web/mobile): `agent-browser console` and `agent-browser errors` must show zero errors — console errors are behavioral defects, Critical not cosmetic
+- Performance: response times, render efficiency, query patterns. "Functionally correct but slow" does not satisfy
 
 **You MUST evaluate assertion quality per scenario** — read test source files:
 - Are assertions precise? (exact match, not `toBeTruthy()`, not `string.contains()`)

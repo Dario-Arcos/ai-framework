@@ -119,6 +119,16 @@ You MUST complete each phase before proceeding to the next.
    - Keep tracing up until you find the source
    - Fix at source, not at symptom
 
+6. **Capture Runtime Evidence (Web/Mobile)**
+
+   **WHEN debugging web or mobile UI:**
+
+   - `agent-browser console` — all console messages (errors, warnings, logs)
+   - `agent-browser errors` — page errors and unhandled exceptions
+   - `agent-browser -p ios snapshot` — iOS-specific state verification
+
+   Console errors are evidence, not noise. A feature that "works" with console errors is broken.
+
 ### Phase 2: Pattern Analysis
 
 **Find the pattern before fixing:**

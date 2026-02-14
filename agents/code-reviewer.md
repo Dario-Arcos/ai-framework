@@ -30,12 +30,13 @@ When reviewing completed work, you will:
    - Verify test/validation code exercises real behavior, not mock return values
    - Evaluate whether scenario coverage captures the feature's full behavioral surface (not just happy path)
    - Review code for adherence to established patterns, error handling, type safety, and defensive programming — but weight behavioral evidence above structural impression
+   - For web/mobile: verify zero console errors via agent-browser (console, errors). Console errors in production code are behavioral defects — Critical, not Suggestion
 
 3. **Architecture and Design Review**:
    - Ensure the implementation follows SOLID principles and established architectural patterns
    - Check for proper separation of concerns and loose coupling
    - Verify that the code integrates well with existing systems
-   - Assess scalability and extensibility considerations
+   - Assess performance and scalability as first-class: algorithmic efficiency, render optimization, query patterns, lazy loading. "Correct but slow" is a Critical finding
 
 4. **Documentation and Standards**:
    - Verify that code includes appropriate comments and documentation
