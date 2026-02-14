@@ -83,7 +83,7 @@ This reference provides practical examples of sop-code-assist usage, demonstrati
 
 **Input (via ralph-orchestrator):**
 ```
-task_description=".ralph/specs/feature/implementation/step02/task-03-add-tests.code-task.md"
+task_description=".ralph/specs/feature/implementation/step02/task-03-implement-parser.code-task.md"
 mode="autonomous"
 ```
 

@@ -376,7 +376,8 @@ Generates:
 - Background: Sufficient context, no jargon without explanation
 - Technical Requirements: Specific, measurable, testable
 - Acceptance Criteria: At least 3 criteria, all in Given-When-Then format
-- Include scenario validation requirements in acceptance criteria
+- You MUST embed scenario validation requirements within each task's acceptance criteria — because testing requirements belong alongside the functionality they validate, not in separate tasks
+- You MUST NOT create standalone testing tasks (e.g., "Add unit tests for feature X", "Write scenarios for Step 3") — because standalone testing tasks violate SDD ordering where scenarios precede code, and allow untested code to accumulate between implementation and test tasks
 - Dependencies: All external dependencies documented, including previous steps
 - Implementation Approach: Guidance without over-prescription
 - Metadata Step: Must include position (e.g., "03 of 05")

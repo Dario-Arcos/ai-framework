@@ -295,6 +295,9 @@ Create `{project_dir}/implementation/plan.md`:
 - Includes acceptance criteria
 - Complexity estimate (S/M/L/XL)
 - SDD approach: Define scenario -> Write code -> Satisfy -> Refactor
+- You MUST include scenario/test requirements as part of each step that introduces or modifies functionality, NOT as separate testing-only steps — because SDD requires scenarios before code, and separate testing steps allow untested code to accumulate
+- You MUST NOT create steps solely dedicated to "adding tests", "writing scenarios", or "test coverage" for prior functionality — because this violates the SDD Iron Law (no production code without a defined scenario first) and creates retroactive rationalization instead of specification
+- You SHOULD structure each step's description to make the scenario implicit: "User does X → system responds with Y" — because this naturally produces SDD-compatible task files downstream
 
 **Phases**:
 1. Foundation (data models, core abstractions)
@@ -309,6 +312,8 @@ Create `{project_dir}/implementation/plan.md`:
 - You MUST keep each step <= M complexity, completable in <= 2 hours
 - You MUST generate 5-15 steps total
 - You MUST NOT include steps that depend on future steps
+- You MUST NOT create steps solely dedicated to testing, scenario writing, or test coverage for previously implemented functionality — because this violates SDD ordering where scenarios precede code
+- You MUST embed scenario/test expectations within each functional step's description and acceptance criteria
 - In interactive mode: Wait for user review and approval
 - In autonomous mode: Generate complete plan, flag any steps with uncertainty
 
