@@ -5,13 +5,15 @@ Fires when an Agent Teams teammate marks a task as complete.
 Exit 2 = task NOT marked complete, stderr fed back to teammate.
 Exit 0 = task marked complete.
 
-Guard: only activates in ralph-orchestrator projects (.ralph/config.sh).
-Non-ralph Agent Teams usage is transparent (immediate exit 0).
-
 Decision logic:
-  1. Run gates in order → first failure = exit 2 + increment failures.json
-  2. Coverage gate      → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
-  3. All gates pass     → exit 0 + reset failures.json + update metrics.json
+  Ralph projects (.ralph/config.sh):
+    1. Run gates in order → first failure = exit 2 + increment failures.json
+    2. Coverage gate      → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
+    3. All gates pass     → exit 0 + reset failures.json + update metrics.json
+  Non-ralph projects:
+    1. Read auto-test state (or wait if running) → passing = exit 0
+    2. No state → detect test command → run fresh → write state
+    3. Tests fail → exit 2 with summary feedback
 """
 import fcntl
 import json
@@ -19,8 +21,12 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _sdd_detect import detect_test_command, parse_test_summary, project_hash
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -164,7 +170,7 @@ def update_metrics(ralph_dir, success, teammate_name):
 # QUALITY GATES
 # ─────────────────────────────────────────────────────────────────
 
-def run_gate(name, command, cwd):
+def run_gate(name, command, cwd, timeout=120):
     """Run a single quality gate.
 
     Returns:
@@ -176,7 +182,7 @@ def run_gate(name, command, cwd):
     try:
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True,
-            cwd=cwd, timeout=120,
+            cwd=cwd, timeout=timeout,
         )
         output = (result.stdout + result.stderr).strip()
         # Truncate to last 800 chars for readable feedback
@@ -184,7 +190,7 @@ def run_gate(name, command, cwd):
             output = "...\n" + output[-800:]
         return result.returncode == 0, output
     except subprocess.TimeoutExpired:
-        return False, f"Gate '{name}' timed out after 120s"
+        return False, f"Gate '{name}' timed out after {timeout}s"
     except OSError as e:
         return False, f"Gate '{name}' failed to execute: {e}"
 
@@ -258,6 +264,125 @@ def find_scenario_strategy(cwd, task_subject, task_description=""):
 
 
 # ─────────────────────────────────────────────────────────────────
+# NON-RALPH STATE-AWARE TEST GATE
+# ─────────────────────────────────────────────────────────────────
+
+def _autotest_pid_path(cwd):
+    """PID file path matching sdd-auto-test.py convention."""
+    return Path(f"/tmp/sdd-test-run-{project_hash(cwd)}.pid")
+
+
+def _autotest_state_path(cwd):
+    """State file path matching sdd-auto-test.py convention."""
+    return Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
+
+
+def _is_autotest_running(cwd):
+    """Check if auto-test background process is running."""
+    pf = _autotest_pid_path(cwd)
+    try:
+        pid = int(pf.read_text().strip())
+        os.kill(pid, 0)
+        return True
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        return False
+
+
+def _wait_for_autotest(cwd, timeout=300):
+    """Poll until auto-test finishes (PID file disappears or process dies)."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not _is_autotest_running(cwd):
+            return
+        time.sleep(2)
+
+
+def _read_autotest_state(cwd):
+    """Read auto-test state file with shared lock. Returns dict or None."""
+    sp = _autotest_state_path(cwd)
+    try:
+        with open(sp, "r", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
+def _write_autotest_state(cwd, passed, output):
+    """Write state in same format as sdd-auto-test.py (other hooks read it)."""
+    sp = _autotest_state_path(cwd)
+    data = {
+        "passing": passed,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "summary": parse_test_summary(output, 0 if passed else 1) if output else ("tests passed" if passed else "tests failed"),
+    }
+    try:
+        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-state-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+            f.write("\n")
+        os.rename(tmp, str(sp))
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+def _handle_non_ralph_completion(cwd, task_subject):
+    """Test gate for projects without ralph. Reads auto-test state or runs fresh."""
+    test_cmd = detect_test_command(cwd)
+    if not test_cmd:
+        return  # No test runner detected → allow
+
+    # Step 1: If auto-test is running, wait for its result
+    if _is_autotest_running(cwd):
+        _wait_for_autotest(cwd, timeout=300)
+
+    # Step 2: Read auto-test state
+    state = _read_autotest_state(cwd)
+    if state is not None:
+        if state.get("passing"):
+            return  # Tests pass → allow
+        summary = state.get("summary", "tests failed")
+        print(
+            f"Tests failed for: {task_subject}\n\n"
+            f"{summary}\n\n"
+            f"Fix the issue before completing this task.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    # Step 3: No state, no PID → run fresh (with lock to avoid parallel runs)
+    lock_path = Path(f"/tmp/sdd-test-lock-{project_hash(cwd)}")
+    with open(lock_path, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        # Double-check after acquiring lock (another teammate may have run)
+        state = _read_autotest_state(cwd)
+        if state is not None:
+            if state.get("passing"):
+                return
+            print(
+                f"Tests failed for: {task_subject}\n\n"
+                f"{state.get('summary', 'tests failed')}\n\n"
+                f"Fix the issue before completing this task.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        # Run tests
+        passed, output = run_gate("test", test_cmd, cwd, timeout=300)
+        _write_autotest_state(cwd, passed, output)
+        if not passed:
+            print(
+                f"Test gate failed for: {task_subject}\n\n"
+                f"Output:\n{output}\n\n"
+                f"Fix the issue before completing this task.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+
+# ─────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────
 
@@ -275,10 +400,11 @@ def main():
     scenario_strategy = find_scenario_strategy(cwd, task_subject, task_description)
     teammate_name = input_data.get("teammate_name", "unknown")
 
-    # Guard: not a ralph-orchestrator project
+    # Guard: not a ralph-orchestrator project → state-aware test gate
     ralph_dir = Path(cwd) / ".ralph"
     config_path = ralph_dir / "config.sh"
     if not config_path.exists():
+        _handle_non_ralph_completion(cwd, task_subject)
         sys.exit(0)
 
     # Load config
