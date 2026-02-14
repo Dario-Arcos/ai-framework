@@ -291,6 +291,41 @@ Ideal para refactorings grandes, integraciones externas y cambios arquitectónic
 `bypassPermissions` elimina TODAS las confirmaciones. Solo usar con código trusted, en CI/CD, o después de revisar plan.
 :::
 
+### Plan mode vía instrucciones (sin cambiar modo manual)
+
+No necesitas activar plan mode con `Shift+Tab`. Puedes **instruir a Claude directamente** para que planifique primero — incluso con `bypassPermissions` activo.
+
+```bash
+# En CLAUDE.md o en el prompt
+"ALWAYS plan before building: crystallize decisions + scenarios
+in plan file. No implementation without user approval."
+```
+
+Claude respeta la instrucción y entra en plan mode por comportamiento, sin importar el modo de permisos configurado.
+
+**¿Por qué es poderoso?**
+
+1. **Contexto inicial limpio para planificar** — La ventana de 200K tokens está fresca. Claude dedica toda su capacidad a entender el problema, explorar el codebase y diseñar el plan sin ruido de ejecuciones previas.
+2. **Ejecución con contexto fresco** — Cuando apruebas el plan, la implementación puede arrancar en un turno nuevo (o con agentes delegados vía Task tool) con contexto dedicado 100% a ejecutar, no a decidir.
+3. **Sin pasos manuales** — No necesitas ciclar `Shift+Tab` entre plan y bypass. El flujo es: prompt → Claude planifica → apruebas → Claude ejecuta. Todo en bypass permissions, sin fricción.
+
+```
+Flujo:
+[bypass permissions ON]
+  ↓
+Prompt: "Implementa feature X"
+  ↓
+Claude: presenta plan (por instrucción en CLAUDE.md)
+  ↓
+Usuario: "Aprobado, ejecuta"
+  ↓
+Claude: implementa sin interrupciones de permisos
+```
+
+::: warning Consistencia
+Las instrucciones en `CLAUDE.md` no son deterministas al 100% — Claude puede ocasionalmente saltar la fase de plan si interpreta la tarea como trivial. Para máxima consistencia, combina la regla en `CLAUDE.md` con un refuerzo explícito en el prompt: `"Planifica primero, no implementes hasta que apruebe"`.
+:::
+
 ---
 
 ## Personalización del framework
