@@ -22,6 +22,20 @@ Detailed checklists and patterns for SDD review validation.
 - [ ] Previous scenarios re-executed after new implementation (regression check)
 - [ ] Satisfaction reported as fraction `[M/N]`, not boolean
 
+## Acceptance Criteria Coverage Checklist
+
+### Criterion-to-Scenario Mapping
+- [ ] ALL acceptance criteria extracted from `.code-task.md`
+- [ ] Each criterion mapped to at least one scenario
+- [ ] No criterion left as MISSING — gaps are automatic FAIL
+- [ ] Mapped scenarios test the criterion's specific requirement, not a proxy
+
+### Assertion Quality (per scenario)
+- [ ] Assertions use precise comparisons (exact match, not `toBeTruthy()` or `contains()`)
+- [ ] No scenario can be satisfied by a hardcoded return value
+- [ ] At least 2 distinct inputs with distinct expected outputs per scenario
+- [ ] Assertions verify the user-facing requirement, not internal implementation details
+
 ## Reward Hacking Patterns Catalog
 
 ### Pattern 1: Scenario Rewriting
@@ -56,8 +70,8 @@ Detailed checklists and patterns for SDD review validation.
 ### Convergence Model
 Satisfaction is NOT binary. Measure as: "of observed trajectories, what fraction satisfies user intent?"
 
-- **Full convergence (N/N):** All observed execution paths satisfy intent
-- **Partial convergence (M/N, M < N):** Some paths satisfy — identify which fail and why
+- **Full convergence (N/N):** All observed execution paths satisfy intent — only passing verdict
+- **Partial convergence (M/N, M < N):** Some paths satisfy — automatic FAIL. Identify which fail and why for rework feedback
 - **No convergence (0/N):** Implementation does not satisfy — immediate FAIL
 
 ### Assessment Dimensions
@@ -76,8 +90,13 @@ Satisfaction is NOT binary. Measure as: "of observed trajectories, what fraction
 ## SDD Compliance: {PASS|FAIL}
 {Checklist results — which items passed/failed}
 
+## Acceptance Criteria Coverage: {PASS|FAIL}
+| Criterion | Scenario | Covered? |
+|-----------|----------|----------|
+{Mapping table — every criterion from .code-task.md}
+
 ## Behavioral Satisfaction: [{M}/{N} satisfied]
-{Per-scenario assessment with convergence analysis}
+{Per-scenario assessment with convergence analysis and assertion quality evaluation}
 
 ## Reward Hacking: {CLEAN|DETECTED}
 {Pattern-by-pattern check results}

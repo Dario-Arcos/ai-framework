@@ -66,14 +66,30 @@ Verify the implementation followed scenario-driven development ordering.
 - You MUST NOT proceed to Step 3 if this gate fails — report immediately
 - If Scenario-Strategy is `not-applicable`, verify the task genuinely doesn't need scenarios (config-only, docs-only, scaffolding). If it modifies behavior, it needs scenarios regardless of the field value.
 
-### 3. Behavioral Satisfaction
+### 3. Acceptance Criteria Coverage (BLOCKING)
 
-Assess convergence — not boolean pass/fail.
+Map every acceptance criterion from `.code-task.md` to a verifiable scenario.
+
+**You MUST build an explicit mapping table:**
+
+| Acceptance Criterion | Scenario | Covered? |
+|---------------------|----------|----------|
+| {criterion from task file} | {scenario name/description or MISSING} | Yes/No |
+
+**Constraints:**
+- You MUST extract ALL acceptance criteria from the task file before evaluating
+- You MUST report FAIL if ANY criterion has no corresponding scenario — uncovered criteria = untested behavior
+- You MUST NOT proceed to Step 4 if this gate fails
+- You MUST NOT count a scenario as covering a criterion if it only tests a trivial case (single input, no edge variation)
+
+### 4. Behavioral Satisfaction
+
+Assess convergence per criterion — every acceptance criterion must be satisfied, not just counted.
 
 **You MUST evaluate satisfaction as convergence:**
 - "Of observed trajectories, what fraction satisfies user intent?"
 - A scenario "satisfies" when observable behavior matches acceptance criteria across realistic variations, not just the happy path
-- Report as `[M/N scenarios satisfied]` — partial satisfaction is valid signal
+- Report as `[M/N scenarios satisfied]`
 
 **You MUST check:**
 - Edge cases: boundary values, empty inputs, error paths
@@ -81,12 +97,19 @@ Assess convergence — not boolean pass/fail.
 - UX completeness: user-facing behavior is coherent end-to-end
 - Real behavior: test code exercises actual implementation, not mocks or stubs
 
+**You MUST evaluate assertion quality per scenario** — read test source files:
+- Are assertions precise? (exact match, not `toBeTruthy()`, not `string.contains()`)
+- Could a hardcoded return value pass this test? If yes → scenario does NOT satisfy
+- Are there at least 2 distinct inputs with distinct expected outputs? If no → trivial satisfaction risk
+- Do assertions verify the acceptance criterion's specific requirement, not a proxy?
+
 **Constraints:**
-- You MUST NOT treat satisfaction as boolean (green/red)
+- You MUST report FAIL if M < N — partial satisfaction is never a passing verdict
+- You MUST read test source files to evaluate assertion quality — this evaluates the measurement instrument, not the implementation
 - You SHOULD verify test code exercises real behavior, not mock return values
 - You MAY flag scenarios that pass but produce unsatisfying user experience
 
-### 4. Reward Hacking Detection (BLOCKING)
+### 5. Reward Hacking Detection (BLOCKING)
 
 Detect patterns that game the validation system. Any finding here is automatic FAIL.
 
@@ -102,7 +125,7 @@ Detect patterns that game the validation system. Any finding here is automatic F
 - You MUST NOT downgrade reward hacking findings to Suggestion level
 - You SHOULD check git history timestamps for scenario vs. code ordering
 
-### 5. Write Review
+### 6. Write Review
 
 Output structured review to disk.
 
@@ -117,8 +140,13 @@ Output structured review to disk.
 ## SDD Compliance: {PASS|FAIL}
 {findings}
 
+## Acceptance Criteria Coverage: {PASS|FAIL}
+| Criterion | Scenario | Covered? |
+|-----------|----------|----------|
+{mapping table — every criterion from .code-task.md}
+
 ## Behavioral Satisfaction: [{M}/{N} satisfied]
-{findings per scenario}
+{findings per scenario — including assertion quality evaluation}
 
 ## Reward Hacking: {CLEAN|DETECTED}
 {findings or "No patterns detected"}
@@ -168,8 +196,10 @@ Output structured review to disk.
 ## Constraints (RFC 2119)
 
 - You MUST NOT modify implementation code — reviewers observe, never change
-- You MUST validate through observable behavior, not code reading (StrongDM: "code as opaque weights")
+- You MUST validate implementation through observable behavior, not code reading (StrongDM: "code as opaque weights") — exception: reading test source to evaluate assertion quality is validating the measurement instrument, not the implementation
 - You MUST report FAIL if SDD compliance gate fails, regardless of code quality
+- You MUST report FAIL if any acceptance criterion lacks a corresponding scenario
+- You MUST report FAIL if behavioral satisfaction is M/N where M < N
 - You MUST report FAIL if reward hacking is detected, regardless of other findings
 - You SHOULD check that Scenario-Strategy field in `.code-task.md` was respected
 - You SHOULD verify convergence across multiple execution paths, not just happy path
