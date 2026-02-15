@@ -116,18 +116,7 @@ Output the `referents/` directory with structured findings that feed into sop-pl
 
 ### Referent Discovery Output
 
-```text
-{output_dir}/
-├── referents/                    # Referent discovery catalog
-│   ├── catalog.md                # Summary: all referents, scores, recommendation
-│   ├── {referent-1}-analysis.md  # Per-referent detailed analysis
-│   ├── {referent-2}-analysis.md
-│   ├── comparative-analysis.md   # Cross-referent pattern comparison
-│   └── extracted-patterns.md     # Patterns ready to adopt in new design
-├── investigation.md              # Search process and methodology
-├── recommendations.md            # Which patterns to adopt and why
-└── summary.md                    # Executive overview and next steps
-```
+See **Output Structure > Referent Discovery** below for directory structure.
 
 **Handoff to sop-planning:** The `referents/` directory contents serve as high-quality input for sop-planning. Use `referents/extracted-patterns.md` as the foundation for design decisions, and `referents/catalog.md` as the `discovery_path` equivalent:
 - Example: `/sop-planning rough_idea="{goal}" discovery_path="{output_dir}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}`

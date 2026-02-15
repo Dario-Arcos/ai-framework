@@ -108,7 +108,6 @@ Implement using the scenario-driven-development skill.
 #### Anti-Reward-Hacking Constraint
 - NEVER modify existing tests to make them pass new code because scenarios are holdout sets — modifying them to match code is reward hacking
 - NEVER weaken acceptance criteria to match implementation limitations because criteria define user intent, not implementation convenience
-- Scenarios are holdout sets: code must converge toward them, not the reverse
 - If a scenario cannot be satisfied, escalate as blocker — do not adjust the scenario
 
 <failure_escalation>
@@ -124,7 +123,6 @@ Implement using the scenario-driven-development skill.
 
 **Constraints:**
 - Implementation MUST be in `repo_root`, not `documentation_dir`
-- You MUST follow the scenario-driven-development skill's complete process
 - You MUST run quality validation after tests pass
 - You MUST escalate to systematic-debugging after 2 unexpected failures
 

@@ -322,7 +322,6 @@ Create `{project_dir}/implementation/plan.md`:
 - You MUST keep each step <= M complexity, completable in <= 2 hours
 - You MUST generate 5-15 steps total
 - You MUST NOT include steps that depend on future steps because forward dependencies create circular blocks during execution
-- You MUST NOT create steps solely dedicated to testing, scenario writing, or test coverage for previously implemented functionality — because this violates SDD ordering where scenarios precede code
 - You MUST embed scenario/test expectations within each functional step's description and acceptance criteria
 - In interactive mode: Wait for user review and approval
 - In autonomous mode: Generate complete plan, flag any steps with uncertainty
@@ -427,7 +426,7 @@ All artifacts MUST be:
 
 **Interactive Mode MUST NOT**:
 - Proceed to next phase without explicit user approval because premature phase transitions skip important refinement
-- Pre-populate answers or assume user intent because assumptions undermine the clarification process
+- Pre-populate answers or assume user intent because assumptions skip the clarification that produces quality requirements
 - Create implementation plan before design is approved because implementation plans built on unapproved designs drift from user intent
 - Skip any of the 8 steps (unless user explicitly requests) because each step produces artifacts that downstream steps depend on
 
