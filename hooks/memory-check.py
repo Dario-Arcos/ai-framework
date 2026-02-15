@@ -92,9 +92,8 @@ def main():
     if has_manifest and not _has_test_infra(cwd):
         messages.append(
             "Software project detected but no test infrastructure found. "
-            "When the user requests feature implementation, recommend "
-            "/scenario-driven-development to define scenarios and create "
-            "tests before writing code."
+            "Mention this to the user and suggest /scenario-driven-development "
+            "when they request implementation work."
         )
 
     emit(" ".join(messages))
