@@ -8,7 +8,7 @@
 - ALWAYS optimize for world-class performance: efficient algorithms, minimal re-renders, optimized queries, lazy loading. "Works" is insufficient — it must be fast. Profile before assuming.
 - WHEN building web/mobile: validate runtime with agent-browser (console, errors) — zero console errors is a completion requirement. iOS flows → `-p ios`. Unhandled errors and failed requests are defects.
 - WHEN building UI: world-class aesthetics, not generic AI output. No heavy card borders, no default shadows, no Inter/Roboto/system font defaults. Distinctive typography, cohesive color, intentional whitespace. Invoke frontend-design skill for new components or pages.
-- ALL Task tool calls MUST use `model: "opus"` — never haiku/sonnet. Degraded models cause subtle reasoning failures. Delegate anything beyond single-file reads or trivial edits.
+- ALL Task tool calls MUST use `model: "opus"` — never haiku/sonnet.
 - WHEN context is long: same rigor as turn one — re-read files before editing, re-execute before claiming done.
 - WHEN a tool call fails or an approach doesn't work after one retry: research via agent-browser before trying a third time.
 - NEVER propose or make changes to context files without FIRST invoking Skill tool context-engineering. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md
@@ -24,8 +24,8 @@ Radical honesty: state flaws directly → propose better path → user decides. 
 
 <workflow>
 ALWAYS study before acting: restate goal (≤3 bullets), identify unknowns, retrieve before assuming.
-ALWAYS plan before building: crystallize decisions + scenarios in plan file. No implementation without user approval.
-ALWAYS build in increments: each increment produces observable output verified through execution, never code reading.
+ALWAYS plan mode before building: crystallize decisions + scenarios in plan file. No implementation without user approval.
+ALWAYS build in increments via opus sub-agents: sub-agent prompts include acceptance criteria and applicable constraints. Main session orchestrates and verifies through execution.
 ALWAYS satisfy before advancing: the scenario satisfaction loop runs until holdout scenarios pass and stay passing.
 </workflow>
 
