@@ -32,11 +32,11 @@ AI Framework es un plugin de Claude Code que inyecta gobernanza en cada sesión.
 
 ```mermaid
 flowchart LR
-  S["🚀 SessionStart\nhooks inyectan constraints"]
-  U["💬 Tu mensaje\nllega con gobernanza activa"]
-  SK["⚙️ Skills\nse activan por contexto"]
-  AG["🔍 Agents\nvalidan el output"]
-  V["✅ Verification\nevidencia antes de completion"]
+  S["🚀 SessionStart<br>hooks inyectan constraints"]
+  U["💬 Tu mensaje<br>llega con gobernanza activa"]
+  SK["⚙️ Skills<br>se activan por contexto"]
+  AG["🔍 Agents<br>validan el output"]
+  V["✅ Verification<br>evidencia antes de completion"]
 
   S --> U --> SK --> AG --> V
 ```

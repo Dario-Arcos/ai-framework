@@ -1,7 +1,3 @@
----
-outline: [2, 3]
----
-
 # Pro tips
 
 > **Patrones y técnicas para multiplicar tu efectividad con Claude Code.**
@@ -34,12 +30,12 @@ Claude respeta la instrucción y planifica antes de ejecutar — sin importar el
 **¿Por qué es más poderoso que `Shift+Tab`?**
 
 ```mermaid
-flowchart LR
-    A["bypass permissions ON"] --> B["Prompt: Implementa feature X"]
-    B --> C["Claude presenta plan\n(por instrucción en CLAUDE.md)"]
+flowchart TD
+    A["bypass permissions ON"] --> B["Tu prompt:<br>Implementa feature X"]
+    B --> C["Claude presenta plan<br>(instrucción CLAUDE.md)"]
     C --> D{"¿Apruebas?"}
-    D -- Sí --> E["Claude implementa\nsin interrupciones"]
-    D -- No --> F["Ajustas dirección\ncontexto aún limpio"]
+    D -- Sí --> E["Implementa<br>sin interrupciones"]
+    D -- No --> F["Ajustas dirección<br>contexto limpio"]
 ```
 
 1. **Contexto inicial 100% para planificar** — La ventana de 200K está fresca. Claude dedica toda su capacidad a explorar el codebase y diseñar el plan sin ruido de ejecuciones previas.

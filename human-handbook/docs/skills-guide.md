@@ -1,3 +1,7 @@
+---
+outline: 2
+---
+
 # Skills
 
 Los skills son workflows especializados que Claude carga automáticamente por contexto o que puedes invocar de forma explícita. Cada skill encapsula un proceso completo (debugging, commits, PRs, diseño UI) con sus propias fases, validaciones y outputs.

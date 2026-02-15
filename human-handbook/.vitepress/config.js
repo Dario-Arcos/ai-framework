@@ -70,6 +70,7 @@ export default withMermaid(defineConfig({
     ],
 
     outline: {
+      level: [2, 3],
       label: "En esta página",
     },
 

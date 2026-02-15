@@ -1,3 +1,7 @@
+---
+outline: 2
+---
+
 # Changelog
 
 Registro de cambios del framework, organizado por versión siguiendo [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y [versionado semántico](https://semver.org/lang/es/).

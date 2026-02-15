@@ -456,6 +456,102 @@ textarea:focus-visible {
   }
 }
 
+/* ===== MERMAID DIAGRAMS - Responsive & Never Clipped ===== */
+.vp-doc .mermaid-wrapper,
+.vp-doc [class*="language-mermaid"],
+.vp-doc .mermaid {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.vp-doc .mermaid svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ===== OUTLINE (Right sidebar TOC) - Compact & Scannable ===== */
+.VPDocAsideOutline .outline-title {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--vp-c-text-3);
+  margin-bottom: 8px;
+}
+
+/* All outline links: truncate + compact */
+.VPDocAsideOutline .outline-link {
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+/* h2-level items: bold category headers */
+.VPDocOutlineItem.root > li > .outline-link {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--vp-c-text-1);
+  padding: 3px 0;
+}
+
+/* Category spacing - breathing room between groups */
+.VPDocOutlineItem.root > li {
+  margin-bottom: 6px;
+}
+
+/* h3-level items: subdued tip entries */
+.VPDocOutlineItem.nested {
+  margin: 2px 0 0 0;
+  padding: 0;
+}
+
+.VPDocOutlineItem.nested > li > .outline-link {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  opacity: 0.65;
+  padding: 1.5px 0 1.5px 10px;
+  border-left: 1.5px solid var(--vp-c-divider);
+}
+
+.VPDocOutlineItem.nested > li > .outline-link:hover {
+  color: var(--vp-c-text-1);
+  opacity: 1;
+  border-left-color: var(--vp-c-brand-1);
+}
+
+/* Active marker refinement */
+.VPDocAsideOutline .outline-marker {
+  width: 1.5px;
+  border-radius: 1px;
+  background-color: var(--vp-c-brand-1);
+  opacity: 0.8;
+}
+
+/* Scrollable outline for long pages */
+.VPDocAsideOutline .content {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-c-divider) transparent;
+}
+
+.VPDocAsideOutline .content::-webkit-scrollbar {
+  width: 3px;
+}
+
+.VPDocAsideOutline .content::-webkit-scrollbar-thumb {
+  background: var(--vp-c-divider);
+  border-radius: 3px;
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
   *,

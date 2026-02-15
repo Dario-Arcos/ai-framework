@@ -138,9 +138,9 @@ Todo código se escribe para satisfacer escenarios, nunca al revés.
 
 ```mermaid
 flowchart LR
-  S["🎯 SCENARIO\nDefine behavior first"]
-  SA["✅ SATISFY\nCode until converge"]
-  R["♻️ REFACTOR\nSimplify, preserve behavior"]
+  S["🎯 SCENARIO<br>Define behavior first"]
+  SA["✅ SATISFY<br>Code until converge"]
+  R["♻️ REFACTOR<br>Simplify, preserve behavior"]
 
   S --> SA --> R -.->|nuevo scenario| S
 ```
