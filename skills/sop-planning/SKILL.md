@@ -264,9 +264,9 @@ Create `{project_dir}/design/detailed-design.md` using `templates/detailed-desig
 Create `{project_dir}/implementation/plan.md`:
 
 ```markdown
-## Implementation Checklist
-- [ ] Step 1: [Description]
-- [ ] Step 2: [Description]
+## Steps
+1. [Description] | Size: S/M/L | Dependencies: none
+2. [Description] | Size: S/M/L | Dependencies: Step 1
 ...
 
 ## Prerequisites

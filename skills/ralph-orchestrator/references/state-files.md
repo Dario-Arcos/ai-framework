@@ -23,7 +23,7 @@ This reference defines the state files used by Ralph for persistent state manage
 | `.ralph/reviews/task-{id}-review.md` | SDD compliance reviews per task | Current execution |
 | `.ralph/specs/{goal}/referents/catalog.md` | Referent recommendation, constraints | Current goal |
 | `.ralph/specs/{goal}/design/detailed-design.md` | Architectural decisions | Current goal |
-| `.ralph/specs/{goal}/implementation/plan.md` | Prioritized tasks | Current goal |
+| `.ralph/specs/{goal}/implementation/plan.md` | Input spec for sop-task-generator (read-only after creation) | Current goal |
 | `*.code-task.md` | Individual task descriptions + status | Current goal |
 | `.ralph/specs/{goal}/implementation/execution-runbook.md` | Orchestrator instructions (survives context compression) | Current goal |
 

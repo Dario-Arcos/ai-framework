@@ -180,8 +180,8 @@ After 3 consecutive failures, the teammate stops:
 ### Task Format
 
 ```markdown
-- [ ] Task title | Size: S/M | Files: N
-  Acceptance: [single sentence]
+1. Task title | Size: S/M | Files: N
+   Acceptance: [single sentence]
 ```
 
 ### Anti-patterns
