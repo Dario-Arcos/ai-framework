@@ -1,6 +1,6 @@
 ---
 name: ralph-orchestrator
-description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel ephemeral teammates with fresh 200K context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams cockpit.
+description: Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel ephemeral teammates with fresh 200K context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams.
 ---
 
 # Ralph Orchestrator
@@ -11,7 +11,7 @@ description: Use when building features requiring planning + autonomous executio
 ## Overview
 
 - **Planning**: Interactive OR autonomous (user chooses)
-- **Execution**: ALWAYS autonomous — Agent Teams in same session (tmux recommended for cockpit)
+- **Execution**: ALWAYS autonomous — Agent Teams in same session
 
 ## Parameters
 
@@ -34,7 +34,7 @@ description: Use when building features requiring planning + autonomous executio
 5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
 7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
-8. **Step 7**: Configure execution (quality gates, cockpit services, checkpoints)
+8. **Step 7**: Configure execution (quality gates, checkpoints)
 9. **Step 8**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
 
 ---
@@ -48,30 +48,9 @@ description: Use when building features requiring planning + autonomous executio
 - [ ] `.ralph/config.sh` exists — if missing: copy from `templates/config.sh.template`
 - [ ] `.ralph/guardrails.md` exists — if missing: copy from `templates/guardrails.md.template`
 
-**Execution prerequisites (required for Step 8):**
-- [ ] `tmux` installed (`which tmux`) — **Optional (cockpit monitoring)**
-  - If missing: **Use AskUserQuestion**:
-    Question: "tmux no esta instalado. Con tmux, los servicios del proyecto (dev server, tests, logs) corren en ventanas dedicadas visibles en Ghostty. Sin el, la ejecucion funciona igual pero sin cockpit visual."
-    Header: "tmux"
-    Options:
-    - Instalar ahora (Recommended): Ejecuta brew install tmux (macOS) / sudo apt install tmux (Linux)
-    - Continuar sin tmux: Sin cockpit visual. Ejecucion funciona normalmente.
-
-**Recommended (cockpit viewer):**
-- [ ] Ghostty (macOS) — terminal dedicada para visualizar e intervenir en el cockpit
-  - If missing: **Use AskUserQuestion**:
-    Question: "Ghostty no esta instalado. Sin el, el cockpit se abrira en tu terminal actual (puede quedar 'atrapada' si estas en un IDE). Altamente recomendado para visualizar e intervenir."
-    Header: "Ghostty"
-    Options:
-    - Instalar ahora (Recommended): Ejecuta brew install --cask ghostty
-    - Continuar sin Ghostty: El cockpit corre en tmux. Conectate manualmente con `tmux attach -t ralph-{goal}` desde una terminal externa.
-
 **Teammate mode**: always in-process (teammates run as sub-agents in the current session).
-**Cockpit** (automatic — no user input):
-- tmux installed → service windows created (dev server, tests, logs). Ghostty opens as viewer if available.
-- tmux NOT installed → no cockpit. Execution works normally; monitor via TaskList and state files.
 
-**You MUST** verify planning prerequisites before planning. **You MUST NOT** proceed to Step 8 without execution prerequisites.
+**You MUST** verify planning prerequisites before planning.
 
 > Error handling: [troubleshooting.md](references/troubleshooting.md)
 
@@ -82,9 +61,10 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | Artifact | Detected Phase |
 |----------|----------------|
 | All `*.code-task.md` with `Status: COMPLETED` | COMPLETE |
+| Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 8) |
 | Any `*.code-task.md` with `Status: PENDING` | execution (Step 8) |
 | `implementation/plan.md` without task files | task-generator (Step 4) |
-| `design/detailed-design.md` | planning (Step 3) |
+| `design/detailed-design.md` | planning-complete (Step 4) |
 | `referents/catalog.md` | referent-complete (Step 3) |
 | Nothing | NEW |
 
@@ -199,21 +179,19 @@ Options:
 | Config Variable | Derived From |
 |-----------------|-------------|
 | `GATE_TEST` | Unit Testing technology |
-| `GATE_COVERAGE` | Unit Testing technology + coverage flag |
 | `GATE_TYPECHECK` | Language toolchain (empty for compiled languages) |
 | `GATE_LINT` | Language linter |
 | `GATE_BUILD` | Build/bundling tool (empty if none) |
 
 Empty string = gate skipped. See `.ralph/config.sh` comments for stack-specific examples.
 
-**Configure cockpit services** — prompt user for optional commands:
+**Supplementary gate (evaluated after the 4 standard gates by the TaskCompleted hook):**
 
-| Service | Example | Config Variable |
-|---------|---------|-----------------|
-| Dev server | `npm run dev` | `COCKPIT_DEV_SERVER` |
-| Test watcher | `npm run test:watch` | `COCKPIT_TEST_WATCHER` |
-| Logs | `tail -f logs/*.log` | `COCKPIT_LOGS` |
-| Database | `docker-compose up -d postgres` | `COCKPIT_DB` |
+| Config Variable | Derived From |
+|-----------------|-------------|
+| `GATE_COVERAGE` | Unit Testing technology + coverage flag |
+
+GATE_COVERAGE requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh.
 
 Update `.ralph/config.sh` with derived gates and user selections. See [configuration-guide.md](references/configuration-guide.md) for all options.
 
@@ -230,17 +208,30 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 2. Build execution plan (read-only):
    a. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
    b. Map dependencies: parse `Blocked-By` references from each `.code-task.md`
-   c. Read `.ralph/config.sh` for quality gates, MAX_TEAMMATES, and MODEL
-   d. If tmux available and COCKPIT_* services configured: note service windows to create
-   e. Resolve absolute paths for these ralph-orchestrator plugin files:
+   c. Detect file overlap between parallelizable tasks:
+      1. For each `.code-task.md`, extract the `Files to Modify` list from Metadata
+      2. Identify parallelizable groups: tasks with no `Blocked-By` relationship between them
+      3. Within each group, check if any two tasks share one or more files
+      4. If overlap detected: add `Blocked-By` from the lower-step task to the higher-step one (serialize them)
+      5. Report in plan Summary: "File overlap: Task {Y} waits for Task {X} (shared: {file})"
+   d. Read `.ralph/config.sh` for quality gates, MAX_TEAMMATES, and MODEL
+   e. Determine parallelism: analyze task count and dependency graph (including overlaps resolved in 2c) to calculate max parallelizable tasks (tasks with no unresolved dependencies that can run simultaneously). Cap at 3 — more than 3 concurrent teammates degrades coordination quality. **Use AskUserQuestion**:
+      - Question: "¿Cuantos teammates quieres ejecutar en paralelo?"
+      - Header: "Paralelismo"
+      - Options (calculate dynamically, all capped at 3):
+        - "{recommended} (Recomendado)": min(parallelizable_count, 3) teammates — {parallelizable_count} tasks parallelizables de {total_tasks} totales.
+        - "1": Ejecucion secuencial — mas lenta pero menor consumo de API.
+        - "2": Dos teammates en paralelo — equilibrio entre velocidad y consumo.
+      - The user's choice overrides MAX_TEAMMATES from config.sh for this execution. Hard cap: 3.
+   f. Resolve absolute paths for these ralph-orchestrator plugin files:
       - `templates/execution-runbook.md.template`
       - `scripts/PROMPT_implementer.md`
       - `scripts/PROMPT_reviewer.md`
 3. Write execution plan to plan file with THREE sections:
-   a. **Summary** (for human review): N tasks, dependency graph, quality gates, cockpit services
+   a. **Summary** (for human review): N tasks, dependency graph, quality gates
    b. **Execution Data** (concrete values — drives runbook generation after approval):
       - Team name: `ralph-{concrete-goal-slug}`
-      - MAX_TEAMMATES: {value from config.sh}
+      - MAX_TEAMMATES: {user's choice from step 2e, or config.sh default if skipped}
       - MODEL: {value from config.sh}
       - Task Registry table: `| Step | File (absolute path) | Blocked-By | Title |`
       - Quality Gates table: `| Gate | Command |` (non-empty gates only)
@@ -273,15 +264,11 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 > If context compresses during monitoring, re-read the runbook to recover all instructions.
 > The canonical source for runbook content is below and in Phase 2. See `templates/execution-runbook.md.template` for structure.
 
-1. If tmux available and COCKPIT_* services configured:
-   - Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`
-   - Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
-   - This creates ONLY service windows (dev server, test watcher, logs, DB) — NOT a Claude Code instance
-2. `TeamCreate(team_name="ralph-{goal-slug}")`
-3. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
-4. Build dependency mapping: `.code-task.md` `Blocked-By` references → Agent Teams taskIds via metadata lookup
-5. `TaskUpdate(addBlockedBy=[...])` for each task with dependencies
-6. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
+1. `TeamCreate(team_name="ralph-{goal-slug}")`
+2. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
+3. Build dependency mapping: `.code-task.md` `Blocked-By` references → Agent Teams taskIds via metadata lookup
+4. `TaskUpdate(addBlockedBy=[...])` for each task with dependencies
+5. For each unblocked PENDING task (up to MAX_TEAMMATES): spawn implementer teammate
    ```python
    Task(
        subagent_type="general-purpose",
@@ -292,15 +279,13 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}"
    )
    ```
-7. Enter monitoring mode
-
-> If tmux NOT available: no cockpit service windows. Monitor via TaskList, metrics.json, and failures.json.
+6. Enter monitoring mode
 
 > Architecture details: [agent-teams-architecture.md](references/agent-teams-architecture.md)
 
 ---
 
-## Phase 2: Monitoring
+## Phase 2: Execution
 
 **Role: PURE ORCHESTRATOR.** Lead coordinates via summaries only — never reads code, diffs, or full review content.
 
@@ -337,21 +322,23 @@ OTHERWISE (task completed, gates passed):
    )
    ```
 
+> **Note:** The reviewer shares the implementer's Agent Teams taskId. It calls `TaskGet(taskId)` to read task details but does NOT call `TaskUpdate` — the implementer already marked the Agent Teams task as completed.
+
 WHEN reviewer goes idle — read 8-word summary from SendMessage:
-3. Send `shutdown_request` to the reviewer
-4. IF PASS: Mark `.code-task.md` as COMPLETED → `TaskList` for newly unblocked tasks → spawn next implementer if unblocked tasks exist
-5. IF FAIL: Spawn NEW implementer for the same task with review feedback:
+1. Send `shutdown_request` to the reviewer
+2. IF PASS: Mark `.code-task.md` as COMPLETED → `TaskList` for newly unblocked tasks → spawn next implementer if unblocked tasks exist
+3. IF FAIL: Spawn NEW implementer for the same task with review feedback:
    ```python
    Task(
        subagent_type="general-purpose",
        team_name="ralph-{goal-slug}",
-       name="impl-{task-slug}-r2",
+       name="impl-{task-slug}-r{N}",  # Increment N on each rework cycle: r2, r3, r4...
        mode="bypassPermissions",
        model="{model}",
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
    )
    ```
-6. IF BLOCKED: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface blocker to user via text output. Do NOT spawn new teammate until blocker resolved.
+4. IF BLOCKED: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface blocker to user via text output. Do NOT spawn new teammate until blocker resolved.
 
 **Completion flow:**
 1. All tasks complete — all reviewers report PASS
@@ -379,7 +366,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 |------|-------------|
 | [configuration-guide.md](references/configuration-guide.md) | All config options and defaults |
 | [execution-paths.md](references/execution-paths.md) | Agent Teams execution model |
-| [agent-teams-architecture.md](references/agent-teams-architecture.md) | Cockpit architecture, hooks, tmux layout |
+| [agent-teams-architecture.md](references/agent-teams-architecture.md) | Agent Teams architecture, hooks, execution model |
 | [supervision-modes.md](references/supervision-modes.md) | Planning modes, checkpoint behavior |
 | [quality-gates.md](references/quality-gates.md) | Gate descriptions, SDD enforcement |
 | [sop-integration.md](references/sop-integration.md) | How SOP skills connect |
@@ -393,6 +380,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 | [pressure-testing.md](references/pressure-testing.md) | Adversarial scenarios |
 | [troubleshooting.md](references/troubleshooting.md) | Common issues and fixes |
 | [best-practices.md](references/best-practices.md) | Recommended patterns |
+| [autonomous-mode-constraint.md](references/autonomous-mode-constraint.md) | Autonomous planning constraints |
 
 ---
 

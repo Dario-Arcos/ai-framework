@@ -72,20 +72,18 @@ Ralph implements backpressure at multiple levels:
 graph TD
     A[Task attempted] --> B{Quality gates pass?}
     B -->|No| C[Reject: Exit 2<br/>Teammate retries]
-    B -->|Yes| D[Commit]
+    B -->|Yes| D[Commit + Go idle]
 
-    D --> E{Circuit breaker?}
-    E -->|MAX_CONSECUTIVE_FAILURES hit| F[Teammate goes idle<br/>Exit 0]
-    E -->|OK| G[Teammate goes idle<br/>Exit 0]
-
-    G --> H[Lead spawns next<br/>teammate if tasks remain]
+    D --> E{TeammateIdle hook:<br/>Circuit breaker?}
+    E -->|MAX_CONSECUTIVE_FAILURES hit| F[Teammate stays idle<br/>Lead notified]
+    E -->|OK| G[Lead spawns next<br/>teammate if tasks remain]
 
     C --> A
 
     style C fill:#ffe1e1
     style F fill:#ffe1e1
+    style D fill:#e1ffe1
     style G fill:#e1ffe1
-    style H fill:#e1ffe1
 ```
 
 ### Backpressure Levels
@@ -153,12 +151,12 @@ Ralph does NOT enforce context percentages. The 40-60% sweet spot emerges natura
 - You MUST fix underlying issue before restart because same failures will repeat
 - You MUST NOT disable circuit breaker because it protects against runaway failures
 
-After 3 consecutive failures, Agent Teams cockpit stops:
+After 3 consecutive failures, the teammate stops:
 
 1. Check `.ralph/failures.json` for per-teammate failure counts
 2. Check `.ralph/metrics.json` for task success/failure history
 3. Fix underlying issue or adjust specs
-4. Run `bash .ralph/launch-build.sh` again
+4. Spawn new teammates for remaining PENDING tasks
 
 ---
 
@@ -193,7 +191,7 @@ After 3 consecutive failures, Agent Teams cockpit stops:
 - Step-by-step implementation notes
 - Keeping completed tasks forever
 
-**Recovery:** If plan exceeds 100 lines -> re-run planning via Agent Teams cockpit (`bash .ralph/launch-build.sh`)
+**Recovery:** If plan exceeds 100 lines -> re-run planning phase
 
 ---
 
@@ -222,5 +220,5 @@ If tasks consistently fail to complete in one task cycle:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-15*
+*Compliant with Agent Teams architecture (RFC 2119)*

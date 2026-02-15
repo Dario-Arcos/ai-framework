@@ -21,6 +21,14 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 | `GATE_LINT` | Linting | `npm run lint`, `ruff check .` |
 | `GATE_BUILD` | Build validation | `npm run build`, `go build ./...` |
 
+### Supplementary: Coverage Gate
+
+| Gate | Purpose | Example Command |
+|------|---------|-----------------|
+| `GATE_COVERAGE` | Coverage enforcement | `npx vitest run --coverage`, `pytest --cov` |
+
+GATE_COVERAGE is evaluated AFTER the 4 standard gates pass. Requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh. When coverage falls below threshold, exit 2 rejects the task.
+
 ---
 
 ## Gate Configuration
@@ -54,6 +62,7 @@ All gates are required. SDD is mandatory. There is one quality standard: product
 2. `GATE_TYPECHECK` - Catch type errors
 3. `GATE_LINT` - Catch style issues
 4. `GATE_BUILD` - Ensure it compiles
+5. `GATE_COVERAGE` - Enforce minimum coverage (when configured)
 
 If any gate fails, the `task-completed.py` hook returns exit 2 with failure output on stderr. The teammate receives the gate output and must fix the issue before marking the task complete again.
 
@@ -191,5 +200,5 @@ If circuit breaker trips (3 failures):
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Compliant with Agent Teams architecture (RFC 2119)*

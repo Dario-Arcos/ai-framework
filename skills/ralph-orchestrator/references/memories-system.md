@@ -58,15 +58,9 @@ In `.ralph/config.sh`:
 
 ```bash
 MEMORIES_ENABLED=true   # Enable structured memory format
-MEMORIES_BUDGET=2000    # Max tokens to inject (~8000 chars)
 ```
 
-## Truncation Behavior
-
-Auto-compaction (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`) respects memory block boundaries:
-- Never cuts mid-memory (waits for `-->` marker)
-- Adds `<!-- truncated: budget exceeded -->` when truncating
-- Preserves parseability of remaining memories
+> **MEMORIES_BUDGET (deprecated):** No enforcement mechanism was ever implemented. Guardrails.md grows naturally (~1 entry per task, bounded by session scope). Reviewer teammates validate entry accuracy via CORRECTION entries (see PROMPT_reviewer.md Phase 2).
 
 ## Backwards Compatibility
 
@@ -108,5 +102,5 @@ What kind of learning?
 
 ---
 
-*Version: 3.0.0 | Updated: 2026-01-31*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Structured memories with typed sections*

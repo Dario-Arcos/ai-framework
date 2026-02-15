@@ -19,7 +19,6 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 | `.ralph/metrics.json` | Aggregate success/failure counts | `Read(".ralph/metrics.json")` |
 | `.ralph/failures.json` | Per-teammate failure tracking | `Read(".ralph/failures.json")` |
 | `.ralph/guardrails.md` | Accumulated error lessons | `Read(".ralph/guardrails.md")` |
-| Cockpit windows | Live service output (dev server, tests, logs) | tmux capture-pane |
 
 ---
 
@@ -49,36 +48,6 @@ This reference defines monitoring and debugging capabilities during Agent Teams 
 | Failure count | 0-1 consecutive | 2+ consecutive per teammate | Review gate output, add memory to guardrails.md |
 | .ralph/guardrails.md growth | Gradual, useful memories | Rapid growth, repetitive memories | Task may be too complex — consider splitting |
 | Blocked tasks | Rare | Multiple tasks blocked | Review blockers.md, may need user input |
-
----
-
-## Cockpit Monitoring
-
-Teammates and the lead can observe cockpit windows via tmux:
-
-```bash
-# Read dev server output
-tmux capture-pane -p -t ralph:services.0
-
-# Read test watcher output
-tmux capture-pane -p -t ralph:quality.0
-
-# Read log output
-tmux capture-pane -p -t ralph:monitor.0
-```
-
-### Useful Patterns
-
-**Check if dev server is healthy:**
-```bash
-tmux capture-pane -p -t ralph:services.0 | tail -5
-# Look for: "ready", "listening on", "compiled successfully"
-```
-
-**Check test watcher for failures:**
-```bash
-tmux capture-pane -p -t ralph:quality.0 | grep -i "fail\|error"
-```
 
 ---
 
@@ -183,14 +152,7 @@ If success rate drops below 80%:
 - You SHOULD verify gate commands work manually
 - You MAY reduce MAX_TEAMMATES to reduce contention
 
-### Cockpit Windows Empty
-
-If cockpit windows show no output:
-- You SHOULD verify COCKPIT_* variables in config.sh
-- You SHOULD check if tmux session "ralph" exists: `tmux ls`
-- You MUST verify commands work when run manually
-
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Agent Teams observability*

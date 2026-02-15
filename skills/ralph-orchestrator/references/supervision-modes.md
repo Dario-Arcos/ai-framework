@@ -21,7 +21,7 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 ├─────────────────────────────────────────────────────────────────┤
 │  PHASE 2: EXECUTION                                             │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │  Mode: ALWAYS AUTONOMOUS (Agent Teams cockpit)           │    │
+│  │  Mode: ALWAYS AUTONOMOUS (Agent Teams)           │    │
 │  │  Safety: Circuit breaker + quality gates                  │    │
 │  │  Duration: 1-8 hours                                    │    │
 │  └─────────────────────────────────────────────────────────┘    │
@@ -100,7 +100,7 @@ User options:
 
 ### Core Truth
 
-**Execution is ALWAYS autonomous.** The Agent Teams cockpit launches ephemeral teammates that each claim 1 task, implement it with fresh 200K context, and complete. There is no "interactive execution" - that's a contradiction.
+**Execution is ALWAYS autonomous.** The Agent Teams launches ephemeral teammates that each claim 1 task, implement it with fresh 200K context, and complete. There is no "interactive execution" - that's a contradiction.
 
 ### Safety Configuration
 
@@ -145,13 +145,13 @@ These protections are always active during execution:
 
 **Wrong:** "I want human-in-the-loop execution where I review each task."
 
-**Right:** Execution is always autonomous. The Agent Teams cockpit runs teammates that claim tasks, execute them, and pass quality gates. Safety is enforced by circuit breakers and quality gates, not by human pauses.
+**Right:** Execution is always autonomous. The Agent Teams runs teammates that claim tasks, execute them, and pass quality gates. Safety is enforced by circuit breakers and quality gates, not by human pauses.
 
 ### "AFK vs HITL"
 
 **Wrong:** "AFK and HITL are two different execution modes."
 
-**Right:** There's only ONE execution mode: autonomous via Agent Teams cockpit. Safety nets (MAX_CONSECUTIVE_FAILURES, quality gates) protect against runaway failures. You review results when execution completes.
+**Right:** There's only ONE execution mode: autonomous via Agent Teams. Safety nets (MAX_CONSECUTIVE_FAILURES, quality gates) protect against runaway failures. You review results when execution completes.
 
 ### "Autonomous Planning = No Control"
 
@@ -197,7 +197,7 @@ Planning            Planning
 └─────────────┬───────────────┘
               │
               ▼
-       Launch Agent Teams cockpit
+       Launch Agent Teams
        (ALWAYS autonomous)
               │
               ▼
@@ -211,5 +211,5 @@ Planning            Planning
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Rewritten to eliminate HITL/AFK ambiguity and ghost variables*

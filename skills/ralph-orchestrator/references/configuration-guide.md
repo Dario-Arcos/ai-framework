@@ -2,7 +2,7 @@
 
 ## Overview
 
-This reference defines ralph configuration options in `.ralph/config.sh`. Configuration controls quality gates, safety thresholds, and cockpit services for Agent Teams execution.
+This reference defines ralph configuration options in `.ralph/config.sh`. Configuration controls quality gates and safety thresholds for Agent Teams execution.
 
 ---
 
@@ -69,26 +69,18 @@ GATE_COVERAGE="go test -cover ./..."
 ## Agent Teams Options
 
 **Constraints:**
-- You MUST configure cockpit services before launch because launch-build.sh reads config at startup
 - You SHOULD set MAX_TEAMMATES based on task parallelism because too many teammates contend for resources
+- You MUST NOT set MAX_TEAMMATES above 3 because more than 3 concurrent teammates degrades coordination quality
 
 ```bash
 MODEL="opus"                      # Model for teammates (opus recommended)
-MAX_TEAMMATES=2                   # Maximum concurrent teammates
-COCKPIT_DEV_SERVER="npm run dev"  # Dev server command (tmux "services" window)
-COCKPIT_TEST_WATCHER="npm run test:watch"  # Test watcher (tmux "quality" window)
-COCKPIT_LOGS="tail -f logs/*.log" # Log tailing (tmux "monitor" window)
-COCKPIT_DB=""                     # Database command (tmux "services" window, pane 1)
+MAX_TEAMMATES=2                   # Maximum concurrent teammates (hard cap: 3)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `MODEL` | `opus` | Model used for teammates |
-| `MAX_TEAMMATES` | `2` | Max concurrent teammates |
-| `COCKPIT_DEV_SERVER` | `""` | Command for dev server window |
-| `COCKPIT_TEST_WATCHER` | `""` | Command for test watcher window |
-| `COCKPIT_LOGS` | `""` | Command for log monitoring window |
-| `COCKPIT_DB` | `""` | Command for database service |
+| `MAX_TEAMMATES` | `2` | Max concurrent teammates (hard cap: 3) |
 
 ---
 
@@ -125,17 +117,19 @@ The circuit breaker tracks failures **per teammate** in `.ralph/failures.json`. 
 
 **Constraints:**
 - You SHOULD enable memories for complex tasks because guardrails.md captures patterns and prevents repeated mistakes
-- You SHOULD set MEMORIES_BUDGET based on task duration because long-running sessions accumulate more entries
+- You SHOULD NOT worry about guardrails.md size because growth is bounded by session scope (~1 entry per task)
 
 ```bash
 MEMORIES_ENABLED=true    # Enable/disable memory system
-MEMORIES_BUDGET=2000     # Max tokens to inject (~8000 chars)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `MEMORIES_ENABLED` | `true` | Enable/disable the guardrails.md memory system. When false, teammates skip writing learned patterns and error patterns |
-| `MEMORIES_BUDGET` | `2000` | Maximum tokens to inject from guardrails.md (~8000 chars). Prevents unbounded context growth in long-running sessions |
+
+> **Note:** MEMORIES_ENABLED is prompt-enforced (teammates read config.sh and honor it), not hook-enforced. No hook validates this setting.
+
+> **MEMORIES_BUDGET (deprecated):** Never enforced — see [memories-system.md](memories-system.md).
 
 ---
 
@@ -145,12 +139,14 @@ MEMORIES_BUDGET=2000     # Max tokens to inject (~8000 chars)
 - You MUST understand exit codes because they guide recovery actions
 - You MUST check logs after non-zero exit because root cause needs identification
 
+Exit codes from lifecycle hooks (task-completed.py, teammate-idle.py). Codes 1 and 130 are reserved for future orchestrator-level exits.
+
 | Exit Code | Name | Trigger |
 |-----------|------|---------|
 | 0 | SUCCESS | All tasks completed, teammates idled |
-| 1 | ERROR | Validation failure, missing files, config error |
+| 1 | ERROR | Reserved — not currently produced by hooks |
 | 2 | GATE_FAILURE | Quality gate or coverage gate failure |
-| 130 | INTERRUPTED | User interrupt (Ctrl+C) or manual ABORT |
+| 130 | INTERRUPTED | Reserved — manual ABORT uses .ralph/ABORT file (exit 0) |
 
 **Manual abort**: Create `.ralph/ABORT` file → all teammates idle on next TeammateIdle check.
 
@@ -170,8 +166,7 @@ touch .ralph/ABORT                      # Graceful stop — teammates idle on ne
 rm .ralph/ABORT                         # Clear abort flag
 git reset --hard HEAD~N                 # Revert N commits if needed
 rm .ralph/failures.json                 # Reset circuit breakers
-# Re-launch cockpit
-bash .ralph/launch-build.sh
+# Spawn new teammates to resume execution
 ```
 
 ---
@@ -189,7 +184,7 @@ If quality gates fail when they shouldn't:
 
 If config changes don't take effect:
 - You SHOULD verify config.sh syntax because shell syntax errors prevent loading
-- You SHOULD check if cockpit was relaunched because running sessions don't reload config
+- You SHOULD check if teammates were re-spawned because running teammates don't reload config
 - You MUST source config.sh manually to test because this reveals parse errors
 
 ### Exit Codes Not Matching Expected
@@ -201,5 +196,5 @@ If execution exits unexpectedly:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Agent Teams configuration model*

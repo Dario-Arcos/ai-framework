@@ -217,7 +217,7 @@ graph LR
 
 After planning, configure safety limits in `.ralph/config.sh`:
 
-> **Key insight**: Execution is ALWAYS autonomous via Agent Teams cockpit (`bash .ralph/launch-build.sh`). Safety is enforced by circuit breakers, not by human pauses.
+> **Key insight**: Execution is ALWAYS autonomous via Agent Teams. Safety is enforced by circuit breakers, not by human pauses.
 
 ```mermaid
 graph TD
@@ -229,7 +229,7 @@ graph TD
     Q1 -->|Normal| Default[Default limits<br/>MAX_CONSECUTIVE_FAILURES=3]
     Q1 -->|Low/Familiar| Relaxed[Relaxed limits<br/>MAX_CONSECUTIVE_FAILURES=5]
 
-    Strict --> Launch[Launch Agent Teams cockpit]
+    Strict --> Launch[Launch Agent Teams]
     Default --> Launch
     Relaxed --> Launch
 
@@ -320,7 +320,7 @@ Solution: Direct implementation for tasks < 3 steps
 ### ❌ Skipping Planning Phase
 
 ```
-Problem: "I'll just start the cockpit, I know what I want"
+Problem: "I'll just start execution, I know what I want"
 Reality: Teammates confused, poor quality output
 Solution: Always complete planning first
 ```
@@ -385,5 +385,5 @@ If safety configuration is unclear:
 
 ---
 
-*Version: 2.1.0 | Updated: 2026-02-11*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-15*
+*Compliant with Agent Teams architecture (RFC 2119)*

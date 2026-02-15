@@ -18,18 +18,6 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 - **Fix**: Copy from templates: `cp templates/guardrails.md.template .ralph/guardrails.md`
 - **Verification**: File exists at `.ralph/guardrails.md`
 
-### tmux Not Installed
-
-- **Cause**: Missing prerequisite
-- **Fix**: `brew install tmux`
-- **Verification**: `which tmux` returns a path
-
-### Ghostty Not Available
-
-- **Cause**: Missing prerequisite for cockpit
-- **Fix**: `brew install --cask ghostty`
-- **Verification**: `open -na Ghostty.app` launches without error
-
 ### Agent Teams Flag Not Set
 
 - **Cause**: Environment variable missing
@@ -81,7 +69,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
 
 - **Cause**: Misconfigured gate commands, missing dependencies
 - **Fix**:
-  1. Run gate commands manually in the `shell` tmux window:
+  1. Run gate commands manually:
      ```bash
      npm test        # GATE_TEST
      npm run lint    # GATE_LINT
@@ -90,29 +78,6 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
   2. Fix the failing command
   3. Update `.ralph/config.sh` if gate command is wrong
   4. Teammates will succeed on next attempt (TaskCompleted rejects, they retry)
-
-### Cockpit Not Launching
-
-- **Cause**: tmux or Ghostty issue, or launch-build.sh missing
-- **Fix**:
-  1. Verify `.ralph/launch-build.sh` exists and is executable
-  2. If missing: copy from `templates/launch-build.sh.template`, `chmod +x`
-  3. Check tmux is not already running a "ralph" session: `tmux ls`
-  4. Kill stale session if needed: `tmux kill-session -t ralph`
-  5. Re-launch: `bash .ralph/launch-build.sh`
-
-### tmux Session Issues
-
-- **Symptom**: Windows missing, panes not responding
-- **Fix**:
-  1. List sessions: `tmux ls`
-  2. Attach to verify: `tmux attach -t ralph`
-  3. Check window list: `Ctrl+B w` (inside tmux)
-  4. If corrupted: kill and relaunch
-     ```bash
-     tmux kill-session -t ralph
-     bash .ralph/launch-build.sh
-     ```
 
 ### Orchestrator Tempted to Implement
 
@@ -128,7 +93,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
   1. Check `.ralph/failures.json` for the affected teammate
   2. Identify the failing gate and fix root cause
   3. Reset failures: edit `.ralph/failures.json` and set the failing teammate's value to 0, e.g., `{"teammate-1": 0}`
-  4. Re-launch cockpit or spawn new teammate
+  4. Spawn new teammate
 
 ---
 
@@ -141,7 +106,7 @@ Quick reference for common issues and their solutions during ralph-orchestrator 
   - `TaskList` — real-time task states
   - `Read(".ralph/metrics.json")` — aggregate counts
   - `Read(".ralph/failures.json")` — per-teammate failures
-  - `tmux capture-pane -p -t ralph:services.0` — dev server output
+  - `SendMessage` — query specific teammate for status
 
 ### Metrics Show High Failure Rate
 
@@ -167,13 +132,13 @@ If success rate drops below 80%:
 
 ### Configuration Not Taking Effect
 
-- **Cause**: Cockpit reads config at launch, not dynamically
+- **Cause**: Config is read at teammate spawn, not dynamically
 - **Fix**:
   1. Verify config.sh syntax: `source .ralph/config.sh && echo "OK"`
   2. Stop current execution: `touch .ralph/ABORT`
   3. Wait for teammates to idle
   4. Remove abort: `rm .ralph/ABORT`
-  5. Re-launch cockpit
+  5. Spawn new teammates (they'll read updated config)
 
 ---
 
@@ -193,11 +158,11 @@ When something goes wrong:
 ## See Also
 
 - [configuration-guide.md](configuration-guide.md) - All configuration options
-- [agent-teams-architecture.md](agent-teams-architecture.md) - Architecture, hooks, cockpit
+- [agent-teams-architecture.md](agent-teams-architecture.md) - Architecture, hooks, execution model
 - [observability.md](observability.md) - Metrics, debugging
 - [supervision-modes.md](supervision-modes.md) - Planning modes
 
 ---
 
 *Troubleshooting reference for ralph-orchestrator.*
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*

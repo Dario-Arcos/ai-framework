@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assist) for user-present sessions. **Autonomous** (Agent Teams teammates) for parallel, hooks-gated execution via the tmux cockpit (Ghostty optional viewer).
+Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assist) for user-present sessions. **Autonomous** (Agent Teams teammates) for parallel, hooks-gated execution.
 
 ---
 
@@ -11,9 +11,9 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 | Aspect | Interactive (sop-code-assist) | Autonomous (Agent Teams) |
 |--------|-------------------------------|--------------------------|
 | **When used** | User present, learning, complex decisions | Batch processing, overnight, parallel tasks |
-| **Invoker** | User manually or orchestrator in interactive mode | Same session continues from Step 7 (launch-build.sh for service windows only) |
+| **Invoker** | User manually or orchestrator in interactive mode | Same session proceeds to Step 8 (Agent Teams) |
 | **Context** | Single session, full context retained | Fresh 200K context per task (ephemeral teammates) |
-| **User interaction** | Confirms at each step | None after cockpit launch |
+| **User interaction** | Confirms at each step | None after Agent Teams launch |
 | **Parallelism** | Sequential (single session) | Parallel (up to MAX_TEAMMATES) |
 | **Blocker handling** | AskUserQuestion | Document in blockers.md, mark task BLOCKED, move to next |
 | **Quality gates** | Inline (teammate runs gates) | TaskCompleted hook validates automatically |
@@ -52,19 +52,13 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 
 ## Autonomous Path: Agent Teams Teammates
 
-**Trigger**: Same session continues from Step 7. Plan mode pre-flight builds plan with execution data → user approval → generates `execution-runbook.md` from template → orchestrator reads runbook → TeamCreate + spawn teammates.
-
-```bash
-# Service windows only (if tmux + COCKPIT_* configured):
-bash .ralph/launch-build.sh
-```
+**Trigger**: Same session proceeds to Step 8. Plan mode pre-flight builds plan with execution data → user approval → generates `execution-runbook.md` from template → orchestrator reads runbook → TeamCreate + spawn teammates.
 
 **Characteristics:**
 - Fresh 200K context per teammate (each teammate handles exactly 1 task, then shuts down)
 - Parallel execution with up to MAX_TEAMMATES concurrent teammates
 - Quality gates enforced via TaskCompleted hook (not inline)
 - TeammateIdle hook provides safety (circuit breaker + abort). Lead drives the implementer→reviewer→next cycle.
-- Cockpit provides live visibility via tmux windows
 
 **Implementer lifecycle:**
 1. Spawn with task context (guardrails.md + agents.md + task description)
@@ -131,7 +125,7 @@ Both paths use the same state files, but access patterns differ:
 | File | Interactive | Autonomous (Agent Teams) |
 |------|-------------|--------------------------|
 | `.ralph/guardrails.md` | Updated on errors | Concurrent access (flock for writes) |
-| `.code-task.md` | Status header updated | Status header updated via TaskUpdate |
+| `.code-task.md` | Status header updated | Status: PENDING → IN_PROGRESS → IN_REVIEW → COMPLETED / BLOCKED |
 | `blockers.md` | N/A | Created when blocked |
 | `.ralph/failures.json` | N/A | Per-teammate failure tracking |
 | `.ralph/metrics.json` | N/A | Task success/failure counts |
@@ -147,8 +141,7 @@ Is this ralph-orchestrator execution?
 │
 ├── Yes → Autonomous path (Agent Teams) — default
 │   ├── Parallel, independent tasks
-│   ├── Quality gates via hooks
-│   └── Cockpit monitoring
+│   └── Quality gates via hooks
 │
 └── No → Interactive path (sop-code-assist)
     ├── Single task, user present
@@ -168,8 +161,7 @@ Is this ralph-orchestrator execution?
 - User approves plan at checkpoint (Step 6)
 
 **Execution phase** (Steps 7-8):
-- ALWAYS uses Agent Teams in the same session. launch-build.sh creates optional service windows (if tmux available and COCKPIT_* configured).
-- Cockpit provides tmux service windows for monitoring
+- ALWAYS uses Agent Teams in the same session
 - Lead enters delegate mode (monitor only, no implementation)
 
 ```mermaid
@@ -184,7 +176,6 @@ graph LR
         D --> E[ExitPlanMode approval]
         E --> W[Generate execution-runbook.md<br/>from template + plan data]
         W --> R[Read execution-runbook.md<br/>survives context compression]
-        R --> F[launch-build.sh<br/>service windows only]
         R --> G[TeamCreate + spawn]
         G --> H[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
     end
@@ -221,11 +212,11 @@ graph LR
 ### State Inconsistency
 
 If paths produce conflicting state:
-- Agent Teams teammates are authoritative during cockpit execution
+- Agent Teams teammates are authoritative during autonomous execution
 - Interactive path is authoritative during manual execution
 - Never run both simultaneously on same goal
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-10*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Agent Teams execution model*

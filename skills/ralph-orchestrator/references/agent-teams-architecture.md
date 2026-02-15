@@ -1,12 +1,12 @@
 # Agent Teams Architecture
 
-> Execution engine for ralph-orchestrator Step 8. tmux cockpit + Claude Code Agent Teams (Ghostty optional viewer).
+> Execution engine for ralph-orchestrator Step 8. Claude Code Agent Teams.
 
 ---
 
 ## Overview
 
-Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks, shared state files. The lead runs in the current session; tmux provides optional cockpit service windows (Ghostty as viewer).
+Agent Teams is the execution engine for ralph-orchestrator. It replaces sequential iteration with ephemeral, parallel teammates coordinated through hooks and shared state files. The lead runs in the current session.
 
 Key properties:
 - **2-layer execution** — lead orchestrates, ephemeral teammates implement (1 task each) with fresh 200K context
@@ -14,15 +14,13 @@ Key properties:
 - **Fresh 200K context per task** — each teammate gets a clean context window, avoiding progressive degradation
 - **Reviewer validation** — after implementer completes and gates pass, a reviewer teammate validates SDD compliance
 - **Hook-based quality gates** — TaskCompleted validates, TeammateIdle provides safety (circuit breaker + abort)
-- **Cockpit visibility** — tmux windows for services, tests, logs, and shell access
 
 ---
 
 ## Component Map
 
 ```
-.ralph/config.sh ──────────── Configuration (quality, gates, cockpit services)
-.ralph/launch-build.sh ────── Service windows launcher (tmux, if COCKPIT_* configured)
+.ralph/config.sh ──────────── Configuration (quality gates, safety settings)
 .ralph/failures.json ──────── Per-teammate failure counters (written by hooks)
 .ralph/metrics.json ───────── Task success/failure metrics (written by hooks)
 .ralph/specs/{goal}/implementation/execution-runbook.md ── Orchestrator instructions (generated post-approval, survives compression)
@@ -33,7 +31,6 @@ hooks/hooks.json ──────────── Hook registration
 
 scripts/PROMPT_implementer.md ── Implementer teammate prompt
 scripts/PROMPT_reviewer.md ──── Reviewer teammate prompt
-templates/launch-build.sh.template ── Cockpit launcher source
 templates/config.sh.template ──────── Default configuration
 templates/execution-runbook.md.template ── Orchestrator runbook source
 ```
@@ -123,50 +120,6 @@ Each teammate uses its full 200K context for a single task. No compaction needed
 
 ---
 
-## Cockpit Layout
-
-```
-tmux session: "ralph" (service windows only — lead runs in current session)
-
-Window ? "services" → COCKPIT_DEV_SERVER + COCKPIT_DB (if configured)
-Window ? "quality"  → COCKPIT_TEST_WATCHER (if configured)
-Window ? "monitor"  → COCKPIT_LOGS (if configured)
-Window N "shell"    → Free terminal (if any service configured)
-```
-
-Windows are created only if COCKPIT_* variables are configured in .ralph/config.sh. If no services configured, no tmux session is created. The lead runs in the current terminal session, not inside tmux.
-
-Navigation: `Ctrl+B {N}` to switch windows (standard tmux prefix).
-
----
-
-## Teammate Capabilities
-
-Teammates can observe cockpit service windows through tmux (for reading dev server output, test results, etc.):
-
-### Eyes (capture-pane) — Read output from any window
-
-```bash
-tmux capture-pane -p -t ralph:services.0    # Read dev server output
-tmux capture-pane -p -t ralph:quality.0     # Read test watcher output
-tmux capture-pane -p -t ralph:monitor.0     # Read log output
-```
-
-### Hands (send-keys) — Execute commands in any window
-
-```bash
-tmux send-keys -t ralph:shell.0 "npm run migrate" Enter
-tmux send-keys -t ralph:services.0 "C-c" "npm run dev" Enter  # Restart dev server
-```
-
-### Reach (new-window) — Create new tools
-
-```bash
-tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
-```
-
----
-
 ## State Files
 
 | File | Purpose | Written By | Read By |
@@ -176,7 +129,7 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 | `.ralph/failures.json` | Per-teammate consecutive failure count | TaskCompleted hook | TeammateIdle hook (circuit breaker) |
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
 | `.ralph/agents.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
-| `.ralph/config.sh` | Gates, cockpit services, safety settings | Lead (Step 7) | Hooks, launch-build.sh |
+| `.ralph/config.sh` | Gates, safety settings | Lead (Step 7) | Hooks |
 | `.ralph/reviews/task-{id}-review.md` | SDD compliance review per task | Reviewer teammates | Lead (summary only) |
 
 ---
@@ -197,13 +150,11 @@ tmux new-window -t ralph -n "debug"         # Open a dedicated debug window
 
 | Requirement | Check | Install |
 |-------------|-------|---------|
-| tmux | `which tmux` | `brew install tmux` (Optional — enables cockpit service windows for monitoring) |
-| Ghostty | `open -na Ghostty.app` | `brew install --cask ghostty` |
 | Agent Teams flag | `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
 | Config file | `.ralph/config.sh` exists | Copy from `templates/config.sh.template` |
 | Guardrails | `.ralph/guardrails.md` exists | Copy from `templates/guardrails.md.template` |
 
 ---
 
-*Version: 3.0.0 | Updated: 2026-02-11*
+*Version: 2.0.0 | Updated: 2026-02-15*
 *Redesigned: 2-layer architecture (Lead → ephemeral implementer/reviewer teammates)*

@@ -8,8 +8,6 @@
 ## Task Cycle Execution
 
 **Agent Teams execution (same-session):**
-- Service windows (if tmux + COCKPIT_* configured):
-  `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`
 - Team setup (lead does directly):
   `TeamCreate(team_name="ralph-{goal-slug}")` → `TaskCreate` per task → spawn
 
@@ -38,7 +36,7 @@ Read(".ralph/metrics.json")
 The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 - Atomic task design naturally stays within effective context range
-- Control is INPUT-based (trim guardrails before each task cycle)
+- Control is INPUT-based (atomic task design + auto-compaction via CLAUDE_AUTOCOMPACT_PCT_OVERRIDE)
 - No post-hoc measurement or exit conditions based on context percentage
 
 **Configuration**: Use MAX_CONSECUTIVE_FAILURES (circuit breaker) for safety limits, not context percentages.
@@ -71,13 +69,13 @@ The 40-60% context sweet spot is an **observation**, not a target to enforce:
 
 After every session verify:
 1. `.ralph/guardrails.md` has new memories (if gotchas found)
-2. `.ralph/guardrails.md` reflects final state (shared memory across teammates and teammates)
+2. `.ralph/guardrails.md` reflects final state (shared memory across teammates)
 
 **Capture checklist:**
 | Artifact | Check | Purpose |
 |----------|-------|---------|
 | .ralph/guardrails.md | New memories added? | Prevent repeat mistakes |
-| .ralph/guardrails.md | State updated? | Shared memory for teammates and teammates |
+| .ralph/guardrails.md | State updated? | Shared memory for teammates |
 
 > Cross-reference: [state-files.md](state-files.md) for state file management.
 
@@ -108,7 +106,7 @@ After every session verify:
 | Foreground launch | Timeout kills process | Use `run_in_background=true` |
 | Blocking monitors | Claude stuck waiting | Use `TaskList` + `TaskGet` + `Read` for monitoring |
 | Context pollution | Teammate context degraded | Update plan, don't pollute teammate |
-| Skip prerequisites | Missing SOP artifacts | Always validate Step 0 |
+| Skip prerequisites | Missing SOP artifacts | Always validate Step 1 |
 | Ignore red flags | Issues compound | Intervene at first sign |
 
 ---
@@ -117,9 +115,6 @@ After every session verify:
 
 **Essential commands:**
 ```bash
-# Service windows (if tmux + COCKPIT_* configured):
-Bash(command="bash .ralph/launch-build.sh", run_in_background=true)
-
 # Team setup (lead does directly in same session):
 TeamCreate(team_name="ralph-{goal-slug}")
 TaskCreate(subject="...", description="...")  # per .code-task.md
@@ -137,8 +132,8 @@ Read(".ralph/metrics.json")
 - Fresh context via teammates — no OUTPUT measurement or context-based exits
 
 **Knowledge artifacts:**
-- `.ralph/guardrails.md`: Warning signs, rules, and shared memory across teammates and teammates
+- `.ralph/guardrails.md`: Warning signs, rules, and shared memory across teammates
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-11*
+*Version: 2.0.0 | Updated: 2026-02-15*

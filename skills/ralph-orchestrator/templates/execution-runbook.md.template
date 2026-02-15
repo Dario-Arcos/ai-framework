@@ -21,6 +21,7 @@
 | Step | File | Blocked-By | Title |
 |------|------|------------|-------|
 <!-- Populate from .ralph/specs/{goal}/implementation/step*/*.code-task.md -->
+<!-- Note: Blocked-By may include synthetic dependencies added by file overlap detection (Step 2c) -->
 
 ## 3. Quality Gates
 
@@ -34,21 +35,13 @@
 
 Execute these steps IN ORDER:
 
-### 4.1 Cockpit (if tmux available AND COCKPIT_* services configured)
-
-Copy `templates/launch-build.sh.template` to `.ralph/launch-build.sh`, `chmod +x`.
-Launch: `Bash(command="bash .ralph/launch-build.sh", run_in_background=true)`.
-This creates ONLY service windows — NOT a Claude Code instance.
-
-If tmux NOT available or no COCKPIT_* configured: skip this step. Monitor via `TaskList`, `Read(".ralph/metrics.json")`, and `Read(".ralph/failures.json")` instead.
-
-### 4.2 Create Team
+### 4.1 Create Team
 
 ```
 TeamCreate(team_name="{team-name}")
 ```
 
-### 4.3 Create Tasks
+### 4.2 Create Tasks
 
 For each row in the Task Registry:
 
@@ -61,16 +54,16 @@ TaskCreate(
 )
 ```
 
-### 4.4 Map Dependencies
+### 4.3 Map Dependencies
 
 After ALL tasks are created, map step numbers to Agent Teams task IDs using the Task Registry.
 For each task with Blocked-By entries:
 
 ```
-TaskUpdate(taskId="{task_id}", addBlockedBy=[{blocked_by_task_ids}])
+TaskUpdate(taskId="{taskId}", addBlockedBy=[{blocked_by_task_ids}])
 ```
 
-### 4.5 Spawn Initial Implementers
+### 4.4 Spawn Initial Implementers
 
 For each unblocked PENDING task (up to MAX_TEAMMATES concurrent):
 
@@ -81,7 +74,7 @@ Task(
   name="impl-{task-slug}",
   mode="bypassPermissions",
   model="{model}",
-  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {task_id}"
+  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {taskId}"
 )
 ```
 
@@ -105,7 +98,7 @@ Task(
 
 **IF summary starts with "BLOCKED:":**
 1. Send `shutdown_request` to the implementer
-2. Read blockers.md from the task's step directory: `.ralph/specs/{goal}/implementation/{step_dir}/blockers.md`
+2. Read blockers.md from the task's step directory: `.ralph/specs/{goal}/implementation/{task_name}/blockers.md`
 3. Surface blocker content to user. Do NOT spawn reviewer — wait for resolution.
 
 **OTHERWISE (task completed, gates passed):**
@@ -119,7 +112,7 @@ Task(
   name="rev-{task-slug}",
   mode="bypassPermissions",
   model="{model}",
-  prompt=<Section 8: Reviewer Prompt below> + "\n\nYour assigned task ID: {task_id}\nTask file: {code_task_path}"
+  prompt=<Section 8: Reviewer Prompt below> + "\n\nYour assigned task ID: {taskId}\nTask file: {path_to_code_task_md}"
 )
 ```
 
@@ -138,11 +131,11 @@ Task(
   name="impl-{task-slug}-r{N}",
   mode="bypassPermissions",
   model="{model}",
-  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {task_id}\nReview feedback: .ralph/reviews/task-{task_id}-review.md"
+  prompt=<Section 7: Implementer Prompt below> + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
 )
 ```
 
-4. **IF BLOCKED**: Read `.ralph/reviews/task-{task_id}-blockers.md`. Surface to user.
+4. **IF BLOCKED**: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface to user.
 
 ## 6. Completion
 

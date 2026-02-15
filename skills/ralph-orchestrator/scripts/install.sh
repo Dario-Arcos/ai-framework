@@ -35,28 +35,12 @@ fi
 # Preflight checks
 echo "Preflight checks..."
 
-if command -v tmux > /dev/null 2>&1; then
-    echo -e "  ${GREEN}✓${NC} tmux found ($(tmux -V))"
-else
-    echo -e "  ${YELLOW}⊘${NC} tmux not installed (optional — enables cockpit service windows)"
-    echo "    Install: brew install tmux (macOS) / sudo apt install tmux (Linux)"
-    echo "    Without tmux, execution works normally but without visual cockpit"
-fi
-
 if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
     echo -e "  ${GREEN}✓${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is set"
 else
     echo -e "  ${YELLOW}⚠${NC} CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS not set — required for Agent Teams"
     echo "    Export it before running Claude Code:"
     echo "    export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
-fi
-
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    if [ -d "/Applications/Ghostty.app" ]; then
-        echo -e "  ${GREEN}✓${NC} Ghostty found"
-    else
-        echo -e "  ${YELLOW}⊘${NC} Ghostty not found (optional) — cockpit uses tmux attach directly"
-    fi
 fi
 
 echo ""
@@ -66,7 +50,6 @@ TEMPLATES=(
     "templates/AGENTS.md.template:.ralph/agents.md"
     "templates/guardrails.md.template:.ralph/guardrails.md"
     "templates/config.sh.template:.ralph/config.sh"
-    "templates/launch-build.sh.template:.ralph/launch-build.sh"
 )
 
 # Create directories
@@ -93,9 +76,6 @@ for template_mapping in "${TEMPLATES[@]}"; do
     fi
 done
 
-# Make scripts executable
-chmod +x "$TARGET_DIR/.ralph/launch-build.sh" 2>/dev/null || true
-
 echo ""
 echo -e "${GREEN}Installation complete!${NC}"
 echo ""
@@ -107,8 +87,5 @@ echo ""
 echo "Workflow:"
 echo "  1. Invoke /ralph-orchestrator to start planning"
 echo "  2. Complete discovery, planning, and task generation"
-echo "  3. Execution launches automatically in tmux cockpit"
-echo ""
-echo "Cockpit:"
-echo "  bash .ralph/launch-build.sh    # Manual launch (if needed)"
+echo "  3. Execution launches automatically via Agent Teams"
 echo ""

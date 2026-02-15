@@ -604,7 +604,7 @@ Which approach?
 **Incorrect Response (Baseline)**:
 ```
 Execution failed. Let me restart it.
-[Reruns `bash .ralph/launch-build.sh` with same plan]
+[Spawns new teammates with same plan without diagnosing failure]
 ```
 
 **Correct Response**:
@@ -748,5 +748,5 @@ If pressure tests pass but production behavior differs:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-11*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-15*
+*Compliant with Agent Teams architecture (RFC 2119)*

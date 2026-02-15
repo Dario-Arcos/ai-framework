@@ -185,5 +185,5 @@ If custom loop runs indefinitely:
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-11*
-*Compliant with strands-agents SOP format (RFC 2119)*
+*Version: 2.0.0 | Updated: 2026-02-15*
+*Compliant with Agent Teams architecture (RFC 2119)*
