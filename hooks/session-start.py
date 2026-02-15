@@ -31,11 +31,7 @@ CRITICAL_GITIGNORE_RULES = [
     "/CLAUDE.md",
     "/hooks/*.db",
     "/hooks/__pycache__/",
-    "/.ralph/failures.json",
-    "/.ralph/metrics.json",
-    "/.ralph/ABORT",
-    "/.ralph/handoff-*.md",
-    "/.ralph/logs/",
+    "/.ralph/",
 ]
 
 
