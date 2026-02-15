@@ -15,8 +15,14 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 - **documentation_dir** (optional, default: `.ralph/specs/{goal}/implementation/{task_name}`)
 - **task_name** (optional, auto-generated): Short descriptive name
 
-**Constraints:**
-- You MUST request all required parameters upfront in a single prompt
+**Constraints for parameter acquisition:**
+- You MUST request all required parameters upfront in a single prompt because repeated interruptions degrade the workflow
+- You MUST support multiple input methods for task_description:
+  - Direct text input
+  - File path to a `.code-task.md` file
+  - URL to a task description
+- You MUST use appropriate tools to access content based on the input method
+- You MUST confirm successful acquisition of all parameters before proceeding
 
 ## Mode Behavior
 
@@ -31,7 +37,7 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 - Execute without user confirmation
 - Document decisions in `.ralph/guardrails.md`
 - If blocked: document in blockers.md, exit cleanly
-- You MUST NOT use AskUserQuestion
+- You MUST NOT use AskUserQuestion because autonomous mode must never block for input — blockers go to blockers.md
 </mode_autonomous>
 
 ## Steps
@@ -100,8 +106,8 @@ Implement using the scenario-driven-development skill.
 - After all tests pass, run quality validation
 
 #### Anti-Reward-Hacking Constraint
-- NEVER modify existing tests to make them pass new code
-- NEVER weaken acceptance criteria to match implementation limitations
+- NEVER modify existing tests to make them pass new code because scenarios are holdout sets — modifying them to match code is reward hacking
+- NEVER weaken acceptance criteria to match implementation limitations because criteria define user intent, not implementation convenience
 - Scenarios are holdout sets: code must converge toward them, not the reverse
 - If a scenario cannot be satisfied, escalate as blocker — do not adjust the scenario
 
@@ -156,7 +162,7 @@ Finalize and commit changes.
 - Emit confession markers (autonomous mode)
 
 **Constraints:**
-- You MUST NOT push to remote
+- You MUST NOT push to remote because this could publish unreviewed code to shared repositories
 - You MUST complete the verification-before-completion gate before commit
 - Evidence format: `[Claim]: \`[command]\` → [output]`
 

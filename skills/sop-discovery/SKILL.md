@@ -96,8 +96,8 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 - You MUST confirm the extracted goal with user before proceeding
 
 **You MUST NOT:**
-- Skip context gathering even if the goal seems simple
-- Make assumptions about the existing codebase without verification
+- Skip context gathering even if the goal seems simple because missing context surfaces as wrong assumptions during planning
+- Make assumptions about the existing codebase without verification because unverified assumptions produce specs that conflict with reality
 
 ### Step 2: Initial Process Planning [INTERACTIVE ONLY]
 
@@ -110,7 +110,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Constraints:**
 - You MUST ask the user which option they prefer
 - You MUST wait for explicit user selection before proceeding
-- You MUST NOT assume a default without user confirmation
+- You MUST NOT assume a default without user confirmation because user preferences shape the entire exploration approach
 - You MAY explain trade-offs: "Option A works better when the goal is unclear. Option B works better when you have domain knowledge to share."
 
 **Verification**: User has explicitly chosen Option A or B.
@@ -138,7 +138,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- Skip any of these questions
+- Skip any of these questions because each question category captures constraints that later phases depend on
 
 ### Step 4: Constraints Identification
 
@@ -162,7 +162,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **Questioning Discipline:** Follow [references/questioning-protocol.md](references/questioning-protocol.md).
 
 **You MUST NOT:**
-- Make assumptions about constraints
+- Make assumptions about constraints because assumed constraints may be wrong and distort the solution space
 
 ### Step 5: Risk Analysis
 
@@ -275,7 +275,7 @@ Once the discovery document is complete, you **SHOULD** suggest one of the follo
 3. **Refine Scope** - If constraints or risks suggest the goal is too large, work with the user to decompose it
 
 **You MUST NOT:**
-- Jump directly to implementation without planning
+- Jump directly to implementation without planning because unplanned implementation lacks the risk analysis and scope alignment that prevent waste
 - Proceed without user confirmation on next steps [INTERACTIVE ONLY]
 
 **Autonomous mode behavior:**

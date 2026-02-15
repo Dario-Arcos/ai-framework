@@ -31,7 +31,7 @@ Code is opaque weights. You validate through externally observable behavior, not
 - Execute all gates without user interaction
 - Write review to disk — never use AskUserQuestion
 - Document blockers in `.ralph/reviews/task-{task_id}-blockers.md` if unable to complete
-- You MUST NOT use AskUserQuestion in autonomous mode
+- You MUST NOT use AskUserQuestion in autonomous mode because autonomous reviewers report findings to disk and lead, never to the user
 </mode_autonomous>
 
 ## Steps
@@ -79,8 +79,8 @@ Map every acceptance criterion from `.code-task.md` to a verifiable scenario.
 **Constraints:**
 - You MUST extract ALL acceptance criteria from the task file before evaluating
 - You MUST report FAIL if ANY criterion has no corresponding scenario — uncovered criteria = untested behavior
-- You MUST NOT proceed to Step 4 if this gate fails
-- You MUST NOT count a scenario as covering a criterion if it only tests a trivial case (single input, no edge variation)
+- You MUST NOT proceed to Step 4 if this gate fails because uncovered criteria represent untested behavior that invalidates the review
+- You MUST NOT count a scenario as covering a criterion if it only tests a trivial case (single input, no edge variation) because single-input coverage can be satisfied by hardcoded return values
 
 ### 4. Behavioral Satisfaction
 
@@ -124,7 +124,7 @@ Detect patterns that game the validation system. Any finding here is automatic F
 
 **Constraints:**
 - You MUST report FAIL if ANY pattern is detected
-- You MUST NOT downgrade reward hacking findings to Suggestion level
+- You MUST NOT downgrade reward hacking findings to Suggestion level because reward hacking undermines the entire validation system — it is always Critical
 - You SHOULD check git history timestamps for scenario vs. code ordering
 
 ### 6. Write Review
@@ -177,6 +177,69 @@ Output structured review to disk.
 
 - `.ralph/reviews/task-{task_id}-review.md` — full review
 - SendMessage to lead: 8-word summary (e.g., "Task 3: PASS, SDD compliant, 4/4 satisfied")
+
+## Examples
+
+### Example: PASS Review
+
+**Input:**
+```text
+task_id="01" task_file=".ralph/specs/auth/implementation/step01/task-01-setup.code-task.md"
+```
+
+**Expected output in `.ralph/reviews/task-01-review.md`:**
+```markdown
+# Review: Task 01
+
+## Verdict: PASS
+
+## SDD Compliance: PASS
+Scenario commit (abc1234) predates implementation commit (def5678). Scenarios describe user stories with concrete values.
+
+## Acceptance Criteria Coverage: PASS
+| Criterion | Scenario | Covered? |
+|-----------|----------|----------|
+| Auth endpoint returns 200 on valid credentials | test_valid_login | Yes |
+| Auth endpoint returns 401 on invalid password | test_invalid_password | Yes |
+| Token expires after configured TTL | test_token_expiry | Yes |
+
+## Behavioral Satisfaction: [3/3 satisfied]
+All scenarios converge across multiple input variations.
+
+## Reward Hacking: CLEAN
+No patterns detected.
+
+## Findings
+### Critical
+None
+### Important
+None
+### Suggestions
+- Consider adding rate-limiting scenario for brute-force protection
+
+## Summary
+Task 01: PASS, SDD compliant, 3/3 satisfied
+```
+
+### Example: FAIL Review (reward hacking detected)
+
+**Scenario:** Implementer modified an existing test to match new behavior.
+
+**Expected verdict:** FAIL — reward hacking pattern #1 (scenario rewriting).
+
+## Troubleshooting
+
+### Problem: Git history doesn't show scenario-before-code ordering
+**Cause**: Implementer committed scenarios and code in the same commit
+**Solution**: Check if scenario text in the commit describes user intent (not implementation). Same-commit is acceptable if scenario content is specification-style, not code-first.
+
+### Problem: Acceptance criteria in task file are vague
+**Cause**: Task generator produced criteria without concrete Given-When-Then values
+**Solution**: Report as Important finding. Note which criteria lack specificity. Do NOT fail the review solely for vague criteria — the implementation may still satisfy user intent.
+
+### Problem: Test code uses mocks extensively
+**Cause**: Integration testing was infeasible for the task scope
+**Solution**: Evaluate whether mocked behavior is realistic. If mocks return hardcoded values that any implementation could satisfy, report as reward hacking risk (trivial satisfaction).
 
 ## Ralph Integration
 

@@ -34,11 +34,21 @@ Transforms rough ideas into detailed, implementation-ready designs through struc
   - `interactive`: Ask user questions, wait for confirmations
   - `autonomous`: Document decisions, never block for input
 
+**Constraints for parameter acquisition:**
+- You MUST ask for all required parameters upfront in a single prompt because repeated interruptions degrade the workflow
+- You MUST support multiple input methods for rough_idea:
+  - Direct text input
+  - File path to an existing document
+  - URL to a resource
+- You MUST use appropriate tools to access content based on the input method
+- You MUST confirm successful acquisition of all parameters before proceeding
+- You SHOULD save the acquired rough idea to `{project_dir}/rough-idea.md` for use in subsequent steps
+
 ### Existing Data Protection
 
 **You MUST NOT:**
-- Overwrite an existing project directory without explicit user confirmation (interactive mode)
-- Proceed if the default project directory contains files (interactive mode)
+- Overwrite an existing project directory without explicit user confirmation (interactive mode) because this could destroy previous planning work
+- Proceed if the default project directory contains files (interactive mode) because overwriting would lose existing artifacts
 
 **You MUST:**
 - Check if `{project_dir}` exists before creating it
@@ -132,7 +142,7 @@ Present options to user:
 **Constraints:**
 - In interactive mode: Present both options, wait for explicit user choice
 - In autonomous mode: Choose Option A (requirements first) by default, document choice
-- You MUST NOT assume user preference in interactive mode
+- You MUST NOT assume user preference in interactive mode because users need to make informed choices between exploration paths
 
 **Verification**: User has explicitly chosen Option A or B (interactive) or choice documented (autonomous).
 
@@ -162,7 +172,7 @@ Present options to user:
 **Constraints:**
 - In interactive mode: Ask ONE question at a time, wait for user response
 - In autonomous mode: Generate comprehensive Q&A pairs based on rough idea, document assumptions
-- You MUST NOT pre-populate answers or assume user intent in interactive mode
+- You MUST NOT pre-populate answers or assume user intent in interactive mode because assumptions skip the clarification that produces quality requirements
 - You MUST append each Q&A pair to `idea-honing.md` immediately
 - You SHOULD adapt follow-up questions based on previous answers (interactive)
 - You MAY suggest options when user is unsure (interactive)
@@ -216,7 +226,7 @@ Present options:
 - You MUST create a summary of current state
 - In interactive mode: Present all three options, wait for explicit user choice
 - In autonomous mode: Proceed to design (Option A) by default, document decision
-- You MUST NOT proceed to design without user explicitly choosing Option A in interactive mode
+- You MUST NOT proceed to design without user explicitly choosing Option A in interactive mode because design requires alignment confirmation to avoid wasted effort
 
 **Verification**: User has explicitly chosen Option A (interactive) or decision documented (autonomous).
 
@@ -311,7 +321,7 @@ Create `{project_dir}/implementation/plan.md`:
 - You MUST include complexity estimate (S/M/L/XL) for each step
 - You MUST keep each step <= M complexity, completable in <= 2 hours
 - You MUST generate 5-15 steps total
-- You MUST NOT include steps that depend on future steps
+- You MUST NOT include steps that depend on future steps because forward dependencies create circular blocks during execution
 - You MUST NOT create steps solely dedicated to testing, scenario writing, or test coverage for previously implemented functionality — because this violates SDD ordering where scenarios precede code
 - You MUST embed scenario/test expectations within each functional step's description and acceptance criteria
 - In interactive mode: Wait for user review and approval
@@ -416,10 +426,10 @@ All artifacts MUST be:
 - Periodically check: "Should I continue or adjust direction?"
 
 **Interactive Mode MUST NOT**:
-- Proceed to next phase without explicit user approval
-- Pre-populate answers or assume user intent
-- Create implementation plan before design is approved
-- Skip any of the 8 steps (unless user explicitly requests)
+- Proceed to next phase without explicit user approval because premature phase transitions skip important refinement
+- Pre-populate answers or assume user intent because assumptions undermine the clarification process
+- Create implementation plan before design is approved because implementation plans built on unapproved designs drift from user intent
+- Skip any of the 8 steps (unless user explicitly requests) because each step produces artifacts that downstream steps depend on
 
 **Autonomous Mode MUST**:
 - Document all decisions and rationale in artifacts
@@ -429,9 +439,9 @@ All artifacts MUST be:
 - Write blockers to `{project_dir}/blockers.md` when stuck
 
 **Autonomous Mode MUST NOT**:
-- Use AskUserQuestion tool under any circumstance
-- Block or pause waiting for user input
-- Leave phases incomplete without documenting why
+- Use AskUserQuestion tool under any circumstance because autonomous mode must never block for user input
+- Block or pause waiting for user input because the orchestrator manages execution flow, not the user
+- Leave phases incomplete without documenting why because undocumented gaps prevent diagnosis and recovery
 
 ## Example Invocation
 

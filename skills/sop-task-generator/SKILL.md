@@ -36,6 +36,16 @@ This skill creates well-formed implementation tasks that can be executed by sop-
   - `interactive`: Ask user questions, wait for approvals
   - `autonomous`: Generate tasks without interaction, document decisions
 
+**Constraints for parameter acquisition:**
+- You MUST ask for all required parameters upfront in a single prompt because repeated interruptions degrade the workflow
+- You MUST support multiple input methods for input:
+  - Direct text description
+  - File path to a design document or PDD plan
+  - Directory path (will look for plan.md within it)
+  - URL to internal documentation
+- You MUST use appropriate tools to access content based on the input method
+- You MUST confirm successful acquisition of all parameters before proceeding
+
 ## Mode Behavior
 
 ### Interactive Mode (default)
@@ -71,7 +81,7 @@ This skill creates well-formed implementation tasks that can be executed by sop-
 **Constraints:**
 - In interactive mode: Inform user of detected mode, wait for acknowledgment
 - In autonomous mode: Log detected mode, proceed immediately
-- You MUST NOT proceed without acknowledgment in interactive mode
+- You MUST NOT proceed without acknowledgment in interactive mode because generating tasks without user buy-in leads to rework
 
 **Example output:**
 ```text
@@ -167,7 +177,7 @@ Action: Will generate 5 task files (one per step)
 **Constraints:**
 - In interactive mode: Present breakdown, wait for explicit approval
 - In autonomous mode: Log breakdown, proceed to generation immediately
-- You MUST NOT generate files before user approval in interactive mode
+- You MUST NOT generate files before user approval in interactive mode because premature generation wastes effort if the breakdown is wrong
 
 ### Step 5: Validate Task Atomicity
 
@@ -198,7 +208,7 @@ Each task MUST fit within one sub-agent context window. Validate before generati
 **Constraints:**
 - In **interactive mode**: Present validation results, ask user to approve splits.
 - In **autonomous mode**: Apply splits automatically, document rationale in task description.
-- You MUST NOT skip atomicity validation
+- You MUST NOT skip atomicity validation because oversized tasks degrade sub-agent quality within context limits
 
 ### Task File Generation Requirements (PDD Mode)
 
@@ -225,10 +235,10 @@ Plan has 3 steps → Generate 3 task files (step01, step02, step03)
 - [ ] Task numbering matches step numbering
 
 **You MUST NOT:**
-- Create only the first task and leave others for later
-- Generate tasks ad-hoc during execution
-- Skip steps that seem "simple"
-- Ask which step to process (process ALL of them)
+- Create only the first task and leave others for later because incomplete task sets create ad-hoc generation during execution
+- Generate tasks ad-hoc during execution because runtime generation produces inconsistent scope and ordering
+- Skip steps that seem "simple" because perceived simplicity often hides integration requirements
+- Ask which step to process (process ALL of them) because selective processing leaves gaps in the dependency graph
 
 ### Step 6: Generate Tasks
 
@@ -366,8 +376,8 @@ Generates:
 ```
 
 **You MUST NOT:**
-- Leave Blocked-By empty when Dependencies exist in plan.md
-- Use step numbers without the full file path
+- Leave Blocked-By empty when Dependencies exist in plan.md because missing blockers allow tasks to execute before their prerequisites complete
+- Use step numbers without the full file path because the orchestrator resolves dependencies by file path, not step number
 
 **Quality Requirements:**
 - Status: Always starts as `PENDING`
@@ -385,7 +395,7 @@ Generates:
 **Constraints:**
 - You MUST follow the exact task file format
 - You MUST include all required sections (Description, Background, Reference Documentation, etc.)
-- You MUST NOT place tasks in wrong directory structure
+- You MUST NOT place tasks in wrong directory structure because the orchestrator and hooks expect tasks at specific paths
 
 ### Step 7: Report Results
 

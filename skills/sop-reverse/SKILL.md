@@ -144,7 +144,7 @@ You MUST analyze the target to determine its type. You MUST present determinatio
 - You MUST confirm type with user in interactive mode
 - You MUST wait for explicit confirmation before proceeding in interactive mode
 - You MUST auto-detect type and log determination in autonomous mode
-- You MUST NOT proceed without confirmation in interactive mode
+- You MUST NOT proceed without confirmation in interactive mode because type misclassification corrupts all downstream analysis
 - You SHOULD present multiple candidate types when confidence is low
 
 See [references/artifact-types.md](references/artifact-types.md) for type detection criteria.
@@ -172,7 +172,7 @@ You MUST present findings summary before asking questions. You MUST ask clarifyi
 - You MUST wait for user response before asking next question
 - You MUST skip interactive refinement in autonomous mode
 - You MUST document deferred questions under "## Deferred Questions" in autonomous mode
-- You MUST NOT batch questions in interactive mode
+- You MUST NOT batch questions in interactive mode because batched questions produce shallow, incomplete responses
 - You SHOULD prioritize questions by impact on spec quality
 
 See [references/investigation-patterns.md](references/investigation-patterns.md) for question guidelines.
@@ -196,8 +196,8 @@ You MUST generate `recommendations.md` with improvements, risks, migration paths
 
 **Constraints:**
 - You MUST ask user if they want to continue to sop-planning in interactive mode
-- You MUST NOT auto-invoke sop-planning in autonomous mode
-- You MUST NOT auto-invoke sop-planning without user permission in interactive mode
+- You MUST NOT auto-invoke sop-planning in autonomous mode because the caller controls workflow transitions, not the skill
+- You MUST NOT auto-invoke sop-planning without user permission in interactive mode because users need to review findings before committing to planning
 - You MUST prioritize recommendations by ROI
 - You SHOULD include effort estimates for recommendations
 
