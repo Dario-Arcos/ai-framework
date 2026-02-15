@@ -87,7 +87,7 @@ You MUST clarify what concept, domain, or capability the user wants referents fo
 **Sources for referent identification:**
 - User-provided URLs or project names
 - Context7 documentation for framework-specific patterns
-- agent-browser for current state-of-the-art implementations
+- agent-browser skill for current state-of-the-art implementations — you MUST use agent-browser for ALL web research (never WebSearch/WebFetch directly, they are too shallow for real investigation)
 - Known exemplar projects in the domain
 
 ### Step R2: Analyze Each Referent

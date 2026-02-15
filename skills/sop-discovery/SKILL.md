@@ -220,6 +220,7 @@ If called from ralph-orchestrator context (detected by presence of `.ralph/` dir
 **You SHOULD:**
 - Search the codebase for relevant patterns if the user seems unsure
 - Reference specific files or commits as examples
+- Use agent-browser skill for ALL web research (never WebSearch/WebFetch directly — they are too shallow for real investigation)
 
 ### Step 7: Generate Discovery Summary
 

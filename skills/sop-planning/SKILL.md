@@ -199,6 +199,7 @@ Present options to user:
 - You MUST include specific examples, not generic descriptions
 - You MUST compare 2-3 options when multiple approaches exist
 - You MUST make recommendation with justification
+- You MUST use agent-browser skill for ALL web research (never WebSearch/WebFetch directly — they are too shallow for real investigation)
 - In interactive mode: Ask user to confirm research direction after 2-3 files
 - In autonomous mode: Complete all proposed research topics, document rationale for recommendations
 
