@@ -2,9 +2,9 @@
 """Rules staleness detector — nudges /project-init and /scenario-driven-development.
 
 Runs on SessionStart. Performance-critical path:
-  Happy path (no mtime changes): only os.stat() calls — same as before.
+  Every session: os.stat() calls + 1 file read (~200 bytes checksums cache).
   Mtime changed: content-hash verification eliminates false positives (~1ms extra).
-  Baseline (first run / post project-init): K manifest reads (K typically 1-3).
+  Post project-init: K manifest reads to re-baseline (K typically 1-3).
 Expected execution: <200ms in all paths.
 """
 import hashlib
@@ -39,7 +39,7 @@ TEST_INDICATORS = [
     "playwright.config.ts", "playwright.config.js",
 ]
 
-RULES_SENTINEL = os.path.join(".claude", "rules", "project.md")
+RULES_DIR = os.path.join(".claude", "rules")
 CHECKSUMS_PATH = os.path.join(".claude", "rules", ".manifest-checksums")
 STALENESS_DAYS = 30
 
@@ -52,10 +52,10 @@ def main():
         pass
 
     cwd = os.getcwd()
-    sentinel = os.path.join(cwd, RULES_SENTINEL)
+    rules_mtime = _rules_mtime(cwd)
 
     # Level 1: No project memory — nothing else matters
-    if not os.path.exists(sentinel):
+    if rules_mtime is None:
         emit(
             "No project memory (.claude/rules/) found. "
             "Before responding to any task, ask the user if they want to run "
@@ -63,7 +63,10 @@ def main():
         )
         return
 
-    rules_mtime = os.path.getmtime(sentinel)
+    # Eager baseline: capture manifest hashes at project-init time.
+    # Cost: 1 file read (~200 bytes) to check; re-hashes only after project-init.
+    _ensure_baseline(cwd, rules_mtime)
+
     messages = []
 
     # Level 2: Manifests changed after last generation (content-verified)
@@ -119,8 +122,8 @@ def _check_manifest_staleness(cwd, rules_mtime):
     if not mtime_candidates:
         return [], has_manifest
 
-    # Phase 2: verify candidates against stored content hashes
-    checksums = _load_or_baseline(cwd, rules_mtime)
+    # Phase 2: verify candidates against baseline hashes (guaranteed fresh by _ensure_baseline)
+    checksums = _load_checksums(cwd)
 
     changed = []
     for name in mtime_candidates:
@@ -132,11 +135,12 @@ def _check_manifest_staleness(cwd, rules_mtime):
     return changed, has_manifest
 
 
-def _load_or_baseline(cwd, rules_mtime):
-    """Load checksums cache. Re-baselines when sentinel mtime changes (project-init ran).
+def _ensure_baseline(cwd, rules_mtime):
+    """Ensure checksums reflect the current project-init epoch.
 
-    Baseline cost: K file reads where K = number of existing manifests (typically 1-3).
-    Cache hit cost: 1 file read (~200 bytes JSON).
+    Called every session. Cost: 1 file read (~200 bytes) to check.
+    Re-hashes manifests only when sentinel mtime changed (project-init ran) or
+    checksums file is missing/corrupt — typically once per project-init.
     """
     checksums_path = os.path.join(cwd, CHECKSUMS_PATH)
 
@@ -144,11 +148,11 @@ def _load_or_baseline(cwd, rules_mtime):
         with open(checksums_path, "r") as f:
             checksums = json.load(f)
         if checksums.get("_sentinel_mtime") == rules_mtime:
-            return checksums
+            return  # Already baselined for this epoch
     except (OSError, json.JSONDecodeError, ValueError):
         pass
 
-    # Re-baseline: sentinel changed or no/corrupt checksums file
+    # Re-baseline: hash all existing manifests
     checksums = {"_sentinel_mtime": rules_mtime}
     for name in MANIFESTS:
         path = os.path.join(cwd, name)
@@ -162,7 +166,15 @@ def _load_or_baseline(cwd, rules_mtime):
     except OSError:
         pass  # Non-fatal: next session re-baselines
 
-    return checksums
+
+def _load_checksums(cwd):
+    """Load baseline checksums. Returns empty dict if unavailable."""
+    checksums_path = os.path.join(cwd, CHECKSUMS_PATH)
+    try:
+        with open(checksums_path, "r") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
 
 
 def _hash_file(path):
@@ -172,6 +184,30 @@ def _hash_file(path):
             return hashlib.md5(f.read()).hexdigest()
     except OSError:
         return None
+
+
+def _rules_mtime(cwd):
+    """Most recent mtime across all .md files in .claude/rules/.
+
+    Returns None if no rules exist (Level 1 trigger). Cost: 1 listdir + N stat().
+    """
+    rules_dir = os.path.join(cwd, RULES_DIR)
+    try:
+        entries = os.listdir(rules_dir)
+    except OSError:
+        return None
+
+    latest = 0.0
+    for entry in entries:
+        if entry.endswith(".md"):
+            try:
+                mt = os.path.getmtime(os.path.join(rules_dir, entry))
+                if mt > latest:
+                    latest = mt
+            except OSError:
+                continue
+
+    return latest if latest > 0 else None
 
 
 def _age_days(mtime):
