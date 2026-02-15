@@ -7,29 +7,18 @@ set -u
 
 SOUNDS_DIR="/System/Library/Sounds"
 
-# macOS only - exit silently on other platforms
-[[ "$(uname -s)" != "Darwin" ]] && exit 0
+[[ "$OSTYPE" != darwin* ]] && exit 0
 
-# Read JSON input from stdin with timeout protection
 INPUT=""
-if read -r -t 2 -d '' INPUT; then
-  : # Successfully read
-elif [[ -n "$INPUT" ]]; then
-  : # Partial read is OK
-fi
+read -r -t 2 -d '' INPUT || true
+[[ -z "$INPUT" ]] && exit 0
 
-# Early exit if no input
-if [[ -z "$INPUT" ]]; then
-  exit 0
-fi
-
-# Parse JSON fields via Python (secure, no injection risk)
+# Python for secure JSON parsing (no injection risk via eval/jq alternatives)
 IFS='|' read -r EVENT NOTIFICATION_TYPE CWD TITLE MESSAGE STOP_HOOK_ACTIVE < <(
   printf '%s' "$INPUT" | python3 -c '
 import sys, json
 
 def sanitize(value):
-    """Sanitize value for pipe-delimited output."""
     if value is None:
         return ""
     return str(value).replace("|", " ").replace("\n", " ").replace("\r", " ")
@@ -52,33 +41,29 @@ except Exception:
   exit 0
 }
 
-# Project name from cwd
 PROJECT="Claude Code"
 if [[ -n "$CWD" ]]; then
   PROJECT=$(basename "$CWD" 2>/dev/null) || PROJECT="Claude Code"
 fi
 
-# Prevent infinite loops in Stop hooks
+# Prevent infinite loops: Stop hook fires notify → notify fires Stop → ...
 if [[ "$EVENT" == "Stop" && "$STOP_HOOK_ACTIVE" == "true" ]]; then
   exit 0
 fi
 
-# Select sound and content by event type
-# Sounds chosen for friendliness: subtle enough to help, not to annoy
 SOUND="Tink"
 case "$EVENT" in
   Stop)
     TITLE="$PROJECT"
     MESSAGE="Tarea completada"
-    SOUND="Tink"     # Delicate tap: "I'm done"
     ;;
   Notification)
     TITLE="${TITLE:-$PROJECT}"
     MESSAGE="${MESSAGE:-Notificacion}"
     case "$NOTIFICATION_TYPE" in
-      permission_prompt|elicitation_dialog) SOUND="Funk" ;; # Muted note: "come back"
-      idle_prompt)                          SOUND="Purr" ;; # Softest: gentle nudge
-      auth_success)                         SOUND="Pop"  ;; # Quick bubble: confirmation
+      permission_prompt|elicitation_dialog) SOUND="Funk" ;; # needs attention
+      idle_prompt)                          SOUND="Purr" ;; # gentle nudge
+      auth_success)                         SOUND="Pop"  ;; # confirmation
       *)                                    SOUND="Tink" ;;
     esac
     ;;
@@ -87,23 +72,17 @@ case "$EVENT" in
     ;;
 esac
 
-# Validate content
-if [[ -z "$TITLE" || -z "$MESSAGE" ]]; then
-  exit 0
-fi
+[[ -z "$TITLE" || -z "$MESSAGE" ]] && exit 0
 
-# Truncate for display
 TITLE="${TITLE:0:50}"
 MESSAGE="${MESSAGE:0:200}"
 
-# --- SOUND: afplay (guaranteed, bypasses Notification Center) ---
 SOUND_FILE="$SOUNDS_DIR/$SOUND.aiff"
 if [[ -f "$SOUND_FILE" ]]; then
   afplay "$SOUND_FILE" &
   disown
 fi
 
-# --- VISUAL: osascript (best-effort, works if Script Editor has permissions) ---
 escape_applescript() {
   local str="$1"
   str="${str//\\/\\\\}"

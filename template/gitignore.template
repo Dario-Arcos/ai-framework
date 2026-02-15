@@ -3,6 +3,7 @@
 
 /.claude/*
 !/.claude/rules/
+/.claude/rules/.manifest-checksums
 /CLAUDE.md
 /hooks/*.db
 /hooks/__pycache__/
