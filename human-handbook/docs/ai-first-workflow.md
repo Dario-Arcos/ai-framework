@@ -193,6 +193,28 @@ if (count >= planLimits[plan]) {          // [!code ++]
 - Un cambio pequeño a la vez
 - Si algo rompe → undo inmediatamente
 
+### Enforcement automático <Badge type="warning" text="invisible" />
+
+Dos hooks operan en background durante toda implementación — no requieren configuración ni invocación manual:
+
+| Hook | Trigger | Qué hace |
+|------|---------|----------|
+| `sdd-test-guard` | **PreToolUse** (Edit\|Write) | Si los tests están fallando Y un edit reduce el número de assertions → **deniega el edit**. Previene que Claude debilite tests para que pasen en vez de arreglar el código. |
+| `sdd-auto-test` | **PostToolUse** (Edit\|Write) | Después de cada edit a código fuente, lanza tests en background (~10ms de bloqueo). Los resultados se reportan en el siguiente edit — loop continuo de feedback. |
+
+**`sdd-test-guard`** implementa la ley de hierro: "Not M/M → fix code, never weaken scenarios." Su matriz de decisión:
+
+| Tests | Edit | Resultado |
+|-------|------|-----------|
+| Passing + cualquier cambio | → ALLOW | Refactoring legítimo |
+| Failing + assertions ≥ | → ALLOW | Fix o test nuevo |
+| Failing + assertions < | → **DENY** | Reward hacking detectado |
+| Sin estado + cualquier cambio | → ALLOW | Sin datos = sin bloqueo |
+
+**`sdd-auto-test`** cierra el loop de SDD: cada cambio al código fuente dispara tests automáticamente. No necesitas recordar correr tests — el hook lo hace por ti y reporta resultados en el contexto del siguiente edit.
+
+Ambos hooks comparten estado via archivos temporales y son invisibles en operación normal. Solo se manifiestan cuando detectan reward hacking (guard) o cuando reportan resultados (auto-test).
+
 ::: details SDD vs TDD
 | | Scenario (SDD) | Test (TDD) |
 |---|---|---|

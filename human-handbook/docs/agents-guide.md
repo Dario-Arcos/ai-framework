@@ -13,7 +13,7 @@ Los agentes son módulos especializados que Claude activa automáticamente cuand
 | `code-reviewer` | Review contra plan y standards | Después de completar un step del plan |
 | `code-simplifier` | Simplifica código reciente | Automático después de escribir código |
 | `edge-case-detector` | Detecta edge cases de producción | Antes de merge, código crítico |
-| `performance-engineer` | Optimización y observabilidad | Problemas de rendimiento, monitoring |
+| `performance-engineer` | Análisis de rendimiento en código | Código con queries, procesamiento de datos, endpoints |
 | `security-reviewer` | Security review del branch | Antes de merge, PRs |
 | `systematic-debugger` | Debugging metódico en 4 fases | Cualquier bug, test failure |
 
@@ -136,15 +136,22 @@ Debugging metódico usando el skill `systematic-debugging`.
 
 ### performance-engineer
 
-Optimización de rendimiento y observabilidad.
+Análisis estático de rendimiento en código modificado. Identifica patrones que funcionan en desarrollo pero degradan en producción.
 
-**Cuándo se activa:** Performance issues, setup monitoring, optimización.
+**Cuándo se activa:** Código con queries a BD, procesamiento de datos, endpoints de API, o cuando se detectan patrones de rendimiento sospechosos.
 
-**Capacidades:**
-- **Observability:** OpenTelemetry, DataDog, Prometheus/Grafana, RUM
-- **Profiling:** CPU (flame graphs), memory (heap, GC), I/O, language-specific
-- **Load testing:** k6, JMeter, Gatling, stress testing
-- **Core Web Vitals:** LCP, FID, CLS optimization
+**Qué analiza:**
+
+| Categoría | Patrones | Ejemplo |
+|-----------|----------|---------|
+| Query inefficiency | N+1, unbounded loading, over-fetching, missing batch | Loop con query ORM dentro |
+| Algorithmic complexity | Quadratic loops, repeated linear search, redundant computation | `Array.find()` dentro de loop |
+| I/O bottlenecks | Sync blocking en async, sequential→parallel, missing timeouts | `await` secuencial de calls independientes |
+| Resource exhaustion | Unbounded queues, connection leaks, missing backpressure | Connection sin close en error path |
+
+**Threshold:** Solo reporta issues con confidence ≥0.8. No reporta micro-optimizaciones ni código en tests.
+
+**Tools:** Read, Grep, Glob, Task — análisis estático de código, no infraestructura ni herramientas externas.
 
 ---
 

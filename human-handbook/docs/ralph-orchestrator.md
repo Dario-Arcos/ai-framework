@@ -4,9 +4,7 @@ outline: [2, 3]
 
 # Ralph Orchestrator
 
-Desarrollo autónomo sin degradación.
-
-Ralph orquesta agentes autónomos que planifican, implementan, y revisan tu feature task por task — con la misma precisión en la primera y en la última.
+Construye features complejas de forma autónoma. Planteas el resultado, confirmas la ruta, y Ralph entrega un resultado production-ready.
 
 ---
 
@@ -88,7 +86,9 @@ flowchart LR
     style C fill:#D1FAE5,stroke:#059669,color:#065F46
 ```
 
-Dos filtros por task. Los quality gates (test, lint, typecheck, build) corren automáticamente — si fallan, el implementer vuelve a intentar. Si pasan, un reviewer valida que los scenarios se definieron antes del código y que nadie reescribió tests para que pasen.
+**Pipeline parallelism:** Tasks independientes (sin relación `Blocked-By`) se ejecutan en paralelo — hasta 3 teammates concurrentes. Tasks dependientes esperan a que la anterior pase review antes de arrancar. Ralph calcula el grafo de dependencias y maximiza overlap sin comprometer orden.
+
+Dos filtros por task. Los quality gates (test, lint, typecheck, build, integration, e2e) corren automáticamente — si fallan, el implementer vuelve a intentar. Si pasan, un reviewer valida que los scenarios se definieron antes del código y que nadie reescribió tests para que pasen.
 
 ---
 
@@ -96,7 +96,7 @@ Dos filtros por task. Los quality gates (test, lint, typecheck, build) corren au
 
 **Contexto limpio por task.** La diferencia entre el teammate 1 y el teammate 7 es cero. Ambos arrancan con contexto vacío para una sola task. No hay degradación progresiva — la task 7 se resuelve con la misma calidad que la task 1.
 
-**Gates que no perdonan.** Test, lint, typecheck, build corren via TaskCompleted hook — no via el teammate. No puede skipearlos, mentir sobre ellos, ni commitear sin que pasen.
+**Gates que no perdonan.** Test, lint, typecheck, build, integration y e2e corren via TaskCompleted hook — no via el teammate. No puede skipearlos, mentir sobre ellos, ni commitear sin que pasen.
 
 **Review cruzado.** Si el implementer reescribió un test para que pase en vez de arreglar el código, el reviewer lo detecta y rechaza. No hay atajos.
 
@@ -155,7 +155,7 @@ Da igual qué planning mode elegiste. Ralph presenta el plan completo en plan mo
 | Mecanismo | Protección |
 |-----------|-----------|
 | **Circuit breaker** | 3 fallos consecutivos → teammate se detiene |
-| **Quality gates** | Test, lint, typecheck, build via hook — imposibles de saltar |
+| **Quality gates** | Test, lint, typecheck, build, integration, e2e via hook — imposibles de saltar |
 | **Coverage** | Cobertura mínima configurable (default 90%) |
 | **Checkpoint** | Aprobación humana antes de ejecutar |
 | **Ctrl+C** | Abort manual en cualquier momento (exit 130) |
@@ -169,12 +169,12 @@ Da igual qué planning mode elegiste. Ralph presenta el plan completo en plan mo
 
 Ralph auto-deriva los gates del Technology Stack de tu proyecto. Gate vacío = se salta.
 
-| Stack | Test | Typecheck | Lint | Build |
-|-------|------|-----------|------|-------|
-| Node.js | `npm test` | `npm run typecheck` | `npm run lint` | `npm run build` |
-| Python | `pytest` | `mypy src/` | `ruff check .` | — |
-| Go | `go test ./...` | — | `golangci-lint run` | `go build ./...` |
-| Rust | `cargo test` | — | `cargo clippy` | `cargo build` |
+| Stack | Test | Typecheck | Lint | Build | Integration | E2E |
+|-------|------|-----------|------|-------|-------------|-----|
+| Node.js | `npm test` | `npm run typecheck` | `npm run lint` | `npm run build` | `npm run test:integration` | `npx playwright test` |
+| Python | `pytest` | `mypy src/` | `ruff check .` | — | `pytest -m integration` | `pytest -m e2e` |
+| Go | `go test ./...` | — | `golangci-lint run` | `go build ./...` | `go test -tags=integration ./...` | — |
+| Rust | `cargo test` | — | `cargo clippy` | `cargo build` | — | — |
 
 ### Paralelismo
 
@@ -195,6 +195,8 @@ GATE_TEST="npm test"
 GATE_TYPECHECK="npm run typecheck"
 GATE_LINT="npm run lint"
 GATE_BUILD="npm run build"
+GATE_INTEGRATION=""  # e.g. "npm run test:integration"
+GATE_E2E=""          # e.g. "npx playwright test"
 
 # Safety
 MAX_CONSECUTIVE_FAILURES=3

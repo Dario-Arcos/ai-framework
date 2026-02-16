@@ -231,7 +231,7 @@ cat /tmp/agent-browser-update.log
 
 ## Siguientes pasos
 
-- [Skills Guide](./skills-guide.md) — Los 21 skills del framework
+- [Skills Guide](./skills-guide.md) — Los 24 skills del framework
 - [Agents Guide](./agents-guide.md) — 6 agentes especializados
 - [Integrations](./integrations.md) — Plugins, MCPs y herramientas externas
 

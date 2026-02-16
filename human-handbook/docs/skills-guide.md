@@ -43,7 +43,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `deep-research` | Investigación multi-fuente con verificación y confidence ratings | Investigación compleja |
 | `using-ai-framework` | Enforcement de skills y agentes — inyectado automáticamente | Session start (automático), o manual si falta |
 
-### Pipeline SOP (desarrollo autónomo)
+### Ralph Orchestrator + SOP Skills (desarrollo autónomo)
 
 | Skill | Qué hace | Cuándo se activa |
 |-------|----------|------------------|
@@ -185,7 +185,7 @@ Interfaces web con dirección estética bold. Sin look genérico.
 
 ## humanizer
 
-Elimina 24 patrones de texto AI (Wikipedia's "Signs of AI writing").
+Elimina 28 patrones de texto AI — 24 generales + 4 Spanish-specific (basado en Wikipedia's "Signs of AI writing" y estudios AESLA/RAE).
 
 | Patrón | Ejemplos |
 |--------|----------|
@@ -408,22 +408,9 @@ Usa `agent-browser` para navegación real, no cached data.
 
 ---
 
-## Pipeline SOP
+## Ralph Orchestrator + SOP Skills
 
-Sistema de desarrollo autónomo. Ralph orquesta estos skills en secuencia:
-
-```
-┌─────────────┐     ┌──────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│sop-discovery│ ──▶ │ sop-planning │ ──▶ │sop-task-generator │ ──▶ │ sop-code-assist │
-└─────────────┘     └──────────────┘     └───────────────────┘     └─────────────────┘
-       │                   ▲
-       └───────────────────┤
-                    ┌──────┴──────┐
-                    │ sop-reverse │
-                    └─────────────┘
-```
-
-### ralph-orchestrator
+### ralph-orchestrator <Badge type="tip" text="entry point" />
 
 **Entry point** para desarrollo autónomo. Orquesta el pipeline completo — de la idea al código revisado — usando Agent Teams con contexto fresco de 200K tokens por teammate.
 
@@ -431,82 +418,18 @@ Sistema de desarrollo autónomo. Ralph orquesta estos skills en secuencia:
 
 **En resumen:** planificación en 2 modos (interactive/autonomous), checkpoint obligatorio, ejecución via Agent Teams con quality gates enforced por hooks y reviewer teammate que valida SDD compliance.
 
-::: details Exit codes
-| Código | Significado |
-|--------|-------------|
-| 0 | Completo |
-| 1 | Error validación |
-| 2 | Circuit breaker (3 fallos) |
-| 3 | Max iterations |
-| 130 | Ctrl+C |
-:::
+### SOP Skills
 
----
+Ralph orquesta estos skills en secuencia. Rara vez los invocarás directamente — Ralph los llama por ti.
 
-### sop-discovery
-
-Explora constraints, riesgos y prior art. Metodología Amazon agent-SOP.
-
-**Cuándo:** Proyecto nuevo, requirements poco claros.
-
-**Output:** `discovery.md`
-
----
-
-### sop-reverse
-
-Dos capacidades en un skill:
-
-1. **Referent Discovery** (pre-build): busca implementaciones world-class, extrae patrones, construye sobre fundamentos probados.
-2. **Reverse Engineering** (investigar existente): investiga artifacts existentes (codebases, APIs, procesos) y genera specs estructurados.
-
-**Cuándo:** Antes de construir algo nuevo (referentes), o al heredar codebase, integrar APIs, documentar legacy.
-
-**Output:** `referents/catalog.md`, `extracted-patterns.md`, `investigation.md`, `recommendations.md`
-
----
-
-### sop-planning
-
-Transforma ideas en diseños implementables. Metodología PDD (Prompt-Driven Development).
-
-**Fases:** Requirements → Research → Design → Implementation plan
-
-**Output:** `design/detailed-design.md`, `implementation/plan.md`
-
----
-
-### sop-task-generator
-
-Convierte plans en `.code-task.md` files.
-
-**Output:** Un task file por paso, con acceptance criteria (Given-When-Then).
-
----
-
-### sop-code-assist
-
-Implementa tasks con SDD: SCENARIO → SATISFY → REFACTOR.
-
-**Output:** Código + tests + commits.
-
----
-
-### sop-reviewer
-
-Valida implementaciones completadas contra 5 gates en secuencia:
-
-| Gate | Qué valida | Nivel |
-|------|-----------|-------|
-| 1. SDD Compliance | Scenarios definidos antes del código, end-to-end user stories | BLOCKING |
-| 2. Behavioral Satisfaction | Comportamiento observado satisface intent del usuario | BLOCKING |
-| 3. Reward Hacking Detection | Tests no fueron reescritos para pasar, scenarios no debilitados | BLOCKING |
-| 4. Code Quality | Clean code, no tech debt innecesaria | SUGGESTION |
-| 5. Integration Risk | Impacto en otros tasks, side effects | SUGGESTION |
-
-Los gates BLOCKING detienen la review si fallan. Los SUGGESTION se documentan pero no bloquean.
-
-**Detección de reward hacking:** Si el implementer reescribió un test para que pase en vez de arreglar el código, o debilitó un scenario para satisfacerlo, el reviewer lo detecta y rechaza.
+| Skill | Fase | Qué hace | Output |
+|-------|------|----------|--------|
+| `sop-discovery` | Exploración | Constraints, riesgos, prior art | `discovery.md` |
+| `sop-reverse` | Exploración | Referent discovery + reverse engineering | `referents/catalog.md` |
+| `sop-planning` | Diseño | Requirements → Research → Design | `detailed-design.md`, `plan.md` |
+| `sop-task-generator` | Planificación | Plan → task files con acceptance criteria | `.code-task.md` files |
+| `sop-code-assist` | Ejecución | Implementa con SDD (SCENARIO→SATISFY→REFACTOR) | Código + tests + commits |
+| `sop-reviewer` | Post-ejecución | 5 gates: SDD compliance, reward hacking, quality | Review pass/reject |
 
 ---
 
@@ -559,12 +482,6 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 | 6. REPORT | Reporta [M/N satisfechos] con evidencia |
 
 "Lo corrí antes" no cuenta. "Los tests pasan" sin output no cuenta. Solo evidencia fresca y observable.
-
----
-
-## sop-reviewer
-
-Disponible como skill standalone o invocado automáticamente por reviewer teammates en Ralph. Ver [sección en Pipeline SOP](#sop-reviewer) para detalles de los 5 gates.
 
 ---
 
