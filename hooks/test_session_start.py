@@ -126,52 +126,6 @@ class TestEnsureGitignoreRules(unittest.TestCase):
             self.assertIn(rule, content)
 
 
-class TestReadEnforcementContent(unittest.TestCase):
-    """Test read_enforcement_content() frontmatter stripping."""
-
-    def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
-        self.plugin_root = Path(self.tmpdir)
-        self.skill_dir = self.plugin_root / "skills" / "using-ai-framework"
-        self.skill_dir.mkdir(parents=True)
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir, ignore_errors=True)
-
-    def test_reads_and_strips_frontmatter(self):
-        skill_file = self.skill_dir / "SKILL.md"
-        skill_file.write_text(
-            "---\nname: test\ndescription: test skill\n---\nActual content here",
-            encoding="utf-8",
-        )
-        result = session_start.read_enforcement_content(self.plugin_root)
-        self.assertEqual(result, "Actual content here")
-
-    def test_no_frontmatter(self):
-        skill_file = self.skill_dir / "SKILL.md"
-        skill_file.write_text("Plain content without frontmatter", encoding="utf-8")
-        result = session_start.read_enforcement_content(self.plugin_root)
-        self.assertEqual(result, "Plain content without frontmatter")
-
-    def test_missing_file(self):
-        result = session_start.read_enforcement_content(self.plugin_root / "nonexistent")
-        self.assertEqual(result, "")
-
-
-class TestBuildAdditionalContext(unittest.TestCase):
-    """Test build_additional_context() wrapping logic."""
-
-    def test_wraps_content(self):
-        result = session_start.build_additional_context("Some enforcement rules")
-        self.assertTrue(result.startswith("<EXTREMELY_IMPORTANT>"))
-        self.assertTrue(result.endswith("</EXTREMELY_IMPORTANT>"))
-        self.assertIn("Some enforcement rules", result)
-
-    def test_empty_returns_empty(self):
-        result = session_start.build_additional_context("   \n  ")
-        self.assertEqual(result, "")
-
-
 class TestMain(unittest.TestCase):
     """Test main() entry point with mocked filesystem and I/O."""
 
@@ -184,12 +138,6 @@ class TestMain(unittest.TestCase):
         # Create minimal template structure
         template_dir = self.plugin_root / "template"
         template_dir.mkdir()
-        # Create skill file for enforcement content
-        skill_dir = self.plugin_root / "skills" / "using-ai-framework"
-        skill_dir.mkdir(parents=True)
-        (skill_dir / "SKILL.md").write_text(
-            "---\nname: test\n---\nEnforcement content", encoding="utf-8"
-        )
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -242,10 +190,9 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 0)
         output = json.loads(stdout_capture.getvalue())
-        # Verify enforcement content was picked up (proves plugin root was used)
+        # Verify plugin root was used (no enforcement injection, just success marker)
         ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("EXTREMELY_IMPORTANT", ctx)
-        self.assertIn("Enforcement content", ctx)
+        self.assertEqual(ctx, "AI Framework: ✓")
 
     def test_exception_handled(self):
         env_patch = {"CLAUDE_PLUGIN_ROOT": str(self.plugin_root)}
