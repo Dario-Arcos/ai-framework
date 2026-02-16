@@ -98,6 +98,30 @@ Default: field absent → `required` (all gates run).
 
 ---
 
+## Exit Code Suppression (Anti-Pattern)
+
+**Constraints:**
+- You MUST NOT use `|| true`, `; true`, `|| :`, or `|| exit 0` in gate commands because they force exit code 0, defeating the gate entirely
+- You MUST NOT use `2>&1 || true` because it both redirects output AND suppresses failure
+- You MUST use `&&` to chain multi-package commands because `&&` propagates the first failure
+
+The `task-completed.py` hook rejects gate commands containing exit code suppression at runtime. If your gate command is rejected, replace the suppression with `&&`.
+
+```bash
+# BAD — gate always passes, tests never enforced:
+GATE_TEST="npm test --prefix packages/server 2>&1 || true"
+
+# BAD — first failure is swallowed:
+GATE_TEST="npm test --prefix packages/a ; true ; npm test --prefix packages/b"
+
+# GOOD — first failure stops the chain:
+GATE_TEST="npm test --prefix packages/server && npm test --prefix packages/web"
+```
+
+**Why this matters:** Exit code suppression defeats ALL three enforcement layers simultaneously — the TaskCompleted gate, the SDD auto-test state, and the reward hacking guard.
+
+---
+
 ## Custom Gates
 
 **Constraints:**

@@ -37,6 +37,8 @@ GATE_BUILD="go build ./..."
 
 Gates execute in order: **test → typecheck → lint → build**. First failure stops the chain (TaskCompleted hook).
 
+**Anti-pattern — exit code suppression:** NEVER use `|| true`, `; true`, `|| :`, or `|| exit 0` in gate commands. These force exit 0, defeating all three enforcement layers (TaskCompleted gate, SDD auto-test state, reward hacking guard). For multi-package projects, use `&&` to propagate failures. The hook rejects suppressed commands at runtime.
+
 **Coverage Enforcement:**
 
 ```bash

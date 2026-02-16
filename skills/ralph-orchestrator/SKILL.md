@@ -167,6 +167,11 @@ Populate `templates/AGENTS.md.template` with operational context for teammates.
 
 Empty string = gate skipped. See `.ralph/config.sh` comments for stack-specific examples.
 
+**You MUST NOT** use exit code suppression in gate commands. The following patterns defeat quality gates and are rejected at runtime:
+- `|| true`, `; true`, `|| :`, `; :`, `|| exit 0`, `; exit 0` — forces exit 0 regardless of test result
+- `2>&1 || true` — redirects output AND suppresses failure
+- For multi-package projects, use `&&` to chain commands: `cmd1 && cmd2` (propagates first failure)
+
 **Supplementary gate (evaluated after the 4 standard gates by the TaskCompleted hook):**
 
 | Config Variable | Derived From |

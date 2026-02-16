@@ -22,6 +22,12 @@ MAX_TEAMMATES=2                   # Max concurrent teammates (hard cap: 3)
 # Commands that must pass before commit
 # Empty string = skip that gate
 # Modify these for your project's tooling
+#
+# CRITICAL: NEVER add || true, ; true, || :, or || exit 0 to gate commands.
+# These suppress failure exit codes and defeat the quality gate entirely.
+# For multi-package projects, chain with && to propagate failures:
+#   GOOD: "npm test --prefix pkg/a && npm test --prefix pkg/b"
+#   BAD:  "npm test --prefix pkg/a 2>&1 || true"
 
 GATE_TEST="npm test"
 GATE_TYPECHECK="npm run typecheck"
