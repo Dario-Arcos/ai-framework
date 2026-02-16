@@ -21,12 +21,14 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import detect_test_command, parse_test_summary, project_hash
+from _sdd_detect import (
+    detect_test_command, has_exit_suppression, is_test_running,
+    parse_test_summary, project_hash, read_state, write_state,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -162,13 +164,28 @@ def update_metrics(ralph_dir, success, teammate_name):
             f.truncate()
             json.dump(metrics, f, indent=2)
             f.write("\n")
-    except (json.JSONDecodeError, OSError):
+    except OSError:
         pass
 
 
 # ─────────────────────────────────────────────────────────────────
 # QUALITY GATES
 # ─────────────────────────────────────────────────────────────────
+
+def _validate_gate_command(name, command):
+    """Reject gate commands that suppress exit codes.
+
+    Returns error message or None if valid.
+    """
+    if has_exit_suppression(command):
+        return (
+            f"Gate '{name}' has exit code suppression (|| true or similar) "
+            f"which defeats the quality gate. "
+            f"Remove it — use && to chain commands. "
+            f"Command: {command}"
+        )
+    return None
+
 
 def run_gate(name, command, cwd, timeout=120):
     """Run a single quality gate.
@@ -178,6 +195,10 @@ def run_gate(name, command, cwd, timeout=120):
     """
     if not command:
         return True, ""
+
+    error = _validate_gate_command(name, command)
+    if error:
+        return False, error
 
     try:
         result = subprocess.run(
@@ -239,94 +260,46 @@ def find_scenario_strategy(cwd, task_subject, task_description=""):
                     return "not-applicable"
                 return "required"
 
-    # Fallback: grep .code-task.md files
+    # Fallback: scan .code-task.md files (pure Python, no subprocess)
     try:
-        result = subprocess.run(
-            ["grep", "-rFl", f"# Task: {task_subject}", "--include=*.code-task.md", "."],
-            capture_output=True, text=True, cwd=cwd, timeout=5,
-        )
-        if result.returncode != 0 or not result.stdout.strip():
+        needle = f"# Task: {task_subject}"
+        for task_file in Path(cwd).glob("**/*.code-task.md"):
+            try:
+                content = task_file.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            if needle not in content:
+                continue
+            for line in content.splitlines():
+                if "Scenario-Strategy" in line:
+                    return "not-applicable" if "not-applicable" in line else "required"
             return "required"
-
-        task_file = result.stdout.strip().split("\n")[0]
-        task_path = Path(cwd) / task_file
-        content = task_path.read_text(encoding="utf-8")
-
-        for line in content.splitlines():
-            if "Scenario-Strategy" in line:
-                if "not-applicable" in line:
-                    return "not-applicable"
-                return "required"
-
         return "required"
-    except (subprocess.TimeoutExpired, OSError, ValueError):
+    except OSError:
         return "required"
+
+
+# ─────────────────────────────────────────────────────────────────
+# FAILURE FEEDBACK
+# ─────────────────────────────────────────────────────────────────
+
+def _fail_task(header, body, footer="Fix the issue before completing this task."):
+    """Print failure feedback to stderr and exit 2 (task not complete)."""
+    print(f"{header}\n\n{body}\n\n{footer}", file=sys.stderr)
+    sys.exit(2)
 
 
 # ─────────────────────────────────────────────────────────────────
 # NON-RALPH STATE-AWARE TEST GATE
 # ─────────────────────────────────────────────────────────────────
 
-def _autotest_pid_path(cwd):
-    """PID file path matching sdd-auto-test.py convention."""
-    return Path(f"/tmp/sdd-test-run-{project_hash(cwd)}.pid")
-
-
-def _autotest_state_path(cwd):
-    """State file path matching sdd-auto-test.py convention."""
-    return Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
-
-
-def _is_autotest_running(cwd):
-    """Check if auto-test background process is running."""
-    pf = _autotest_pid_path(cwd)
-    try:
-        pid = int(pf.read_text().strip())
-        os.kill(pid, 0)
-        return True
-    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
-        return False
-
-
 def _wait_for_autotest(cwd, timeout=300):
     """Poll until auto-test finishes (PID file disappears or process dies)."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if not _is_autotest_running(cwd):
+        if not is_test_running(cwd):
             return
         time.sleep(2)
-
-
-def _read_autotest_state(cwd):
-    """Read auto-test state file with shared lock. Returns dict or None."""
-    sp = _autotest_state_path(cwd)
-    try:
-        with open(sp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-
-def _write_autotest_state(cwd, passed, output):
-    """Write state in same format as sdd-auto-test.py (other hooks read it)."""
-    sp = _autotest_state_path(cwd)
-    data = {
-        "passing": passed,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "summary": parse_test_summary(output, 0 if passed else 1) if output else ("tests passed" if passed else "tests failed"),
-    }
-    try:
-        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-state-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-            f.write("\n")
-        os.rename(tmp, str(sp))
-    except OSError:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
 
 
 def _handle_non_ralph_completion(cwd, task_subject):
@@ -336,50 +309,32 @@ def _handle_non_ralph_completion(cwd, task_subject):
         return  # No test runner detected → allow
 
     # Step 1: If auto-test is running, wait for its result
-    if _is_autotest_running(cwd):
+    if is_test_running(cwd):
         _wait_for_autotest(cwd, timeout=300)
 
     # Step 2: Read auto-test state
-    state = _read_autotest_state(cwd)
+    state = read_state(cwd)
     if state is not None:
         if state.get("passing"):
             return  # Tests pass → allow
-        summary = state.get("summary", "tests failed")
-        print(
-            f"Tests failed for: {task_subject}\n\n"
-            f"{summary}\n\n"
-            f"Fix the issue before completing this task.",
-            file=sys.stderr,
-        )
-        sys.exit(2)
+        _fail_task(f"Tests failed for: {task_subject}", state.get("summary", "tests failed"))
 
     # Step 3: No state, no PID → run fresh (with lock to avoid parallel runs)
     lock_path = Path(f"/tmp/sdd-test-lock-{project_hash(cwd)}")
     with open(lock_path, "w") as lf:
         fcntl.flock(lf, fcntl.LOCK_EX)
         # Double-check after acquiring lock (another teammate may have run)
-        state = _read_autotest_state(cwd)
+        state = read_state(cwd)
         if state is not None:
             if state.get("passing"):
                 return
-            print(
-                f"Tests failed for: {task_subject}\n\n"
-                f"{state.get('summary', 'tests failed')}\n\n"
-                f"Fix the issue before completing this task.",
-                file=sys.stderr,
-            )
-            sys.exit(2)
+            _fail_task(f"Tests failed for: {task_subject}", state.get("summary", "tests failed"))
         # Run tests
         passed, output = run_gate("test", test_cmd, cwd, timeout=300)
-        _write_autotest_state(cwd, passed, output)
+        summary = parse_test_summary(output, 0 if passed else 1) if output else ("tests passed" if passed else "tests failed")
+        write_state(cwd, passed, summary)
         if not passed:
-            print(
-                f"Test gate failed for: {task_subject}\n\n"
-                f"Output:\n{output}\n\n"
-                f"Fix the issue before completing this task.",
-                file=sys.stderr,
-            )
-            sys.exit(2)
+            _fail_task(f"Test gate failed for: {task_subject}", f"Output:\n{output}")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -429,14 +384,11 @@ def main():
         if not passed:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
-            print(
-                f"Quality gate '{gate_name}' failed for: {task_subject}\n\n"
-                f"Output:\n{output}\n\n"
-                f"Fix the issue before completing this task. "
-                f"(consecutive failures: {count})",
-                file=sys.stderr,
+            _fail_task(
+                f"Quality gate '{gate_name}' failed for: {task_subject}",
+                f"Output:\n{output}",
+                f"Fix the issue before completing this task. (consecutive failures: {count})",
             )
-            sys.exit(2)
 
     # Coverage gate (after quality gates pass)
     try:
@@ -452,28 +404,21 @@ def main():
         if not passed:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
-            print(
-                f"Coverage gate failed for: {task_subject}\n\n"
-                f"Output:\n{output}\n\n"
-                f"Fix the coverage command before completing this task. "
-                f"(consecutive failures: {count})",
-                file=sys.stderr,
+            _fail_task(
+                f"Coverage gate failed for: {task_subject}",
+                f"Output:\n{output}",
+                f"Fix the coverage command before completing this task. (consecutive failures: {count})",
             )
-            sys.exit(2)
 
         pct = extract_coverage_pct(output)
         if pct is not None and pct < min_coverage:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             update_metrics(ralph_dir, success=False, teammate_name=teammate_name)
-            print(
-                f"Coverage below threshold for: {task_subject}\n\n"
-                f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\n"
-                f"Output:\n{output}\n\n"
-                f"Increase test coverage before completing this task. "
-                f"(consecutive failures: {count})",
-                file=sys.stderr,
+            _fail_task(
+                f"Coverage below threshold for: {task_subject}",
+                f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\nOutput:\n{output}",
+                f"Increase test coverage before completing this task. (consecutive failures: {count})",
             )
-            sys.exit(2)
 
     # All gates passed
     _atomic_update_failures(ralph_dir, teammate_name, "reset")

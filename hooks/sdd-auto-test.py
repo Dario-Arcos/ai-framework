@@ -9,17 +9,17 @@ Single GATE_TEST, no fast/slow split. Background execution + debounce = no block
 
 State shared with sdd-test-guard.py via /tmp/ files (keyed by project hash).
 """
-import fcntl
 import json
 import os
 import subprocess
 import sys
-import tempfile
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import detect_test_command, parse_test_summary, project_hash
+from _sdd_detect import (
+    detect_test_command, has_exit_suppression, is_test_running,
+    parse_test_summary, pid_path, read_state, write_state,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -30,16 +30,6 @@ SOURCE_EXTENSIONS = frozenset({
     ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
     ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
 })
-
-
-def state_path(cwd):
-    """Path to shared test state file."""
-    return Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
-
-
-def pid_path(cwd):
-    """Path to PID file for debounce."""
-    return Path(f"/tmp/sdd-test-run-{project_hash(cwd)}.pid")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -56,59 +46,6 @@ def is_source_file(path):
 # ─────────────────────────────────────────────────────────────────
 # DEBOUNCE
 # ─────────────────────────────────────────────────────────────────
-
-def is_test_running(cwd):
-    """Check if a test process is already running (debounce)."""
-    pf = pid_path(cwd)
-    try:
-        pid = int(pf.read_text().strip())
-        os.kill(pid, 0)  # signal 0 = check existence
-        return True
-    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
-        # Clean up stale PID file
-        try:
-            pf.unlink(missing_ok=True)
-        except OSError:
-            pass
-        return False
-
-
-# ─────────────────────────────────────────────────────────────────
-# STATE I/O
-# ─────────────────────────────────────────────────────────────────
-
-def read_state(cwd):
-    """Read test state file with shared lock. Returns dict or None."""
-    sp = state_path(cwd)
-    try:
-        with open(sp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
-            data = json.load(f)
-            return data
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-
-def write_state(cwd, passing, summary):
-    """Atomic write of test state via tmpfile + rename."""
-    sp = state_path(cwd)
-    data = {
-        "passing": passing,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "summary": summary,
-    }
-    try:
-        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-state-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-            f.write("\n")
-        os.rename(tmp, str(sp))
-    except OSError:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-
 
 # ─────────────────────────────────────────────────────────────────
 # BACKGROUND EXECUTION
@@ -138,6 +75,11 @@ def _run_tests_worker(cwd, command):
 
     Called when script is invoked with --run-tests flag.
     """
+    # Reject commands with exit code suppression (|| true, ; true, etc.)
+    if has_exit_suppression(command):
+        write_state(cwd, False, "gate command has exit code suppression — remove || true")
+        return
+
     pf = pid_path(cwd)
     try:
         pf.write_text(str(os.getpid()))
@@ -149,7 +91,10 @@ def _run_tests_worker(cwd, command):
             command, shell=True, capture_output=True, text=True,
             cwd=cwd, timeout=300,
         )
-        output = (result.stdout + result.stderr).strip()
+        raw = result.stdout + result.stderr
+        if len(raw) > 8192:
+            raw = raw[-8192:]
+        output = raw.strip()
         summary = parse_test_summary(output, result.returncode)
         write_state(cwd, result.returncode == 0, summary)
     except subprocess.TimeoutExpired:
@@ -215,7 +160,7 @@ def main():
     # Guard: debounce — don't launch if tests already running
     if not is_test_running(cwd):
         command = detect_test_command(cwd)
-        if command:
+        if command and not has_exit_suppression(command):
             run_tests_background(cwd, command)
 
     # Report previous state as additionalContext (visible to Claude, not just user)

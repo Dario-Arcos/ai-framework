@@ -1,15 +1,30 @@
-"""Shared SDD detection utilities — test runner detection and project hashing.
+"""Shared SDD utilities — test detection, project hashing, and state I/O.
 
-NOT a hook. Pure functions, no I/O state. Imported by:
+Imported by:
 - sdd-auto-test.py (PostToolUse)
 - sdd-test-guard.py (PreToolUse)
 - task-completed.py (TaskCompleted)
 """
+import fcntl
 import hashlib
 import json
+import os
 import re
 import subprocess
+import tempfile
+import time
 from pathlib import Path
+
+
+EXIT_SUPPRESSION_RE = re.compile(
+    r"\|\|\s*(?:(?:[\w/]*/)?true\b|:(?:\s|$)|exit\s+0\b)"
+    r"|;\s*(?:(?:[\w/]*/)?true\b|:(?:\s|$)|exit\s+0\b)"
+)
+
+
+def has_exit_suppression(command):
+    """Check if a shell command contains exit code suppression patterns."""
+    return bool(EXIT_SUPPRESSION_RE.search(command))
 
 
 def project_hash(cwd):
@@ -23,11 +38,12 @@ def detect_test_command(cwd):
     Priority:
     1. .ralph/config.sh → GATE_TEST (explicit configuration)
     2. package.json → scripts.test (VERIFIED it exists and is non-empty)
-    3. pyproject.toml → "pytest"
-    4. go.mod → "go test ./..."
-    5. Cargo.toml → "cargo test"
-    6. Makefile → "make test"
-    7. None
+    3. pyproject.toml → "pytest" (VERIFIED: "pytest" in content OR tests/ dir)
+    4. setup.py → "pytest" (VERIFIED: tests/ dir exists)
+    5. go.mod → "go test ./..." (runner handles no-tests gracefully)
+    6. Cargo.toml → "cargo test" (runner handles no-tests gracefully)
+    7. Makefile → "make test" (VERIFIED: ^test: target in content)
+    8. None
 
     Returns command string or None.
     """
@@ -62,17 +78,36 @@ def detect_test_command(cwd):
         except (json.JSONDecodeError, OSError):
             pass
 
-    # Priority 3-6: manifest-based detection
-    manifest_runners = [
-        ("pyproject.toml", "pytest"),
-        ("setup.py", "pytest"),
-        ("go.mod", "go test ./..."),
-        ("Cargo.toml", "cargo test"),
-        ("Makefile", "make test"),
-    ]
-    for manifest, command in manifest_runners:
-        if (cwd_path / manifest).exists():
-            return command
+    # Priority 3: pyproject.toml — verify pytest infrastructure
+    pyproject = cwd_path / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            content = pyproject.read_text(encoding="utf-8")
+            if "pytest" in content or (cwd_path / "tests").is_dir() or (cwd_path / "test").is_dir():
+                return "pytest"
+        except OSError:
+            pass
+
+    # Priority 4: setup.py — verify test directory exists
+    if (cwd_path / "setup.py").exists():
+        if (cwd_path / "tests").is_dir() or (cwd_path / "test").is_dir():
+            return "pytest"
+
+    # Priority 5-6: go.mod and Cargo.toml (runners handle no-tests gracefully)
+    if (cwd_path / "go.mod").exists():
+        return "go test ./..."
+    if (cwd_path / "Cargo.toml").exists():
+        return "cargo test"
+
+    # Priority 7: Makefile — verify test target exists
+    makefile = cwd_path / "Makefile"
+    if makefile.exists():
+        try:
+            content = makefile.read_text(encoding="utf-8")
+            if re.search(r"^test\s*:", content, re.MULTILINE):
+                return "make test"
+        except OSError:
+            pass
 
     return None
 
@@ -115,3 +150,68 @@ def parse_test_summary(output, returncode):
 
     # Fallback
     return "tests passed" if returncode == 0 else "tests failed"
+
+
+# ─────────────────────────────────────────────────────────────────
+# STATE I/O — canonical implementations for /tmp/ shared state
+# ─────────────────────────────────────────────────────────────────
+
+def state_path(cwd):
+    """Path to shared test state file."""
+    return Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
+
+
+def pid_path(cwd):
+    """Path to PID file for debounce."""
+    return Path(f"/tmp/sdd-test-run-{project_hash(cwd)}.pid")
+
+
+def is_test_running(cwd):
+    """Check if a test process is already running (debounce).
+
+    Cleans up stale PID files when the process no longer exists.
+    """
+    pf = pid_path(cwd)
+    try:
+        pid = int(pf.read_text().strip())
+        os.kill(pid, 0)  # signal 0 = check existence
+        return True
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        # Clean up stale PID file
+        try:
+            pf.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False
+
+
+def read_state(cwd):
+    """Read test state file with shared lock. Returns dict or None."""
+    sp = state_path(cwd)
+    try:
+        with open(sp, "r", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
+def write_state(cwd, passing, summary):
+    """Atomic write of test state via tmpfile + rename."""
+    sp = state_path(cwd)
+    data = {
+        "passing": passing,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "summary": summary,
+    }
+    try:
+        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-state-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+            f.write("\n")
+        os.rename(tmp, str(sp))
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass

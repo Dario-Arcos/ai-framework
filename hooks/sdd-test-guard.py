@@ -15,7 +15,6 @@ Decision matrix:
 
 State shared with sdd-auto-test.py via /tmp/ files (keyed by project hash).
 """
-import fcntl
 import json
 import os
 import re
@@ -23,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import project_hash
+from _sdd_detect import read_state
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -59,21 +58,6 @@ def is_test_file(path):
     if not path:
         return False
     return bool(TEST_FILE_RE.search(path))
-
-
-# ─────────────────────────────────────────────────────────────────
-# STATE
-# ─────────────────────────────────────────────────────────────────
-
-def read_state(cwd):
-    """Read test state file with shared lock. Returns dict or None."""
-    sp = Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
-    try:
-        with open(sp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
 
 
 # ─────────────────────────────────────────────────────────────────
