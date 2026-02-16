@@ -21,7 +21,6 @@
 
 # Hook databases (notifications, tracking)
 /hooks/*.db
-/hooks/__pycache__/
 
 # ============================================================================
 # COMMON PROJECT FILES (add your own)
@@ -50,7 +49,6 @@ ehthumbs.db
 
 # Dependencies
 node_modules/
-*/node_modules/
 vendor/
 jspm_packages/
 .npm
@@ -112,8 +110,6 @@ drivers/
 human-handbook/.vitepress/dist/
 human-handbook/.vitepress/cache/
 
-# macOS system files - Deep recursion (ai-framework fix)
-**/.DS_Store
 
 # Planning & design documents (working files, not for version control)
 /docs/plans/
@@ -121,10 +117,3 @@ human-handbook/.vitepress/cache/
 
 # Ralph orchestrator runtime
 /.ralph/
-
-# AI Framework runtime files (auto-added)
-/.ralph/failures.json
-/.ralph/metrics.json
-/.ralph/ABORT
-/.ralph/handoff-*.md
-/.ralph/logs/
