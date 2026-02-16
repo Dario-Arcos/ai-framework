@@ -140,15 +140,13 @@ O describe qué quieres construir. Ralph pregunta lo que necesite.
 
 **Step 5** — Contexto. Genera `AGENTS.md` con todo lo que cada teammate necesita: stack, diseño, constraints, patrones.
 
-**Step 6** — Checkpoint.
+**Step 6** — Configuración. Ralph deriva quality gates del stack.
+
+**Step 7** — Ejecución. Ralph presenta el plan completo en plan mode (incluyendo resumen de planificación, estrategia de ejecución y configuración). Apruebas y Agent Teams arranca.
 
 ::: warning Aprobación obligatoria
-Da igual qué planning mode elegiste. Ralph presenta el plan completo y espera tu OK. Nada se ejecuta sin aprobación. Puedes aprobar, revisar artifacts, o rehacer la planificación desde cero.
+Da igual qué planning mode elegiste. Ralph presenta el plan completo en plan mode y espera tu OK. Nada se ejecuta sin aprobación. Puedes aprobar, pedir revisar artifacts específicos, o rehacer la planificación desde cero.
 :::
-
-**Step 7** — Configuración. Ralph deriva quality gates del stack y pregunta cuántos teammates en paralelo.
-
-**Step 8** — Ejecución. Agent Teams arranca. Ciclo implementer→reviewer hasta completar todas las tasks.
 
 ---
 
@@ -222,8 +220,8 @@ Ralph detecta artifacts en `.ralph/specs/` y ofrece continuar donde quedó.
 | `referents/catalog.md` | Referentes completos — Step 3 |
 | `design/detailed-design.md` | Diseño completo — Step 4 |
 | `plan.md` sin task files | Task generation — Step 4 |
-| `.code-task.md` con `PENDING` | Ejecución — Step 8 |
-| `.code-task.md` con `IN_REVIEW` | Ejecución — Step 8 |
+| `.code-task.md` con `PENDING` | Ejecución — Step 7 |
+| `.code-task.md` con `IN_REVIEW` | Ejecución — Step 7 |
 | Todos `COMPLETED` | COMPLETE |
 
 Disk es estado, git es memoria. Si un teammate crashea, su task file persiste para el siguiente.

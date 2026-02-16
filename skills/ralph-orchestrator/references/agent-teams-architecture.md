@@ -1,6 +1,6 @@
 # Agent Teams Architecture
 
-> Execution engine for ralph-orchestrator Step 8. Claude Code Agent Teams.
+> Execution engine for ralph-orchestrator Step 7. Claude Code Agent Teams.
 
 ---
 
@@ -129,7 +129,7 @@ Each teammate uses its full 200K context for a single task. No compaction needed
 | `.ralph/failures.json` | Per-teammate consecutive failure count | TaskCompleted hook | TeammateIdle hook (circuit breaker) |
 | `.ralph/metrics.json` | Task success/failure counts | TaskCompleted hook | Lead (monitoring) |
 | `.ralph/agents.md` | Operational context for teammates | Lead (Step 5) | All teammates at spawn |
-| `.ralph/config.sh` | Gates, safety settings | Lead (Step 7) | Hooks |
+| `.ralph/config.sh` | Gates, safety settings | Lead (Step 6) | Hooks |
 | `.ralph/reviews/task-{id}-review.md` | SDD compliance review per task | Reviewer teammates | Lead (summary only) |
 
 ---
@@ -142,7 +142,7 @@ Each teammate uses its full 200K context for a single task. No compaction needed
 | **Task rejection** | TaskCompleted hook rejects tasks that fail quality gates → teammate must fix |
 | **Manual abort** | Create `.ralph/ABORT` file → all teammates idle on next TeammateIdle check |
 | **Quality gates** | TaskCompleted hook runs test/typecheck/lint/build in sequence |
-| **Checkpoint review** | Plan Review (Step 6) is mandatory before any execution begins |
+| **Checkpoint review** | Plan approval (Step 7 ExitPlanMode) is mandatory before any execution begins |
 
 ---
 

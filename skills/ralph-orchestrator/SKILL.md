@@ -33,9 +33,8 @@ description: Use when building features requiring planning + autonomous executio
 4. **Step 2**: Referent Discovery (`sop-reverse referent`)
 5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
 6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
-7. **Step 6**: Plan Review Checkpoint (mandatory before execution)
-8. **Step 7**: Configure execution (quality gates, checkpoints)
-9. **Step 8**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
+7. **Step 6**: Configure execution (quality gates)
+8. **Step 7**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
 
 ---
 
@@ -61,8 +60,8 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | Artifact | Detected Phase |
 |----------|----------------|
 | All `*.code-task.md` with `Status: COMPLETED` | COMPLETE |
-| Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 8) |
-| Any `*.code-task.md` with `Status: PENDING` | execution (Step 8) |
+| Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 7) |
+| Any `*.code-task.md` with `Status: PENDING` | execution (Step 7) |
 | `implementation/plan.md` without task files | task-generator (Step 4) |
 | `design/detailed-design.md` | planning-complete (Step 4) |
 | `referents/catalog.md` | referent-complete (Step 3) |
@@ -149,24 +148,7 @@ Populate `templates/AGENTS.md.template` with operational context for teammates.
 
 **Output:** `.ralph/agents.md` — Continue to Step 6.
 
-### Step 6: Plan Review Checkpoint
-
-**MANDATORY before execution, regardless of planning mode.**
-
-Present to user: planning mode used, artifacts generated (referent catalog, design, N task files, `.ralph/agents.md`), key decisions from design document, blockers found, task summary by step with complexity.
-
-**Use AskUserQuestion:**
-```text
-Question: "Aprobar plan y continuar a ejecucion?"
-Options:
-- Aprobar y continuar: Proceder a configurar ejecucion
-- Revisar artifacts: Mostrar contenido de artifacts antes de decidir
-- Rehacer planificacion: Volver a Step 2 con modo interactivo
-```
-
-**You MUST NOT** skip this checkpoint, launch without approval, or proceed if user requests review.
-
-### Step 7: Configure Execution
+### Step 6: Configure Execution
 
 **Use AskUserQuestion (1 question):**
 
@@ -195,11 +177,11 @@ GATE_COVERAGE requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` c
 
 Update `.ralph/config.sh` with derived gates and user selections. See [configuration-guide.md](references/configuration-guide.md) for all options.
 
-### Step 8: Execute via Agent Teams
+### Step 7: Execute via Agent Teams
 
 **Prerequisites (all must be true):**
 - `.ralph/specs/{goal}/implementation/plan.md` + `.code-task.md` files with `Status: PENDING`
-- `.ralph/agents.md` exists, Plan Review passed (Step 6)
+- `.ralph/agents.md` exists
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` set
 
 **Pre-flight (Plan Mode):**
@@ -213,7 +195,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
       2. Identify parallelizable groups: tasks with no `Blocked-By` relationship between them
       3. Within each group, check if any two tasks share one or more files
       4. If overlap detected: add `Blocked-By` from the lower-step task to the higher-step one (serialize them)
-      5. Report in plan Summary: "File overlap: Task {Y} waits for Task {X} (shared: {file})"
+      5. Report in Execution Strategy: "File overlap: Task {Y} waits for Task {X} (shared: {file})"
    d. Read `.ralph/config.sh` for quality gates, MAX_TEAMMATES, and MODEL
    e. Determine parallelism: analyze task count and dependency graph (including overlaps resolved in 2c) to calculate max parallelizable tasks (tasks with no unresolved dependencies that can run simultaneously). Cap at 3 — more than 3 concurrent teammates degrades coordination quality. **Use AskUserQuestion**:
       - Question: "¿Cuantos teammates quieres ejecutar en paralelo?"
@@ -227,9 +209,17 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
       - `templates/execution-runbook.md.template`
       - `scripts/PROMPT_implementer.md`
       - `scripts/PROMPT_reviewer.md`
-3. Write execution plan to plan file with THREE sections:
-   a. **Summary** (for human review): N tasks, dependency graph, quality gates
-   b. **Execution Data** (concrete values — drives runbook generation after approval):
+3. Write execution plan to plan file with FOUR sections:
+   a. **Planning Summary** (for human review — mandatory, regardless of planning mode):
+      Present to user: planning mode used, artifacts generated (referent catalog,
+      design, N task files, `.ralph/agents.md`), key decisions from design document,
+      blockers found, task summary by step with complexity.
+      Include paths to all artifacts so the user can inspect them.
+      Include note: "To redo planning: reject this plan with 'rehacer'.
+      To review specific artifacts before approving: reject with 'revisar {artifact}'."
+   b. **Execution Strategy** (for human review): N tasks, dependency graph,
+      quality gates, file overlap resolution
+   c. **Execution Data** (concrete values — drives runbook generation after approval):
       - Team name: `ralph-{concrete-goal-slug}`
       - MAX_TEAMMATES: {user's choice from step 2e, or config.sh default if skipped}
       - MODEL: {value from config.sh}
@@ -237,7 +227,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
       - Quality Gates table: `| Gate | Command |` (non-empty gates only)
       - File Paths (absolute): runbook template, implementer prompt, reviewer prompt
       - Goal directory: `.ralph/specs/{goal}`
-   c. **Post-Approval Directive** (MUST be last section — survives context compression):
+   d. **Post-Approval Directive** (MUST be last section — survives context compression):
       ```
       ## Post-Approval Execution
       After this plan is approved, IMMEDIATELY:
@@ -354,7 +344,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 ## Core Principles
 
 1. **Single Entry Point** — Invoke once, orchestrate everything. Never invoke SOP skills directly.
-2. **Checkpoint Before Execution** — Planning can be interactive OR autonomous, but user ALWAYS approves before execution begins.
+2. **Checkpoint Before Execution** — Planning can be interactive OR autonomous, but user ALWAYS approves the execution plan (Step 7 ExitPlanMode) before execution begins.
 3. **Fresh Context + Guardrails = Compounding Intelligence** — Each teammate gets fresh 200K context for a single task. `guardrails.md` accumulates lessons across all tasks. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Reviewer teammates validate SDD compliance after automated gates pass.
 4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the task contract. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
 

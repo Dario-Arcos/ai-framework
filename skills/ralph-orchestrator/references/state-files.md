@@ -157,9 +157,10 @@ SDD compliance reviews written by reviewer teammates after implementers complete
 
 | Phase | .ralph/guardrails.md | failures.json | metrics.json | .code-task.md | .ralph/agents.md | execution-runbook.md |
 |-------|--------------|---------------|--------------|---------------|-----------|-------------|
-| Planning (Steps 0-6) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) | — |
-| Post-approval (Step 8) | — | — | — | — | — | Generated (materialized from template) |
-| Launch (Step 8) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates | Read by orchestrator |
+| Planning (Steps 0-5) | Created if missing | — | — | Generated (Step 4) | Generated (Step 5) | — |
+| Pre-execution (Step 6) | — | — | — | — | — | — |
+| Post-approval (Step 7) | — | — | — | — | — | Generated (materialized from template) |
+| Launch (Step 7) | Read by teammates | Initialized empty | Initialized empty | TaskCreate per file | Read by teammates | Read by orchestrator |
 | Execution | Append (flock) | Updated per task | Updated per task | Status updated | Read-only | Re-read after compression |
 | Completion | Preserved | Preserved | Preserved | All COMPLETED | Preserved | Preserved |
 

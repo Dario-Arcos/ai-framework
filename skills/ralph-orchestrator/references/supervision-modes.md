@@ -81,16 +81,16 @@ Ralph-orchestrator has two distinct phases with different supervision options. T
 
 **ALWAYS required between planning and execution, regardless of planning mode.**
 
-The checkpoint presents:
-- Summary of all artifacts generated
-- Key decisions made (with rationale if autonomous)
-- Any blockers found
-- Task count and complexity breakdown
+The checkpoint is the `ExitPlanMode` approval in Step 7 (Execute via Agent Teams).
+The plan file presents:
+- Planning summary: planning mode used, artifacts generated (referent catalog, design, N task files, `.ralph/agents.md`), key decisions from design document, blockers found, task summary by step with complexity
+- Execution strategy: N tasks, dependency graph, quality gates, file overlap resolution
+- Concrete execution data: team config, task registry, file paths
 
-User options:
+User actions:
 - **Approve**: Continue to execution
-- **Review**: Inspect artifact contents
-- **Redo**: Return to planning with interactive mode
+- **Reject with "revisar {artifact}"**: Inspect artifact contents before deciding
+- **Reject with "rehacer"**: Return to planning with interactive mode
 
 **You MUST NOT skip this checkpoint.**
 

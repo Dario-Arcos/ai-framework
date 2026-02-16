@@ -15,7 +15,7 @@ Este es el pipeline completo de desarrollo con AI Framework: de idea a código e
 
 <details class="details custom-block">
 <summary>📋 2. PLAN — ralph-orchestrator · discovery → planning → tasks</summary>
-<p>Entry point único para desarrollo autónomo. Ralph ejecuta 8 pasos: elige modo (Interactive/Autonomous), discovery, planning, genera <code>.code-task.md</code> files, y se detiene en un <strong>checkpoint obligatorio</strong> antes de ejecutar. <a href="#plan">Ver detalle →</a></p>
+<p>Entry point único para desarrollo autónomo. Ralph ejecuta 8 pasos (0-7): elige modo (Interactive/Autonomous), discovery, planning, genera <code>.code-task.md</code> files, configura gates, y presenta plan completo en plan mode para tu aprobación antes de ejecutar. <a href="#plan">Ver detalle →</a></p>
 </details>
 
 <details class="details custom-block">
@@ -70,7 +70,7 @@ Entry point único para desarrollo autónomo. Una invocación orquesta todo el p
 "Implementa el sistema de notificaciones del design doc"
 ```
 
-Ralph ejecuta 8 pasos en secuencia:
+Ralph ejecuta 8 pasos (0-7) en secuencia:
 
 | Paso | Qué hace | Output |
 |:----:|----------|--------|
@@ -80,12 +80,11 @@ Ralph ejecuta 8 pasos en secuencia:
 | 3 | **Planning** — diseño detallado | `detailed-design.md` |
 | 4 | **Task generation** — todas las tareas upfront | `.code-task.md` files |
 | 5 | Genera `AGENTS.md` para workers | `AGENTS.md` |
-| 6 | **Checkpoint** — aprobación obligatoria | Tú decides |
-| 7 | Configura ejecución (quality level, gates) | `.ralph/config.sh` |
-| 8 | Lanza `loop.sh` en background | Ejecución autónoma |
+| 6 | Configura ejecución (quality gates) | `.ralph/config.sh` |
+| 7 | Plan mode + aprobación + ejecución autónoma | Agent Teams |
 
-::: warning Checkpoint obligatorio (Paso 6)
-Ralph **nunca** ejecuta código sin tu aprobación. Después de generar el plan y las tareas, se detiene y te presenta todo para review.
+::: warning Aprobación obligatoria (Paso 7)
+Ralph **nunca** ejecuta código sin tu aprobación. Antes de lanzar Agent Teams, presenta un plan completo en plan mode con resumen de planificación, estrategia de ejecución y configuración. Nada se ejecuta sin tu OK.
 :::
 
 ::: details ¿Qué son los modos?
@@ -93,7 +92,7 @@ Ralph **nunca** ejecuta código sin tu aprobación. Después de generar el plan 
 
 **Autonomous** — Ralph toma decisiones solo, documenta assumptions y continúa sin bloquear. Para desarrollo overnight/AFK.
 
-En ambos modos, el checkpoint del paso 6 es **obligatorio**.
+En ambos modos, la aprobación en plan mode (paso 7) es **obligatoria**.
 :::
 
 ### SOP Pipeline <Badge type="info" text="manual" />

@@ -4,7 +4,7 @@
 # Modify as needed for your project
 #
 # Usage Constraints:
-# - GATE_* commands are auto-derived from Technology Stack during planning (Step 7)
+# - GATE_* commands are auto-derived from Technology Stack during planning (Step 6)
 # - You MAY adjust safety limits but exercise caution because these prevent runaway teammates
 
 # ─────────────────────────────────────────────────────────────────

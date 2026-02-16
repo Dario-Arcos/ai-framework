@@ -11,7 +11,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 | Aspect | Interactive (sop-code-assist) | Autonomous (Agent Teams) |
 |--------|-------------------------------|--------------------------|
 | **When used** | User present, learning, complex decisions | Batch processing, overnight, parallel tasks |
-| **Invoker** | User manually or orchestrator in interactive mode | Same session proceeds to Step 8 (Agent Teams) |
+| **Invoker** | User manually or orchestrator in interactive mode | Same session proceeds to Step 7 (Agent Teams) |
 | **Context** | Single session, full context retained | Fresh 200K context per task (ephemeral teammates) |
 | **User interaction** | Confirms at each step | None after Agent Teams launch |
 | **Parallelism** | Sequential (single session) | Parallel (up to MAX_TEAMMATES) |
@@ -52,7 +52,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 
 ## Autonomous Path: Agent Teams Teammates
 
-**Trigger**: Same session proceeds to Step 8. Plan mode pre-flight builds plan with execution data → user approval → generates `execution-runbook.md` from template → orchestrator reads runbook → TeamCreate + spawn teammates.
+**Trigger**: Same session proceeds to Step 7. Plan mode pre-flight builds plan with execution data → user approval → generates `execution-runbook.md` from template → orchestrator reads runbook → TeamCreate + spawn teammates.
 
 **Characteristics:**
 - Fresh 200K context per teammate (each teammate handles exactly 1 task, then shuts down)
@@ -149,18 +149,20 @@ Is this ralph-orchestrator execution?
     └── Complex decisions requiring user input
 ```
 
-**Default**: ralph-orchestrator ALWAYS uses Agent Teams for execution (Step 8). Interactive path is for standalone sop-code-assist usage.
+**Default**: ralph-orchestrator ALWAYS uses Agent Teams for execution (Step 7). Interactive path is for standalone sop-code-assist usage.
 
 ---
 
 ## Integration with ralph-orchestrator
 
-**Planning phase** (Steps 0-6):
+**Planning phase** (Steps 0-5):
 - Uses planning_mode selection (interactive/autonomous)
 - SOP skills operate according to selected mode
-- User approves plan at checkpoint (Step 6)
 
-**Execution phase** (Steps 7-8):
+**Pre-execution** (Step 6):
+- Quality gates auto-derived from Technology Stack, config.sh updated
+
+**Execution phase** (Step 7):
 - ALWAYS uses Agent Teams in the same session
 - Lead enters delegate mode (monitor only, no implementation)
 
@@ -172,7 +174,7 @@ graph LR
     end
 
     subgraph "Execution (ALWAYS Agent Teams — same session)"
-        C --> D[EnterPlanMode pre-flight<br/>build plan + execution data]
+        C --> D[EnterPlanMode pre-flight<br/>Planning Summary + execution data]
         D --> E[ExitPlanMode approval]
         E --> W[Generate execution-runbook.md<br/>from template + plan data]
         W --> R[Read execution-runbook.md<br/>survives context compression]

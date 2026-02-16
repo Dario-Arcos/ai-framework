@@ -9,7 +9,7 @@ This reference defines ralph configuration options in `.ralph/config.sh`. Config
 ## Backpressure Gates
 
 **Constraints:**
-- Gates are auto-derived from Technology Stack in `detailed-design.md` during Step 7 (Configure Execution)
+- Gates are auto-derived from Technology Stack in `detailed-design.md` during Step 6 (Configure Execution)
 - You MUST pass all gates before commit because partial passes indicate incomplete work
 - You SHOULD leave unused gates empty because non-existent commands cause failures
 
