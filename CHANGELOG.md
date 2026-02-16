@@ -4,18 +4,108 @@ outline: 2
 
 # Changelog
 
-Registro de cambios del framework, organizado por versión siguiendo [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y [versionado semántico](https://semver.org/lang/es/).
+Registro de cambios del framework, organizado por versión siguiendo [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y [CalVer](https://calver.org/) `YYYY.MINOR.MICRO`.
 
 ---
 
 ## [No Publicado]
 
+---
+
+## [2026.1.0] - 2026-02-16
+
+> **⚠️ MAJOR UPGRADE — Migración requerida desde v5.x**
+>
+> Esta versión reestructura la arquitectura completa del framework: metodología (TDD→SDD), invocación (commands→skills), orquestación (shell loop→Agent Teams), y enforcement (prescriptivo→empírico). 10 breaking changes documentados con guía de migración.
+
+### Añadido
+
+- **Skill scenario-driven-development**: Metodología SDD (Scenario→Satisfy→Refactor) con puertas de convergencia, principios anti-reward-hacking, y validación de comportamiento observable — reemplaza TDD como metodología core del framework (commit `d086eb8`)
+- **Skill context-engineering**: Tres leyes de entrega de contexto (pasivo > activo, índice > inline, recuperar > recordar), gestión de attention budget, y estrategias long-horizon — gate obligatorio para modificar archivos de contexto (commit `45b731f`)
+- **Skill verification-before-completion**: Gate de completitud evidence-based con 6 pasos y detección de reward hacking pre-completitud (commit `65c6693`)
+- **Skill systematic-debugging**: 4 fases (Root Cause→Pattern Analysis→Hypothesis Testing→Implementation) con escape hatch arquitectural tras 3+ intentos fallidos, incluye sub-técnicas condition-based-waiting, defense-in-depth, root-cause-tracing y script find-polluter.sh (commit `65c6693`)
+- **Skill sop-reviewer**: Validador SDD para tareas con 5 gates (compliance, acceptance criteria, behavioral satisfaction, reward hacking, structured output) — integrado con ralph-orchestrator para revisión autónoma (commit `ab39b2b`)
+- **Skill skill-creator**: Meta-skill para creación de skills con anatomía, progressive disclosure, grados de libertad, y 3 scripts Python de scaffolding (commit `c35cab2`)
+- **Skill using-ai-framework**: Primer de enrutamiento de skills con tabla de red flags y prioridades de invocación (commit `1797abe`)
+- **Skill commit**: Migrar lógica de command a skill con soporte de formatos corporativos (task ID parsing) y estrategia multi-commit por categoría (commit `ea45eae`)
+- **Skill changelog**: Migrar a skill con workflow de 9 fases, rúbrica de calidad, protocolo de breaking changes con severidad, y reglas de análisis de diff (commit `520d99d`)
+- **Skill deep-research**: Migrar a skill con protocolo anti-alucinación, 4 fases de ejecución, investigación primaria vía agent-browser, y validación cruzada con 3+ iteraciones (commit `ea45eae`)
+- **Skill project-init**: Migrar a skill con 5 capas de análisis, gate de context engineering (subtraction test, attention budget), detección de staleness, y diff reporting para actualizaciones (commit `55bc5b5`)
+- **Skill branch-cleanup**: Migrar de command a skill con protección de branches vía regex, `--ff-only` safety, y auto-detección de branch base (commit `ea45eae`)
+- **Skills worktree-create y worktree-cleanup**: Migrar de commands a skills auto-contenidos (commit `ea45eae`)
+- **Sistema de project memory**: 4 archivos auto-generados en `.claude/rules/` (project.md, stack.md, architecture.md, conventions.md) — conocimiento estructurado que sobrevive context compaction (commit `3c0cc5a`)
+- **Hook memory-check**: Detección de staleness de project memory en SessionStart con 4 niveles y hashing de contenido para eliminar falsos positivos (commit `4ac84f7`)
+- **Hook sdd-auto-test**: Lanzar tests en background tras cada edición de código fuente (PostToolUse) con feedback continuo de resultados — implementa loop de retroalimentación SDD (commit `7a06618`)
+- **Hook sdd-test-guard**: Bloquear ediciones que reducen assertions en test files cuando tests fallan — prevención de reward hacking (PreToolUse) (commit `7a06618`)
+- **Hook task-completed**: Gate de calidad para Agent Teams con gates ordenados (test, typecheck, lint, build, integration, e2e, coverage) y tracking de failures por teammate (commit `d90fc12`)
+- **Hook teammate-idle**: Safety net con detección de archivo ABORT y circuit breaker tras N failures consecutivos (commit `7a06618`)
+- **Módulo _sdd_detect.py**: Biblioteca compartida SDD — detección de test commands (npm, pytest, go, cargo, make), parsing de output (TAP, Jest, Vitest, pytest, Go, cargo), e I/O atómico vía `/tmp/` (commit `4291a6b`)
+- **Test suites para hooks**: 9 archivos, 230+ tests cubriendo todos los hooks — incluyendo 43 escenarios de integración SDD (commit `b5495d9`)
+- **Ralph pipeline parallelism**: Ejecución paralela de tareas independientes con detección de overlap de archivos y regla de tarea lanzable (commit `f828cb2`)
+- **Ralph GATE_INTEGRATION y GATE_E2E**: Gates de calidad de primera clase para integración y end-to-end (commit `73edd51`)
+- **Memoria persistente en agentes**: Atributo `memory: user` en los 6 agentes core para acumulación de conocimiento cross-sesión (commit `393864d`)
+- **Handbook página Ralph Orchestrator**: Documentación dedicada con arquitectura, prerequisites y guía de uso (commit `030e2a8`)
+- **Hero animation**: Componente HeroDither.vue con animación cascade para landing page del handbook (commit `75862d3`)
+
+### Cambiado
+
+- ⚠️ **BREAKING**: **Metodología TDD → SDD** — Scenario-Driven Development reemplaza TDD como core del framework. Escenarios observables antes de código, tests como herramienta (no autoridad), prohibición explícita de reward hacking. Migración: definir escenarios de usuario antes de escribir tests, usar `/scenario-driven-development` (commit `d086eb8`)
+- ⚠️ **BREAKING**: **Directorio `commands/` eliminado** — 15 commands migrados a skills o eliminados. Migración: invocar skills directamente (`/commit`, `/changelog`, `/pull-request`, `/deep-research`, etc.) (commit `ea45eae`)
+- ⚠️ **BREAKING**: **Ralph orchestrator reescrito con Agent Teams** — `loop.sh` (789 líneas), `status.sh`, `tail-logs.sh`, `truncate-context.sh` eliminados. Ejecución ahora in-process con teammates efímeros (200K contexto fresco por tarea). Requiere `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Migración: eliminar `loop.sh` del proyecto, usar `/ralph-orchestrator` desde sesión activa (commits `8a8b97b`, `a23702a`)
+- ⚠️ **BREAKING**: **CLAUDE.md template rediseñado** — de 301 líneas (manual prescriptivo con ROI scoring, graphviz, complexity budgets, compliance certification) a 37 líneas (constitución con `<constraints>`, `<identity>`, `<workflow>`, `<communication>`). Migración: regenerar con `/project-init` (commit `989dead`)
+- ⚠️ **BREAKING**: **Template `.mcp.json` eliminado** — Context7 reubicado a plugin.json. Mobile-mcp y maestro eliminados. Migración: configurar MCP servers directamente en proyecto si se necesitan (commit `3a91ef0`)
+- ⚠️ **BREAKING**: **Hooks lifecycle events reestructurados** — `UserPromptSubmit` y `SessionEnd` eliminados. `PreToolUse` cambiado de security scanning a SDD test guard. Nuevos eventos: `PostToolUse`, `TaskCompleted`, `TeammateIdle`. Migración: eliminar hooks personalizados que dependan de anti_drift o security_guard (commit `7a06618`)
+- ⚠️ **BREAKING**: **Gitignore template reducido** — de 121 líneas (kitchen sink) a 12 líneas (solo framework-specific). `.claude/rules/` ahora versionable. Migración: mantener reglas genéricas en gitignore propio del proyecto (commit `3a91ef0`)
+- ⚠️ **BREAKING**: **Skill pr-workflow → pull-request** — renombrado para consistencia. Migración: actualizar invocaciones de `/pr-workflow` a `/pull-request` (commits en rango)
+- ⚠️ **BREAKING**: **Settings template: Tasks y Agent Teams habilitados** — `CLAUDE_CODE_ENABLE_TASKS`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, `MAX_MCP_OUTPUT_TOKENS` añadidos. `MAX_THINKING_TOKENS` eliminado. Permisos `WebFetch` removidos (todo web vía agent-browser). `FILE_READ_MAX_OUTPUT_TOKENS` reducido de 200K a 100K (commit `c35cab2`)
+- ⚠️ **BREAKING**: **Ralph config variables renombradas** — `QUALITY_LEVEL`, `CONFESSION_MIN_CONFIDENCE` → `GATE_TEST`, `GATE_TYPECHECK`, `GATE_LINT`, `GATE_BUILD`, `GATE_INTEGRATION`, `GATE_E2E`, `GATE_COVERAGE`, `MAX_TEAMMATES`, `MODEL`. `AGENTS.md` movido a `.ralph/agents.md` (commits `e193dd1`, `5455cff`)
+- **Agentes consolidados de ~20 a 6**: edge-case-detector reescrito (+113% — 4 fases, 5 categorías, 20+ patrones, confidence scoring), performance-engineer reescrito (+446% — taxonomía 3-tier con 16 patrones), code-reviewer con SDD compliance gate y detección de reward hacking (commits `f1bce96`, `51c15d1`, `bc94991`)
+- **Ralph simplificado de 3 capas a 2**: Lead (orquestador puro) + teammates efímeros (implementers y reviewers). Eliminada rotación de coordinadores. Un teammate = una tarea = contexto fresco (commit `a23702a`)
+- **Ralph execution runbook**: Artefacto generado post-aprobación de plan que sobrevive context compression con registro de tareas, gates, y prompts inlined (commit `16f2c71`)
+- **SOP skills alineados con SDD**: sop-code-assist, sop-discovery, sop-planning, sop-reverse, sop-task-generator actualizados con validación de escenarios, agent-browser para research, y containment de filesystem (commits `a9617b7`, `adb72ae`, `c47e7fc`)
+- **Hook session-start simplificado**: Eliminada migración legacy de gitignore y lógica de scan compleja. Añadido patrón `/.claude/*` + `!/.claude/rules/`. Reducido ~320 a ~170 líneas (commit `2edad9e`)
+- **Hook agent-browser-check reescrito**: Limpieza de daemons huérfanos, sync de skill a nivel usuario (`~/.claude/skills/`), cooldown anti-retry storms (commit `da354be`)
+- **Hook notify.sh reescrito**: Parsing JSON, sonidos distintos por tipo (Funk/Purr/Pop/Tink), prevención de loop infinito, escaping AppleScript (commit `9c92fec`)
+- **Statusline.sh optimizado**: De 6-9 invocaciones `jq` a single pass. Branch/worktree detection consolidado (commit `2edad9e`)
+- **Plugin.json**: keyword `tdd` → `sdd`, Context7 MCP registrado en plugin manifest (commit `d086eb8`)
+- **Handbook ai-first-workflow**: Reescrito con metodología SDD y estructura por fases (commit `0113e52`)
+- **Handbook quickstart**: Expandido con prerequisites, post-install flow, y documentación de memory-check hook (commit `e3e6c6c`)
+- **Handbook why-ai-framework**: Reescrito con sustancia técnica y componentes VitePress (commit `12998fc`)
+- **Handbook pro-tips**: Reescrito como tips orientados a patrones (commit `f20626f`)
+- **Handbook agents-guide**: Actualizado para roster de 6 agentes (commit `1627248`)
+- **Skill humanizer**: Añadir patrones de escritura AI en español con `references/spanish-patterns.md` (commit `47437c2`)
+
 ### Eliminado
 
-- **Agentes deprecados**: `frontend-developer`, `mobile-developer`, `docs-architect`, `design-review` — bajo/nulo uso, reducción de complejidad del plugin
-- **Comandos deprecados**: `/polish`, `/cleancode-format` — bajo/nulo uso, reducción de complejidad del plugin
+- **14 agentes**: architect-review, backend-architect, cloud-architect, config-security-expert, database-admin, design-iterator, mobile-test-generator, observability-engineer, playwright-test-generator, test-automator, frontend-developer, mobile-developer, docs-architect, design-review — consolidados en 6 agentes core o absorbidos por skills (commits `f1bce96`, `51c15d1`)
+- **Skill mobile-testing**: Removido con ejemplos y referencias Maestro/Expo — demasiado especializado para framework general (commit `1b67340`)
+- **Skill webapp-testing**: Removido con scripts Python — reemplazado por agent-browser (commit `1b67340`)
+- **Skill writing-skills**: Removido — reemplazado por skill-creator con arquitectura mejorada (commit `45b731f`)
+- **Skill claude-code-expert**: Deprecado en favor de claude-code-guide nativo de Claude Code (commit `7a093e2`)
+- **Hook anti_drift**: Enforcement prescriptivo por prompt reemplazado por constraints constitucionales + SDD hooks empíricos (commit `3a91ef0`)
+- **Hook superpowers-loader**: Carga forzada de skill redundante — Claude Code descubre skills nativamente (commit `3a91ef0`)
+- **Hook security_guard**: Scanning regex en ediciones reemplazado por security-reviewer agent (commit `3a91ef0`)
+- **Hook episodic-memory-sync**: Dependencia de plugin externo eliminada (commit `3a91ef0`)
+- **Dashboard**: Removido completamente (server.js, readers.js, tests, package.json) — monitoreo de Ralph migrado a Agent Teams in-process (commit `1b67340`)
+- **Specs**: Removido directorio specs/supervision-dashboard/ — artefactos muertos tras eliminación del dashboard (commit `1b67340`)
+- **Ralph scripts legacy**: `loop.sh`, `status.sh`, `tail-logs.sh`, `truncate-context.sh`, `PROMPT_build.md`, `scratchpad.md.template`, examples/ (2,023 líneas) — reemplazados por Agent Teams in-process (commit `01e61e1`)
+- **Handbook commands-guide**: Página eliminada — commands ya no existen como capa de invocación (commit `1627248`)
+- **Template rules/browser-auth.md**: Guía de autenticación OAuth/SSO removida del template base (commit `3a91ef0`)
+- **Comandos deprecados**: `/polish`, `/cleancode-format` — subsumidos por eliminación completa del directorio commands/ (commit `ea45eae`)
+
+### Arreglado
+
+- **SDD test guard**: Prevenir reward hacking bloqueando ediciones que reducen assertions cuando tests fallan (commit `7a06618`)
+- **Containment SOP skills**: Restricciones de filesystem para prevenir leaks de archivos fuera del proyecto (commit `adb72ae`)
+- **Agent-browser daemons**: Limpieza de procesos huérfanos en SessionStart (commit `84098bc`)
+- **Gitignore concurrencia**: Prevenir entradas duplicadas por ejecución concurrente de hooks (commit `b8bff4e`)
+- **Ralph exit code suppression**: Detección robusta de supresión de exit codes en gates de calidad (commit `16bb045`)
+- **Ralph context compression**: Supervivencia vía execution-runbook artifact (commit `16f2c71`)
+- **Ralph consistencia**: Resolución de 25+ findings en runtime files y 31 findings de auditoría (commits `5b77a11`, `fe50f43`)
 
 ---
+
+::: details Versiones Anteriores
 
 ## [5.1.2] - 2026-01-07
 
@@ -211,8 +301,6 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
-::: details Versiones Anteriores
-
 ## [3.1.0] - 2025-11-12
 
 > **⚠️ CRÍTICO - REINSTALACIÓN OBLIGATORIA**
@@ -309,5 +397,5 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Versión**: 2026.1.0 | **Fecha**: 2026-02-16
 :::
