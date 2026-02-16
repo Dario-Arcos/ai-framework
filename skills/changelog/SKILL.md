@@ -1,6 +1,6 @@
 ---
 name: changelog
-description: Actualiza CHANGELOG.md con análisis Truth-Based del diff real entre versiones. Use when: "actualizar changelog", "qué cambió desde la última versión", "preparar release notes", "documentar cambios para vX.Y", "changelog", "what changed", "release notes", "prepare release".
+description: Use when updating CHANGELOG.md between versions.
 ---
 
 # Truth-Based Changelog

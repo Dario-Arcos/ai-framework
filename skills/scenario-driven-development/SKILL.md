@@ -1,6 +1,6 @@
 ---
 name: scenario-driven-development
-description: ALWAYS Use for all implementation work. SCENARIO→SATISFY→REFACTOR with convergence gates. Scenarios define expected behavior as end-to-end user stories; satisfaction replaces boolean pass/fail with probabilistic convergence. 
+description: Use when implementing any feature or change. Invoke AFTER brainstorming. SCENARIO→SATISFY→REFACTOR with convergence gates.
 ---
 
 # Scenario-Driven Development

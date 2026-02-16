@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Generates project memory (.claude/rules/) — project context, architecture, stack, and conventions that Claude loads every session
+description: Use when initializing or refreshing project memory (.claude/rules/).
 ---
 
 # Project Initialization

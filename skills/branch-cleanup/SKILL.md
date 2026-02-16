@@ -1,6 +1,6 @@
 ---
 name: branch-cleanup
-description: Cleanup workflow after PR merge - delete feature branch and sync with base
+description: Use when cleaning up a branch after PR merge.
 ---
 
 # Post-Merge Cleanup

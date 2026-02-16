@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: AI-native multi-pass research with verification pipeline and confidence-rated outputs
+description: Use when researching a topic in depth with verification — technology decisions, API comparisons, or architecture exploration.
 ---
 
 # AI-Native Deep Research

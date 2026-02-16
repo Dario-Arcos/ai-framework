@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Intelligent git commit with automatic grouping and quality checks
+description: Use when creating a git commit.
 ---
 
 # Smart Git Commit

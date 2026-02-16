@@ -1,6 +1,6 @@
 ---
 name: worktree-cleanup
-description: Safe removal of specific worktrees with ownership validation and discovery mode
+description: Use when removing git worktrees or discovering existing worktrees.
 ---
 
 # Worktree Cleanup

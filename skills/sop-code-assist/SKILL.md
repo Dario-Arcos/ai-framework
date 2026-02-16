@@ -1,6 +1,6 @@
 ---
 name: sop-code-assist
-description: Scenario-driven implementation of code tasks following Explore → Plan → Code → Commit workflow. Use when executing .code-task.md files from ralph-orchestrator or when structured requirements are ready.
+description: Use when executing .code-task.md files or when structured requirements are ready for implementation.
 ---
 
 # Code Assist

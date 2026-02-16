@@ -1,6 +1,6 @@
 ---
 name: worktree-create
-description: Creates worktree with consistent branch in sibling directory
+description: Use when creating a git worktree for parallel development.
 ---
 
 # Worktree Create

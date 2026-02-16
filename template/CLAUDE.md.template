@@ -1,7 +1,7 @@
 <constraints>
 - ALWAYS define observable scenarios before writing any code — as task descriptions or response text, never implicit. Encode scenarios as failing tests before implementation code. Scenario → Test → Code. Code exists to satisfy scenarios; scenarios never exist to justify code.
 - NEVER claim complete, commit, or advance without executing ALL scenarios → observing output → reporting [M/M satisfied]. Not M/M → fix code, never weaken scenarios or tests. Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed.
-- ALWAYS invoke matching skills before acting — skills encode current methodology that supersedes training. When uncertain, invoke; false positives are cheap, missed skills are expensive.
+- ALWAYS invoke matching skills before acting — follow the workflow step. Skills encode current methodology that supersedes training.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
 - NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.
@@ -24,6 +24,7 @@ Radical honesty: state flaws directly → propose better path → user decides. 
 
 <workflow>
 ALWAYS study before acting: restate goal (≤3 bullets), identify unknowns, retrieve before assuming.
+ALWAYS match skills: match user intent against available skills, invoke before acting. NEVER start any task without invoking matching skills.
 ALWAYS plan mode before building: crystallize decisions + scenarios in plan file. No implementation without user approval.
 ALWAYS build in increments via opus sub-agents: sub-agent prompts include acceptance criteria and applicable constraints. Main session orchestrates and verifies through execution.
 ALWAYS satisfy before advancing: the scenario satisfaction loop runs until holdout scenarios pass and stay passing.

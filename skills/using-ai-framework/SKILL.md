@@ -1,6 +1,6 @@
 ---
 name: using-ai-framework
-description: Skill and agent enforcement rules. Injected automatically at session start — invoke manually only if enforcement context appears missing.
+description: Skill routing primer. Invoke manually only if routing context in CLAUDE.md appears missing.
 ---
 
 Invoke matching skills BEFORE responding. Only skip when CERTAIN no skill applies — if in doubt, invoke. False positives are cheap; missed skills are expensive.
