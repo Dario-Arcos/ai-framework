@@ -58,7 +58,7 @@ Ralph-orchestrator supports two execution paths. **Interactive** (sop-code-assis
 - Fresh 200K context per teammate (each teammate handles exactly 1 task, then shuts down)
 - Parallel execution with up to MAX_TEAMMATES concurrent teammates
 - Quality gates enforced via TaskCompleted hook (not inline)
-- TeammateIdle hook provides safety (circuit breaker + abort). Lead drives the implementer→reviewer→next cycle.
+- TeammateIdle hook provides safety (circuit breaker + abort). Lead drives the pipeline: independent tasks can start while reviews run, dependent tasks wait until their dependency's review passes.
 
 **Implementer lifecycle:**
 1. Spawn with task context (guardrails.md + agents.md + task description)
@@ -179,7 +179,7 @@ graph LR
         E --> W[Generate execution-runbook.md<br/>from template + plan data]
         W --> R[Read execution-runbook.md<br/>survives context compression]
         R --> G[TeamCreate + spawn]
-        G --> H[Ephemeral teammates<br/>Lead → Implementer → Reviewer → Next]
+        G --> H[Ephemeral teammates<br/>Pipeline: independent overlap, dependents wait for review]
     end
 
     style D fill:#ffe1e1

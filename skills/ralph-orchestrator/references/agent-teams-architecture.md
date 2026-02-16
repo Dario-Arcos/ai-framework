@@ -106,6 +106,10 @@ Ephemeral teammates solve this: each task starts with a clean 200K window. No co
 
 The lead is a **pure orchestrator**: it reads only 8-word summaries from reviewers, never code, diffs, or full reviews. Decision-making is based on task status and summary signals.
 
+### Pipeline parallelism
+
+The lead maintains a `tasks_in_review` set — taskIds whose implementation completed but review has not passed. When deciding whether to spawn the next implementer, the lead applies the **launchable task rule**: a task is launchable only if none of its original `blockedBy` dependencies are in `tasks_in_review`. This allows independent tasks to overlap with reviews while dependent tasks wait until their dependency is review-validated — preventing cascade failure from architectural issues that quality gates cannot detect.
+
 ### Context budget (per teammate)
 
 | Component | Tokens | Source |

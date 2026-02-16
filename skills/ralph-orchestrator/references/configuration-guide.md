@@ -76,13 +76,13 @@ GATE_COVERAGE="go test -cover ./..."
 
 ```bash
 MODEL="opus"                      # Model for teammates (opus recommended)
-MAX_TEAMMATES=2                   # Maximum concurrent teammates (hard cap: 3)
+MAX_TEAMMATES=3                   # Maximum concurrent teammates (hard cap: 3)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `MODEL` | `opus` | Model used for teammates |
-| `MAX_TEAMMATES` | `2` | Max concurrent teammates (hard cap: 3) |
+| `MAX_TEAMMATES` | `3` | Max concurrent teammates (hard cap: 3) |
 
 ---
 

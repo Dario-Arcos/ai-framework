@@ -1,7 +1,7 @@
 # Execution Runbook
 
-> **You are the ORCHESTRATOR.** Teammates implement. You coordinate.
-> Read this file completely. Follow every instruction. Do NOT implement tasks yourself.
+> **You are the ORCHESTRATOR.** Teammates implement — you coordinate.
+> Read this file completely. Follow every instruction.
 > **If your context was compressed**, re-read this file — it contains all orchestration instructions.
 
 ---
@@ -33,7 +33,7 @@
 
 ## 4. Launch Procedure
 
-Execute these steps IN ORDER:
+Execute these steps:
 
 ### 4.1 Create Team
 
@@ -90,9 +90,16 @@ Task(
 - `Read(".ralph/failures.json")` — per-teammate failure tracking
 - `SendMessage` — direct instructions to specific teammates
 
-**If user asks to implement:** Redirect to teammates. You coordinate, never implement.
+**If user asks to implement:** Redirect to teammates.
 
-### State Machine
+### State Machine — Pipeline Parallelism
+
+**Internal state:** Maintain `tasks_in_review` — a set of taskIds whose implementation completed but review has not yet passed. Initialized empty at launch.
+
+**Launchable task rule:** A task is launchable when ALL of these are true:
+1. Unblocked in Agent Teams (no pending `blockedBy`)
+2. None of its original `blockedBy` dependencies are in `tasks_in_review`
+3. Active teammates < MAX_TEAMMATES
 
 **WHEN implementer goes idle** — read 8-word summary from SendMessage:
 
@@ -103,7 +110,8 @@ Task(
 
 **OTHERWISE (task completed, gates passed):**
 1. Send `shutdown_request` to the implementer
-2. Spawn reviewer for the completed task:
+2. Add taskId to `tasks_in_review`
+3. Spawn reviewer for the completed task:
 
 ```
 Task(
@@ -116,13 +124,13 @@ Task(
 )
 ```
 
+4. Check `TaskList` for launchable tasks. Spawn implementers up to MAX_TEAMMATES.
+
 **WHEN reviewer goes idle** — read 8-word summary:
 
 1. Send `shutdown_request` to the reviewer
-
-2. **IF PASS**: Update `.code-task.md` file: set `## Status: COMPLETED` and `## Completed: {date}`. Run `TaskList` for newly unblocked tasks. Spawn next implementer(s) if available.
-
-3. **IF FAIL**: Spawn NEW implementer for the same task with review feedback:
+2. **IF PASS**: Remove taskId from `tasks_in_review` → set `.code-task.md` `## Status: COMPLETED` + `## Completed: {date}` → check `TaskList` for launchable tasks → spawn implementers up to MAX_TEAMMATES
+3. **IF FAIL**: taskId stays in `tasks_in_review` → spawn NEW implementer with review feedback:
 
 ```
 Task(
@@ -135,14 +143,14 @@ Task(
 )
 ```
 
-4. **IF BLOCKED**: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface to user.
+4. **IF BLOCKED**: Remove taskId from `tasks_in_review` → read `.ralph/reviews/task-{taskId}-blockers.md` → surface to user.
 
 ## 6. Completion
 
 1. All tasks complete — all reviewers report PASS
 2. Verify: all `.code-task.md` files have `Status: COMPLETED`
 3. Send `shutdown_request` to any remaining teammates
-4. `TeamDelete` to clean up team resources
+4. `TeamDelete`
 5. Report to user: "Ejecucion completa. {N} tasks completadas." + metrics summary from `.ralph/metrics.json`
 
 ## 7. Implementer Prompt

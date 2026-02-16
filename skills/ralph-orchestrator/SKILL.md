@@ -47,9 +47,7 @@ description: Use when building features requiring planning + autonomous executio
 - [ ] `.ralph/config.sh` exists — if missing: copy from `templates/config.sh.template`
 - [ ] `.ralph/guardrails.md` exists — if missing: copy from `templates/guardrails.md.template`
 
-**Teammate mode**: always in-process (teammates run as sub-agents in the current session).
-
-**You MUST** verify planning prerequisites before planning.
+**Teammate mode**: always in-process.
 
 > Error handling: [troubleshooting.md](references/troubleshooting.md)
 
@@ -67,11 +65,10 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | `referents/catalog.md` | referent-complete (Step 3) |
 | Nothing | NEW |
 
-**Use AskUserQuestion** to confirm: resume from detected phase, or choose goal if multiple. Surface `blockers.md` content if exists. After confirmation, skip to detected phase.
+**Use AskUserQuestion** to confirm: resume from detected phase, or choose goal if multiple. Surface `blockers.md` content if exists.
 
 ### Convergence Model
-The SOP pipeline (referent discovery → planning → task-gen → execution) is conceptually a
-**convergence loop**, not a linear waterfall:
+The SOP pipeline is a **convergence loop**, not a linear waterfall:
 - If execution reveals design gaps → loop back to planning
 - If planning reveals unknown risks → loop back to referent discovery
 - The State Detection table enables re-entry at any phase
@@ -111,7 +108,7 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 /sop-reverse target="{concept}" search_mode="referent" output_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
-Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3 with referent patterns as planning input.
+Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3.
 
 ### Step 3: Planning
 
@@ -119,7 +116,7 @@ Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3 with ref
 /sop-planning rough_idea="{goal}" discovery_path=".ralph/specs/{goal}/referents/catalog.md" project_dir=".ralph/specs/{goal}" mode={PLANNING_MODE}
 ```
 
-sop-planning reads `extracted-patterns.md` from the `referents/` directory when `discovery_path` points within it. Verified: sop-planning Step 1 constraint.
+sop-planning reads `extracted-patterns.md` from `referents/` when `discovery_path` points within it.
 
 Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
 
@@ -193,7 +190,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 
 **Pre-flight (Plan Mode):**
 
-1. Call `EnterPlanMode` — restricts session to read-only, preventing accidental edits.
+1. Call `EnterPlanMode` — restricts session to read-only.
 2. Build execution plan (read-only):
    a. Read all `.code-task.md` files from `.ralph/specs/{goal}/implementation/`
    b. Map dependencies: parse `Blocked-By` references from each `.code-task.md`
@@ -204,7 +201,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
       4. If overlap detected: add `Blocked-By` from the lower-step task to the higher-step one (serialize them)
       5. Report in Execution Strategy: "File overlap: Task {Y} waits for Task {X} (shared: {file})"
    d. Read `.ralph/config.sh` for quality gates, MAX_TEAMMATES, and MODEL
-   e. Determine parallelism: analyze task count and dependency graph (including overlaps resolved in 2c) to calculate max parallelizable tasks (tasks with no unresolved dependencies that can run simultaneously). Cap at 3 — more than 3 concurrent teammates degrades coordination quality. **Use AskUserQuestion**:
+   e. Determine parallelism: calculate max parallelizable tasks from dependency graph (including overlaps from 2c). Cap at 3. **Use AskUserQuestion**:
       - Question: "¿Cuantos teammates quieres ejecutar en paralelo?"
       - Header: "Paralelismo"
       - Options (calculate dynamically, all capped at 3):
@@ -254,12 +251,9 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 
 **Launch (after plan approval):**
 
-> Execute the Post-Approval Directive from the approved plan. The directive carries absolute
-> file paths and concrete values — it is self-contained and survives context compression.
-> Generate the runbook first (plan mode write restrictions are now lifted), then read and
-> execute it. The runbook is the single source of truth during execution.
-> If context compresses during monitoring, re-read the runbook to recover all instructions.
-> The canonical source for runbook content is below and in Phase 2. See `templates/execution-runbook.md.template` for structure.
+> Execute the Post-Approval Directive. Generate runbook first, then read and execute it.
+> Runbook is the single source of truth — re-read if context compresses.
+> See `templates/execution-runbook.md.template` for structure.
 
 1. `TeamCreate(team_name="ralph-{goal-slug}")`
 2. For each `.code-task.md`: `TaskCreate` with full file content as description, `metadata={codeTaskFile: path, codeTaskStep: N}`
@@ -284,7 +278,7 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 
 ## Phase 2: Execution
 
-**Role: PURE ORCHESTRATOR.** Lead coordinates via summaries only — never reads code, diffs, or full review content.
+**Role: PURE ORCHESTRATOR.** Never read code, diffs, or full review content — summaries only.
 
 **Tools allowed:**
 - `TaskList` — task progress
@@ -294,9 +288,16 @@ Update `.ralph/config.sh` with derived gates and user selections. See [configura
 - `Read(".ralph/failures.json")` — per-teammate failure tracking
 - `SendMessage` — direct instructions to specific teammates
 
-**If user asks to implement:** Redirect to teammates. Lead coordinates, doesn't implement.
+**If user asks to implement:** Redirect to teammates. Lead never implements.
 
-**State machine — Implementer → Reviewer → Next cycle:**
+**State machine — Pipeline parallelism (independent tasks overlap, dependent tasks wait for review):**
+
+**Internal state:** Maintain `tasks_in_review` — a set of taskIds whose implementation completed but review has not yet passed. Initialized empty at launch.
+
+**Launchable task rule:** A task is launchable when ALL of these are true:
+1. Unblocked in Agent Teams (no pending `blockedBy`)
+2. None of its original `blockedBy` dependencies are in `tasks_in_review`
+3. Active teammates < MAX_TEAMMATES
 
 WHEN implementer goes idle — read 8-word summary from SendMessage:
 
@@ -307,7 +308,8 @@ IF summary starts with "BLOCKED:":
 
 OTHERWISE (task completed, gates passed):
 1. Send `shutdown_request` to the implementer
-2. Spawn a reviewer teammate for the completed task:
+2. Add taskId to `tasks_in_review`
+3. Spawn a reviewer teammate for the completed task:
    ```python
    Task(
        subagent_type="general-purpose",
@@ -318,13 +320,12 @@ OTHERWISE (task completed, gates passed):
        prompt=PROMPT_reviewer.md content + "\n\nYour assigned task ID: {taskId}\nTask file: {path_to_code_task_md}"
    )
    ```
-
-> **Note:** The reviewer shares the implementer's Agent Teams taskId. It calls `TaskGet(taskId)` to read task details but does NOT call `TaskUpdate` — the implementer already marked the Agent Teams task as completed.
+4. Check `TaskList` for launchable tasks. Spawn implementers up to MAX_TEAMMATES.
 
 WHEN reviewer goes idle — read 8-word summary from SendMessage:
 1. Send `shutdown_request` to the reviewer
-2. IF PASS: Mark `.code-task.md` as COMPLETED → `TaskList` for newly unblocked tasks → spawn next implementer if unblocked tasks exist
-3. IF FAIL: Spawn NEW implementer for the same task with review feedback:
+2. IF PASS: Remove taskId from `tasks_in_review` → mark `.code-task.md` as COMPLETED → check `TaskList` for launchable tasks → spawn implementers up to MAX_TEAMMATES
+3. IF FAIL: taskId stays in `tasks_in_review` → spawn NEW implementer with review feedback:
    ```python
    Task(
        subagent_type="general-purpose",
@@ -335,13 +336,13 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
        prompt=PROMPT_implementer.md content + "\n\nYour assigned task ID: {taskId}\nReview feedback: .ralph/reviews/task-{taskId}-review.md"
    )
    ```
-4. IF BLOCKED: Read `.ralph/reviews/task-{taskId}-blockers.md`. Surface blocker to user via text output. Do NOT spawn new teammate until blocker resolved.
+4. IF BLOCKED: Remove taskId from `tasks_in_review` → read `.ralph/reviews/task-{taskId}-blockers.md` → surface to user. Do NOT spawn until resolved.
 
 **Completion flow:**
 1. All tasks complete — all reviewers report PASS
 2. Lead verifies: all `.code-task.md` files have `Status: COMPLETED`
 3. Lead sends `shutdown_request` to any remaining teammates
-4. `TeamDelete` cleans up team resources
+4. `TeamDelete`
 5. Inform user: "Ejecucion completa. {N} tasks completadas. {metrics summary}."
 
 > Guardrail enforcement: [backpressure.md](references/backpressure.md)
@@ -352,7 +353,7 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 
 1. **Single Entry Point** — Invoke once, orchestrate everything. Never invoke SOP skills directly.
 2. **Checkpoint Before Execution** — Planning can be interactive OR autonomous, but user ALWAYS approves the execution plan (Step 7 ExitPlanMode) before execution begins.
-3. **Fresh Context + Guardrails = Compounding Intelligence** — Each teammate gets fresh 200K context for a single task. `guardrails.md` accumulates lessons across all tasks. Each completed task feeds learnings into the next. Quality gates (TaskCompleted hook) enforce standards. Reviewer teammates validate SDD compliance after automated gates pass.
+3. **Fresh Context + Guardrails = Compounding Intelligence** — Each teammate gets fresh 200K context. `guardrails.md` accumulates lessons across tasks. Quality gates (TaskCompleted hook) enforce standards. Reviewers validate SDD compliance after gates pass.
 4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the task contract. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
 
 ---
