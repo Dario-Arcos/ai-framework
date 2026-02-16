@@ -58,6 +58,7 @@ Two complementary capabilities in one skill:
 - You MUST auto-detect target_type if not specified
 - You SHOULD confirm target type with user in interactive mode
 - You MUST create output_dir if it doesn't exist
+- You MUST write ALL files (intermediate and final) exclusively under `{output_dir}/` — never to the project root, `./research/`, `./docs/`, or any path outside `{output_dir}/` because leaked files pollute the user's project and create confusing duplicates
 
 ## Mode Behavior
 
@@ -83,6 +84,8 @@ When `search_mode=referent`, the skill searches for world-class implementations 
 ### Step R1: Define Search Scope
 
 You MUST clarify what concept, domain, or capability the user wants referents for. You MUST identify 3-5 candidate referent projects/implementations.
+
+**Filesystem containment:** When saving research results from agent-browser or any other source, write ALL files under `{output_dir}/referents/` (or `{output_dir}/` subdirectories). Do NOT save intermediate research to `./research/`, `./docs/`, or the project root.
 
 **Sources for referent identification:**
 - User-provided URLs or project names

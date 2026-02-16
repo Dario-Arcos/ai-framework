@@ -43,6 +43,7 @@ Transforms rough ideas into detailed, implementation-ready designs through struc
 - You MUST use appropriate tools to access content based on the input method
 - You MUST confirm successful acquisition of all parameters before proceeding
 - You SHOULD save the acquired rough idea to `{project_dir}/rough-idea.md` for use in subsequent steps
+- You MUST write ALL files (intermediate and final) exclusively under `{project_dir}/` — never to the project root, `./research/`, `./docs/`, or any path outside `{project_dir}/` because leaked files pollute the user's project and create confusing duplicates
 
 ### Existing Data Protection
 
@@ -195,6 +196,7 @@ Present options to user:
 5. Before proceeding: "Is research sufficient for design?"
 
 **Constraints:**
+- You MUST write research files ONLY to `{project_dir}/research/{topic-name}.md` — never to `./research/` at the project root or any path outside `{project_dir}/`
 - You MUST make each research file standalone
 - You MUST include specific examples, not generic descriptions
 - You MUST compare 2-3 options when multiple approaches exist
