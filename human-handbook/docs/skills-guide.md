@@ -20,43 +20,46 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 
 | Skill | Qué hace | Cuándo se activa |
 |-------|----------|------------------|
-| `brainstorming` | Diálogo para diseñar soluciones | Usuario describe qué construir, añadir o cambiar |
+| `brainstorming` | Diálogo estructurado para diseñar soluciones antes de implementar | Usuario describe qué construir, añadir o cambiar |
+| `scenario-driven-development` | Ciclo SCENARIO→SATISFY→REFACTOR con convergence gates | Toda implementación — se activa siempre |
 | `systematic-debugging` | Debugging metódico con 4 fases | Bug, test failure, comportamiento inesperado |
+| `verification-before-completion` | Gate de evidencia: 6 pasos antes de declarar "hecho" | Antes de cualquier claim de completitud |
 | `pull-request` | PR con quality gate integrado | Listo para crear pull request |
 | `frontend-design` | Diseño UI distintivo | Construir o estilizar UI (web, mobile, posters) |
 | `humanizer` | Elimina patrones de texto AI | Escribir o editar prosa (docs, UI copy, mensajes) |
 | `skill-creator` | Crear skills nuevas | Creando o actualizando un skill |
-| `context-engineering` | Optimizar prompts y CLAUDE.md | System prompts, agent architecture |
-| `agent-browser` | Browser automation con Playwright | Cualquier interacción web (research, E2E, scraping) |
+| `context-engineering` | Diseño y optimización de system prompts, CLAUDE.md, y agent architectures | System prompts, context windows, coherencia de agentes |
 
 ### Git & Workflow
 
 | Skill | Qué hace | Cuándo se activa |
 |-------|----------|------------------|
-| `commit` | Commits semánticos con agrupación | Listo para commitear |
+| `commit` | Commits semánticos con agrupación automática por tipo | Listo para commitear |
 | `changelog` | Actualiza CHANGELOG desde diff real | Documentar cambios |
 | `branch-cleanup` | Limpieza post-merge | Después de mergear PR |
 | `worktree-create` | Worktree aislado en sibling dir | Necesitas workstream paralelo |
 | `worktree-cleanup` | Eliminar worktrees con validación | Terminar con worktrees |
-| `project-init` | Genera rules de equipo | Proyecto nuevo o cambiado |
-| `deep-research` | Investigación multi-fuente verificada | Investigación compleja |
+| `project-init` | Genera rules de proyecto (stack, architecture, conventions) | Proyecto nuevo o stack cambiado |
+| `deep-research` | Investigación multi-fuente con verificación y confidence ratings | Investigación compleja |
+| `using-ai-framework` | Enforcement de skills y agentes — inyectado automáticamente | Session start (automático), o manual si falta |
 
 ### Pipeline SOP (desarrollo autónomo)
 
 | Skill | Qué hace | Cuándo se activa |
 |-------|----------|------------------|
-| `ralph-orchestrator` | Orquesta todo el pipeline | **Entry point** — invoca este |
+| `ralph-orchestrator` | Orquesta pipeline completo con Agent Teams — [ver página dedicada](./ralph-orchestrator.md) | **Entry point** — invoca este |
 | `sop-discovery` | Explora constraints y riesgos | Fase 1: exploración |
-| `sop-reverse` | Investiga sistemas existentes | Fase 1: exploración (alternativa) |
+| `sop-reverse` | Referent discovery (pre-build) + reverse engineering (sistemas existentes) | Fase 1: exploración |
 | `sop-planning` | Diseña solución detallada | Fase 2: diseño |
 | `sop-task-generator` | Genera .code-task.md files | Fase 3: planificación |
 | `sop-code-assist` | Implementa con SDD | Fase 4: ejecución |
+| `sop-reviewer` | Valida SDD compliance, reward hacking, satisfacción de scenarios | Post-ejecución: review |
 
 ---
 
-## agent-browser
+## agent-browser <Badge type="info" text="herramienta externa" />
 
-CLI de browser automation. Reemplaza WebFetch/WebSearch para interacción real con páginas.
+CLI de browser automation. No es un skill del framework — es una herramienta externa que los skills usan internamente. Reemplaza WebFetch/WebSearch para interacción real con páginas.
 
 ```bash
 agent-browser open https://example.com
@@ -422,27 +425,11 @@ Sistema de desarrollo autónomo. Ralph orquesta estos skills en secuencia:
 
 ### ralph-orchestrator
 
-**Entry point.** Invoca este para desarrollo autónomo.
+**Entry point** para desarrollo autónomo. Orquesta el pipeline completo — de la idea al código revisado — usando Agent Teams con contexto fresco de 200K tokens por teammate.
 
-```bash
-# Instalar
-./skills/ralph-orchestrator/scripts/install.sh
+> **[Ver página dedicada →](./ralph-orchestrator.md)** — arquitectura, paso a paso, configuración, safety nets, modelo de costos.
 
-# Ejecutar
-./loop.sh specs/mi-feature/
-```
-
-::: warning Requisitos
-Git repo, tests/lint/build, Bash 4+, jq, bc.
-:::
-
-**Flujo:**
-1. Detecta tipo (Forward: nuevo | Reverse: investigar)
-2. Discovery o investigation
-3. Diseño detallado
-4. Genera task files
-5. **Checkpoint**: apruebas el plan
-6. Ejecución autónoma
+**En resumen:** planificación en 2 modos (interactive/autonomous), checkpoint obligatorio, ejecución via Agent Teams con quality gates enforced por hooks y reviewer teammate que valida SDD compliance.
 
 ::: details Exit codes
 | Código | Significado |
@@ -468,11 +455,14 @@ Explora constraints, riesgos y prior art. Metodología Amazon agent-SOP.
 
 ### sop-reverse
 
-Investiga sistemas existentes y genera specs.
+Dos capacidades en un skill:
 
-**Cuándo:** Codebase heredado, integrar APIs, documentar legacy.
+1. **Referent Discovery** (pre-build): busca implementaciones world-class, extrae patrones, construye sobre fundamentos probados.
+2. **Reverse Engineering** (investigar existente): investiga artifacts existentes (codebases, APIs, procesos) y genera specs estructurados.
 
-**Output:** `investigation.md`, `specs-generated/`, `recommendations.md`
+**Cuándo:** Antes de construir algo nuevo (referentes), o al heredar codebase, integrar APIs, documentar legacy.
+
+**Output:** `referents/catalog.md`, `extracted-patterns.md`, `investigation.md`, `recommendations.md`
 
 ---
 
@@ -499,6 +489,100 @@ Convierte plans en `.code-task.md` files.
 Implementa tasks con SDD: SCENARIO → SATISFY → REFACTOR.
 
 **Output:** Código + tests + commits.
+
+---
+
+### sop-reviewer
+
+Valida implementaciones completadas contra 5 gates en secuencia:
+
+| Gate | Qué valida | Nivel |
+|------|-----------|-------|
+| 1. SDD Compliance | Scenarios definidos antes del código, end-to-end user stories | BLOCKING |
+| 2. Behavioral Satisfaction | Comportamiento observado satisface intent del usuario | BLOCKING |
+| 3. Reward Hacking Detection | Tests no fueron reescritos para pasar, scenarios no debilitados | BLOCKING |
+| 4. Code Quality | Clean code, no tech debt innecesaria | SUGGESTION |
+| 5. Integration Risk | Impacto en otros tasks, side effects | SUGGESTION |
+
+Los gates BLOCKING detienen la review si fallan. Los SUGGESTION se documentan pero no bloquean.
+
+**Detección de reward hacking:** Si el implementer reescribió un test para que pase en vez de arreglar el código, o debilitó un scenario para satisfacerlo, el reviewer lo detecta y rechaza.
+
+---
+
+## scenario-driven-development
+
+Metodología core del framework. Todo código se implementa con el ciclo SCENARIO → SATISFY → REFACTOR.
+
+**Ley de hierro:**
+```
+NO PRODUCTION CODE WITHOUT A DEFINED SCENARIO FIRST
+```
+
+**Concepto clave:** un scenario NO es un test. Es una user story end-to-end con comportamiento observable desde la perspectiva del usuario.
+
+| | Scenario | Test |
+|---|---|---|
+| **Vive** | En el spec o external | En el codebase |
+| **Evalúa** | "¿Satisface al usuario?" | "¿Pasa?" |
+| **Vulnerable a** | Nada (holdout externo) | Reward hacking |
+
+**Satisfacción ≠ Pass/Fail:** SDD reemplaza el boolean "todos los tests pasan" con convergencia probabilística — ¿qué fracción de trayectorias por los scenarios satisface al usuario?
+
+**Ciclo:**
+1. Definir scenario como user story con valores concretos
+2. Encodificar como test que falla
+3. Implementar código mínimo para satisfacer
+4. Refactor sin romper satisfacción
+5. Repetir hasta convergencia
+
+---
+
+## verification-before-completion
+
+Gate de evidencia que se ejecuta antes de cualquier claim de completitud. "Los tests pasan" sin output no es evidencia.
+
+**Ley de hierro:**
+```
+NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+```
+
+**Los 6 pasos:**
+
+| Paso | Acción |
+|------|--------|
+| 1. IDENTIFY | Lista cada claim que vas a hacer |
+| 2. RUN | Ejecuta el comando de verificación AHORA |
+| 3. READ | Lee el output COMPLETO — no skimees |
+| 4. VERIFY | Confirma que el output coincide con tu claim |
+| 5. SATISFY | Verifica contra scenarios definidos |
+| 6. REPORT | Reporta [M/N satisfechos] con evidencia |
+
+"Lo corrí antes" no cuenta. "Los tests pasan" sin output no cuenta. Solo evidencia fresca y observable.
+
+---
+
+## sop-reviewer
+
+Disponible como skill standalone o invocado automáticamente por reviewer teammates en Ralph. Ver [sección en Pipeline SOP](#sop-reviewer) para detalles de los 5 gates.
+
+---
+
+## using-ai-framework
+
+Reglas de enforcement que aseguran que Claude invoque skills y agentes por contexto. Inyectado automáticamente al inicio de cada sesión via SessionStart hook.
+
+**Regla:** invocar skills antes de responder. Solo saltar cuando es **seguro** que ningún skill aplica. En duda, invocar — los falsos positivos son baratos, los skills perdidos son caros.
+
+**Red flags** — si piensas esto, STOP e invoca:
+
+| Pensamiento | Realidad |
+|-------------|---------|
+| "Puedo con mi training" | Training es stale. Skills tienen metodología actual. |
+| "El skill es overkill" | Lo simple se complica. Invoca. |
+| "Déjame explorar primero" | Skills dicen CÓMO explorar. Invoca primero. |
+
+**Prioridad:** skills de proceso primero (brainstorming, debugging, discovery), luego skills de implementación (scenario-driven-development, frontend-design).
 
 ---
 
@@ -548,5 +632,5 @@ Verifica que existe `specs/` en tu proyecto.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-02-15
 :::

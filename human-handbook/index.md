@@ -26,7 +26,7 @@ features:
       width: 48
       height: 48
     title: Skills
-    details: 21 workflows que Claude activa por contexto o con slash commands — commits, PRs, debugging, research
+    details: 24 workflows que Claude activa por contexto o con slash commands — commits, PRs, debugging, research
     link: /docs/skills-guide
 
   - icon:

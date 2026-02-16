@@ -56,6 +56,7 @@ export default withMermaid(defineConfig({
         collapsed: false,
         items: [
           { text: "Skills", link: "/docs/skills-guide" },
+          { text: 'Ralph Orchestrator <span class="sidebar-badge-new">new</span>', link: "/docs/ralph-orchestrator" },
           { text: "Agentes", link: "/docs/agents-guide" },
           { text: "Integraciones", link: "/docs/integrations" },
         ],
@@ -85,5 +86,8 @@ export default withMermaid(defineConfig({
   // Mermaid configuration
   mermaid: {
     theme: "neutral",
+    flowchart: {
+      padding: 24,
+    },
   },
 }));

@@ -318,6 +318,28 @@ html {
   color: var(--success-text);
 }
 
+/* ===== SIDEBAR NEW TAG - Left-accented label for recent additions ===== */
+.sidebar-badge-new {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px 1px 5px;
+  border-left: 2px solid var(--vp-c-success-1);
+  background: rgba(var(--success-rgb), 0.06);
+  color: var(--success-text);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.dark .sidebar-badge-new {
+  border-left-color: #4ADE80;
+  background: rgba(74, 222, 128, 0.08);
+  color: #86EFAC;
+}
+
 /* Secondary button variant with lavender */
 .VPButton.alt {
   border-color: var(--lavender-blue);
