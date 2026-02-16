@@ -1,7 +1,7 @@
 {
   "name": "ai-framework",
   "description": "Constitutional AI-first development framework with specialized agents, workflow commands, and intelligent hooks",
-  "version": "5.1.2",
+  "version": "2026.1.0",
   "author": {
     "name": "Dario Arcos"
   },

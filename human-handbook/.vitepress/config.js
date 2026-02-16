@@ -11,8 +11,8 @@ export default withMermaid(defineConfig({
   head: [["link", { rel: "icon", href: "/ai-framework/favicon.png" }]],
 
   themeConfig: {
-    version: "5.1.2",
-    previousVersion: "5.1.1",
+    version: "2026.1.0",
+    previousVersion: "5.1.2",
 
     search: {
       provider: "local",
