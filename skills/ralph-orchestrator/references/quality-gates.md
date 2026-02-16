@@ -16,10 +16,12 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 
 | Gate | Purpose | Example Command |
 |------|---------|-----------------|
-| `GATE_TEST` | Run test suite | `npm test`, `pytest` |
+| `GATE_TEST` | Run unit test suite | `npm test`, `pytest` |
 | `GATE_TYPECHECK` | Type checking | `npm run typecheck`, `mypy src/` |
 | `GATE_LINT` | Linting | `npm run lint`, `ruff check .` |
 | `GATE_BUILD` | Build validation | `npm run build`, `go build ./...` |
+| `GATE_INTEGRATION` | Integration tests (testcontainers, real DB) | `npm run test:integration`, `pytest -m integration` |
+| `GATE_E2E` | End-to-end tests | `npx playwright test`, `npx cypress run` |
 
 ### Supplementary: Coverage Gate
 
@@ -27,7 +29,7 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 |------|---------|-----------------|
 | `GATE_COVERAGE` | Coverage enforcement | `npx vitest run --coverage`, `pytest --cov` |
 
-GATE_COVERAGE is evaluated AFTER the 4 standard gates pass. Requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh. When coverage falls below threshold, exit 2 rejects the task.
+GATE_COVERAGE is evaluated AFTER the 6 standard gates pass. Requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh. When coverage falls below threshold, exit 2 rejects the task.
 
 ---
 
@@ -58,11 +60,13 @@ All gates are required. SDD is mandatory. There is one quality standard: product
 - You MUST NOT skip to later gates because failed early gates invalidate later results
 
 **Order:**
-1. `GATE_TEST` - Verify behavior
+1. `GATE_TEST` - Verify unit behavior (fast feedback)
 2. `GATE_TYPECHECK` - Catch type errors
 3. `GATE_LINT` - Catch style issues
 4. `GATE_BUILD` - Ensure it compiles
-5. `GATE_COVERAGE` - Enforce minimum coverage (when configured)
+5. `GATE_INTEGRATION` - Verify integration behavior (testcontainers, real deps)
+6. `GATE_E2E` - Verify end-to-end flows
+7. `GATE_COVERAGE` - Enforce minimum coverage (when configured)
 
 If any gate fails, the `task-completed.py` hook returns exit 2 with failure output on stderr. The teammate receives the gate output and must fix the issue before marking the task complete again.
 
@@ -83,16 +87,16 @@ If any gate fails, the `task-completed.py` hook returns exit 2 with failure outp
 3. Implementation satisfies the scenario (satisfy)
 4. Refactor while satisfied
 
-Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip GATE_TEST but all other gates still apply.
+Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip behavioral gates (test, integration, e2e) but structural gates (typecheck, lint, build) still apply.
 
 ### Scenario-Strategy Override
 
-Tasks with `Scenario-Strategy: not-applicable` skip GATE_TEST but run all other gates.
+Tasks with `Scenario-Strategy: not-applicable` skip behavioral gates but run structural gates.
 
-| Scenario-Strategy | GATE_TEST | GATE_TYPECHECK | GATE_LINT | GATE_BUILD |
-|---|---|---|---|---|
-| `required` | Run | Run | Run | Run |
-| `not-applicable` | **Skip** | Run | Run | Run |
+| Scenario-Strategy | GATE_TEST | GATE_TYPECHECK | GATE_LINT | GATE_BUILD | GATE_INTEGRATION | GATE_E2E |
+|---|---|---|---|---|---|---|
+| `required` | Run | Run | Run | Run | Run | Run |
+| `not-applicable` | **Skip** | Run | Run | Run | **Skip** | **Skip** |
 
 Default: field absent → `required` (all gates run).
 
@@ -125,7 +129,7 @@ GATE_TEST="npm test --prefix packages/server && npm test --prefix packages/web"
 ## Custom Gates
 
 **Constraints:**
-- You MUST modify `hooks/task-completed.py` to add custom gates because the hook only reads the 4 hardcoded gate names (`GATE_TEST`, `GATE_TYPECHECK`, `GATE_LINT`, `GATE_BUILD`)
+- You MUST modify `hooks/task-completed.py` to add custom gates because the hook only reads gate names listed in `CONFIG_KEYS`
 - You MUST add the corresponding gate command to `.ralph/config.sh` because the hook sources this file for gate commands
 - You MUST NOT assume that adding a new `GATE_*` variable to `config.sh` alone will activate it — the hook's `CONFIG_KEYS` list and gate execution logic must also be updated
 
@@ -133,14 +137,15 @@ GATE_TEST="npm test --prefix packages/server && npm test --prefix packages/web"
 
 ```bash
 # In .ralph/config.sh — define the command
-GATE_E2E="npm run e2e"
+GATE_SECURITY="npm audit --audit-level=high"
 ```
 
 ```python
 # In hooks/task-completed.py — add to CONFIG_KEYS and gate execution
 CONFIG_KEYS = [
     "GATE_TEST", "GATE_TYPECHECK", "GATE_LINT", "GATE_BUILD",
-    "GATE_E2E",  # ← add here
+    "GATE_INTEGRATION", "GATE_E2E",
+    "GATE_SECURITY",  # ← add here
 ]
 ```
 
@@ -169,7 +174,7 @@ CONFIG_KEYS = [
 
 **Process:**
 - When a teammate marks a task as complete, the `TaskCompleted` hook fires automatically
-- The hook runs all configured gates in order (test → typecheck → lint → build)
+- The hook runs all configured gates in order (test → typecheck → lint → build → integration → e2e)
 - **Exit 0**: all gates passed — task is marked complete, failure counter resets, metrics updated
 - **Exit 2**: a gate failed — task remains incomplete, failure output sent to teammate via stderr, failure counter incremented
 
@@ -186,7 +191,7 @@ After automated gates pass, a **reviewer teammate** validates SDD compliance for
 - Refactoring was done while scenarios remained green
 
 **Workflow:**
-1. Implementer completes task → automated gates pass (test, typecheck, lint, build)
+1. Implementer completes task → automated gates pass (test, typecheck, lint, build, integration, e2e)
 2. Lead spawns a reviewer teammate for the completed task
 3. Reviewer runs `/sop-reviewer` against the task
 4. Reviewer writes review to `.ralph/reviews/task-{id}-review.md`

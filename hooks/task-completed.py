@@ -40,6 +40,8 @@ CONFIG_KEYS = [
     "GATE_TYPECHECK",
     "GATE_LINT",
     "GATE_BUILD",
+    "GATE_INTEGRATION",
+    "GATE_E2E",
     "GATE_COVERAGE",
     "MIN_TEST_COVERAGE",
 ]
@@ -49,6 +51,8 @@ CONFIG_DEFAULTS = {
     "GATE_TYPECHECK": "npm run typecheck",
     "GATE_LINT": "npm run lint",
     "GATE_BUILD": "npm run build",
+    "GATE_INTEGRATION": "",
+    "GATE_E2E": "",
     "GATE_COVERAGE": "",
     "MIN_TEST_COVERAGE": "0",
 }
@@ -365,7 +369,9 @@ def main():
     # Load config
     config = load_config(config_path)
 
-    # Run quality gates in order (skip GATE_TEST for not-applicable tasks)
+    # Run quality gates in order
+    # Behavioral gates (test, integration, e2e) skip for not-applicable tasks
+    # Structural gates (typecheck, lint, build) always run
     gates = []
     if scenario_strategy != "not-applicable":
         gates.append(("test", config["GATE_TEST"]))
@@ -374,6 +380,11 @@ def main():
         ("lint", config["GATE_LINT"]),
         ("build", config["GATE_BUILD"]),
     ])
+    if scenario_strategy != "not-applicable":
+        gates.extend([
+            ("integration", config["GATE_INTEGRATION"]),
+            ("e2e", config["GATE_E2E"]),
+        ])
 
     for gate_name, gate_cmd in gates:
         if not gate_cmd:

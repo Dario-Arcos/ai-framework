@@ -164,8 +164,10 @@ Populate `templates/AGENTS.md.template` with operational context for teammates.
 | `GATE_TYPECHECK` | Language toolchain (empty for compiled languages) |
 | `GATE_LINT` | Language linter |
 | `GATE_BUILD` | Build/bundling tool (empty if none) |
+| `GATE_INTEGRATION` | Integration Testing technology (empty if none) |
+| `GATE_E2E` | E2E technology (empty if none) |
 
-Empty string = gate skipped. See `.ralph/config.sh` comments for stack-specific examples.
+Empty string = gate skipped. Integration and E2E gates run after build and are skipped for `Scenario-Strategy: not-applicable` tasks. See `.ralph/config.sh` comments for stack-specific examples.
 
 **You MUST NOT** use exit code suppression in gate commands. The following patterns defeat quality gates and are rejected at runtime:
 - `|| true`, `; true`, `|| :`, `; :`, `|| exit 0`, `; exit 0` — forces exit 0 regardless of test result

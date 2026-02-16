@@ -55,6 +55,27 @@ GATE_BUILD="npm run build"
 #   GATE_BUILD="cargo build"
 
 # ─────────────────────────────────────────────────────────────────
+# INTEGRATION & E2E GATES
+# ─────────────────────────────────────────────────────────────────
+# Run AFTER standard gates pass. Empty string = skip.
+# Skipped for tasks with Scenario-Strategy: not-applicable.
+
+GATE_INTEGRATION=""
+GATE_E2E=""
+
+# Examples:
+#
+#   GATE_INTEGRATION="npm run test:integration"   # testcontainers, real DB
+#   GATE_INTEGRATION="pytest -m integration"       # pytest marker
+#   GATE_INTEGRATION="go test -tags=integration ./..."
+#   GATE_INTEGRATION="gradle integrationTest"
+#
+#   GATE_E2E="npx playwright test"
+#   GATE_E2E="npx cypress run"
+#   GATE_E2E="npm run test:e2e"
+#   GATE_E2E="pytest -m e2e"
+
+# ─────────────────────────────────────────────────────────────────
 # SAFETY
 # ─────────────────────────────────────────────────────────────────
 # Circuit breaker and coverage enforcement
