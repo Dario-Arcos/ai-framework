@@ -14,7 +14,7 @@
 - `npm run docs:dev` — start VitePress dev server
 - `npm run docs:build` — compile documentation to HTML
 - `npm run docs:preview` — preview built documentation
-- `npm version [major|minor|patch]` — bump version + sync across all manifests (sync-versions.cjs)
+- `npm version <calver>` — bump version with CalVer `YYYY.MINOR.MICRO` + sync across all manifests (sync-versions.cjs)
 
 ## CI/CD (GitHub Actions)
 - `claude-code-review.yml` — automated security/code review on PRs (Opus model)

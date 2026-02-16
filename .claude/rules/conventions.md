@@ -25,7 +25,7 @@
 - Commits: conventional format `type(scope): description` (Spanish changelog, English commits)
 
 ## Versioning
-- Semantic versioning via `npm version` → triggers sync-versions.cjs
+- CalVer `YYYY.MINOR.MICRO` via `npm version <calver-string>` → triggers sync-versions.cjs
 - CHANGELOG.md: Keep a Changelog format in Spanish, validated on version bump
 - Version synchronized across: package.json, plugin.json, README.md, VitePress config
 
