@@ -60,7 +60,7 @@ In `.ralph/config.sh`:
 MEMORIES_ENABLED=true   # Enable structured memory format
 ```
 
-> **MEMORIES_BUDGET (deprecated):** No enforcement mechanism was ever implemented. Guardrails.md grows naturally (~1 entry per task, bounded by session scope). Reviewer teammates validate entry accuracy via CORRECTION entries (see PROMPT_reviewer.md Phase 2).
+> **MEMORIES_BUDGET (deprecated):** No enforcement mechanism was ever implemented. Guardrails.md grows naturally (~1 entry per task, bounded by session scope). Reviewer teammates validate entry accuracy via CORRECTION entries (see PROMPT_reviewer.md Step 2).
 
 ## Backwards Compatibility
 
