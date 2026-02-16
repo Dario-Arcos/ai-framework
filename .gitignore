@@ -121,3 +121,10 @@ human-handbook/.vitepress/cache/
 
 # Ralph orchestrator runtime
 /.ralph/
+
+# AI Framework runtime files (auto-added)
+/.ralph/failures.json
+/.ralph/metrics.json
+/.ralph/ABORT
+/.ralph/handoff-*.md
+/.ralph/logs/
