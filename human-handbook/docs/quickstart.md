@@ -97,34 +97,48 @@ Claude Code necesita unos segundos para registrar los hooks del plugin en su con
 
 ## Compatibilidad de plataformas {#platforms}
 
-La plataforma principal es **macOS**. En Linux y Windows funciona con limitaciones.
+La plataforma principal es **macOS**. Linux funciona completamente. Windows tiene limitaciones significativas.
 
 ### Hooks por plataforma
 
-| Hook | macOS | Linux | Windows |
-|------|:-----:|:-----:|:-------:|
-| `session-start.py` | ✅ | ✅ | ✅ |
-| `agent-browser-check.py` | ✅ | ✅ | ⚠️ |
-| `memory-check.py` | ✅ | ✅ | ✅ |
-| `notify.sh` | ✅ | ➖ | ➖ |
+| Hook | Evento | macOS | Linux | Windows |
+|------|--------|:-----:|:-----:|:-------:|
+| `session-start.py` | SessionStart | ✅ | ✅ | ✅ |
+| `agent-browser-check.py` | SessionStart | ✅ | ✅ | ⚠️ |
+| `memory-check.py` | SessionStart | ✅ | ✅ | ✅ |
+| `notify.sh` | Stop, Notification | ✅ | ➖ | ➖ |
+| `sdd-test-guard.py` | PreToolUse | ✅ | ✅ | ❌ |
+| `sdd-auto-test.py` | PostToolUse | ✅ | ✅ | ❌ |
+| `teammate-idle.py` | TeammateIdle | ✅ | ✅ | ❌ |
+| `task-completed.py` | TaskCompleted | ✅ | ✅ | ❌ |
 
 ::: details Detalles por hook
 
-**session-start.py** — Python puro, 100% cross-platform. Sincroniza templates y `.gitignore`.
+**session-start.py** — Python puro (stdlib), 100% cross-platform. Sincroniza templates y `.gitignore`.
 
 **agent-browser-check.py** — Usa `sh -c` para lanzar procesos en background. En macOS/Linux funciona nativamente. En Windows puede fallar si no hay shell POSIX disponible (Git Bash, WSL).
 
-**memory-check.py** — Python puro, 100% cross-platform. Solo usa `os.stat()` para comparar timestamps (sin lectura de archivos). Detecta 3 niveles: reglas faltantes, manifests modificados después de la última generación, y reglas con >90 días de antigüedad.
+**memory-check.py** — Python puro (stdlib), 100% cross-platform. Usa `os.stat()` para fast-path de timestamps y content hashing (MD5) para verificar cambios reales en manifests. Detecta 4 niveles: reglas faltantes, manifests modificados (verificado por contenido), reglas con >30 días de antigüedad, y ausencia de infraestructura de tests.
 
 **notify.sh** — Notificaciones nativas macOS (`afplay` para sonido, `osascript` para visual). En Linux y Windows se salta silenciosamente (`exit 0`). No afecta la funcionalidad del framework.
+
+**sdd-test-guard.py** — Valida que ediciones a archivos de test no reduzcan assertions cuando los tests están fallando (protección contra reward hacking). Depende de `_sdd_detect.py` que usa `fcntl` (POSIX-only) y paths `/tmp/` hardcodeados.
+
+**sdd-auto-test.py** — Ejecuta tests en background después de cada edición a archivos fuente. Misma dependencia en `fcntl` y `/tmp/` que `sdd-test-guard.py`.
+
+**teammate-idle.py** — Safety net para ralph-orchestrator. Usa `fcntl` para file locking y `bash -c` para leer configuración. No funciona en Windows.
+
+**task-completed.py** — Quality gates para validar tareas completadas. Usa `fcntl` para atomic read-modify-write de contadores de fallos y métricas. No funciona en Windows.
 :::
 
-### Windows y Linux
+### Windows
 
 ::: warning Limitaciones en Windows
+- **SDD hooks (4 hooks)**: `sdd-test-guard`, `sdd-auto-test`, `teammate-idle`, `task-completed` usan `fcntl` (módulo POSIX) — fallan al importar en Windows. Sin estos hooks no hay protección contra reward hacking, auto-test continuo, ni quality gates automatizados
+- **Paths `/tmp/` hardcodeados**: `_sdd_detect.py` usa `/tmp/` para estado compartido entre hooks — no existe en Windows
 - **Notificaciones**: No disponibles (requieren macOS)
-- **agent-browser auto-install**: Puede fallar sin shell POSIX. Se recomienda instalar manualmente o usar WSL
-- **Workaround**: Usa Git Bash o WSL como shell de Claude Code
+- **agent-browser auto-install**: Puede fallar sin shell POSIX
+- **Workaround parcial**: Usa WSL para obtener compatibilidad completa. Git Bash solo resuelve los hooks que dependen de `sh -c`, no los que usan `fcntl`
 :::
 
 Para desactivar la auto-instalación de `agent-browser` en entornos donde falla:
