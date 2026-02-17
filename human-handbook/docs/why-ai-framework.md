@@ -30,16 +30,113 @@ Le pides que implemente algo, te dice "listo", y el código se ve razonable. Per
 
 AI Framework es un plugin de Claude Code que inyecta gobernanza en cada sesión. No son sugerencias que el modelo puede ignorar — son constraints embebidos a nivel de system prompt que el modelo recibe antes de leer tu primer mensaje.
 
-```mermaid
-flowchart LR
-  S["🚀 SessionStart<br>hooks inyectan constraints"]
-  U["💬 Tu mensaje<br>llega con gobernanza activa"]
-  SK["⚙️ Skills<br>se activan por contexto"]
-  AG["🔍 Agents<br>validan el output"]
-  V["✅ Verification<br>evidencia antes de completion"]
+<div class="flow-pipeline">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-body">
+      <div class="flow-title">SessionStart</div>
+      <div class="flow-desc">Hooks inyectan constraints</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-body">
+      <div class="flow-title">Tu mensaje</div>
+      <div class="flow-desc">Llega con gobernanza activa</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-body">
+      <div class="flow-title">Skills</div>
+      <div class="flow-desc">Se activan por contexto</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">4</div>
+    <div class="flow-body">
+      <div class="flow-title">Agents</div>
+      <div class="flow-desc">Validan el output</div>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">5</div>
+    <div class="flow-body">
+      <div class="flow-title">Verification</div>
+      <div class="flow-desc">Evidencia antes de completion</div>
+    </div>
+  </div>
+</div>
 
-  S --> U --> SK --> AG --> V
-```
+<style>
+.flow-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 24px 0;
+  position: relative;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  position: relative;
+}
+
+.flow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 48px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--vp-c-divider);
+}
+
+.flow-num {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--vp-c-bg-soft);
+  border: 1.5px solid var(--vp-c-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+  position: relative;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.flow-step:hover .flow-num {
+  background: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-bg);
+}
+
+.flow-body {
+  padding-top: 3px;
+}
+
+.flow-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  line-height: 1.4;
+}
+
+.flow-desc {
+  font-size: 13px;
+  color: var(--vp-c-text-3);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+</style>
 
 ### Gobernanza constitucional <Badge type="danger" text="core" />
 
