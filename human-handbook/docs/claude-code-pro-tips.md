@@ -108,18 +108,19 @@ Enfoque esperado:
 
 ## 2. Velocidad — menos latencia, más iteraciones
 
-### Tip 4: Effort level — no todo requiere pensar profundo
+### Tip 4: Effort level — máximo razonamiento por defecto
 
 `/model` → flechas `←` `→` para ajustar entre **low**, **medium** y **high**.
 
-| Effort | Cuándo usar |
+Mantén **high** como tu default. Más razonamiento = mejores decisiones, menos correcciones, menos ciclos desperdiciados. Solo baja cuando la velocidad importa más que la profundidad:
+
+| Effort | Cuándo bajar |
 |---|---|
-| Low | Quick fixes, renombrar variables, formateo |
-| Medium | Tareas de producción rutinarias (default) |
-| High | Diseño arquitectónico, refactoring complejo |
+| Medium | Iteraciones rápidas sobre algo que ya está claro |
+| Low | Tareas mecánicas: renombrar, formatear, fixes obvios |
 
 ::: tip PRO TIP
-Effort level controla **profundidad de razonamiento** — menos thinking = respuesta más rápida pero potencialmente menos profunda. Low para tareas triviales te ahorra tiempo y tokens significativamente.
+Bajar effort level no "ahorra" — reduce la calidad del razonamiento. La ganancia real es velocidad en tareas donde pensar profundo no aporta: pruebas exploratorias, cambios cosméticos, operaciones repetitivas.
 :::
 
 ---
@@ -151,9 +152,9 @@ Desactivar: `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false`
 
 ## 3. Recuperación — cuando las cosas salen mal
 
-### Tip 7: `ESC ESC` — 5 opciones, no solo rewind
+### Tip 7: `ESC ESC` — tu red de seguridad completa
 
-`ESC ESC` abre un menú con **5 acciones** sobre cualquier punto de la conversación:
+Claude Code **auto-checkpoints** antes de cada edición. No necesitas commits manuales ni `git reset --hard`. Si algo sale mal: `ESC ESC` y elige qué restaurar.
 
 | Opción | Qué hace |
 |---|---|
@@ -175,33 +176,19 @@ Desactivar: `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false`
 [debugging largo] → ESC ESC → Summarize from here → [implementar con contexto limpio]
 ```
 
----
-
-### Tip 8: Git checkpoint + ESC ESC = doble red
-
-Antes de cambios grandes, commitea un checkpoint. Si falla: git reset + ESC ESC.
-
-::: code-group
-
-```bash [1. Checkpoint]
-git add .
-git commit -m "checkpoint: antes de refactor X"
-```
-
-```bash [2. Si falla]
-git reset --hard HEAD    # Revierte código
-# ESC ESC → Restore conversation  # Revierte contexto
-```
-
+::: warning ¿Cuándo sí necesitas git?
+Los checkpoints solo trackean ediciones hechas por Claude. Si usaste comandos Bash que modifican archivos (`rm`, `mv`, `cp`), esos cambios **no se pueden revertir** con `ESC ESC`. En ese caso, un commit previo sí te protege.
 :::
 
-Git protege el código. `ESC ESC` protege el contexto de conversación. Juntos = red de seguridad completa.
+::: tip Checkpoints persisten entre sesiones
+Puedes cerrar la terminal, volver a abrir Claude Code, y tus checkpoints siguen disponibles vía `ESC ESC` o `/rewind`.
+:::
 
 ---
 
 ## 4. Modelos — el modelo correcto para cada fase
 
-### Tip 9: `Option+P` — cambiar modelo sin perder prompt
+### Tip 8: `Option+P` — cambiar modelo sin perder prompt
 
 `Option+P` / `Alt+P` abre el model picker directamente **sin borrar lo que estabas escribiendo**.
 
@@ -214,20 +201,20 @@ Vs `/model` que requiere limpiar el input, escribir el comando, y luego reescrib
 
 ---
 
-### Tip 10: Haiku para experimentar
+### Tip 9: Haiku para experimentar, Opus para producir
 
 ```bash
-/model haiku     # Prototipar, experimentar (bajo costo)
-/model sonnet    # Producción real (calidad)
+/model haiku     # Prototipar, experimentar, iterar rápido
+/model opus      # Producción real (máxima calidad)
 ```
 
-**Regla simple:** Haiku prueba, Sonnet produce. Haiku es ideal para explorar APIs, probar formatos de prompt, o iterar rápido sobre ideas antes de comprometer tokens de calidad.
+**Regla simple:** Haiku prueba, Opus produce. Haiku es ideal para explorar APIs, probar formatos de prompt, o iterar rápido sobre ideas antes de comprometer tokens de calidad en Opus.
 
 ---
 
 ## 5. Paralelización — hacer más en menos tiempo
 
-### Tip 11: Background → seguir trabajando
+### Tip 10: Background → seguir trabajando
 
 `Ctrl+B` envía la tarea en ejecución al background. Tu terminal queda libre.
 
@@ -245,7 +232,7 @@ Ideal para: dev servers, test suites, builds largos.
 
 ---
 
-### Tip 12: `&` prefix — tareas en la nube
+### Tip 11: `&` prefix — tareas en la nube
 
 Prefija con `&` para ejecutar en infraestructura cloud de Anthropic:
 
@@ -260,27 +247,22 @@ Prefija con `&` para ejecutar en infraestructura cloud de Anthropic:
 
 ---
 
-### Tip 13: Agent Teams — investigación en paralelo <Badge type="warning" text="experimental" />
+### Tip 12: `/ralph-orchestrator` — ejecución autónoma en paralelo
 
-Múltiples instancias de Claude Code coordinadas: un líder + teammates, cada uno con su propia ventana de contexto.
-
-**Habilitar:**
-
-```bash
-# En settings o variable de entorno
-CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-```
+En lugar de coordinar Agent Teams manualmente, usa `/ralph-orchestrator`. Una sola invocación orquesta todo: discovery → planning → task generation → ejecución con teammates, cada uno con su propia ventana de 200K tokens limpia.
 
 **Mejor para:**
 
-- Review paralelo (code-reviewer + security-reviewer simultáneos)
-- Hipótesis competitivas (3 teammates explorando ángulos distintos)
-- Research intensivo (divide y conquistarás)
+- Features multi-paso que tocan varios archivos
+- Desarrollo overnight (planifica interactivamente, ejecuta autónomo)
+- Cualquier tarea donde teammates paralelos con contexto fresco mejoran calidad
 
-`Shift+Up/Down` para navegar entre teammates. `Shift+Tab` hasta **Delegate mode** para restringir al líder a solo coordinación.
+```bash
+/ralph-orchestrator    # Una invocación, todo el pipeline
+```
 
 ::: details Documentación completa
-[Orchestrate teams of Claude Code sessions](https://code.claude.com/docs/en/agent-teams)
+[Ralph Orchestrator](./ralph-orchestrator.md) — guía completa con modos, configuración y flujo
 :::
 
 ---
@@ -306,5 +288,5 @@ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-14
+**Fecha**: 2026-02-17
 :::
