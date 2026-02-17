@@ -15,7 +15,7 @@ Extract:
 - **Framework**: main framework + version (largest dependency by import frequency)
 - **Project type**: monorepo | library | CLI | API | SaaS | static-site (infer from structure + manifest)
 - **Critical deps**: top 5-7 by import frequency, with one-word purpose
-- **Scripts**: build, test, dev, lint (only documented scripts, not all)
+- **Scripts**: build, dev, lint, version (test commands route to conventions.md Testing)
 - **Environment**: variables from `.env.example` (NEVER read `.env`)
 
 ## Layer 2: Configs → stack.md, conventions.md
@@ -64,7 +64,7 @@ grep: "(throw|raise|return err|new Error|\.catch|try\s*\{)"
 # Import style → conventions.md
 grep: "^(import|from|require)"
 
-# Paradigm signals → architecture.md
+# Paradigm signals → project.md (boundaries → architecture.md)
 grep: "(interface |abstract class|implements |extends )"     # OOP
 grep: "(pipe|compose|curry|map\(|reduce\(|filter\()"         # Functional
 grep: "(emit|on\(|subscribe|publish|EventEmitter)"           # Event-driven
@@ -103,4 +103,4 @@ Extract:
 
 ---
 
-*Version: 1.0.0 | Updated: 2026-02-11*
+*Version: 1.1.0 | Updated: 2026-02-16*
