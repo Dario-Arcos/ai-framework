@@ -13,12 +13,15 @@ Intelligently analyze and commit changes with automatic grouping and quality che
 
 ### 1. Parse Arguments and Validate Repository
 
-Parse `$ARGUMENTS`:
-- **Explicit type with Task ID**: Pattern `^(feat|fix|refactor|chore|docs|test|security):\s*([A-Z]+-[0-9]+)\s+(.+)$`
-  - If match: store explicit_type, task_id, description. Set has_explicit_type=true
-- **Task ID only**: Pattern `([A-Z]+-[0-9]+)`
-  - If match: auto-map type from file categories. Set has_explicit_type=false
-- **No Task ID**: Use conventional commit format
+Parse `$ARGUMENTS` for three components:
+- **Commit type prefix** (optional): one of feat, fix, refactor, chore, docs, test, security — typically before a colon
+- **Task ID** (optional): alphanumeric project key followed by a number (e.g. TRV-345, PROJ-123)
+- **Description**: remaining text
+
+Resolution:
+- Type prefix + Task ID found → use explicit type. Set has_explicit_type=true
+- Task ID found without type prefix → auto-map type from file categories. Set has_explicit_type=false
+- No Task ID → use conventional commit format
 
 Validate: `git rev-parse --git-dir`
 
@@ -33,22 +36,18 @@ git ls-files --others --exclude-standard  # Untracked
 
 ### 3. Handle Staging
 
-- Nothing staged + changes exist → `git add -A`
-- Files already staged → use existing
+- Files already staged → use existing staging
+- Nothing staged + changes exist → stage all relevant files by explicit path, **excluding** sensitive files (.env, credentials, secrets, private keys). Prefer `git add <file>...` over `git add -A`
 
 ### 4. Classify Files by Category
 
-Classify each staged file using natural language processing.
-Read [references/commit-formats.md](references/commit-formats.md) for classification rules and format templates.
+Classify each staged file by matching against category patterns in [references/commit-formats.md](references/commit-formats.md).
 
 Categories: config, docs, security, test, main
 
-### 5. Determine Strategy (Single vs Multiple)
+### 5. Determine Strategy and Execute Commits
 
-- **Multiple commits**: 2+ categories with 2+ files each, OR any security files
-- **Single commit**: one significant category or limited changes
-
-### 6. Execute Commits
+Apply grouping rules from [references/commit-formats.md](references/commit-formats.md) to decide single vs multiple commits.
 
 For each category (order: security, config, docs, test, main):
 
@@ -58,7 +57,7 @@ For each category (order: security, config, docs, test, main):
 
 Read [references/commit-formats.md](references/commit-formats.md) for corporate format template and auto-mapping rules.
 
-### 7. Report Results
+### 6. Report Results
 
 ```bash
 git log --oneline -n 3
@@ -68,5 +67,5 @@ git log --oneline -n 3
 
 - No AI signatures or attributions in commits
 - No git config modifications
-- Stages ALL changes when nothing pre-staged (modified, new, deleted)
+- Stages changes by explicit path when nothing pre-staged, excluding sensitive files
 - Fallback to single commit when grouping provides no benefit
