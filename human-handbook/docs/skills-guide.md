@@ -152,7 +152,6 @@ Quality gate para PRs: code review + security review + observaciones.
 ::: details Agentes que usa
 - `code-reviewer` — lógica, arquitectura, tests
 - `security-reviewer` — SQL injection, XSS, secrets
-- `receiving-code-review` — verifica issues antes de auto-fix
 :::
 
 **Requisitos:** git, gh CLI

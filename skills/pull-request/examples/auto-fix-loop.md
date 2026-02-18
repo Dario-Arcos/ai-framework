@@ -2,7 +2,7 @@
 
 Complete flow showing the virtuous cycle: detection → verification → implementation → re-validation → success.
 
-**Key concept:** The `receiving-code-review` skill verifies each issue before implementing, catching false positives.
+**Key concept:** The inline verification protocol verifies each issue before implementing, catching false positives.
 
 ---
 
@@ -101,14 +101,12 @@ Commits:
 ]
 ```
 
-### 2b.2 Verify and Apply Fixes (Using receiving-code-review)
+### 2b.2 Verify and Apply Fixes
 
-**Invoke `receiving-code-review` skill** to verify each issue before implementing:
+**Run inline verification protocol** for each issue before implementing:
 
 ```
-Skill: receiving-code-review
-
-Feedback to process (from code-reviewer + security-reviewer):
+Issues to verify (from code-reviewer + security-reviewer):
 1. [High (Security)] SQL injection at validator.ts:23
 2. [Important] Card number logging at validator.ts:45
 3. [Medium (Security)] Timing attack at validator.ts:67
@@ -145,7 +143,7 @@ Processing 3 issues with verification...
 ### 2b.3 Commit Verified Fixes
 
 ```bash
-git add -A && git commit -m "fix: address verified pre-PR review findings
+git add src/payments/validator.ts && git commit -m "fix: address verified pre-PR review findings
 
 Applied (verified):
 - [High] SQL injection in validator.ts:23 - parameterized query
@@ -216,7 +214,7 @@ Quality Gate: 0 issues, 4 observations OK
 
 1. **User always in control**: Loop only continues if user selects "Auto fix"
 2. **Parallel detection**: Code-reviewer AND security-reviewer run in parallel
-3. **Verified fixes**: `receiving-code-review` verifies each issue before implementing
+3. **Verified fixes**: Inline verification protocol verifies each issue before implementing
 4. **False positive filtering**: Verification catches issues that don't exist (like the timing attack)
 5. **Re-validation**: BOTH reviewers run again after fixes to ensure quality
 6. **Natural loop exit**: When both reviews return clean, user selects "Create PR"

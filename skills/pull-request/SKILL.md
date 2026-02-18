@@ -66,7 +66,7 @@ If match:
 ### 1.4 Display Context
 
 ```
-📊 PR Context
+PR Context
    From: {current_branch} → To: {target_branch}
    Commits: {commit_count}
    ΔLOC: +{additions} -{deletions} (Δ{delta_loc})
@@ -76,30 +76,6 @@ If match:
 Commits:
 {commit_list}
 ```
-
----
-
-## Review Architecture: Three Complementary Layers
-
-**1. Observations (Phase 2.2)** - Pattern Matching
-- **What:** Facts via grep/regex (tests count, BREAKING keyword, API files, complexity)
-- **Speed:** Instant
-- **Coverage:** Known patterns only
-- **Example:** "0 test files added when source changed"
-
-**2. Code Review (Phase 2.1a)** - Logic & Architecture
-- **What:** Bugs, architectural issues, missing features, test quality
-- **Speed:** 30-60s (parallel with security)
-- **Coverage:** Semantic code analysis
-- **Example:** "Missing error handling in async function"
-
-**3. Security Review (Phase 2.1b)** - Vulnerabilities
-- **What:** SQL injection, hardcoded secrets, XSS, command injection, auth bypass
-- **Speed:** 30-60s (parallel with code review)
-- **Coverage:** Security-focused patterns + exploitability analysis
-- **Example:** "SQL injection via string concatenation"
-
-**Why three layers:** Observations catch obvious patterns fast. Code review catches logic issues. Security review catches vulnerabilities. Complementary, not redundant.
 
 ---
 
@@ -150,40 +126,14 @@ Run checks on `origin/{target_branch}..HEAD`:
 
 ### 2.3 Consolidate Findings
 
-Build structure from THREE sources:
+Merge code review, security review, and observations into a single findings summary:
 
-```
-findings = {
-  code_review: {
-    assessment: cr_assessment,
-    critical_count: len(cr_issues.critical),
-    important_count: len(cr_issues.important),
-    minor_count: len(cr_issues.minor),
-    strengths: cr_strengths,
-    issues: cr_issues
-  },
-  security_review: {
-    high_count: len(sr_issues.high),
-    medium_count: len(sr_issues.medium),
-    issues: sr_issues
-  },
-  observations: {
-    tests: { status, detail },
-    api: { status, detail },
-    breaking: { status, detail },
-    complexity: { status, detail }
-  },
-  summary: {
-    has_blockers: cr_has_critical OR sr_has_high,
-    total_issues: cr_critical_count + cr_important_count + cr_minor_count + sr_high_count + sr_medium_count,
-    attention_count: count of non-✅ observations
-  }
-}
-```
+- **Code review**: assessment, issue counts by severity (critical/important/minor), strengths, full issues list
+- **Security review**: issue counts by severity (high/medium), full issues list
+- **Observations**: status and detail for each check (tests, api, breaking, complexity)
+- **Summary flags**: `has_blockers` (any critical OR high), `total_issues` (all severities except minor), `attention_count` (non-OK observations)
 
 ### 2.4 Present Findings
-
-**Structure:**
 
 ```
 ## Quality Gate Results
@@ -220,15 +170,18 @@ Header: "PR Decision"
 Options:
   - label: "Create PR"
     description: "Push branch and create PR with current findings documented"
-  - label: "Auto fix"
-    description: "Fix Critical+Important (code) and High+Medium (security) issues, then re-review. Minor issues not auto-fixed."
+  - label: "Auto fix (all)"
+    description: "Fix all reported issues, then re-review"
+  - label: "Auto fix (blockers only)"
+    description: "Fix Critical+Important (code) and High+Medium (security) only — skip Minor/Low"
   - label: "Cancel"
     description: "Exit. Fix manually and re-run /pull-request {target_branch}"
 ```
 
 - **"Create PR"** → Phase 3
 - **"Cancel"** → Exit with actionable summary (see `examples/manual-cancellation.md`)
-- **"Auto fix"** → Phase 2b
+- **"Auto fix (all)"** → Phase 2b with `fix_scope = all`
+- **"Auto fix (blockers only)"** → Phase 2b with `fix_scope = blockers`
 
 ---
 
@@ -236,131 +189,70 @@ Options:
 
 Only if user chose "Auto fix". See `examples/auto-fix-loop.md` for complete flow.
 
-**Why verification matters:** Subagents can generate false positives, suggest fixes that break functionality, or miss codebase context. The `receiving-code-review` skill acts as a **second line of defense** to filter issues before implementing.
-
 ### 2b.1 Prepare Fix List
 
-Extract issues from BOTH reviews:
+Extract issues from BOTH reviews based on `fix_scope`:
 
-```
-fix_list = []
+| fix_scope | Code Review | Security Review |
+|-----------|-------------|-----------------|
+| `all` | Critical, Important, Minor | High, Medium |
+| `blockers` | Critical, Important | High, Medium |
 
-# Code review: Critical + Important (NOT Minor)
-for issue in cr_issues.critical:
-  fix_list.append({
-    severity: "Critical",
-    source: "Code Review",
-    file: issue.file,
-    line: issue.line,
-    problem: issue.what,
-    suggestion: issue.fix
-  })
-for issue in cr_issues.important:
-  fix_list.append({ severity: "Important", source: "Code Review", ...issue })
+Each entry: `{severity, source, file, line, problem, suggestion}`.
 
-# Security review: High + Medium
-for issue in sr_issues.high:
-  fix_list.append({ severity: "High (Security)", source: "Security Review", ...issue })
-for issue in sr_issues.medium:
-  fix_list.append({ severity: "Medium (Security)", source: "Security Review", ...issue })
-```
+### 2b.2 Verify and Apply Fixes
 
-### 2b.2 Verify and Apply Fixes (Using receiving-code-review)
+For EACH issue in fix_list, execute the verification protocol directly:
 
-**Invoke the `receiving-code-review` skill** with the fix_list as feedback to process.
-
-The skill defines the verification protocol. Implementer follows and documents this output for EACH issue:
-
-1. **READ** - Read the file to understand context around the issue
-2. **UNDERSTAND** - Restate the problem in own words
-3. **VERIFY** - Check: Is this issue REAL in this codebase?
-4. **EVALUATE** - Check: Is the suggested fix technically correct?
+1. **READ** — Read the file, observe actual code at the reported location
+2. **STUDY** — Restate the problem in own words; identify which scenarios are affected
+3. **VERIFY** — Is this issue REAL? Compare reported vs observed behavior — assumed ≠ observed
+4. **EVALUATE** — Is the suggested fix correct? Will it break existing scenario satisfaction?
 5. **DECIDE**:
-   - ✅ **Valid** → Implement the fix
-   - ⚠️ **False positive** → Skip with justification
-   - ❌ **Fix breaks something** → Pushback, document why
-6. **TEST** - Run related tests after each fix
+   - Valid → Implement the fix
+   - False positive → Skip with justification (observed behavior contradicts report)
+   - Fix breaks satisfaction → Skip, document why
+6. **TEST** — Run related tests, observe output, confirm no scenario regressions
 
-**Example invocation:**
+**Document each issue on one line:**
 ```
-Skill: receiving-code-review
-
-Feedback to process (from code-reviewer + security-reviewer):
-1. [Critical] src/payments/validator.ts:23 - SQL injection via string concatenation
-   Suggestion: Use parameterized query with prepared statement
-2. [High (Security)] config.js:17 - Hardcoded API_KEY exposed
-   Suggestion: Move to environment variable
-3. [Important] src/payments/validator.ts:45 - Card number logged in plaintext
-   Suggestion: Mask card number, show only last 4 digits
-4. [Medium (Security)] src/auth/session.ts:89 - Potential session fixation
-   Suggestion: Regenerate session ID after authentication
+N/T [{severity}] {file}:{line} — {problem} → {Fixed|Skipped: reason}
 ```
 
-**Example verification output:**
+**Example:**
 ```
-Processing 4 issues with verification...
-
-1/4 [Critical] SQL injection - src/payments/validator.ts:23
-    READ: Line 23 shows `query = "SELECT * FROM cards WHERE id=" + cardId`
-    VERIFY: ✅ Confirmed - string concatenation with user input
-    EVALUATE: ✅ Parameterized query is correct fix
-    → Implementing fix
-    TEST: ✅ All 12 tests passing
-    → ✅ Fixed
-
-2/4 [High (Security)] Hardcoded API_KEY - config.js:17
-    READ: Line 17 shows `API_KEY = "sk_live_abc123..."`
-    VERIFY: ✅ Confirmed - production key in source
-    EVALUATE: ✅ Environment variable is correct approach
-    → Implementing fix
-    → ✅ Fixed
-
-3/4 [Important] Card number logging - src/payments/validator.ts:45
-    READ: Line 45 shows `console.log("Processing card: " + cardNumber)`
-    VERIFY: ✅ Confirmed - full card number in logs
-    EVALUATE: ✅ Masking is correct approach
-    → Implementing fix
-    → ✅ Fixed
-
-4/4 [Medium (Security)] Session fixation - src/auth/session.ts:89
-    READ: Lines 85-95 show session handling logic
-    VERIFY: ⚠️ Session IS regenerated in authenticateUser() (line 92)
-    EVALUATE: This is a FALSE POSITIVE - session already regenerated
-    → ⚠️ Skipped: False positive - session regeneration exists at line 92
+1/4 [Critical] validator.ts:23 — SQL injection → Fixed: parameterized query
+2/4 [High] config.js:17 — Hardcoded API key → Fixed: moved to env var
+3/4 [Important] validator.ts:45 — Card logged plaintext → Fixed: masked output
+4/4 [Medium] session.ts:89 — Session fixation → Skipped: observed behavior contradicts report (regenerateId() at line 92)
 ```
 
 ### 2b.3 Commit Verified Fixes
 
-After verification and implementation:
+Stage only modified files — never `git add -A`:
 
 ```bash
-git add -A && git commit -m "fix: address verified pre-PR review findings
+git add <specific-files-modified> && git commit -m "fix: address verified pre-PR review findings
 
 Applied (verified):
-- [Critical] SQL injection in validator.ts:23 - parameterized query
-- [High] Hardcoded API key in config.js:17 - moved to env var
-- [Important] Card number logging in validator.ts:45 - masked output
+- [{severity}] {description} in {file} - {fix applied}
 
 Skipped (false positive):
-- [Medium] Session fixation - already handled at auth/session.ts:92"
+- [{severity}] {description} - {reason}"
 ```
 
 ### 2b.4 Return to Quality Gate
 
-After fix completes:
-1. Return to Phase 2.1 (re-dispatch BOTH code-reviewer AND security-reviewer in parallel)
+After fix commit:
+1. Return to Phase 2.1 (re-dispatch BOTH reviewers in parallel)
 2. Re-run Phase 2.2 (observations)
-3. Consolidate findings (Phase 2.3)
-4. Present new findings (Phase 2.4)
-5. User decides again (Phase 2.5)
+3. Consolidate (2.3), present (2.4), user decides (2.5)
 
-**Loop exit strategy:**
-- **Natural termination**: Both reviews return clean (0 Critical/Important/High/Medium issues) → user selects "Create PR"
-- **User control**: User can select "Cancel" at any decision point to exit
+**Loop exit:**
+- **Natural**: Both reviews clean (0 Critical/Important/High/Medium) → user selects "Create PR"
+- **User control**: "Cancel" at any decision point
 - **Expected iterations**: 1-2 (verification catches false positives early)
-- **If >2 iterations**: Indicates fixes introducing new issues - user should investigate
-
-User always controls loop via decision options.
+- **If >2 iterations**: Warn user — fixes may be introducing new issues, suggest manual investigation
 
 ---
 
@@ -432,65 +324,7 @@ fi
 
 ### 3.3 Generate PR Body
 
-Create temp file with this structure:
-
-```markdown
-## Summary
-
-{primary_type} changes affecting **{files_changed}** files (Δ{delta_loc} LOC).
-{If is_corporate: "**Task:** {corp_task_id}"}
-
-## Changes ({commit_count} commits)
-
-{commit_list}
-
-## Pre-PR Quality Gate
-
-### Code Review: {cr_assessment}
-
-**Strengths:**
-{cr_strengths as bullet list}
-
-{If cr_issues or sr_issues exist:}
-**Issues Addressed:**
-{List code review issues that were fixed or acknowledged}
-{List security issues that were fixed or acknowledged}
-
-### Security Review: {sr_high_count} High, {sr_medium_count} Medium
-{If sr_issues: List resolved/acknowledged security findings}
-{Else: "✅ No security vulnerabilities detected"}
-
-### Observations
-
-| Check | Status |
-|-------|--------|
-| Tests | {status} |
-| API Changes | {status} |
-| Breaking Changes | {status} |
-| Complexity | {status} ({size}: Δ{delta_loc}) |
-
-## Test Plan
-
-{Generate checklist based on primary_type - always unchecked for reviewer to complete:}
-
-**For feat:**
-- [ ] New functionality tested
-- [ ] Tests added
-- [ ] Docs updated
-
-**For fix:**
-- [ ] Bug reproduced before fix
-- [ ] Regression test added
-- [ ] Verified in staging
-
-**For refactor:**
-- [ ] Existing tests pass
-- [ ] Functionality unchanged
-
-**For other types (docs, chore, etc.):**
-- [ ] Changes verified
-- [ ] Build successful
-```
+Read `[references/pr-body-template.md]`, fill all `{variables}` from working memory, write to temp file.
 
 ### 3.4 Create PR
 
@@ -501,7 +335,7 @@ gh pr create --title "$pr_title" --body-file "$temp_body_file" --base "$target_b
 ### 3.5 Report Success
 
 ```
-✅ PR Created
+PR Created
 
 URL: {pr_url}
 Branch: {pr_branch} → {target_branch}
@@ -516,47 +350,22 @@ Quality Gate: {attention_count} addressed, {ok_count} OK
 
 | Scenario | Response |
 |----------|----------|
-| No target branch | `❌ Usage: /pull-request main` |
-| No remote configured | `❌ No remote 'origin' configured. Run: git remote add origin <url>` |
-| Target not found | `❌ origin/{target} not found. Run: git fetch origin` |
-| No commits | `❌ No commits between {current} and {target}` |
-| Invalid branch format | `❌ Invalid branch name. Use alphanumeric, /, -, _ only` |
-| Invalid corporate format | `❌ Invalid format. Use: type\|TASK-ID\|YYYYMMDD\|desc` |
+| No target branch | `Usage: /pull-request main` |
+| No remote configured | `No remote 'origin' configured. Run: git remote add origin <url>` |
+| Target not found | `origin/{target} not found. Run: git fetch origin` |
+| No commits | `No commits between {current} and {target}` |
+| Invalid branch format | `Invalid branch name. Use alphanumeric, /, -, _ only` |
+| Invalid corporate format | `Invalid format. Use: type\|TASK-ID\|YYYYMMDD\|desc` |
 | Push fails | Show error + manual command |
-| gh CLI missing | `❌ gh CLI required. Install: https://cli.github.com` |
+| gh CLI missing | `gh CLI required. Install: https://cli.github.com` |
 | PR create fails | Show error + `gh pr create` command |
 
 ---
 
-## Key Principles
+## Constraints
 
-1. **Human decides**: Never auto-proceed past quality gate
-2. **Three-layer validation**: Code review + Security review + Observations (parallel execution)
-3. **Verified fixes**: Auto-fix uses `receiving-code-review` to filter false positives before implementing
-4. **Loop with exit**: Auto fix returns to user decision, exits naturally when reviews clean
-5. **Corporate support**: Detect and validate corporate commit format
-6. **Protected branches**: Never push directly to main/master/develop - auto-creates temp branch
-
-## The Virtuous Cycle
-
-```
-Detection (code-reviewer + security-reviewer)
-         │
-         ▼
-   fix_list (may contain false positives)
-         │
-         ▼
-Verification (receiving-code-review filters each issue)
-         │
-         ├── Valid → Implement
-         ├── False positive → Skip with justification
-         └── Breaks something → Pushback
-         │
-         ▼
-Re-validation (both reviewers again)
-         │
-         ▼
-Clean? → Create PR : Loop
-```
-
-This ensures **multiple perspectives** validate every change before merge.
+- Never auto-proceed past quality gate — human decides at every gate
+- Never use `git add -A` — stage specific files only
+- Never push to protected branches — auto-create temp branch
+- Never skip verification protocol in auto-fix — every issue gets READ→STUDY→VERIFY→EVALUATE→DECIDE→TEST
+- If >2 fix iterations: warn user, suggest manual investigation
