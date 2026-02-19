@@ -327,6 +327,32 @@ class TestFindScenarioStrategy(unittest.TestCase):
         )
         self.assertEqual(result, "not-applicable")
 
+    def test_html_comment_not_applicable_in_description(self):
+        """Template renders <!-- required | not-applicable --> — must strip comment."""
+        result = task_completed.find_scenario_strategy(
+            self.tmpdir, "Add feature",
+            "- **Scenario-Strategy**: required <!-- required | not-applicable -->\nDetails"
+        )
+        self.assertEqual(result, "required")
+
+    def test_html_comment_not_applicable_in_file(self):
+        task_file = Path(self.tmpdir) / "sprint.code-task.md"
+        task_file.write_text(
+            "# Task: Add feature\n"
+            "- **Scenario-Strategy**: required <!-- required | not-applicable -->\n",
+            encoding="utf-8",
+        )
+        result = task_completed.find_scenario_strategy(self.tmpdir, "Add feature", "")
+        self.assertEqual(result, "required")
+
+    def test_html_comment_actual_not_applicable(self):
+        """When value IS not-applicable, comment should not interfere."""
+        result = task_completed.find_scenario_strategy(
+            self.tmpdir, "Fix typo",
+            "- **Scenario-Strategy**: not-applicable <!-- required | not-applicable -->\nJust a fix"
+        )
+        self.assertEqual(result, "not-applicable")
+
 
 # ─────────────────────────────────────────────────────────────────
 # TestFailTask
@@ -604,6 +630,146 @@ class TestMainRalph(unittest.TestCase):
             with self.assertRaises(SystemExit) as ctx:
                 task_completed.main()
             self.assertEqual(ctx.exception.code, 0)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestValidateScenarioStrategy
+# ─────────────────────────────────────────────────────────────────
+
+class TestValidateScenarioStrategy(unittest.TestCase):
+    """Test validate_scenario_strategy() safety net for misclassified tasks."""
+
+    def _mock_git_diffs(self, uncommitted="", committed=""):
+        """Mock both git diff calls: uncommitted (HEAD) and last commit (HEAD~1..HEAD)."""
+        def side_effect(cmd, **kwargs):
+            if "HEAD~1" in cmd:
+                return subprocess.CompletedProcess(
+                    args=cmd, returncode=0, stdout=committed, stderr=""
+                )
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout=uncommitted, stderr=""
+            )
+        return patch("subprocess.run", side_effect=side_effect)
+
+    def _mock_git_diffs_both_fail(self):
+        """Mock both git diff calls returning non-zero."""
+        return patch(
+            "subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[], returncode=1, stdout="", stderr=""
+            ),
+        )
+
+    def test_strategy_required_unchanged(self):
+        """Non-'not-applicable' strategies pass through without git call."""
+        with patch("subprocess.run") as mock_run:
+            result = task_completed.validate_scenario_strategy("required", "/tmp")
+            self.assertEqual(result, "required")
+            mock_run.assert_not_called()
+
+    def test_only_docs_returns_not_applicable(self):
+        with self._mock_git_diffs(uncommitted="README.md\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_python_file_overrides_to_required(self):
+        with self._mock_git_diffs(uncommitted="api.py\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_tsx_file_overrides_to_required(self):
+        with self._mock_git_diffs(uncommitted="Component.tsx\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_github_dir_returns_not_applicable(self):
+        with self._mock_git_diffs(uncommitted=".github/workflow.yml\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_git_failure_returns_not_applicable(self):
+        with self._mock_git_diffs_both_fail():
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_git_timeout_returns_not_applicable(self):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="git", timeout=5)):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_git_not_found_returns_not_applicable(self):
+        with patch("subprocess.run", side_effect=FileNotFoundError("git")):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_mixed_docs_and_source_overrides(self):
+        with self._mock_git_diffs(uncommitted="README.md\nutils.ts\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_shell_script_overrides_to_required(self):
+        with self._mock_git_diffs(uncommitted="deploy.sh\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_no_changed_files_returns_not_applicable(self):
+        with self._mock_git_diffs():
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_docs_root_returns_not_applicable(self):
+        with self._mock_git_diffs(uncommitted="docs/guide.md\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_unknown_extension_overrides_to_required(self):
+        with self._mock_git_diffs(uncommitted="app.zig\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    # --- New tests for review findings ---
+
+    def test_committed_source_detected_via_last_commit(self):
+        """Teammate committed before TaskCompleted → last commit diff catches it."""
+        with self._mock_git_diffs(uncommitted="", committed="src/handler.py\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_committed_docs_only_returns_not_applicable(self):
+        with self._mock_git_diffs(uncommitted="", committed="README.md\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_docs_subdir_treated_as_source(self):
+        """src/docs/helper.ts is NOT root docs/ — should be treated as source."""
+        with self._mock_git_diffs(uncommitted="src/docs/helper.ts\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
+
+    def test_license_file_returns_not_applicable(self):
+        """Extensionless LICENSE file is non-code."""
+        with self._mock_git_diffs(uncommitted="LICENSE\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_makefile_returns_not_applicable(self):
+        with self._mock_git_diffs(uncommitted="Makefile\n"):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "not-applicable")
+
+    def test_one_diff_fails_other_succeeds(self):
+        """If uncommitted diff fails but last commit has source → override."""
+        def side_effect(cmd, **kwargs):
+            if "HEAD~1" in cmd:
+                return subprocess.CompletedProcess(
+                    args=cmd, returncode=0, stdout="app.rs\n", stderr=""
+                )
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=128, stdout="", stderr="error"
+            )
+        with patch("subprocess.run", side_effect=side_effect):
+            result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
+            self.assertEqual(result, "required")
 
 
 if __name__ == "__main__":

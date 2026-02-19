@@ -182,7 +182,7 @@ When invoked from ralph-orchestrator in autonomous mode:
 </at_startup>
 
 <at_completion>
-- Add memories to `.ralph/guardrails.md`
+- Add memories to `.ralph/guardrails.md` using **Edit (append at end)**, never Write (overwrite) — concurrent teammates may write simultaneously
 - Emit confession and task_completed markers
 </at_completion>
 

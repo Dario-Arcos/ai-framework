@@ -260,7 +260,9 @@ def find_scenario_strategy(cwd, task_subject, task_description=""):
     if task_description:
         for line in task_description.splitlines():
             if "Scenario-Strategy" in line:
-                if "not-applicable" in line:
+                # Strip HTML comments before checking value
+                value = line.split("<!--")[0]
+                if "not-applicable" in value:
                     return "not-applicable"
                 return "required"
 
@@ -276,11 +278,99 @@ def find_scenario_strategy(cwd, task_subject, task_description=""):
                 continue
             for line in content.splitlines():
                 if "Scenario-Strategy" in line:
-                    return "not-applicable" if "not-applicable" in line else "required"
+                    value = line.split("<!--")[0]
+                    return "not-applicable" if "not-applicable" in value else "required"
             return "required"
         return "required"
     except OSError:
         return "required"
+
+
+# Inverted approach: define what is DEFINITELY non-code.
+# Any file NOT matching this list is treated as potential source → tests run.
+NON_CODE_EXT_RE = re.compile(
+    r"\.(?:md|txt|rst|adoc|"              # documentation
+    r"ya?ml|json|toml|ini|cfg|conf|"      # config
+    r"env|env\.\w+|"                       # environment
+    r"lock|sum|"                           # lockfiles
+    r"gitignore|gitattributes|dockerignore|editorconfig|"  # dotfiles
+    r"prettierrc|eslintrc|stylelintrc|"    # tool configs
+    r"png|jpg|jpeg|gif|svg|ico|webp|avif|" # images
+    r"woff2?|ttf|eot|otf|"                # fonts
+    r"csv|tsv)$",                          # data
+    re.IGNORECASE
+)
+
+# Extensionless files that are always non-code
+NON_CODE_FILENAME_RE = re.compile(
+    r"(?:^|/)(?:LICENSE|CHANGELOG|AUTHORS|CODEOWNERS|Makefile|Dockerfile)$",
+    re.IGNORECASE
+)
+
+# Directories that are always non-code regardless of extension.
+# Tooling dirs (.github, .vscode, etc.) match at any depth.
+# docs/ only matches at root to avoid misclassifying src/docs/helper.ts.
+NON_CODE_PATH_RE = re.compile(
+    r"(?:^|/)(?:\.github/|\.vscode/|\.idea/|\.claude/)"
+    r"|^docs?/",
+    re.IGNORECASE
+)
+
+
+def validate_scenario_strategy(strategy, cwd):
+    """Safety net: override not-applicable if git diff shows potential source files.
+
+    Uses INVERTED logic: defines what is definitely non-code. If ANY changed file
+    is NOT in the non-code list, overrides to 'required' (tests run).
+
+    Checks both uncommitted changes (working tree vs HEAD) and the last commit
+    (HEAD~1..HEAD), since teammates typically commit before TaskCompleted fires.
+
+    Fail-open: git errors → trust original classification.
+    """
+    if strategy != "not-applicable":
+        return strategy
+
+    # Collect changed files from both uncommitted and last commit
+    changed_files = []
+    diff_commands = [
+        ["git", "diff", "--name-only", "HEAD"],            # uncommitted
+        ["git", "diff", "--name-only", "HEAD~1", "HEAD"],  # last commit
+    ]
+    for cmd in diff_commands:
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=5, cwd=cwd
+            )
+            if result.returncode == 0:
+                changed_files.extend(
+                    f.strip() for f in result.stdout.strip().splitlines() if f.strip()
+                )
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            pass  # fail-open per command
+
+    if not changed_files:
+        return "not-applicable"
+
+    suspect_files = []
+    for f in changed_files:
+        if NON_CODE_PATH_RE.search(f):
+            continue
+        if NON_CODE_EXT_RE.search(f):
+            continue
+        if NON_CODE_FILENAME_RE.search(f):
+            continue
+        suspect_files.append(f)
+
+    if suspect_files:
+        print(
+            f"SDD Safety Net: overriding not-applicable → required. "
+            f"Files outside non-code list: {', '.join(suspect_files[:5])}",
+            file=sys.stderr
+        )
+        return "required"
+
+    return "not-applicable"
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -357,6 +447,7 @@ def main():
     task_subject = input_data.get("task_subject", "unknown task")
     task_description = input_data.get("task_description", "")
     scenario_strategy = find_scenario_strategy(cwd, task_subject, task_description)
+    scenario_strategy = validate_scenario_strategy(scenario_strategy, cwd)  # safety net
     teammate_name = input_data.get("teammate_name", "unknown")
 
     # Guard: not a ralph-orchestrator project → state-aware test gate
