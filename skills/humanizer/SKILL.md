@@ -1,6 +1,6 @@
 ---
 name: humanizer
-description: Use when removing AI writing patterns from text — inflated symbolism, promotional language, structural uniformity, gerundio abuse.
+description: Use when removing AI writing patterns from user-facing prose — design docs, research reports, changelog entries, or any text that needs to sound human.
 ---
 
 # Humanizer: Remove AI Writing Patterns
@@ -465,6 +465,20 @@ Provide:
 - Added specific features and concrete feedback
 
 ---
+
+## Integration
+
+- **brainstorming** — After design document is written, Invoke humanizer on the document before committing to git
+- **deep-research** — After Phase 4 quality gates pass, Invoke humanizer on the research report before delivering to user
+- **changelog** — After entry drafting (Phase 6), Invoke humanizer with focus on Spanish patterns (25-33) before writing to CHANGELOG.md
+- **Manual invocation** — User invokes /humanizer directly on any text
+
+## Artifact Handoff
+
+| Receives | Produces |
+|---|---|
+| Prose artifact from invoking skill (design doc, research report, changelog entry, any user-facing text) | Humanized text with AI patterns removed |
+| Language context (English or Spanish) | Brief change summary (patterns found + rewrites made) |
 
 ## References
 

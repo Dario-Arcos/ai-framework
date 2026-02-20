@@ -370,8 +370,9 @@ After all scenarios are satisfied and refactoring is complete:
 
 1. **Invoke `code-reviewer`** — validates against requirements, checks for bugs, security issues
 2. **Invoke `code-simplifier`** — reduces complexity, removes redundancy while preserving function
+3. **Invoke verification-before-completion** — the 6-step evidence gate before any completion claim
 
-Address Critical/Important issues from review before claiming completion.
+Address Critical/Important issues from agents before proceeding to the verification gate.
 
 ## Validation Anti-Patterns
 
@@ -383,6 +384,16 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 
 ## Related
 
-- **sop-code-assist** — Orchestrates the full implementation workflow; invokes this skill at Step 4
-- **verification-before-completion** — Satisfaction-based completion gate; use before claiming done
+- **brainstorming** — The entry point: scenarios defined during brainstorming are the input for SCENARIO phase
+- **verification-before-completion** — The terminal gate: invoke after Quality Integration, before any completion claim
 - **systematic-debugging** — Root cause analysis; invoke when bugs are complex before SDD fix cycle
+
+## Artifact Handoff
+
+| Receives | Produces |
+|---|---|
+| Observable scenarios from brainstorming design doc (or defined inline for bug fixes/small changes) | Satisfied code with all scenarios passing |
+| | Quality Integration complete (code-reviewer + code-simplifier agents) |
+
+**← From:** brainstorming produces the holdout scenarios.
+**→ Next:** verification-before-completion runs the 6-step evidence gate.

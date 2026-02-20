@@ -89,6 +89,9 @@ Apply quality gates before delivering:
 - Limitations explicitly stated
 - Actionable recommendations provided
 
+After quality gates pass:
+- Invoke humanizer on the synthesized report — research prose is especially vulnerable to inflated significance, vague attributions, filler phrases, and generic conclusions
+
 ## Context Management (Anti-Context-Rot)
 
 1. Every 5 sources: summarize findings so far

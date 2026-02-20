@@ -56,16 +56,15 @@ These scenarios become the holdout set for implementation. They are NOT tests �
 
 **Documentation:**
 - Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
-- Use humanizer skill if available for clear writing
+- Invoke humanizer on the design document to remove AI writing patterns before committing
 - The design document MUST include an "Observable Scenarios" section with all validated scenarios
 - Observable scenarios are the holdout set — they MUST NOT be modified during implementation without returning to brainstorming
 - Commit the design document to git
 
 **Implementation (if continuing):**
 - Ask: "Ready to set up for implementation?"
-- Use `/worktree-create` for isolated workspace if needed
-- Use ralph-orchestrator for autonomous execution, or scenario-driven-development for direct implementation
-- The observable scenarios from the design are the starting input for the SCENARIO phase — they are already defined
+- Invoke scenario-driven-development next — the observable scenarios from this design are its input
+- The scenarios become the holdout set for the SCENARIO→SATISFY→REFACTOR convergence loop
 
 ## Key Principles
 
@@ -76,3 +75,12 @@ These scenarios become the holdout set for implementation. They are NOT tests �
 - **Incremental validation** - Present design in sections, validate each
 - **Be flexible** - Go back and clarify when something doesn't make sense
 - **Scenarios before implementation** - Define observable scenarios as part of the design, not during coding. Scenarios are the bridge between "what to build" and "how to know it's done"
+
+## Artifact Handoff
+
+| Receives | Produces |
+|---|---|
+| User idea, feature request, or change requirement | Design document at `docs/plans/YYYY-MM-DD-<topic>-design.md` (humanized) |
+| | Observable Scenarios section — the holdout set for implementation |
+
+**→ Next:** scenario-driven-development receives the scenarios as input for the SCENARIO phase.
