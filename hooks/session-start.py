@@ -32,6 +32,7 @@ CRITICAL_GITIGNORE_RULES = [
     "/hooks/*.db",
     "/hooks/__pycache__/",
     "/.ralph/",
+    "/.research/",
 ]
 
 
