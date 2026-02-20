@@ -39,7 +39,7 @@ research: deep-research | context files: context-engineering | new skill: skill-
 project memory: project-init
 remove AI writing patterns: humanizer
 verify done: verification-before-completion
-commit: commit | PR: pull-request | release: changelog → release | branch: branch-cleanup
+commit: commit | PR: pull-request
 All build/fix chains end with verification-before-completion.
 </skill-routing>
 
