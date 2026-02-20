@@ -2,7 +2,7 @@
 
 ## Research State as Backbone
 
-The `research-state.md` file (created from `templates/research-state.md.template`) is the single source of truth during investigation. It follows Context Engineering Law 3: Retrieve Don't Remember.
+The `research-state.md` file (created in `.research/{topic-slug}/` from `templates/research-state.md.template`) is the single source of truth during investigation. It follows Context Engineering Law 3: Retrieve Don't Remember. The `.research/` directory is gitignored — research artifacts persist locally but do not contaminate version control.
 
 **Why**: The context window is finite. Raw HTML pages, full Context7 responses, and unprocessed tool output consume attention budget rapidly. After ~10 sources, the model's attention to earlier claims degrades. The research state file persists findings to disk where they cannot be lost to context compression.
 
@@ -62,9 +62,9 @@ When sub-agents investigate in parallel:
 
 ```
 Investigate sub-questions [SQ-N, SQ-M] for research on "[topic]".
-- Read research-state.md for context and assigned perspectives
+- Read .research/{topic-slug}/research-state.md for context and assigned perspectives
 - Use [assigned tool] as primary, [fallback tool] as fallback
-- Write findings directly to SQ-[N] and SQ-[M] sections in research-state.md
+- Write findings directly to SQ-[N] and SQ-[M] sections in .research/{topic-slug}/research-state.md
 - Mark sub-questions as Confirmed, Insufficient, or flag contradictions
 - Do NOT investigate sub-questions outside your assignment
 ```

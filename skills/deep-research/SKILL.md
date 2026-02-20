@@ -73,7 +73,7 @@ Classify the research type, generate sub-questions and perspectives, create the 
 - You MUST classify the research type using the Research Type Classification table before proceeding
 - You MUST decompose the topic into 3-7 sub-questions following the heuristics in [references/research-question-patterns.md](references/research-question-patterns.md)
 - You MUST generate minimum 2 perspectives per sub-question (STORM pattern: how would different stakeholders frame this question?)
-- You MUST create `research-state.md` in the working directory from [templates/research-state.md.template](templates/research-state.md.template)
+- You MUST create `.research/{topic-slug}/research-state.md` from [templates/research-state.md.template](templates/research-state.md.template), where `{topic-slug}` is a kebab-case slug derived from the research topic (e.g., `drizzle-vs-prisma`). Create the directory if it does not exist
 - You MUST assign primary and fallback tools per sub-question using [references/source-routing.md](references/source-routing.md)
 - You MUST NOT proceed to Step 2 without completing all convergence gate items because incomplete planning leads to unfocused investigation
 - You SHOULD display the research plan to the user before proceeding
@@ -182,6 +182,7 @@ Determine output format, assemble findings with citations, run quality gates, in
 - You MUST separate recommendations (judgment based on evidence) from findings (evidence itself)
 - You MUST NOT omit Insufficient findings from the output because omission is more dangerous than stated uncertainty
 - You MUST invoke humanizer on the final output — research prose is especially vulnerable to inflated significance, vague attributions, and filler phrases
+- You MUST write the final output to `.research/{topic-slug}/output.md` before delivering because research artifacts must persist beyond the session
 - You MUST NOT deliver without passing all quality gates from [references/evidence-standard.md](references/evidence-standard.md) because unvalidated research is worse than no research
 - You SHOULD use the user-requested format if they specified one, regardless of research type default
 - You MAY include a "Further Research" section suggesting focused follow-up investigations
@@ -236,9 +237,9 @@ If you observe any of these, stop and correct before continuing:
 
 **Receives**: research_topic (required), research_type, output_format, depth (optional)
 
-**Produces**:
-- Humanized research output in the determined format (delivered to user)
-- `research-state.md` in working directory (persistent state with all claims, sources, and validation status)
+**Produces** (in `.research/{topic-slug}/`):
+- `research-state.md` — persistent state with all claims, sources, and validation status
+- `output.md` — final humanized research output, persisted for future reference
 
 ## References
 

@@ -118,5 +118,8 @@ human-handbook/.vitepress/cache/
 # Ralph orchestrator runtime
 /.ralph/
 
+# Deep research artifacts
+/.research/
+
 # AI Framework runtime files (auto-added)
 /hooks/__pycache__/

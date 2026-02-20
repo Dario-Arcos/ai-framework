@@ -10,3 +10,6 @@
 
 # Ralph orchestrator (operational, per-objective)
 /.ralph/
+
+# Deep research artifacts (per-investigation)
+/.research/
