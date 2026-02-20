@@ -12,6 +12,32 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [2026.1.1] - 2026-02-19
+
+### Añadido
+
+- **Hook task-completed `validate_scenario_strategy()`**: Añadir safety net contra misclasificación de Scenario-Strategy — detectar archivos fuente en git diff cuando tarea marcada `not-applicable`, usando lógica invertida (allowlist de non-code). Incluye 19+ tests con mocks de ambos diffs (uncommitted + last commit) (commit `ae01a23`)
+- **Skill project-init**: Añadir tabla Field Ownership que asigna hogar canónico a conceptos compartidos (test command → conventions, paradigms → project, boundaries → architecture) para eliminar redundancia cross-file. Añadir sección Versioning en conventions.md template (commit `e604132`)
+
+### Cambiado
+
+- **Skill pull-request**: Reescribir — eliminar dependencia de skill `receiving-code-review` (verificación ahora inline con protocolo READ→STUDY→VERIFY→EVALUATE→DECIDE→TEST), externalizar PR body template a `references/pr-body-template.md`, separar auto-fix en dos scopes (`all` y `blockers only`), forzar `git add <files>` explícito (commit `9d5dbe7`)
+- **Skill commit**: Simplificar parseo a 3 componentes (type, task ID, description), forzar staging por path explícito excluyendo archivos sensibles — eliminar `git add -A` (commit `08cf8a5`)
+- **Cadena de skills**: Integrar humanizer como quality gate de prosa obligatorio en brainstorming, deep-research y changelog. Añadir tablas Artifact Handoff en 4 skills (brainstorming → SDD → verification). Añadir sección `<skill-routing>` en CLAUDE.md template con tabla explícita de enrutamiento (commit `4282997`)
+- **Agent code-simplifier**: Generalizar — reemplazar estándares hardcoded (ES modules, React Props, arrow functions) por referencia dinámica al CLAUDE.md y rules del proyecto (commit `4282997`)
+- **README**: Reescribir para reflejar estado actual — eliminar lenguaje promocional, añadir tablas completas de skills (17), agents (6) y hooks (9), documentar metodología SDD (commit `3dbbc6f`)
+- **Project rules (.claude/rules/)**: Actualizar versionado semver → CalVer, eliminar conteos hardcoded de agents/skills, documentar hooks PreToolUse/PostToolUse en data flow (commit `f786dec`)
+
+### Arreglado
+
+- **Hook task-completed**: Corregir parseo de Scenario-Strategy con HTML comments del template (`<!-- required | not-applicable -->`) — strip comment antes de evaluar (commit `ae01a23`)
+- **Skill sop-code-assist**: Corregir escritura concurrente a `.ralph/guardrails.md` — Edit (append) en lugar de Write (overwrite) para teammates simultáneos (commit `4282997`)
+- **Docs pro-tips**: Corregir defaults de effort level (medium → high), jerarquía de modelos (sonnet → opus), workflow de recuperación (auto-checkpoints reemplazan git checkpoint manual) (commit `4243aa2`)
+- **Docs quickstart**: Corregir compatibilidad de plataformas — Linux marcado como full support, 4 SDD hooks documentados como POSIX-only con limitaciones Windows (`fcntl`, `/tmp/`) (commit `f47e278`)
+- **Docs why-ai-framework**: Reemplazar diagrama Mermaid cortado por componente HTML stepper con CSS nativo VitePress (commit `a89e813`)
+
+---
+
 ## [2026.1.0] - 2026-02-16
 
 > **⚠️ MAJOR UPGRADE — Migración requerida desde v5.x**
@@ -397,5 +423,5 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 ::: info Última actualización
-**Versión**: 2026.1.0 | **Fecha**: 2026-02-16
+**Versión**: 2026.1.1 | **Fecha**: 2026-02-19
 :::
