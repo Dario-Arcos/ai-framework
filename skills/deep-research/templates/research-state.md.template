@@ -1,0 +1,56 @@
+# Research State: {{research_topic}}
+
+## Metadata
+
+| Field | Value |
+|-------|-------|
+| **Type** | {{research_type}} |
+| **Status** | Planning / Investigating / Cross-Validating / Synthesizing / Complete |
+| **Depth** | {{depth}} |
+| **Output Format** | {{output_format}} |
+| **Created** | {{date}} |
+| **Last Updated** | {{date}} |
+
+## Sub-Questions
+
+### SQ-1: {{sub_question}}
+
+| Field | Value |
+|-------|-------|
+| **Perspectives** | {{perspective_1}}, {{perspective_2}} |
+| **Primary Tool** | Context7 / agent-browser |
+| **Fallback Tool** | agent-browser / Context7 |
+| **Status** | Pending / Investigating / Confirmed / Insufficient |
+
+**Claims:**
+
+| # | Statement | Source URL | Date | Tier | Confidence | Perspective |
+|---|-----------|-----------|------|------|------------|-------------|
+| 1 | | | | | | |
+
+**Cross-Validation:** <!-- 3+ sources agree? Contradictions? -->
+
+**Conflicts:** <!-- Document both positions -->
+
+<!-- Repeat SQ-N sections as needed -->
+
+## Gaps & Insufficient Evidence
+
+| Sub-Question | Search Attempts | Result | Next Action |
+|-------------|----------------|--------|-------------|
+| | | | |
+
+## Source Log
+
+| # | URL | Date Accessed | Tier | Claims Extracted | Notes |
+|---|-----|--------------|------|-----------------|-------|
+| 1 | | | | | |
+
+## Phase Log
+
+| Phase | Started | Completed | Gate Status | Notes |
+|-------|---------|-----------|-------------|-------|
+| 1. Planning | | | | |
+| 2. Investigation | | | | |
+| 3. Cross-Validation | | | | |
+| 4. Synthesis | | | | |
