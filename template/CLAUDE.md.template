@@ -3,7 +3,7 @@
 - NEVER claim complete, commit, or advance without FIRST invoking verification-before-completion: execute ALL scenarios → observe output → verify satisfaction → produce evidence. Unsatisfied → fix the work, never weaken scenarios or tests. Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed.
 - ALWAYS look up the task in <skill-routing> and invoke the full chain before acting. NEVER skip a chain step. Skills encode current methodology that supersedes training.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
-- NEVER start multi-step work without a task plan: TaskCreate per step, TaskUpdate to track progress, TaskList to advance.
+- WHEN building or fixing: TaskCreate per step, delegate execution to Task sub-agents. Main session orchestrates and verifies — never executes implementation directly. Sub-agents protect context; without delegation, long tasks degrade past compaction.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.
 - WHEN building: optimize for world-class performance — efficient algorithms, minimal re-renders, optimized queries, lazy loading. "Works" is insufficient — it must be fast. Profile before assuming.
 - WHEN building web/mobile: validate runtime with agent-browser (console, errors) — zero console errors is a completion requirement. iOS flows → `-p ios`. Unhandled errors and failed requests are defects.
