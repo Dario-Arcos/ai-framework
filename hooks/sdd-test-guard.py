@@ -48,6 +48,16 @@ ASSERTION_RE = re.compile(
     r"def test_"
 )
 
+# Assertions that compare against concrete values (not just existence/truthiness)
+PRECISE_ASSERTION_RE = re.compile(
+    r"==\s*[\d'\"\[\({]|"           # == literal (number, string, list, tuple, dict)
+    r"!=\s*[\d'\"\[\({]|"           # != literal
+    r"\.toBe\(|\.toEqual\(|\.toStrictEqual\(|"  # Jest exact matchers
+    r"assert_eq!\(|assert_ne!\(|"   # Rust
+    r"assertEqual\(|assertNotEqual\(|"  # Python unittest
+    r"\.to\.equal\(|\.to\.eql\("    # Chai
+)
+
 
 # ─────────────────────────────────────────────────────────────────
 # FILE CLASSIFICATION
@@ -71,6 +81,13 @@ def count_assertions(text):
     return len(ASSERTION_RE.findall(text))
 
 
+def count_precise(text):
+    """Count assertions that compare against concrete values."""
+    if not text:
+        return 0
+    return len(PRECISE_ASSERTION_RE.findall(text))
+
+
 # ─────────────────────────────────────────────────────────────────
 # EDIT ANALYSIS
 # ─────────────────────────────────────────────────────────────────
@@ -78,12 +95,12 @@ def count_assertions(text):
 def analyze_edit(tool_name, tool_input):
     """Analyze an Edit or Write to determine assertion count change.
 
-    Returns (old_count, new_count).
+    Returns (old_count, new_count, old_text, new_text).
     """
     if tool_name == "Edit":
         old_text = tool_input.get("old_string", "")
         new_text = tool_input.get("new_string", "")
-        return count_assertions(old_text), count_assertions(new_text)
+        return count_assertions(old_text), count_assertions(new_text), old_text, new_text
 
     if tool_name == "Write":
         file_path = tool_input.get("file_path", "")
@@ -96,11 +113,11 @@ def analyze_edit(tool_name, tool_input):
             old_count = count_assertions(old_text)
         except (FileNotFoundError, OSError):
             # New file — no old assertions to compare
-            return 0, new_count
+            return 0, new_count, "", new_text
 
-        return old_count, new_count
+        return old_count, new_count, old_text, new_text
 
-    return 0, 0
+    return 0, 0, "", ""
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -134,8 +151,8 @@ def main():
     if state.get("passing", False):
         sys.exit(0)
 
-    # Tests failing → check assertion count
-    old_count, new_count = analyze_edit(tool_name, tool_input)
+    # Tests failing → check assertion count and precision
+    old_count, new_count, old_text, new_text = analyze_edit(tool_name, tool_input)
 
     if new_count < old_count:
         # DENY: reward hacking detected
@@ -154,7 +171,26 @@ def main():
         }))
         sys.exit(0)
 
-    # Assertions same or increased → allow
+    # Assertions same or increased → check precision didn't drop
+    old_precise = count_precise(old_text)
+    new_precise = count_precise(new_text)
+    if old_precise > 0 and new_precise < old_precise:
+        reason = (
+            f"SDD Guard: tests are failing and this edit reduces "
+            f"assertion precision ({old_precise}\u2192{new_precise} precise assertions). "
+            f"Replacing value comparisons with existence checks = reward hacking. "
+            f"Fix implementation code, not test precision."
+        )
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }))
+        sys.exit(0)
+
+    # Assertions and precision OK → allow
     sys.exit(0)
 
 

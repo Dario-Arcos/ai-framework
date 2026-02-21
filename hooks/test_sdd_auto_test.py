@@ -339,5 +339,151 @@ class TestMain(unittest.TestCase):
         mock_read.assert_called_once_with(fake_cwd)
 
 
+class TestSourceExtensionsNew(unittest.TestCase):
+    """Test new source file extensions (Gap 5)."""
+
+    def test_vue_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("app.vue"))
+
+    def test_svelte_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("app.svelte"))
+
+    def test_graphql_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("schema.graphql"))
+
+    def test_gql_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("query.gql"))
+
+    def test_prisma_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("schema.prisma"))
+
+    def test_proto_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("service.proto"))
+
+    def test_sql_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("migration.sql"))
+
+    def test_sh_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("deploy.sh"))
+
+    def test_bash_is_source(self):
+        self.assertTrue(sdd_auto_test.is_source_file("build.bash"))
+
+
+class TestSkillTracking(unittest.TestCase):
+    """Test Skill tool tracking for sop-code-assist (Gap 3)."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        # Clean up any state files
+        import glob as g
+        for f in g.glob("/tmp/sdd-skill-invoked-*.json"):
+            try:
+                os.unlink(f)
+            except OSError:
+                pass
+
+    def _run_main(self, input_data=None, argv=None):
+        if argv:
+            argv_patch = patch.object(sys, "argv", argv)
+        else:
+            argv_patch = patch.object(sys, "argv", ["sdd-auto-test.py"])
+
+        stdin_text = json.dumps(input_data) if input_data is not None else ""
+        stdin_patch = patch.object(sys, "stdin", io.StringIO(stdin_text))
+        stdout_capture = io.StringIO()
+        stdout_patch = patch.object(sys, "stdout", stdout_capture)
+
+        exit_code = 0
+        with argv_patch, stdin_patch, stdout_patch:
+            try:
+                sdd_auto_test.main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+
+        return stdout_capture.getvalue(), exit_code
+
+    @patch.object(sdd_auto_test, "write_skill_invoked")
+    def test_sop_code_assist_writes_state(self, mock_write):
+        """Skill tool with sop-code-assist → state file written."""
+        _, exit_code = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_name": "Skill",
+            "tool_input": {"skill": "sop-code-assist"},
+        })
+        self.assertEqual(exit_code, 0)
+        mock_write.assert_called_once_with(self.tmpdir, "sop-code-assist")
+
+    @patch.object(sdd_auto_test, "write_skill_invoked")
+    def test_other_skill_no_state(self, mock_write):
+        """Skill tool with brainstorming → no state file."""
+        _, exit_code = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_name": "Skill",
+            "tool_input": {"skill": "brainstorming"},
+        })
+        self.assertEqual(exit_code, 0)
+        mock_write.assert_not_called()
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    @patch.object(sdd_auto_test, "read_skill_invoked", return_value=None)
+    def test_source_edit_ralph_no_skill_warns(self, mock_skill, mock_read,
+                                               mock_running, mock_detect,
+                                               mock_suppress, mock_bg):
+        """Edit source in ralph project without skill → additionalContext warning."""
+        ralph_dir = Path(self.tmpdir) / ".ralph"
+        ralph_dir.mkdir()
+        (ralph_dir / "config.sh").write_text('GATE_TEST="pytest"\n', encoding="utf-8")
+
+        stdout, _ = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "app/main.py"},
+        })
+        self.assertIn("sop-code-assist", stdout)
+        data = json.loads(stdout)
+        self.assertIn("SDD:", data["hookSpecificOutput"]["additionalContext"])
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    @patch.object(sdd_auto_test, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
+    def test_source_edit_ralph_with_skill_silent(self, mock_skill, mock_read,
+                                                  mock_running, mock_detect,
+                                                  mock_suppress, mock_bg):
+        """Edit source in ralph project with skill invoked → no warning."""
+        ralph_dir = Path(self.tmpdir) / ".ralph"
+        ralph_dir.mkdir()
+        (ralph_dir / "config.sh").write_text('GATE_TEST="pytest"\n', encoding="utf-8")
+
+        stdout, _ = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "app/main.py"},
+        })
+        self.assertEqual(stdout, "")
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    def test_source_edit_non_ralph_silent(self, mock_read, mock_running,
+                                          mock_detect, mock_suppress, mock_bg):
+        """Edit source without .ralph/ → no warning."""
+        stdout, _ = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "app/main.py"},
+        })
+        self.assertEqual(stdout, "")
+
+
 if __name__ == "__main__":
     unittest.main()

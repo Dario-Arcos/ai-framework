@@ -297,7 +297,9 @@ NON_CODE_EXT_RE = re.compile(
     r"prettierrc|eslintrc|stylelintrc|"    # tool configs
     r"png|jpg|jpeg|gif|svg|ico|webp|avif|" # images
     r"woff2?|ttf|eot|otf|"                # fonts
-    r"csv|tsv)$",                          # data
+    r"csv|tsv|"                            # data
+    r"map|snap|"                           # generated artifacts
+    r"d\.ts|min\.js|min\.css)$",           # generated code artifacts
     re.IGNORECASE
 )
 

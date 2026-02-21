@@ -772,5 +772,38 @@ class TestValidateScenarioStrategy(unittest.TestCase):
             self.assertEqual(result, "required")
 
 
+class TestNonCodeExtensions(unittest.TestCase):
+    """Test extended NON_CODE_EXT_RE for generated artifacts (Gap 5)."""
+
+    def test_source_map_is_non_code(self):
+        self.assertTrue(task_completed.NON_CODE_EXT_RE.search("bundle.js.map"))
+
+    def test_snapshot_is_non_code(self):
+        self.assertTrue(task_completed.NON_CODE_EXT_RE.search("Button.test.js.snap"))
+
+    def test_dts_is_non_code(self):
+        self.assertTrue(task_completed.NON_CODE_EXT_RE.search("types.d.ts"))
+
+    def test_minified_js_is_non_code(self):
+        self.assertTrue(task_completed.NON_CODE_EXT_RE.search("app.min.js"))
+
+    def test_minified_css_is_non_code(self):
+        self.assertTrue(task_completed.NON_CODE_EXT_RE.search("styles.min.css"))
+
+    def test_prisma_is_code(self):
+        self.assertIsNone(task_completed.NON_CODE_EXT_RE.search("schema.prisma"))
+
+    def test_graphql_is_code(self):
+        self.assertIsNone(task_completed.NON_CODE_EXT_RE.search("schema.graphql"))
+
+    def test_python_is_code(self):
+        self.assertIsNone(task_completed.NON_CODE_EXT_RE.search("app.py"))
+
+    def test_typescript_is_code(self):
+        """Regular .ts files should NOT match (they are code)."""
+        # .ts alone should not match d.ts pattern
+        self.assertIsNone(task_completed.NON_CODE_EXT_RE.search("app.ts"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ sdd_test_guard = importlib.import_module("sdd-test-guard")
 
 is_test_file = sdd_test_guard.is_test_file
 count_assertions = sdd_test_guard.count_assertions
+count_precise = sdd_test_guard.count_precise
 analyze_edit = sdd_test_guard.analyze_edit
 main = sdd_test_guard.main
 
@@ -99,9 +100,11 @@ class TestAnalyzeEdit(unittest.TestCase):
             "old_string": "assert x == 1\nassert y == 2",
             "new_string": "assert x == 1",
         }
-        old, new = analyze_edit("Edit", tool_input)
+        old, new, old_text, new_text = analyze_edit("Edit", tool_input)
         self.assertEqual(old, 2)
         self.assertEqual(new, 1)
+        self.assertEqual(old_text, "assert x == 1\nassert y == 2")
+        self.assertEqual(new_text, "assert x == 1")
 
     def test_edit_removing_assertions(self):
         """Edit removing all assertions."""
@@ -110,7 +113,7 @@ class TestAnalyzeEdit(unittest.TestCase):
             "old_string": "assert x == 1\nassert y == 2\nassert z == 3",
             "new_string": "pass",
         }
-        old, new = analyze_edit("Edit", tool_input)
+        old, new, _, _ = analyze_edit("Edit", tool_input)
         self.assertEqual(old, 3)
         self.assertEqual(new, 0)
 
@@ -121,7 +124,7 @@ class TestAnalyzeEdit(unittest.TestCase):
             "old_string": "pass",
             "new_string": "assert x == 1\nassert y == 2",
         }
-        old, new = analyze_edit("Edit", tool_input)
+        old, new, _, _ = analyze_edit("Edit", tool_input)
         self.assertEqual(old, 0)
         self.assertEqual(new, 2)
 
@@ -132,7 +135,7 @@ class TestAnalyzeEdit(unittest.TestCase):
             "file_path": nonexistent,
             "content": "assert a == 1\nassert b == 2",
         }
-        old, new = analyze_edit("Write", tool_input)
+        old, new, _, _ = analyze_edit("Write", tool_input)
         self.assertEqual(old, 0)
         self.assertEqual(new, 2)
 
@@ -146,15 +149,17 @@ class TestAnalyzeEdit(unittest.TestCase):
             "file_path": existing,
             "content": "assert x == 1",
         }
-        old, new = analyze_edit("Write", tool_input)
+        old, new, _, _ = analyze_edit("Write", tool_input)
         self.assertEqual(old, 3)
         self.assertEqual(new, 1)
 
     def test_unknown_tool(self):
-        """Unknown tool name returns (0, 0)."""
-        old, new = analyze_edit("Read", {"file_path": "test_foo.py"})
+        """Unknown tool name returns (0, 0, '', '')."""
+        old, new, old_text, new_text = analyze_edit("Read", {"file_path": "test_foo.py"})
         self.assertEqual(old, 0)
         self.assertEqual(new, 0)
+        self.assertEqual(old_text, "")
+        self.assertEqual(new_text, "")
 
 
 class TestMain(unittest.TestCase):
@@ -270,6 +275,134 @@ class TestMain(unittest.TestCase):
                 "file_path": "test_foo.py",
                 "old_string": "assert x == 1",
                 "new_string": "assert x == 1\nassert y == 2\nassert z == 3",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+
+class TestCountPrecise(unittest.TestCase):
+    """Test count_precise() for concrete value assertions."""
+
+    def test_python_equality(self):
+        self.assertEqual(count_precise('assert x == 42'), 1)
+
+    def test_python_string_equality(self):
+        self.assertEqual(count_precise('assert x == "hello"'), 1)
+
+    def test_python_is_not_none(self):
+        self.assertEqual(count_precise('assert x is not None'), 0)
+
+    def test_jest_toBe(self):
+        self.assertEqual(count_precise('expect(x).toBe(42)'), 1)
+
+    def test_jest_toEqual(self):
+        self.assertEqual(count_precise('expect(x).toEqual({a: 1})'), 1)
+
+    def test_jest_toStrictEqual(self):
+        self.assertEqual(count_precise('expect(x).toStrictEqual([1, 2])'), 1)
+
+    def test_jest_toBeTruthy(self):
+        self.assertEqual(count_precise('expect(x).toBeTruthy()'), 0)
+
+    def test_rust_assert_eq(self):
+        self.assertEqual(count_precise('assert_eq!(a, b)'), 1)
+
+    def test_python_assertEqual(self):
+        self.assertEqual(count_precise('self.assertEqual(x, 42)'), 1)
+
+    def test_chai_to_equal(self):
+        self.assertEqual(count_precise('expect(x).to.equal(42)'), 1)
+
+    def test_chai_to_eql(self):
+        self.assertEqual(count_precise('expect(x).to.eql({a: 1})'), 1)
+
+    def test_none_input(self):
+        self.assertEqual(count_precise(None), 0)
+
+    def test_empty_input(self):
+        self.assertEqual(count_precise(""), 0)
+
+    def test_no_precise_assertions(self):
+        self.assertEqual(count_precise('assert x\nassert y is not None'), 0)
+
+    def test_multiple_precise(self):
+        text = 'assert x == 42\nassert y == "hi"\nself.assertEqual(z, 1)'
+        self.assertEqual(count_precise(text), 3)
+
+
+class TestPrecisionDenyInMain(unittest.TestCase):
+    """Tests failing + same assertion count + precision decreased → DENY."""
+
+    def _run_main(self, input_data):
+        stdin_mock = io.StringIO(json.dumps(input_data))
+        stdout_capture = io.StringIO()
+        exit_code = 0
+        with patch("sys.stdin", stdin_mock), \
+             patch("sys.stdout", stdout_capture):
+            try:
+                main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return exit_code, stdout_capture.getvalue()
+
+    @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    def test_exact_to_existence_denied(self, _mock):
+        """assert x == 42 → assert x is not None: count 1→1, precise 1→0 → DENY."""
+        exit_code, stdout = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert x == 42",
+                "new_string": "assert x is not None",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        output = json.loads(stdout)
+        self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")
+        self.assertIn("precision", output["hookSpecificOutput"]["permissionDecisionReason"])
+
+    @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    def test_exact_to_different_exact_allowed(self, _mock):
+        """assert x == 42 → assert x == 43: count 1→1, precise 1→1 → ALLOW."""
+        exit_code, stdout = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert x == 42",
+                "new_string": "assert x == 43",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+    @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    def test_loose_to_exact_allowed(self, _mock):
+        """assert x is not None → assert x == 42: count 1→1, precise 0→1 → ALLOW."""
+        exit_code, stdout = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert x is not None",
+                "new_string": "assert x == 42",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+    @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    def test_no_old_precise_allows_any_change(self, _mock):
+        """No precise assertions in old → can't drop precision → ALLOW."""
+        exit_code, stdout = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert x is not None",
+                "new_string": "assert y is not None",
             },
         })
         self.assertEqual(exit_code, 0)

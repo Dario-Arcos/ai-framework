@@ -215,3 +215,42 @@ def write_state(cwd, passing, summary):
             os.unlink(tmp)
         except OSError:
             pass
+
+
+# ─────────────────────────────────────────────────────────────────
+# SKILL INVOCATION STATE — tracks sop-code-assist invocations
+# ─────────────────────────────────────────────────────────────────
+
+def skill_invoked_path(cwd):
+    """Path to SDD skill invocation state file."""
+    return Path(f"/tmp/sdd-skill-invoked-{project_hash(cwd)}.json")
+
+
+def write_skill_invoked(cwd, skill_name):
+    """Record that an SDD skill was invoked."""
+    sp = skill_invoked_path(cwd)
+    data = {
+        "skill": skill_name,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    try:
+        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-skill-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        os.rename(tmp, str(sp))
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+def read_skill_invoked(cwd):
+    """Read skill invocation state. Returns dict or None."""
+    sp = skill_invoked_path(cwd)
+    try:
+        with open(sp, "r", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None

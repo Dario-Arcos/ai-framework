@@ -94,7 +94,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|Skill",
         "hooks": [
           {
             "type": "command",
