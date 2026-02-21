@@ -1,15 +1,17 @@
 ---
 name: verification-before-completion
-description: Evidence-based completion gate. Use before ANY claim that work is done, tests pass, or build succeeds.
+description: Use when about to claim work is complete, fixed, or passing — before committing, creating PRs, or reporting results. Requires running verification commands and confirming output before making any success claims. Evidence before assertions, always.
 ---
 
 # Verification Before Completion
 
 ## Overview
 
-Believing code works is not the same as proving it works. Memory of a passing test is not evidence. Confidence is not verification.
+Believing code works is not the same as proving it works. Memory of a passing test is not evidence. Confidence is not verification. Code is opaque weights — correctness is inferred exclusively from externally observable behavior, never from reading source.
 
 **Core principle:** Evidence before claims, always.
+
+**Violating the letter of this rule is violating the spirit of this rule.**
 
 ## The Iron Law
 
@@ -75,6 +77,10 @@ Verify that execution evidence demonstrates genuine user satisfaction, not just 
 - Check for semantic correctness the assertions don't cover: rounding, display format, error message clarity, edge behavior
 - If the answer is "it passes but a user might not accept it" → not satisfied
 
+**Stability Verification:**
+- A single passing run is insufficient — re-run verification to confirm stability
+- If results differ between runs, the system is non-deterministic — investigate before claiming
+
 **Convergence Gate:**
 ```
 □ All defined scenarios satisfied through execution evidence
@@ -82,6 +88,7 @@ Verify that execution evidence demonstrates genuine user satisfaction, not just 
 □ No test expectations modified to match code (reward hacking check)
 □ Behavior satisfies user intent beyond the literal assertions
 □ [N/M] scenarios satisfied — must be M/M to proceed
+□ Verification stable across re-runs (not a lucky single pass)
 ```
 
 If ANY gate fails, return to implementation. Do not proceed to CLAIM.
@@ -128,6 +135,9 @@ Satisfaction: [genuine | concerns: specific concern]
 | "Feature complete" | All acceptance criteria verified with evidence | "I implemented all the requirements" |
 | "No regressions" | Full test suite passes, not just new tests | "My changes are isolated" |
 | "Works correctly" | Observable output matching expected behavior | "The logic looks right" |
+| "Linter clean" | Linter output: 0 errors, 0 warnings | "Build passed" (linter ≠ compiler) |
+| "Regression test works" | Red-green cycle verified (test fails without fix, passes with) | "Test passes" (without red-green) |
+| "Agent completed task" | VCS diff shows correct changes + independent verification | "Agent reported success" |
 
 ## Red Flags — STOP
 
@@ -140,6 +150,7 @@ If you catch yourself saying or thinking:
 - Expressing satisfaction before running verification
 - Claiming completion in the same message as the last code change
 - Using words like "likely," "presumably," "I believe"
+- Rephrasing a success claim with different words to avoid the rule
 
 **ALL mean: You haven't verified. Run the commands.**
 
@@ -155,6 +166,9 @@ If you catch yourself saying or thinking:
 | "I can see in the code that it works" | Reading code is not running code. Execute it. |
 | "The same pattern works elsewhere" | This instance might differ. Verify THIS code. |
 | "I'll fix it if it's broken" | Claim now, fix later = unreliable claims. Verify now. |
+| "Linter passed so build is fine" | Linter ≠ compiler. Run the actual build. |
+| "Agent said it's done" | Agent reports are claims, not evidence. Verify independently. |
+| "Different words so rule doesn't apply" | Spirit over letter. Rephrasing doesn't exempt you. |
 
 ## Key Patterns
 
@@ -163,6 +177,14 @@ If you catch yourself saying or thinking:
 Tests pass: `pytest tests/ -v` → 23 passed in 1.2s
 No regressions: `pytest` → 156 passed, 0 failed, 0 skipped
 ```
+
+### Regression Tests (TDD Red-Green)
+```
+✅ Write test → Run (pass) → Revert fix → Run (MUST FAIL) → Restore fix → Run (pass)
+❌ "I wrote a regression test" (without verifying it fails when the fix is reverted)
+```
+
+A test that doesn't fail without the fix proves nothing. The red-green cycle is mandatory for regression tests.
 
 ### Build
 ```
@@ -181,10 +203,11 @@ AC-3 verified: `npm test -- --grep "validation"` → 5 passed
 ### Agent Delegation
 When delegating work to subagents, verification still applies:
 ```
-Subagent task verified: Read subagent output → [specific evidence from output]
+✅ Agent reports success → Check VCS diff → Verify changes independently → Report actual state
+❌ Trust agent report → Echo agent's claims as your own
 ```
 
-The delegating agent is responsible for verifying the subagent's claims.
+The delegating agent is responsible for verifying the subagent's claims through independent evidence, not by echoing the subagent's assertions.
 
 ## When to Apply
 
@@ -197,6 +220,12 @@ The delegating agent is responsible for verifying the subagent's claims.
 - Transitioning to next task
 
 **There are NO exceptions.** The cost of running one more command is trivial. The cost of a false completion claim is wasted time, broken trust, and compounding errors.
+
+**Rule applies to:**
+- Exact phrases ("tests pass", "build succeeds", "done")
+- Paraphrases and synonyms ("looks good", "should be fine", "all clear")
+- Implications of success ("moving on to the next task", "let me commit this")
+- ANY communication suggesting completion or correctness
 
 ## Integration
 
