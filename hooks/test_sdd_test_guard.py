@@ -166,17 +166,19 @@ class TestMain(unittest.TestCase):
     """Test main() decision matrix end-to-end."""
 
     def _run_main(self, input_data):
-        """Run main() with given JSON input, return (exit_code, stdout)."""
+        """Run main() with given JSON input, return (exit_code, stdout, stderr)."""
         stdin_mock = io.StringIO(json.dumps(input_data))
         stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
         exit_code = 0
         with patch("sys.stdin", stdin_mock), \
-             patch("sys.stdout", stdout_capture):
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
             try:
                 main()
             except SystemExit as e:
                 exit_code = e.code if e.code is not None else 0
-        return exit_code, stdout_capture.getvalue()
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
 
     def test_invalid_json_exits_0(self):
         """Bad stdin → exit 0 (allow)."""
@@ -188,7 +190,7 @@ class TestMain(unittest.TestCase):
 
     def test_non_test_file_allows(self):
         """Source file (not a test) → exit 0."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -203,7 +205,7 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_test_guard, "read_state", return_value=None)
     def test_no_state_allows(self, _mock):
         """Test file, no state → exit 0 (no data = no block)."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -218,7 +220,7 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": True, "summary": "5 passed"})
     def test_passing_state_allows(self, _mock):
         """Test file, tests passing → exit 0 (refactoring OK)."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -232,8 +234,8 @@ class TestMain(unittest.TestCase):
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "2 failed"})
     def test_failing_assertions_reduced_denies(self, _mock):
-        """Tests failing + assertions reduced → DENY with JSON output."""
-        exit_code, stdout = self._run_main({
+        """Tests failing + assertions reduced → DENY (exit 2 + stderr)."""
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -242,18 +244,16 @@ class TestMain(unittest.TestCase):
                 "new_string": "assert x == 1",
             },
         })
-        self.assertEqual(exit_code, 0)
-        output = json.loads(stdout)
-        hook_output = output["hookSpecificOutput"]
-        self.assertEqual(hook_output["permissionDecision"], "deny")
-        self.assertIn("reward hacking", hook_output["permissionDecisionReason"])
-        self.assertIn("2", hook_output["permissionDecisionReason"])
-        self.assertIn("1", hook_output["permissionDecisionReason"])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("reward hacking", stderr)
+        self.assertIn("2", stderr)
+        self.assertIn("1", stderr)
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_failing_assertions_same_allows(self, _mock):
         """Tests failing + assertions unchanged → exit 0 (allow)."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -268,7 +268,7 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_failing_assertions_increased_allows(self, _mock):
         """Tests failing + assertions increased → exit 0 (allow)."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -337,19 +337,21 @@ class TestPrecisionDenyInMain(unittest.TestCase):
     def _run_main(self, input_data):
         stdin_mock = io.StringIO(json.dumps(input_data))
         stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
         exit_code = 0
         with patch("sys.stdin", stdin_mock), \
-             patch("sys.stdout", stdout_capture):
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
             try:
                 main()
             except SystemExit as e:
                 exit_code = e.code if e.code is not None else 0
-        return exit_code, stdout_capture.getvalue()
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_exact_to_existence_denied(self, _mock):
-        """assert x == 42 → assert x is not None: count 1→1, precise 1→0 → DENY."""
-        exit_code, stdout = self._run_main({
+        """assert x == 42 → assert x is not None: count 1→1, precise 1→0 → DENY (exit 2)."""
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -358,15 +360,14 @@ class TestPrecisionDenyInMain(unittest.TestCase):
                 "new_string": "assert x is not None",
             },
         })
-        self.assertEqual(exit_code, 0)
-        output = json.loads(stdout)
-        self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")
-        self.assertIn("precision", output["hookSpecificOutput"]["permissionDecisionReason"])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("precision", stderr)
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_exact_to_different_exact_allowed(self, _mock):
         """assert x == 42 → assert x == 43: count 1→1, precise 1→1 → ALLOW."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -381,7 +382,7 @@ class TestPrecisionDenyInMain(unittest.TestCase):
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_loose_to_exact_allowed(self, _mock):
         """assert x is not None → assert x == 42: count 1→1, precise 0→1 → ALLOW."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -396,7 +397,7 @@ class TestPrecisionDenyInMain(unittest.TestCase):
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_no_old_precise_allows_any_change(self, _mock):
         """No precise assertions in old → can't drop precision → ALLOW."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": "/tmp/project",
             "tool_name": "Edit",
             "tool_input": {
@@ -421,23 +422,25 @@ class TestReviewFileGuard(unittest.TestCase):
     def _run_main(self, input_data):
         stdin_mock = io.StringIO(json.dumps(input_data))
         stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
         exit_code = 0
         with patch("sys.stdin", stdin_mock), \
-             patch("sys.stdout", stdout_capture):
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
             try:
                 main()
             except SystemExit as e:
                 exit_code = e.code if e.code is not None else 0
-        return exit_code, stdout_capture.getvalue()
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
 
     @patch.object(sdd_test_guard, "read_skill_invoked", return_value=None)
     def test_review_write_without_skill_denied(self, _mock):
-        """Write to .ralph/reviews/ without sop-reviewer state → deny."""
+        """Write to .ralph/reviews/ without sop-reviewer state → deny (exit 2)."""
         ralph_dir = Path(self.tmpdir) / ".ralph"
         ralph_dir.mkdir()
         (ralph_dir / "config.sh").write_text('GATE_TEST="npm test"\n', encoding="utf-8")
 
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": self.tmpdir,
             "tool_name": "Write",
             "tool_input": {
@@ -445,10 +448,9 @@ class TestReviewFileGuard(unittest.TestCase):
                 "content": "## Review\nLGTM",
             },
         })
-        self.assertEqual(exit_code, 0)
-        output = json.loads(stdout)
-        self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")
-        self.assertIn("sop-reviewer", output["hookSpecificOutput"]["permissionDecisionReason"])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("sop-reviewer", stderr)
 
     @patch.object(sdd_test_guard, "read_skill_invoked", return_value={"skill": "sop-reviewer"})
     def test_review_write_with_skill_allowed(self, _mock):
@@ -457,7 +459,7 @@ class TestReviewFileGuard(unittest.TestCase):
         ralph_dir.mkdir()
         (ralph_dir / "config.sh").write_text('GATE_TEST="npm test"\n', encoding="utf-8")
 
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": self.tmpdir,
             "tool_name": "Write",
             "tool_input": {
@@ -470,7 +472,7 @@ class TestReviewFileGuard(unittest.TestCase):
 
     def test_non_review_write_unaffected(self):
         """Write to src/main.py → normal flow (no deny)."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": self.tmpdir,
             "tool_name": "Write",
             "tool_input": {
@@ -483,7 +485,7 @@ class TestReviewFileGuard(unittest.TestCase):
 
     def test_non_ralph_project_unaffected(self):
         """No .ralph/config.sh → no deny even for review path."""
-        exit_code, stdout = self._run_main({
+        exit_code, stdout, stderr = self._run_main({
             "cwd": self.tmpdir,
             "tool_name": "Write",
             "tool_input": {

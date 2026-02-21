@@ -195,7 +195,7 @@ def main():
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     tool_name = input_data.get("tool_name", "")
 
     # Extract file path from tool input

@@ -256,7 +256,7 @@ class TestGuardReadsRealState(unittest.TestCase):
         """Tests failing + assertions reduced → DENY (reward hacking)."""
         _sdd_detect.write_state(self.tmpdir, False, "1 passed, 1 failed")
 
-        exit_code, stdout, _ = _run_hook_stdin(sdd_test_guard.main, {
+        exit_code, stdout, stderr = _run_hook_stdin(sdd_test_guard.main, {
             "cwd": self.tmpdir,
             "tool_name": "Edit",
             "tool_input": {
@@ -265,11 +265,8 @@ class TestGuardReadsRealState(unittest.TestCase):
                 "new_string": "assert add(1, 2) == 3",  # dropped an assertion
             },
         })
-        self.assertEqual(exit_code, 0)
-        output = json.loads(stdout)
-        decision = output["hookSpecificOutput"]["permissionDecision"]
-        self.assertEqual(decision, "deny")
-        self.assertIn("reward hacking", output["hookSpecificOutput"]["permissionDecisionReason"])
+        self.assertEqual(exit_code, 2)
+        self.assertIn("reward hacking", stderr)
 
     def test_guard_allows_when_tests_failing_but_assertions_maintained(self):
         """Tests failing + same assertion count → allow (fixing, not weakening)."""
@@ -585,7 +582,7 @@ class TestFullSDDCycle(unittest.TestCase):
         self.assertFalse(state["passing"], "Tests should fail with buggy code")
 
         # Guard BLOCKS removing the failing assertion (reward hacking)
-        exit_code, stdout, _ = _run_hook_stdin(sdd_test_guard.main, {
+        exit_code, stdout, stderr = _run_hook_stdin(sdd_test_guard.main, {
             "cwd": self.tmpdir,
             "tool_name": "Edit",
             "tool_input": {
@@ -599,11 +596,8 @@ class TestFullSDDCycle(unittest.TestCase):
                 ),
             },
         })
-        output = json.loads(stdout)
-        self.assertEqual(
-            output["hookSpecificOutput"]["permissionDecision"], "deny",
-            "Guard MUST deny removing assertions when tests fail"
-        )
+        self.assertEqual(exit_code, 2, "Guard MUST deny removing assertions when tests fail")
+        self.assertIn("reward hacking", stderr)
 
         # TaskCompleted also blocks
         exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
@@ -765,7 +759,7 @@ class TestWriteToolGuardIntegration(unittest.TestCase):
         )
         _sdd_detect.write_state(self.tmpdir, False, "1 failed")
 
-        exit_code, stdout, _ = _run_hook_stdin(sdd_test_guard.main, {
+        exit_code, stdout, stderr = _run_hook_stdin(sdd_test_guard.main, {
             "cwd": self.tmpdir,
             "tool_name": "Write",
             "tool_input": {
@@ -773,8 +767,8 @@ class TestWriteToolGuardIntegration(unittest.TestCase):
                 "content": "def test_a(): assert True\n",
             },
         })
-        output = json.loads(stdout)
-        self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")
+        self.assertEqual(exit_code, 2)
+        self.assertIn("reward hacking", stderr)
 
     def test_write_tool_new_test_file_allowed(self):
         """Write tool creating new test file → allow (file didn't exist before)."""

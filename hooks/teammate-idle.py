@@ -63,7 +63,7 @@ def main():
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)  # malformed input → pass-through
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     teammate_name = input_data.get("teammate_name", "unknown")
 
     # Guard: not a ralph-orchestrator project

@@ -446,7 +446,7 @@ def main():
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)  # malformed input → pass-through
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     task_subject = input_data.get("task_subject", "unknown task")
     task_description = input_data.get("task_description", "")
     scenario_strategy = find_scenario_strategy(cwd, task_subject, task_description)

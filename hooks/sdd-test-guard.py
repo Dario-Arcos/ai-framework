@@ -131,7 +131,7 @@ def main():
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
@@ -141,18 +141,13 @@ def main():
     if tool_name == "Write" and ".ralph/reviews/" in file_path:
         ralph_config = Path(cwd) / ".ralph" / "config.sh"
         if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer"):
-            print(json.dumps({
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": (
-                        "SDD Guard: writing review without invoking sop-reviewer. "
-                        "Invoke: Skill(skill=\"sop-reviewer\", "
-                        "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first."
-                    ),
-                }
-            }))
-            sys.exit(0)
+            print(
+                "SDD Guard: writing review without invoking sop-reviewer. "
+                "Invoke: Skill(skill=\"sop-reviewer\", "
+                "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
     # Fast path: not a test file → allow (~1ms)
     if not is_test_file(file_path):
@@ -174,39 +169,27 @@ def main():
 
     if new_count < old_count:
         # DENY: reward hacking detected
-        reason = (
+        print(
             f"SDD Guard: tests are failing and this edit reduces "
             f"assertions ({old_count}\u2192{new_count}). "
             f"Fix implementation code, not tests. "
-            f"Weakening a test to match a bug = reward hacking."
+            f"Weakening a test to match a bug = reward hacking.",
+            file=sys.stderr,
         )
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "deny",
-                "permissionDecisionReason": reason,
-            }
-        }))
-        sys.exit(0)
+        sys.exit(2)
 
     # Assertions same or increased → check precision didn't drop
     old_precise = count_precise(old_text)
     new_precise = count_precise(new_text)
     if old_precise > 0 and new_precise < old_precise:
-        reason = (
+        print(
             f"SDD Guard: tests are failing and this edit reduces "
             f"assertion precision ({old_precise}\u2192{new_precise} precise assertions). "
             f"Replacing value comparisons with existence checks = reward hacking. "
-            f"Fix implementation code, not test precision."
+            f"Fix implementation code, not test precision.",
+            file=sys.stderr,
         )
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "deny",
-                "permissionDecisionReason": reason,
-            }
-        }))
-        sys.exit(0)
+        sys.exit(2)
 
     # Assertions and precision OK → allow
     sys.exit(0)

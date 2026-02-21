@@ -51,7 +51,7 @@ def main():
     except (IOError, OSError):
         pass
 
-    cwd = os.getcwd()
+    cwd = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
     rules_mtime = _rules_mtime(cwd)
 
     # Level 1: No project memory — nothing else matters

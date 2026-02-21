@@ -15,7 +15,7 @@ def find_plugin_root():
 
 def find_project_dir():
     """Find project directory (where Claude Code was started)."""
-    return Path(os.getcwd()).resolve()
+    return Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())).resolve()
 
 
 ALLOWED_TEMPLATE_PATHS = [
