@@ -157,8 +157,8 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 0)
         output = json.loads(stdout_capture.getvalue())
-        self.assertIn("hookSpecificOutput", output)
-        self.assertEqual(output["hookSpecificOutput"]["hookEventName"], "SessionStart")
+        # Success path: no additionalContext injected (empty JSON)
+        self.assertNotIn("hookSpecificOutput", output)
 
     def test_plugin_root_missing(self):
         nonexistent = str(self.plugin_root / "does-not-exist")
@@ -190,9 +190,8 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 0)
         output = json.loads(stdout_capture.getvalue())
-        # Verify plugin root was used (no enforcement injection, just success marker)
-        ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertEqual(ctx, "AI Framework: ✓")
+        # Success path: no additionalContext (silent success)
+        self.assertNotIn("hookSpecificOutput", output)
 
     def test_exception_handled(self):
         env_patch = {"CLAUDE_PLUGIN_ROOT": str(self.plugin_root)}

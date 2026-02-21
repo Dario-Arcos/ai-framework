@@ -153,9 +153,9 @@ def main():
     if not is_source_file(file_path):
         sys.exit(0)
 
-    # Read previous test state for feedback
+    # Read previous test state — only report failures (passing = no signal needed)
     previous = read_state(cwd)
-    msg = format_feedback(previous)
+    msg = format_feedback(previous) if previous and not previous.get("passing") else None
 
     # Guard: debounce — don't launch if tests already running
     if not is_test_running(cwd):

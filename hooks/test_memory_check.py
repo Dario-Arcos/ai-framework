@@ -278,7 +278,7 @@ class TestMain(unittest.TestCase):
         output = self._run_main()
         data = json.loads(output)
         context = data["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("No project memory", context)
+        self.assertEqual(context, "No project memory. Suggest /project-init before proceeding.")
 
     def test_fresh_rules_no_changes(self):
         # Create rules so they exist
@@ -313,7 +313,8 @@ class TestMain(unittest.TestCase):
         output = self._run_main(mock_time_value=mock_now)
         data = json.loads(output)
         context = data["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("days old", context)
+        self.assertIn("45d old", context)
+        self.assertIn("Suggest /project-init", context)
 
     def test_no_test_infra(self):
         # Create rules + a manifest but NO test infrastructure
@@ -332,7 +333,7 @@ class TestMain(unittest.TestCase):
         output = self._run_main(mock_time_value=now)
         data = json.loads(output)
         context = data["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("no test infrastructure", context)
+        self.assertEqual(context, "No test infrastructure detected. Flag proactively to user.")
 
 
 if __name__ == "__main__":

@@ -58,25 +58,20 @@ Al iniciar Claude Code después de instalar el plugin, los hooks ejecutan autom�
 2. **`agent-browser-check.py`** — Instala `agent-browser` CLI + navegador Chromium en background (~30-60s)
 3. **`memory-check.py`** — Detecta reglas de proyecto faltantes u obsoletas y sugiere ejecutar `/project-init`
 
-Vas a ver estos mensajes en el status de sesión:
+Los hooks son silenciosos cuando todo funciona — solo inyectan mensajes cuando requieren tu atención:
 
 ::: code-group
 ```txt [Primera sesión (sin /project-init)]
-AI Framework: ✓ Templates synced
-agent-browser: installing          # ← Instalación en progreso
 # Claude te preguntará si quieres ejecutar /project-init
+# agent-browser se instala en background (sin mensajes visibles)
 ```
 
 ```txt [Sesión posterior (con reglas)]
-AI Framework: ✓ Templates synced
-agent-browser: ready               # ← Listo para usar
-# Sin mensajes extra — reglas están al día
+# Sin mensajes — todo funcionando correctamente
 ```
 
 ```txt [Reglas obsoletas]
-AI Framework: ✓ Templates synced
-agent-browser: ready
-# Claude sugiere ejecutar /project-init (manifests cambiaron o reglas >90 días)
+# Claude sugiere ejecutar /project-init (manifests cambiaron o reglas >30 días)
 ```
 :::
 
@@ -84,9 +79,8 @@ agent-browser: ready
 1. Instala el plugin
 2. Cierra Claude Code
 3. Espera **~10 segundos** (permite que el proceso termine de registrarse)
-4. Abre nueva sesión — verás `agent-browser: installing`
-5. Trabaja normalmente. La instalación ocurre en background
-6. En la **siguiente sesión**, `agent-browser` aparece como `ready` y la skill se activa
+4. Abre nueva sesión — la instalación de `agent-browser` ocurre en background
+5. Trabaja normalmente. En la siguiente sesión, la skill se activa automáticamente
 :::
 
 ::: details ¿Por qué esperar antes de reiniciar?
@@ -223,8 +217,8 @@ Para commits y PRs:
 | Hooks no ejecutan | Verifica Python 3.8+: `python3 --version` |
 | Plugin no aparece | `/plugin` → selecciona "Discover" |
 | Update no funciona | Ejecuta primero `/plugin marketplace update` |
-| `agent-browser: installing` persistente | Espera ~60s, reinicia. Si persiste: revisa log en `/tmp/agent-browser-install.log` |
-| `agent-browser: install failed` | Verifica Node.js 18+: `node --version`. Instala manualmente con `npm install -g agent-browser` |
+| `agent-browser` no funciona | Revisa log en `/tmp/agent-browser-install.log`. Si falló: `npm install -g agent-browser` |
+| `agent-browser install failed` en sesión | Verifica Node.js 18+: `node --version`. Instala manualmente con `npm install -g agent-browser` |
 | Notificaciones no suenan | Solo disponibles en macOS. Verifica permisos de Script Editor en System Settings → Privacy |
 | Hook falla en Windows | Usa Git Bash o WSL como shell. O desactiva con `AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1` |
 

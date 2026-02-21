@@ -56,11 +56,7 @@ def main():
 
     # Level 1: No project memory — nothing else matters
     if rules_mtime is None:
-        emit(
-            "No project memory (.claude/rules/) found. "
-            "Before responding to any task, ask the user if they want to run "
-            "/project-init first. Explain that without it you lack project context."
-        )
+        emit("No project memory. Suggest /project-init before proceeding.")
         return
 
     # Eager baseline: capture manifest hashes at project-init time.
@@ -75,8 +71,8 @@ def main():
         files = ", ".join(changed)
         age = _age_days(rules_mtime)
         messages.append(
-            f"Project memory outdated: {files} changed since last "
-            f"/project-init ({age}d ago). Ask the user if they want to update it."
+            f"Project memory outdated: {files} changed ({age}d ago). "
+            f"Suggest /project-init."
         )
 
     # Level 3: Old rules (only if Level 2 didn't fire — both suggest /project-init)
@@ -84,16 +80,13 @@ def main():
         age = _age_days(rules_mtime)
         if age > STALENESS_DAYS:
             messages.append(
-                f"Project memory is {age} days old. "
-                "Suggest /project-init to refresh technical context."
+                f"Project memory {age}d old. Suggest /project-init."
             )
 
     # Level 4: No test infrastructure (independent — always evaluated)
     if has_manifest and not _has_test_infra(cwd):
         messages.append(
-            "Software project detected but no test infrastructure found. "
-            "Mention this to the user and suggest /scenario-driven-development "
-            "when they request implementation work."
+            "No test infrastructure detected. Flag proactively to user."
         )
 
     emit(" ".join(messages))

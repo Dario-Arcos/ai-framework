@@ -192,33 +192,39 @@ def main():
         "AI_FRAMEWORK_SKIP_BROWSER_INSTALL", ""
     ).lower() in ("1", "true")
 
+    context = ""  # Silent by default — only actionable states emit to Claude
+
     if is_installed():
         if is_skill_present():
             if is_update_due():
                 update_background()
-            context = "agent-browser: ready"
+            # ready: silent — model can't act on this
         elif is_cooldown_active():
-            context = "agent-browser: syncing skill"
+            pass  # syncing: transient, silent
         else:
             sync_skill_background()
-            context = "agent-browser: syncing skill"
+            # syncing: transient, silent
 
     elif skip_install:
-        context = "agent-browser: skipped"
+        pass  # skipped: intentional via env var, silent
 
     elif is_cooldown_active():
-        context = "agent-browser: installing"
+        pass  # installing: transient, silent
 
     else:
         ok, _ = install_background()
-        context = "agent-browser: installing" if ok else "agent-browser: install failed"
+        if not ok:
+            context = "agent-browser install failed. Inform user: npm install -g agent-browser"
 
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "SessionStart",
-            "additionalContext": context,
-        }
-    }))
+    if context:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": context,
+            }
+        }))
+    else:
+        print(json.dumps({}))
 
 
 if __name__ == "__main__":

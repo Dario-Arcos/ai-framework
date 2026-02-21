@@ -241,13 +241,14 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
     @patch.object(sdd_auto_test, "is_test_running", return_value=False)
     @patch.object(sdd_auto_test, "read_state", return_value={"passing": True, "summary": "5 passed"})
-    def test_previous_passing_state_feedback(self, mock_read, mock_running,
-                                              mock_detect, mock_suppress, mock_bg):
+    def test_previous_passing_state_silent(self, mock_read, mock_running,
+                                            mock_detect, mock_suppress, mock_bg):
         stdout, _ = self._run_main(input_data={
             "cwd": "/tmp/proj",
             "tool_input": {"file_path": "app/main.py"},
         })
-        self.assertIn("[PASS]", stdout)
+        # Passing state = no output (silence reduces attention dilution)
+        self.assertEqual(stdout, "")
 
     @patch.object(sdd_auto_test, "run_tests_background")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
@@ -312,9 +313,9 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
     @patch.object(sdd_auto_test, "is_test_running", return_value=False)
-    @patch.object(sdd_auto_test, "read_state", return_value={"passing": True, "summary": "ok"})
-    def test_output_json_structure(self, mock_read, mock_running, mock_detect,
-                                    mock_suppress, mock_bg):
+    @patch.object(sdd_auto_test, "read_state", return_value={"passing": False, "summary": "2 failed"})
+    def test_output_json_structure_on_failure(self, mock_read, mock_running, mock_detect,
+                                               mock_suppress, mock_bg):
         stdout, _ = self._run_main(input_data={
             "cwd": "/tmp/proj",
             "tool_input": {"file_path": "app/main.py"},

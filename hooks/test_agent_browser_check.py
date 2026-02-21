@@ -178,7 +178,7 @@ class TestMain(unittest.TestCase):
     """Test main() with all dependencies mocked."""
 
     def _run_main(self, patches):
-        """Helper: apply patches, run main(), return parsed JSON output."""
+        """Helper: apply patches, run main(), return parsed JSON output dict."""
         defaults = {
             "agent_browser_check.consume_stdin": None,
             "agent_browser_check.cleanup_orphan_daemons": None,
@@ -207,90 +207,95 @@ class TestMain(unittest.TestCase):
             captured = io.StringIO()
             with patch("sys.stdout", captured):
                 agent_browser_check.main()
-            output = json.loads(captured.getvalue())
-            return output["hookSpecificOutput"]["additionalContext"]
+            return json.loads(captured.getvalue())
         finally:
             for p in active_patches:
                 p.stop()
 
-    def test_installed_skill_present_ready(self):
-        context = self._run_main({
+    def _assert_silent(self, output):
+        """Assert hook output is silent (no additionalContext to Claude)."""
+        self.assertNotIn("hookSpecificOutput", output)
+
+    def test_installed_skill_present_ready_silent(self):
+        output = self._run_main({
             "agent_browser_check.is_installed": True,
             "agent_browser_check.is_skill_present": True,
             "agent_browser_check.is_update_due": False,
         })
-        self.assertEqual(context, "agent-browser: ready")
+        self._assert_silent(output)
 
-    def test_installed_skill_present_update_due(self):
+    def test_installed_skill_present_update_due_silent(self):
         mock_update = MagicMock(return_value=(True, "/tmp/update.log"))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": True,
             "agent_browser_check.is_skill_present": True,
             "agent_browser_check.is_update_due": True,
             "agent_browser_check.update_background": mock_update,
         })
-        self.assertEqual(context, "agent-browser: ready")
+        self._assert_silent(output)
         mock_update.assert_called_once()
 
-    def test_installed_no_skill_syncs(self):
+    def test_installed_no_skill_syncs_silent(self):
         mock_sync = MagicMock(return_value=(True, "/tmp/sync.log"))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": True,
             "agent_browser_check.is_skill_present": False,
             "agent_browser_check.is_cooldown_active": False,
             "agent_browser_check.sync_skill_background": mock_sync,
         })
-        self.assertEqual(context, "agent-browser: syncing skill")
+        self._assert_silent(output)
         mock_sync.assert_called_once()
 
-    def test_installed_no_skill_cooldown(self):
+    def test_installed_no_skill_cooldown_silent(self):
         mock_sync = MagicMock(return_value=(True, "/tmp/sync.log"))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": True,
             "agent_browser_check.is_skill_present": False,
             "agent_browser_check.is_cooldown_active": True,
             "agent_browser_check.sync_skill_background": mock_sync,
         })
-        self.assertEqual(context, "agent-browser: syncing skill")
-        # Sync should NOT be called because cooldown is active
+        self._assert_silent(output)
         mock_sync.assert_not_called()
 
-    def test_not_installed_installs(self):
+    def test_not_installed_installs_silent(self):
         mock_install = MagicMock(return_value=(True, "/tmp/install.log"))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": False,
             "agent_browser_check.install_background": mock_install,
         })
-        self.assertEqual(context, "agent-browser: installing")
+        # Successful background install = silent (transient)
+        self._assert_silent(output)
         mock_install.assert_called_once()
 
-    def test_not_installed_cooldown(self):
+    def test_not_installed_cooldown_silent(self):
         mock_install = MagicMock(return_value=(True, "/tmp/install.log"))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": True,
             "agent_browser_check.install_background": mock_install,
         })
-        self.assertEqual(context, "agent-browser: installing")
-        # Install should NOT be called because cooldown is active
+        self._assert_silent(output)
         mock_install.assert_not_called()
 
     @patch.dict(os.environ, {"AI_FRAMEWORK_SKIP_BROWSER_INSTALL": "1"})
-    def test_not_installed_skip_env(self):
-        context = self._run_main({
+    def test_not_installed_skip_env_silent(self):
+        output = self._run_main({
             "agent_browser_check.is_installed": False,
         })
-        self.assertEqual(context, "agent-browser: skipped")
+        self._assert_silent(output)
 
-    def test_install_fails(self):
+    def test_install_fails_emits_context(self):
         mock_install = MagicMock(return_value=(False, None))
-        context = self._run_main({
+        output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": False,
             "agent_browser_check.install_background": mock_install,
         })
-        self.assertEqual(context, "agent-browser: install failed")
+        # Only install failure emits to Claude — it's actionable
+        context = output["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("install failed", context)
+        self.assertIn("npm install -g agent-browser", context)
         mock_install.assert_called_once()
 
 

@@ -131,14 +131,20 @@ def consume_stdin():
         pass
 
 
-def output_hook_response(context_msg):
-    """Output JSON response following hook protocol."""
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "SessionStart",
-            "additionalContext": context_msg,
-        }
-    }))
+def output_hook_response(context_msg=""):
+    """Output JSON response following hook protocol.
+
+    Empty context_msg emits {} — no additionalContext injected into Claude.
+    """
+    if context_msg:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": context_msg,
+            }
+        }))
+    else:
+        print(json.dumps({}))
 
 
 def main():
@@ -158,7 +164,7 @@ def main():
         ensure_gitignore_rules(plugin_root, project_dir)
         sync_all_files(plugin_root, project_dir)
 
-        output_hook_response("AI Framework: ✓")
+        output_hook_response()
         sys.exit(0)
 
     except Exception as e:

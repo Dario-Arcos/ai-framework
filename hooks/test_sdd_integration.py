@@ -354,8 +354,8 @@ class TestAutoTestHookFeedback(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     @patch.object(sdd_auto_test, "run_tests_background")
-    def test_reports_passing_feedback(self, mock_bg):
-        """Previous state was passing → feedback shows [PASS]."""
+    def test_passing_state_silent(self, mock_bg):
+        """Previous state was passing → silent (no attention dilution)."""
         _sdd_detect.write_state(self.tmpdir, True, "3 passed")
 
         exit_code, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
@@ -363,10 +363,7 @@ class TestAutoTestHookFeedback(unittest.TestCase):
             "tool_input": {"file_path": "app.py"},
         })
         self.assertEqual(exit_code, 0)
-        output = json.loads(stdout)
-        ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("[PASS]", ctx)
-        self.assertIn("3 passed", ctx)
+        self.assertEqual(stdout, "")
 
     @patch.object(sdd_auto_test, "run_tests_background")
     def test_reports_failing_feedback(self, mock_bg):
@@ -696,8 +693,8 @@ class TestFullSDDCycle(unittest.TestCase):
         """CYCLE 5: Multiple edits show evolving feedback.
 
         Edit 1: no state → no feedback
-        Edit 2: tests ran → feedback shows result
-        Edit 3: after fix → feedback shows [PASS]
+        Edit 2: tests ran → feedback shows [FAIL]
+        Edit 3: after fix → silence (passing state suppressed)
         """
         proj = _create_mini_project(self.tmpdir,
             app_code="def add(a, b): return 0  # BUG\n",
@@ -732,14 +729,13 @@ class TestFullSDDCycle(unittest.TestCase):
         (proj / "app.py").write_text("def add(a, b): return a + b\n", encoding="utf-8")
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
 
-        # Edit 3: State updated → feedback shows [PASS]
+        # Edit 3: State updated to passing → silent (FAIL→silence = fix confirmed)
         with patch.object(sdd_auto_test, "run_tests_background"):
             _, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
                 "cwd": self.tmpdir,
                 "tool_input": {"file_path": "app.py"},
             })
-        output = json.loads(stdout)
-        self.assertIn("[PASS]", output["hookSpecificOutput"]["additionalContext"])
+        self.assertEqual(stdout, "")
 
 
 # ─────────────────────────────────────────────────────────────────
