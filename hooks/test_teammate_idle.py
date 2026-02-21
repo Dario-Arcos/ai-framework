@@ -152,5 +152,75 @@ class TestMain(unittest.TestCase):
         self.assertIn("3", stderr_output)
 
 
+class TestReviewerArtifactCheck(unittest.TestCase):
+    """Test reviewer skill verification when rev-* teammate goes idle."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        (self.ralph_dir / "config.sh").write_text("", encoding="utf-8")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        # Clean up /tmp/ state
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import _sdd_detect
+        try:
+            _sdd_detect.skill_invoked_path(self.tmpdir, "sop-reviewer").unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    def test_reviewer_without_skill_warns(self):
+        """rev-* teammate idle without sop-reviewer state → stderr warning."""
+        stdin_data = json.dumps({"cwd": self.tmpdir, "teammate_name": "rev-auth-middleware"})
+        with patch("sys.stdin", io.StringIO(stdin_data)):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                with self.assertRaises(SystemExit) as cm:
+                    teammate_idle.main()
+        self.assertEqual(cm.exception.code, 0)
+        stderr_output = mock_stderr.getvalue()
+        self.assertIn("Review artifact missing", stderr_output)
+        self.assertIn("rev-auth-middleware", stderr_output)
+
+    def test_reviewer_with_skill_no_warning(self):
+        """rev-* teammate idle with sop-reviewer state → no warning."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import _sdd_detect
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-reviewer")
+
+        stdin_data = json.dumps({"cwd": self.tmpdir, "teammate_name": "rev-auth-middleware"})
+        with patch("sys.stdin", io.StringIO(stdin_data)):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                with self.assertRaises(SystemExit) as cm:
+                    teammate_idle.main()
+        self.assertEqual(cm.exception.code, 0)
+        self.assertNotIn("Review artifact missing", mock_stderr.getvalue())
+
+    def test_implementer_no_reviewer_check(self):
+        """impl-* teammate → no reviewer check, no warning."""
+        stdin_data = json.dumps({"cwd": self.tmpdir, "teammate_name": "impl-auth-middleware"})
+        with patch("sys.stdin", io.StringIO(stdin_data)):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                with self.assertRaises(SystemExit) as cm:
+                    teammate_idle.main()
+        self.assertEqual(cm.exception.code, 0)
+        self.assertNotIn("Review artifact missing", mock_stderr.getvalue())
+
+    def test_non_ralph_reviewer_no_check(self):
+        """rev-* in non-ralph project → exits before reviewer check."""
+        non_ralph_dir = tempfile.mkdtemp()
+        try:
+            stdin_data = json.dumps({"cwd": non_ralph_dir, "teammate_name": "rev-auth"})
+            with patch("sys.stdin", io.StringIO(stdin_data)):
+                with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        teammate_idle.main()
+            self.assertEqual(cm.exception.code, 0)
+            self.assertNotIn("Review artifact missing", mock_stderr.getvalue())
+        finally:
+            shutil.rmtree(non_ralph_dir, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

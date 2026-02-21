@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     detect_test_command, has_exit_suppression, is_test_running,
     parse_test_summary, project_hash, read_skill_invoked, read_state,
-    write_state,
+    skill_invoked_path, write_state,
 )
 
 
@@ -537,6 +537,14 @@ def main():
     # All gates passed
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
     update_metrics(ralph_dir, success=True, teammate_name=teammate_name)
+
+    # Clear skill state so next teammate starts fresh (prevents inheritance)
+    for _skill in ("sop-code-assist", "sop-reviewer"):
+        try:
+            skill_invoked_path(cwd, _skill).unlink(missing_ok=True)
+        except OSError:
+            pass
+
     sys.exit(0)
 
 

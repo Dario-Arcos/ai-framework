@@ -828,6 +828,94 @@ class TestSkillEnforcement(unittest.TestCase):
             self.assertEqual(ctx.exception.code, 0)
 
 
+class TestSkillStateClearOnSuccess(unittest.TestCase):
+    """TaskCompleted clears skill state after all gates pass (prevents inheritance)."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir(parents=True)
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        # Clean up any /tmp/ state files
+        import _sdd_detect
+        for skill in ("sop-code-assist", "sop-reviewer"):
+            try:
+                _sdd_detect.skill_invoked_path(self.tmpdir, skill).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    def _default_input(self, **overrides):
+        base = {
+            "cwd": self.tmpdir,
+            "task_subject": "Implement feature X",
+            "task_description": "",
+            "teammate_name": "agent-1",
+        }
+        base.update(overrides)
+        return base
+
+    @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
+    @patch.object(task_completed, "find_scenario_strategy", return_value="required")
+    def test_state_cleared_after_success(self, _mock_strategy, _mock_gate):
+        """After all gates pass, skill state files are deleted."""
+        import _sdd_detect
+        # Pre-condition: skill state exists
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-reviewer")
+        self.assertIsNotNone(_sdd_detect.read_skill_invoked(self.tmpdir, "sop-code-assist"))
+        self.assertIsNotNone(_sdd_detect.read_skill_invoked(self.tmpdir, "sop-reviewer"))
+
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+
+        # Post-condition: both skill states cleared
+        self.assertIsNone(_sdd_detect.read_skill_invoked(self.tmpdir, "sop-code-assist"))
+        self.assertIsNone(_sdd_detect.read_skill_invoked(self.tmpdir, "sop-reviewer"))
+
+    @patch.object(task_completed, "find_scenario_strategy", return_value="required")
+    def test_state_preserved_on_gate_failure(self, _mock_strategy):
+        """On gate failure, skill state is NOT cleared (teammate retries)."""
+        import _sdd_detect
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="npm test"\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+        with patch.object(task_completed, "run_gate", return_value=(False, "FAIL")):
+            with patch("sys.stdin", self._make_stdin(self._default_input())):
+                with self.assertRaises(SystemExit) as ctx:
+                    task_completed.main()
+                self.assertEqual(ctx.exception.code, 2)
+
+        # State preserved — teammate needs it for retry
+        self.assertIsNotNone(_sdd_detect.read_skill_invoked(self.tmpdir, "sop-code-assist"))
+
+    @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
+    @patch.object(task_completed, "find_scenario_strategy", return_value="required")
+    def test_clear_tolerates_missing_files(self, _mock_strategy, _mock_gate):
+        """Clear doesn't crash if state files don't exist."""
+        import _sdd_detect
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        # sop-reviewer state deliberately NOT created
+
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+
+
 class TestNonCodeExtensions(unittest.TestCase):
     """Test extended NON_CODE_EXT_RE for generated artifacts (Gap 5)."""
 
