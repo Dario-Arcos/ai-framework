@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import read_state
+from _sdd_detect import read_skill_invoked, read_state
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -135,6 +135,24 @@ def main():
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
+
+    # ─── REVIEW FILE GUARD ────────────────────────────────────────
+    # Deny Write to .ralph/reviews/ without sop-reviewer skill
+    if tool_name == "Write" and ".ralph/reviews/" in file_path:
+        ralph_config = Path(cwd) / ".ralph" / "config.sh"
+        if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer"):
+            print(json.dumps({
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": (
+                        "SDD Guard: writing review without invoking sop-reviewer. "
+                        "Invoke: Skill(skill=\"sop-reviewer\", "
+                        "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first."
+                    ),
+                }
+            }))
+            sys.exit(0)
 
     # Fast path: not a test file → allow (~1ms)
     if not is_test_file(file_path):

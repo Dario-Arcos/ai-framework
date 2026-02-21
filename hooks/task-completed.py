@@ -27,7 +27,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     detect_test_command, has_exit_suppression, is_test_running,
-    parse_test_summary, project_hash, read_state, write_state,
+    parse_test_summary, project_hash, read_skill_invoked, read_state,
+    write_state,
 )
 
 
@@ -458,6 +459,15 @@ def main():
     if not config_path.exists():
         _handle_non_ralph_completion(cwd, task_subject)
         sys.exit(0)
+
+    # SDD Skill enforcement: implementer must invoke sop-code-assist
+    if not read_skill_invoked(cwd, "sop-code-assist"):
+        _fail_task(
+            f"SDD skill not invoked for: {task_subject}",
+            "sop-code-assist was not invoked before task completion. "
+            "Invoke: Skill(skill=\"sop-code-assist\", "
+            "args='task_description=\"...\" mode=\"autonomous\"') first.",
+        )
 
     # Load config
     config = load_config(config_path)

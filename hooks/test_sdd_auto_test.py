@@ -418,6 +418,17 @@ class TestSkillTracking(unittest.TestCase):
         mock_write.assert_called_once_with(self.tmpdir, "sop-code-assist")
 
     @patch.object(sdd_auto_test, "write_skill_invoked")
+    def test_sop_reviewer_writes_state(self, mock_write):
+        """Skill tool with sop-reviewer → state file written."""
+        _, exit_code = self._run_main(input_data={
+            "cwd": self.tmpdir,
+            "tool_name": "Skill",
+            "tool_input": {"skill": "sop-reviewer"},
+        })
+        self.assertEqual(exit_code, 0)
+        mock_write.assert_called_once_with(self.tmpdir, "sop-reviewer")
+
+    @patch.object(sdd_auto_test, "write_skill_invoked")
     def test_other_skill_no_state(self, mock_write):
         """Skill tool with brainstorming → no state file."""
         _, exit_code = self._run_main(input_data={

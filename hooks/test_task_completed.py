@@ -514,9 +514,10 @@ class TestMainRalph(unittest.TestCase):
             self.assertEqual(ctx.exception.code, 0)
         mock_handler.assert_called_once()
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_all_gates_pass(self, _mock_strategy, _mock_gate):
+    def test_all_gates_pass(self, _mock_strategy, _mock_gate, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST="npm test"\nGATE_TYPECHECK="tsc"\nGATE_LINT="eslint"\nGATE_BUILD="npm run build"\n'
         )
@@ -534,8 +535,9 @@ class TestMainRalph(unittest.TestCase):
         metrics = json.loads(metrics_file.read_text())
         self.assertEqual(metrics["successful_tasks"], 1)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_gate_fails(self, _mock_strategy):
+    def test_gate_fails(self, _mock_strategy, _mock_skill):
         self._make_ralph_project('GATE_TEST="npm test"\n')
         with patch.object(task_completed, "run_gate", return_value=(False, "FAIL: 2 tests")):
             with patch("sys.stdin", self._make_stdin(self._default_input())):
@@ -546,9 +548,10 @@ class TestMainRalph(unittest.TestCase):
         data = json.loads((self.ralph_dir / "failures.json").read_text())
         self.assertEqual(data["agent-1"], 1)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_empty_gate_skipped(self, _mock_strategy, mock_gate):
+    def test_empty_gate_skipped(self, _mock_strategy, mock_gate, _mock_skill):
         self._make_ralph_project('GATE_TEST="npm test"\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n')
         with patch("sys.stdin", self._make_stdin(self._default_input())):
             with self.assertRaises(SystemExit) as ctx:
@@ -566,9 +569,10 @@ class TestMainRalph(unittest.TestCase):
             self.assertNotEqual(name, "lint")
             self.assertNotEqual(name, "build")
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
     @patch.object(task_completed, "find_scenario_strategy", return_value="not-applicable")
-    def test_not_applicable_skips_test_gate(self, _mock_strategy, mock_gate):
+    def test_not_applicable_skips_test_gate(self, _mock_strategy, mock_gate, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST="npm test"\nGATE_TYPECHECK="tsc"\nGATE_LINT=""\nGATE_BUILD=""\n'
         )
@@ -580,8 +584,9 @@ class TestMainRalph(unittest.TestCase):
         self.assertNotIn("test", gate_names)
         self.assertIn("typecheck", gate_names)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_coverage_below_threshold(self, _mock_strategy):
+    def test_coverage_below_threshold(self, _mock_strategy, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n'
             'GATE_COVERAGE="npm run coverage"\nMIN_TEST_COVERAGE="80"\n'
@@ -593,8 +598,9 @@ class TestMainRalph(unittest.TestCase):
                         task_completed.main()
                     self.assertEqual(ctx.exception.code, 2)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_coverage_above_threshold(self, _mock_strategy):
+    def test_coverage_above_threshold(self, _mock_strategy, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n'
             'GATE_COVERAGE="npm run coverage"\nMIN_TEST_COVERAGE="80"\n'
@@ -606,8 +612,9 @@ class TestMainRalph(unittest.TestCase):
                         task_completed.main()
                     self.assertEqual(ctx.exception.code, 0)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_coverage_not_extractable_passes(self, _mock_strategy):
+    def test_coverage_not_extractable_passes(self, _mock_strategy, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n'
             'GATE_COVERAGE="npm run coverage"\nMIN_TEST_COVERAGE="80"\n'
@@ -619,9 +626,10 @@ class TestMainRalph(unittest.TestCase):
                         task_completed.main()
                     self.assertEqual(ctx.exception.code, 0)
 
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
     @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
     @patch.object(task_completed, "find_scenario_strategy", return_value="required")
-    def test_no_coverage_gate(self, _mock_strategy, _mock_gate):
+    def test_no_coverage_gate(self, _mock_strategy, _mock_gate, _mock_skill):
         self._make_ralph_project(
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n'
             'GATE_COVERAGE=""\nMIN_TEST_COVERAGE="0"\n'
@@ -770,6 +778,54 @@ class TestValidateScenarioStrategy(unittest.TestCase):
         with patch("subprocess.run", side_effect=side_effect):
             result = task_completed.validate_scenario_strategy("not-applicable", "/tmp")
             self.assertEqual(result, "required")
+
+
+class TestSkillEnforcement(unittest.TestCase):
+    """TaskCompleted denies if sop-code-assist not invoked in ralph project."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir(parents=True)
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    def _default_input(self, **overrides):
+        base = {
+            "cwd": self.tmpdir,
+            "task_subject": "Implement feature X",
+            "task_description": "",
+            "teammate_name": "agent-1",
+        }
+        base.update(overrides)
+        return base
+
+    @patch.object(task_completed, "read_skill_invoked", return_value=None)
+    @patch.object(task_completed, "find_scenario_strategy", return_value="required")
+    def test_no_skill_exits_2(self, _mock_strategy, _mock_skill):
+        """No skill state → exit 2."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 2)
+
+    @patch.object(task_completed, "run_gate", return_value=(True, "ok"))
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
+    @patch.object(task_completed, "find_scenario_strategy", return_value="required")
+    def test_skill_present_proceeds(self, _mock_strategy, _mock_skill, _mock_gate):
+        """Skill state exists → passes check, proceeds to quality gates."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
 
 
 class TestNonCodeExtensions(unittest.TestCase):

@@ -409,5 +409,91 @@ class TestPrecisionDenyInMain(unittest.TestCase):
         self.assertEqual(stdout, "")
 
 
+class TestReviewFileGuard(unittest.TestCase):
+    """PreToolUse denies Write to .ralph/reviews/ without sop-reviewer."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _run_main(self, input_data):
+        stdin_mock = io.StringIO(json.dumps(input_data))
+        stdout_capture = io.StringIO()
+        exit_code = 0
+        with patch("sys.stdin", stdin_mock), \
+             patch("sys.stdout", stdout_capture):
+            try:
+                main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return exit_code, stdout_capture.getvalue()
+
+    @patch.object(sdd_test_guard, "read_skill_invoked", return_value=None)
+    def test_review_write_without_skill_denied(self, _mock):
+        """Write to .ralph/reviews/ without sop-reviewer state → deny."""
+        ralph_dir = Path(self.tmpdir) / ".ralph"
+        ralph_dir.mkdir()
+        (ralph_dir / "config.sh").write_text('GATE_TEST="npm test"\n', encoding="utf-8")
+
+        exit_code, stdout = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": f"{self.tmpdir}/.ralph/reviews/task-1-review.md",
+                "content": "## Review\nLGTM",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        output = json.loads(stdout)
+        self.assertEqual(output["hookSpecificOutput"]["permissionDecision"], "deny")
+        self.assertIn("sop-reviewer", output["hookSpecificOutput"]["permissionDecisionReason"])
+
+    @patch.object(sdd_test_guard, "read_skill_invoked", return_value={"skill": "sop-reviewer"})
+    def test_review_write_with_skill_allowed(self, _mock):
+        """sop-reviewer state present → no deny output (falls through to test file check)."""
+        ralph_dir = Path(self.tmpdir) / ".ralph"
+        ralph_dir.mkdir()
+        (ralph_dir / "config.sh").write_text('GATE_TEST="npm test"\n', encoding="utf-8")
+
+        exit_code, stdout = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": f"{self.tmpdir}/.ralph/reviews/task-1-review.md",
+                "content": "## Review\nLGTM",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+    def test_non_review_write_unaffected(self):
+        """Write to src/main.py → normal flow (no deny)."""
+        exit_code, stdout = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": f"{self.tmpdir}/src/main.py",
+                "content": "print('hello')",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+    def test_non_ralph_project_unaffected(self):
+        """No .ralph/config.sh → no deny even for review path."""
+        exit_code, stdout = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": f"{self.tmpdir}/.ralph/reviews/task-1-review.md",
+                "content": "## Review\nLGTM",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+
 if __name__ == "__main__":
     unittest.main()

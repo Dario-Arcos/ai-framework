@@ -10,7 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     detect_test_command, has_exit_suppression, is_test_running,
-    parse_test_summary, pid_path, read_state, state_path, write_state,
+    parse_test_summary, pid_path, read_skill_invoked, read_state,
+    skill_invoked_path, state_path, write_skill_invoked, write_state,
 )
 
 
@@ -248,6 +249,58 @@ class TestStateIO(unittest.TestCase):
         pf.write_text("999999999")  # non-existent PID
         self.assertFalse(is_test_running(self.tmpdir))
         self.assertFalse(pf.exists(), "Stale PID file should be cleaned up")
+
+
+class TestSkillInvokedPerSkill(unittest.TestCase):
+    """Test per-skill state files for skill invocation tracking."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._cleanup_paths = []
+
+    def tearDown(self):
+        for p in self._cleanup_paths:
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _track(self, path):
+        self._cleanup_paths.append(path)
+        return path
+
+    def test_separate_files_per_skill(self):
+        p1 = self._track(skill_invoked_path(self.tmpdir, "sop-code-assist"))
+        p2 = self._track(skill_invoked_path(self.tmpdir, "sop-reviewer"))
+        self.assertNotEqual(str(p1), str(p2))
+        self.assertIn("sop-code-assist", str(p1))
+        self.assertIn("sop-reviewer", str(p2))
+
+    def test_read_specific_skill(self):
+        self._track(skill_invoked_path(self.tmpdir, "sop-code-assist"))
+        self._track(skill_invoked_path(self.tmpdir, "sop-reviewer"))
+        write_skill_invoked(self.tmpdir, "sop-code-assist")
+        self.assertIsNotNone(read_skill_invoked(self.tmpdir, "sop-code-assist"))
+        self.assertIsNone(read_skill_invoked(self.tmpdir, "sop-reviewer"))
+
+    def test_write_does_not_clobber_other_skill(self):
+        self._track(skill_invoked_path(self.tmpdir, "sop-code-assist"))
+        self._track(skill_invoked_path(self.tmpdir, "sop-reviewer"))
+        write_skill_invoked(self.tmpdir, "sop-code-assist")
+        write_skill_invoked(self.tmpdir, "sop-reviewer")
+        ca = read_skill_invoked(self.tmpdir, "sop-code-assist")
+        rv = read_skill_invoked(self.tmpdir, "sop-reviewer")
+        self.assertIsNotNone(ca)
+        self.assertIsNotNone(rv)
+        self.assertEqual(ca["skill"], "sop-code-assist")
+        self.assertEqual(rv["skill"], "sop-reviewer")
+
+    def test_default_skill_name_is_sop_code_assist(self):
+        p_default = skill_invoked_path(self.tmpdir)
+        p_explicit = skill_invoked_path(self.tmpdir, "sop-code-assist")
+        self.assertEqual(str(p_default), str(p_explicit))
 
 
 if __name__ == "__main__":

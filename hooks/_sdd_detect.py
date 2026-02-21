@@ -221,14 +221,14 @@ def write_state(cwd, passing, summary):
 # SKILL INVOCATION STATE — tracks sop-code-assist invocations
 # ─────────────────────────────────────────────────────────────────
 
-def skill_invoked_path(cwd):
-    """Path to SDD skill invocation state file."""
-    return Path(f"/tmp/sdd-skill-invoked-{project_hash(cwd)}.json")
+def skill_invoked_path(cwd, skill_name="sop-code-assist"):
+    """Path to SDD skill invocation state file (per-skill)."""
+    return Path(f"/tmp/sdd-skill-{skill_name}-{project_hash(cwd)}.json")
 
 
 def write_skill_invoked(cwd, skill_name):
     """Record that an SDD skill was invoked."""
-    sp = skill_invoked_path(cwd)
+    sp = skill_invoked_path(cwd, skill_name)
     data = {
         "skill": skill_name,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -245,9 +245,9 @@ def write_skill_invoked(cwd, skill_name):
             pass
 
 
-def read_skill_invoked(cwd):
+def read_skill_invoked(cwd, skill_name="sop-code-assist"):
     """Read skill invocation state. Returns dict or None."""
-    sp = skill_invoked_path(cwd)
+    sp = skill_invoked_path(cwd, skill_name)
     try:
         with open(sp, "r", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_SH)

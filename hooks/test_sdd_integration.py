@@ -886,9 +886,17 @@ class TestRalphGateSequence(unittest.TestCase):
         _cleanup_state(self.tmpdir)
         self.ralph_dir = Path(self.tmpdir) / ".ralph"
         self.ralph_dir.mkdir()
+        # Simulate sop-code-assist invocation (required by skill enforcement)
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
 
     def tearDown(self):
         _cleanup_state(self.tmpdir)
+        # Clean up per-skill state files
+        for name in ("sop-code-assist", "sop-reviewer"):
+            try:
+                _sdd_detect.skill_invoked_path(self.tmpdir, name).unlink()
+            except FileNotFoundError:
+                pass
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_all_gates_pass(self):

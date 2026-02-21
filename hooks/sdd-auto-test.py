@@ -39,6 +39,9 @@ SOURCE_EXTENSIONS = frozenset({
     ".sh", ".bash",             # shell scripts
 })
 
+# Compound extensions that look like source but are generated artifacts
+GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
+
 
 # ─────────────────────────────────────────────────────────────────
 # FILE CLASSIFICATION
@@ -47,6 +50,8 @@ SOURCE_EXTENSIONS = frozenset({
 def is_source_file(path):
     """Check if path is a source file worth triggering tests for."""
     if not path:
+        return False
+    if GENERATED_COMPOUND_RE.search(path):
         return False
     return Path(path).suffix in SOURCE_EXTENSIONS
 
@@ -200,7 +205,7 @@ def main():
     # Skill tracking: record sop-code-assist invocations
     if tool_name == "Skill":
         skill_name = tool_input.get("skill", "")
-        if skill_name == "sop-code-assist":
+        if skill_name in ("sop-code-assist", "sop-reviewer"):
             write_skill_invoked(cwd, skill_name)
         sys.exit(0)
 
