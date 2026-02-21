@@ -19,8 +19,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import read_skill_invoked
 
 
 def load_max_failures(config_path):
@@ -87,14 +85,6 @@ def main():
             file=sys.stderr,
         )
         sys.exit(0)
-
-    # Review artifact verification: warn if reviewer idle without sop-reviewer
-    if teammate_name.startswith("rev-") and not read_skill_invoked(cwd, "sop-reviewer"):
-        print(
-            f"Review artifact missing: {teammate_name} went idle without "
-            f"invoking sop-reviewer skill. Review may be incomplete.",
-            file=sys.stderr,
-        )
 
     # Default: allow idle — lead manages task assignment
     sys.exit(0)

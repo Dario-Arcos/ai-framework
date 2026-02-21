@@ -439,62 +439,6 @@ class TestSkillTracking(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         mock_write.assert_not_called()
 
-    @patch.object(sdd_auto_test, "run_tests_background")
-    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
-    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
-    @patch.object(sdd_auto_test, "read_state", return_value=None)
-    @patch.object(sdd_auto_test, "read_skill_invoked", return_value=None)
-    def test_source_edit_ralph_no_skill_warns(self, mock_skill, mock_read,
-                                               mock_running, mock_detect,
-                                               mock_suppress, mock_bg):
-        """Edit source in ralph project without skill → additionalContext warning."""
-        ralph_dir = Path(self.tmpdir) / ".ralph"
-        ralph_dir.mkdir()
-        (ralph_dir / "config.sh").write_text('GATE_TEST="pytest"\n', encoding="utf-8")
-
-        stdout, _ = self._run_main(input_data={
-            "cwd": self.tmpdir,
-            "tool_input": {"file_path": "app/main.py"},
-        })
-        self.assertIn("sop-code-assist", stdout)
-        data = json.loads(stdout)
-        self.assertIn("SDD:", data["hookSpecificOutput"]["additionalContext"])
-
-    @patch.object(sdd_auto_test, "run_tests_background")
-    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
-    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
-    @patch.object(sdd_auto_test, "read_state", return_value=None)
-    @patch.object(sdd_auto_test, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
-    def test_source_edit_ralph_with_skill_silent(self, mock_skill, mock_read,
-                                                  mock_running, mock_detect,
-                                                  mock_suppress, mock_bg):
-        """Edit source in ralph project with skill invoked → no warning."""
-        ralph_dir = Path(self.tmpdir) / ".ralph"
-        ralph_dir.mkdir()
-        (ralph_dir / "config.sh").write_text('GATE_TEST="pytest"\n', encoding="utf-8")
-
-        stdout, _ = self._run_main(input_data={
-            "cwd": self.tmpdir,
-            "tool_input": {"file_path": "app/main.py"},
-        })
-        self.assertEqual(stdout, "")
-
-    @patch.object(sdd_auto_test, "run_tests_background")
-    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
-    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
-    @patch.object(sdd_auto_test, "read_state", return_value=None)
-    def test_source_edit_non_ralph_silent(self, mock_read, mock_running,
-                                          mock_detect, mock_suppress, mock_bg):
-        """Edit source without .ralph/ → no warning."""
-        stdout, _ = self._run_main(input_data={
-            "cwd": self.tmpdir,
-            "tool_input": {"file_path": "app/main.py"},
-        })
-        self.assertEqual(stdout, "")
-
 
 if __name__ == "__main__":
     unittest.main()

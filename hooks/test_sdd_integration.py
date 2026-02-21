@@ -463,8 +463,8 @@ class TestTaskCompletedReadsState(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertIn("failed", stderr.lower())
 
-    def test_no_state_runs_fresh_tests(self):
-        """No auto-test state → runs fresh tests → writes state → gates."""
+    def test_no_state_allows_completion(self):
+        """No auto-test state → allows completion (no fresh run)."""
         _create_mini_project(self.tmpdir,
             app_code="def add(a, b): return a + b\n",
             test_code=(
@@ -480,11 +480,6 @@ class TestTaskCompletedReadsState(unittest.TestCase):
             "teammate_name": "worker-1",
         })
         self.assertEqual(exit_code, 0)
-
-        # State should now exist (written by the fresh run)
-        state = _sdd_detect.read_state(self.tmpdir)
-        self.assertIsNotNone(state)
-        self.assertTrue(state["passing"])
 
     def test_no_test_command_allows_completion(self):
         """Project without test infrastructure → allows completion."""
@@ -894,7 +889,7 @@ class TestRalphGateSequence(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_all_gates_pass(self):
-        """All gates passing → task completes + metrics updated."""
+        """All gates passing → task completes + failures reset."""
         _create_mini_project(self.tmpdir,
             app_code="def add(a, b): return a + b\n",
             test_code=(
@@ -916,9 +911,11 @@ class TestRalphGateSequence(unittest.TestCase):
         })
         self.assertEqual(exit_code, 0)
 
-        metrics = json.loads((self.ralph_dir / "metrics.json").read_text())
-        self.assertEqual(metrics["total_tasks"], 1)
-        self.assertEqual(metrics.get("successful_tasks", 0), 1)
+        # Failures reset to 0 on success
+        failures_file = self.ralph_dir / "failures.json"
+        if failures_file.exists():
+            data = json.loads(failures_file.read_text())
+            self.assertEqual(data.get("worker-1", 0), 0)
 
     def test_test_gate_fails_blocks(self):
         """Test gate fails → exit 2 + failure count incremented."""

@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     detect_test_command, has_exit_suppression, is_test_running,
-    parse_test_summary, pid_path, read_skill_invoked, read_state,
+    parse_test_summary, pid_path, read_state,
     write_skill_invoked, write_state,
 )
 
@@ -140,45 +140,6 @@ def format_feedback(state):
 
 
 # ─────────────────────────────────────────────────────────────────
-# SPEC VALIDATION (merged from sdd-spec-validator to avoid extra process)
-# ─────────────────────────────────────────────────────────────────
-
-def _extract_section(content, heading):
-    """Extract content between heading and next ## heading."""
-    pattern = rf"^{re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
-    m = re.search(pattern, content, re.MULTILINE | re.DOTALL)
-    return m.group(1).strip() if m else ""
-
-
-def validate_spec(content):
-    """Validate .code-task.md structure. Returns list of warnings."""
-    warnings = []
-
-    if "## Acceptance Criteria" not in content:
-        warnings.append("Missing '## Acceptance Criteria' section.")
-        return warnings
-
-    ac_section = _extract_section(content, "## Acceptance Criteria")
-
-    given_count = len(re.findall(
-        r"^\s*-\s*Given\b", ac_section, re.MULTILINE | re.IGNORECASE
-    ))
-    if given_count < 3:
-        warnings.append(
-            f"Only {given_count} acceptance criteria (minimum 3 required). "
-            f"Each must use Given-When-Then format."
-        )
-
-    if "Scenario-Strategy" not in content:
-        warnings.append(
-            "Missing 'Scenario-Strategy' in Metadata. "
-            "Add 'required' (default) or 'not-applicable'."
-        )
-
-    return warnings
-
-
-# ─────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────
 
@@ -209,34 +170,9 @@ def main():
             write_skill_invoked(cwd, skill_name)
         sys.exit(0)
 
-    # Spec validation: validate .code-task.md on Write
-    if tool_name == "Write" and file_path.endswith(".code-task.md"):
-        content = tool_input.get("content", "")
-        if content:
-            warnings = validate_spec(content)
-            if warnings:
-                msg = "SDD Spec Validator:\n" + "\n".join(f"  ! {w}" for w in warnings)
-                print(json.dumps({
-                    "hookSpecificOutput": {
-                        "hookEventName": "PostToolUse",
-                        "additionalContext": msg,
-                    }
-                }))
-        sys.exit(0)
-
     # Guard: only source files
     if not is_source_file(file_path):
         sys.exit(0)
-
-    # Ralph project: warn if sop-code-assist not invoked
-    skill_warning = None
-    ralph_config = Path(cwd) / ".ralph" / "config.sh"
-    if ralph_config.exists() and not read_skill_invoked(cwd):
-        skill_warning = (
-            "SDD: source file edited in ralph project without sop-code-assist. "
-            "Invoke: Skill(skill=\"sop-code-assist\", args='task_description=\"...\" mode=\"autonomous\"') "
-            "before implementing."
-        )
 
     # Read previous test state — only report failures (passing = no signal needed)
     previous = read_state(cwd)
@@ -249,16 +185,11 @@ def main():
             run_tests_background(cwd, command)
 
     # Report feedback as additionalContext (visible to Claude, not just user)
-    messages = []
-    if skill_warning:
-        messages.append(skill_warning)
     if msg:
-        messages.append(msg)
-    if messages:
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "PostToolUse",
-                "additionalContext": "\n".join(messages),
+                "additionalContext": msg,
             }
         }))
 
