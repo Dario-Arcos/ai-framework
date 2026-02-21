@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Use when building web components, pages, dashboards, landing pages, or styling any web UI. Invoke AFTER brainstorming, BEFORE scenario-driven-development for UI work.
+description: Use when building web components, pages, dashboards, landing pages, or styling any web UI. Invoke AFTER plan mode approval, BEFORE scenario-driven-development for UI work.
 license: Complete terms in LICENSE.txt
 ---
 

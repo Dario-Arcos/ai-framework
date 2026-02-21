@@ -9,8 +9,8 @@ Este es el pipeline completo de desarrollo con AI Framework: de idea a código e
 ## El Pipeline
 
 <details class="details custom-block">
-<summary>💡 1. IDEA — brainstorming → design doc</summary>
-<p>Convierte ideas vagas en diseños completos. Claude activa <code>brainstorming</code> automáticamente: pregunta una cosa a la vez, propone 2-3 enfoques con trade-offs, y genera un design doc en <code>docs/plans/</code>. <a href="#idea">Ver detalle →</a></p>
+<summary>💡 1. IDEA — brainstorming → plan mode</summary>
+<p>Convierte ideas vagas en diseños completos. Claude activa <code>brainstorming</code> automáticamente: pregunta una cosa a la vez, propone 2-3 enfoques con trade-offs, y cristaliza diseño + escenarios en plan file nativo. <a href="#idea">Ver detalle →</a></p>
 </details>
 
 <details class="details custom-block">
@@ -50,9 +50,9 @@ Claude activa `brainstorming` automáticamente:
 1. Examina el proyecto, pregunta **una cosa a la vez**
 2. Propone 2-3 enfoques con trade-offs
 3. Diseña en secciones de 200-300 palabras, valida cada una
-4. Genera `docs/plans/YYYY-MM-DD-<topic>-design.md`
+4. Cristaliza diseño + escenarios en plan file nativo (plan mode)
 
-::: tip Después del design doc
+::: tip Después de aprobar el plan
 Según el tamaño de la tarea, continúa con:
 - **Tarea pequeña** → Implementa directamente (ver [Patrones por tamaño](#patterns))
 - **Tarea mediana/grande** → `ralph-orchestrator` para planificación + ejecución autónoma
@@ -322,12 +322,12 @@ Elimina feature branch local, sincroniza con remote.
 
 Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface → refactoriza).
 
-### Medium <Badge type="tip" text="80-250 LOC" /> — Brainstorming + SDD
+### Medium <Badge type="tip" text="80-250 LOC" /> — Brainstorming + Plan Mode + SDD
 
 ```bash
 # 1. Explorar diseño
 "Necesito rate limiting en la API"     # [!code focus]
-# → brainstorming → design doc
+# → brainstorming → plan mode → aprobación
 
 # 2. Implementar con SDD
 "Implementa el diseño"                 # [!code focus]
@@ -341,9 +341,9 @@ Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface 
 ### Large/XL <Badge type="warning" text=">250 LOC" /> — Ralph Orchestrator
 
 ```bash
-# 1. Brainstorming (si no hay design doc)
+# 1. Brainstorming (si no hay plan aprobado)
 "Necesito autenticación OAuth completa"
-# → design doc
+# → brainstorming → plan mode → aprobación
 
 # 2. Ralph se encarga de todo
 "Implementa con ralph-orchestrator"              # [!code focus]

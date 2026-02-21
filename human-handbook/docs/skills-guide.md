@@ -97,9 +97,9 @@ Convierte ideas vagas en diseños completos mediante diálogo.
 1. Examina el proyecto, pregunta una cosa a la vez
 2. Propone 2-3 enfoques con trade-offs
 3. Diseña en secciones de 200-300 palabras, valida cada una
-4. Genera `docs/plans/YYYY-MM-DD-<topic>-design.md`
+4. Cristaliza diseño + escenarios en plan file nativo (plan mode)
 
-Después: continúa con `ralph-orchestrator` o Superpowers `writing-plans`.
+Después: aprobación del plan → `scenario-driven-development` o `ralph-orchestrator`.
 
 ---
 
@@ -506,7 +506,7 @@ Reglas de enforcement que aseguran que Claude invoque skills y agentes por conte
 
 | Escenario | Skills |
 |-----------|--------|
-| **Feature nueva** | `/brainstorming` → implementar → `/commit` → `/pull-request` |
+| **Feature nueva** | `/brainstorming` → plan mode → implementar → `/commit` → `/pull-request` |
 | **Bug fix urgente** | `/worktree-create` → fix → `/commit` → `/pull-request` |
 | **Desarrollo autónomo** | `/ralph-orchestrator` (orquesta todo el pipeline) |
 | **Post-merge** | `/branch-cleanup` |

@@ -111,8 +111,7 @@ human-handbook/.vitepress/dist/
 human-handbook/.vitepress/cache/
 
 
-# Planning & design documents (working files, not for version control)
-/docs/plans/
+# Research documents (working files, not for version control)
 /docs/research/
 
 # Ralph orchestrator runtime

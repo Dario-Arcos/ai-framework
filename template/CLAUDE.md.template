@@ -31,9 +31,9 @@ ALWAYS satisfy before advancing: the scenario satisfaction loop runs until holdo
 </workflow>
 
 <skill-routing>
-build/add feature: brainstorming → scenario-driven-development
-build/change UI: brainstorming → frontend-design → scenario-driven-development
-fix/debug: systematic-debugging → scenario-driven-development
+build/add feature: brainstorming → plan mode → scenario-driven-development
+build/change UI: brainstorming → plan mode → frontend-design → scenario-driven-development
+fix/debug: systematic-debugging → plan mode → scenario-driven-development
 autonomous build: ralph-orchestrator
 research: deep-research | context files: context-engineering | new skill: skill-creator
 project memory: project-init

@@ -468,7 +468,6 @@ Provide:
 
 ## Integration
 
-- **brainstorming** — After design document is written, Invoke humanizer on the document before committing to git
 - **deep-research** — After Phase 4 quality gates pass, Invoke humanizer on the research report before delivering to user
 - **changelog** — After entry drafting (Phase 6), Invoke humanizer with focus on Spanish patterns (25-33) before writing to CHANGELOG.md
 - **Manual invocation** — User invokes /humanizer directly on any text

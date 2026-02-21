@@ -54,17 +54,22 @@ These scenarios become the holdout set for implementation. They are NOT tests �
 
 ## After the Design
 
-**Documentation:**
-- Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
-- Invoke humanizer on the design document to remove AI writing patterns before committing
-- The design document MUST include an "Observable Scenarios" section with all validated scenarios
-- Observable scenarios are the holdout set — they MUST NOT be modified during implementation without returning to brainstorming
-- Commit the design document to git
+**Crystallize in plan mode:**
+1. Once scenarios are validated conversationally, call `EnterPlanMode`
+2. Write the plan file in the user's language with these sections:
+   - **Context** — Problem statement, constraints, prior decisions
+   - **Design** — Architecture, components, data flow (validated sections from above)
+   - **Observable Scenarios** — The holdout set (all validated scenarios in Given/When/Then format)
+   - **Implementation Plan** — Ordered steps, each with acceptance criteria
+   - **Blast Radius** — Files affected, consumers impacted, docs to update
+   - **Verification** — How to confirm each scenario is satisfied
+3. Call `ExitPlanMode` for user approval
+4. Observable scenarios are the holdout set — they MUST NOT be modified during implementation without returning to brainstorming
 
-**Implementation (if continuing):**
-- Ask: "Ready to set up for implementation?"
-- Invoke scenario-driven-development next — the observable scenarios from this design are its input
-- The scenarios become the holdout set for the SCENARIO→SATISFY→REFACTOR convergence loop
+**Post-approval:**
+- For UI work: invoke frontend-design next, then scenario-driven-development
+- For everything else: invoke scenario-driven-development directly
+- The approved plan file's Observable Scenarios become the holdout set for the SCENARIO→SATISFY→REFACTOR convergence loop
 
 ## Key Principles
 
@@ -80,7 +85,7 @@ These scenarios become the holdout set for implementation. They are NOT tests �
 
 | Receives | Produces |
 |---|---|
-| User idea, feature request, or change requirement | Design document at `docs/plans/YYYY-MM-DD-<topic>-design.md` (humanized) |
-| | Observable Scenarios section — the holdout set for implementation |
+| User idea, feature request, or change requirement | Approved plan file (design + observable scenarios + implementation plan) |
+| | Observable Scenarios — the holdout set for implementation |
 
-**→ Next:** scenario-driven-development receives the scenarios as input for the SCENARIO phase.
+**→ Next:** scenario-driven-development receives the scenarios from the approved plan file as input for the SCENARIO phase.

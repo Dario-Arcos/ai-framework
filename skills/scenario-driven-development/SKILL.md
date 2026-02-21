@@ -384,7 +384,7 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 
 ## Related
 
-- **brainstorming** — The entry point: scenarios defined during brainstorming are the input for SCENARIO phase
+- **brainstorming** — The entry point: scenarios defined during brainstorming and crystallized in the approved plan file are the input for SCENARIO phase
 - **verification-before-completion** — The terminal gate: invoke after Quality Integration, before any completion claim
 - **systematic-debugging** — Root cause analysis; invoke when bugs are complex before SDD fix cycle
 
@@ -392,8 +392,8 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 
 | Receives | Produces |
 |---|---|
-| Observable scenarios from brainstorming design doc (or defined inline for bug fixes/small changes) | Satisfied code with all scenarios passing |
+| Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Satisfied code with all scenarios passing |
 | | Quality Integration complete (code-reviewer + code-simplifier agents) |
 
-**← From:** brainstorming produces the holdout scenarios.
+**← From:** brainstorming produces the holdout scenarios, crystallized in the approved plan file.
 **→ Next:** verification-before-completion runs the 6-step evidence gate.
