@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
             "timeout": 10,
             "statusMessage": "Syncing templates..."
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
             "timeout": 10,
             "statusMessage": "Checking browser..."
           }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/memory-check.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/memory-check.py",
             "timeout": 5,
             "statusMessage": "Checking project memory..."
           }
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/teammate-idle.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/teammate-idle.py",
             "timeout": 10
           }
         ]
@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/task-completed.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/task-completed.py",
             "timeout": 300
           }
         ]
@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-test-guard.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-test-guard.py",
             "timeout": 5
           }
         ]
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-auto-test.py",
+            "command": "python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-auto-test.py",
             "timeout": 10
           }
         ]

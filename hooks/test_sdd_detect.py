@@ -132,6 +132,44 @@ class TestDetectTestCommand(unittest.TestCase):
         )
         self.assertEqual(detect_test_command(self.tmpdir), "npm test")
 
+    # ── Bug #7: lockfile-aware package manager detection ──
+    def test_pnpm_lockfile_returns_pnpm_test(self):
+        (Path(self.tmpdir) / "package.json").write_text(
+            '{"scripts": {"test": "vitest"}}', encoding="utf-8"
+        )
+        (Path(self.tmpdir) / "pnpm-lock.yaml").write_text("", encoding="utf-8")
+        self.assertEqual(detect_test_command(self.tmpdir), "pnpm test")
+
+    def test_yarn_lockfile_returns_yarn_test(self):
+        (Path(self.tmpdir) / "package.json").write_text(
+            '{"scripts": {"test": "jest"}}', encoding="utf-8"
+        )
+        (Path(self.tmpdir) / "yarn.lock").write_text("", encoding="utf-8")
+        self.assertEqual(detect_test_command(self.tmpdir), "yarn test")
+
+    def test_bun_lockfile_returns_bun_test(self):
+        (Path(self.tmpdir) / "package.json").write_text(
+            '{"scripts": {"test": "bun:test"}}', encoding="utf-8"
+        )
+        (Path(self.tmpdir) / "bun.lockb").write_text("", encoding="utf-8")
+        self.assertEqual(detect_test_command(self.tmpdir), "bun test")
+
+    def test_no_lockfile_defaults_to_npm(self):
+        """No lockfile present → npm test (backward compatible default)."""
+        (Path(self.tmpdir) / "package.json").write_text(
+            '{"scripts": {"test": "jest"}}', encoding="utf-8"
+        )
+        self.assertEqual(detect_test_command(self.tmpdir), "npm test")
+
+    def test_multiple_lockfiles_bun_wins(self):
+        """If multiple lockfiles exist, bun > pnpm > yarn > npm."""
+        (Path(self.tmpdir) / "package.json").write_text(
+            '{"scripts": {"test": "test"}}', encoding="utf-8"
+        )
+        (Path(self.tmpdir) / "bun.lockb").write_text("", encoding="utf-8")
+        (Path(self.tmpdir) / "yarn.lock").write_text("", encoding="utf-8")
+        self.assertEqual(detect_test_command(self.tmpdir), "bun test")
+
 
 class TestExitSuppression(unittest.TestCase):
     """Test has_exit_suppression() regex."""

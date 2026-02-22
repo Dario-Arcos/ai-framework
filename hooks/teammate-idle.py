@@ -12,11 +12,13 @@ Decision logic:
   2. Circuit breaker triggered  → exit 0 (consecutive failures exceeded)
   3. Default                    → exit 0 (allow idle, lead assigns work)
 """
+import calendar
 import fcntl
 import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -38,8 +40,14 @@ def load_max_failures(config_path):
         return 3
 
 
-def read_failures(ralph_dir):
-    """Read per-teammate failure counters from .ralph/failures.json."""
+def read_failures(ralph_dir, max_age_seconds=7200):
+    """Read per-teammate failure counters from .ralph/failures.json.
+
+    Args:
+        max_age_seconds: Ignore failures older than this (default 7200s = 2h).
+            Prevents stale failures from previous orchestration runs
+            triggering circuit breaker in new runs.
+    """
     failures_path = ralph_dir / "failures.json"
     try:
         if failures_path.exists():
@@ -47,7 +55,21 @@ def read_failures(ralph_dir):
                 fcntl.flock(f.fileno(), fcntl.LOCK_SH)
                 data = json.load(f)
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-                return data
+
+            # TTL check: ignore stale failures from previous runs
+            ts = data.get("_updated_at")
+            if not ts:
+                return {}  # No timestamp → legacy/stale → ignore
+            try:
+                written = calendar.timegm(
+                    time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
+                )
+                if time.time() - written > max_age_seconds:
+                    return {}
+            except (ValueError, OverflowError):
+                return {}  # Unparseable → treat as stale
+
+            return data
     except (json.JSONDecodeError, OSError):
         pass
     return {}
@@ -71,7 +93,13 @@ def main():
         sys.exit(0)
 
     # Check manual abort
-    if (ralph_dir / "ABORT").exists():
+    abort_path = ralph_dir / "ABORT"
+    if abort_path.exists():
+        print(
+            f"ABORT file detected at {abort_path}. "
+            "Remove to resume orchestration.",
+            file=sys.stderr,
+        )
         sys.exit(0)
 
     # Circuit breaker: check consecutive failures for this teammate

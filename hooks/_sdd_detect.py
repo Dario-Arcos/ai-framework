@@ -75,6 +75,13 @@ def detect_test_command(cwd):
             pkg = json.loads(pkg_path.read_text(encoding="utf-8"))
             test_script = pkg.get("scripts", {}).get("test", "")
             if test_script and "no test specified" not in test_script:
+                # Detect package manager from lockfile (priority order)
+                if (cwd_path / "bun.lockb").exists():
+                    return "bun test"
+                if (cwd_path / "pnpm-lock.yaml").exists():
+                    return "pnpm test"
+                if (cwd_path / "yarn.lock").exists():
+                    return "yarn test"
                 return "npm test"
         except (json.JSONDecodeError, OSError):
             pass

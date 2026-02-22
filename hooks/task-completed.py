@@ -122,6 +122,11 @@ def _atomic_update_failures(ralph_dir, teammate_name, operation):
             elif operation == "reset":
                 data[teammate_name] = 0
 
+            # Timestamp for TTL — teammate-idle ignores stale failures
+            data["_updated_at"] = time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
+            )
+
             f.seek(0)
             f.truncate()
             json.dump(data, f, indent=2)
