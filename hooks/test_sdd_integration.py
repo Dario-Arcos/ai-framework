@@ -425,46 +425,19 @@ class TestAutoTestHookFeedback(unittest.TestCase):
 # 5. TASK-COMPLETED READS STATE (NON-RALPH)
 # ─────────────────────────────────────────────────────────────────
 
-class TestTaskCompletedReadsState(unittest.TestCase):
-    """Verify task-completed reads auto-test state for non-ralph projects."""
+class TestTaskCompletedRunsFreshTests(unittest.TestCase):
+    """Verify task-completed runs tests fresh for non-ralph projects."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-")
         _cleanup_state(self.tmpdir)
-        _create_mini_project(self.tmpdir,
-            app_code="def add(a, b): return a + b\n",
-            test_code="def test(): pass\n",
-        )
 
     def tearDown(self):
         _cleanup_state(self.tmpdir)
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def test_passing_state_allows_completion(self):
-        """Tests passing → task completion allowed (exit 0)."""
-        _sdd_detect.write_state(self.tmpdir, True, "3 passed")
-
-        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
-            "cwd": self.tmpdir,
-            "task_subject": "Add feature",
-            "teammate_name": "worker-1",
-        })
-        self.assertEqual(exit_code, 0)
-
-    def test_failing_state_blocks_completion(self):
-        """Tests failing → task completion blocked (exit 2)."""
-        _sdd_detect.write_state(self.tmpdir, False, "1 failed")
-
-        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
-            "cwd": self.tmpdir,
-            "task_subject": "Add feature",
-            "teammate_name": "worker-1",
-        })
-        self.assertEqual(exit_code, 2)
-        self.assertIn("failed", stderr.lower())
-
-    def test_no_state_allows_completion(self):
-        """No auto-test state → allows completion (no fresh run)."""
+    def test_passing_tests_allows_completion(self):
+        """Fresh test run passes → task completion allowed (exit 0)."""
         _create_mini_project(self.tmpdir,
             app_code="def add(a, b): return a + b\n",
             test_code=(
@@ -479,6 +452,46 @@ class TestTaskCompletedReadsState(unittest.TestCase):
             "task_subject": "Add feature",
             "teammate_name": "worker-1",
         })
+        self.assertEqual(exit_code, 0)
+
+    def test_failing_tests_blocks_completion(self):
+        """Fresh test run fails → task completion blocked (exit 2)."""
+        _create_mini_project(self.tmpdir,
+            app_code="def add(a, b): return a + b\n",
+            test_code=(
+                "import sys; sys.path.insert(0, '..')\n"
+                "from app import add\n"
+                "def test_add(): assert add(1, 2) == 999\n"
+            ),
+        )
+
+        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("failed", stderr.lower())
+
+    def test_stale_state_ignored(self):
+        """Stale failing state does NOT block if fresh tests pass."""
+        _create_mini_project(self.tmpdir,
+            app_code="def add(a, b): return a + b\n",
+            test_code=(
+                "import sys; sys.path.insert(0, '..')\n"
+                "from app import add\n"
+                "def test_add(): assert add(1, 2) == 3\n"
+            ),
+        )
+        # Write stale FAILING state — this was the bug
+        _sdd_detect.write_state(self.tmpdir, False, "1 failed (stale)")
+
+        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        # Fresh run passes → stale state ignored
         self.assertEqual(exit_code, 0)
 
     def test_no_test_command_allows_completion(self):

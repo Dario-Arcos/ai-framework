@@ -245,7 +245,7 @@ class TestFailTask(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────
 
 class TestHandleNonRalphCompletion(unittest.TestCase):
-    """Test _handle_non_ralph_completion() — reads state only."""
+    """Test _handle_non_ralph_completion() — runs tests fresh."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -253,27 +253,30 @@ class TestHandleNonRalphCompletion(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    @patch.object(task_completed, "read_state", return_value=None)
-    def test_no_state_allows(self, _mock):
-        """No test state → allow completion."""
+    @patch.object(task_completed, "detect_test_command", return_value=None)
+    def test_no_test_command_allows(self, _mock):
+        """No test infrastructure → allow completion."""
         task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
 
-    @patch.object(task_completed, "read_state", return_value={"passing": True, "summary": "ok"})
-    def test_state_passing_allows(self, _mock):
-        """Tests passing → allow completion."""
+    @patch.object(task_completed, "run_gate", return_value=(True, "5 passed"))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_tests_passing_allows(self, _mock_detect, _mock_gate):
+        """Tests passing (fresh run) → allow completion."""
         task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
 
-    @patch.object(task_completed, "read_state", return_value={"passing": False, "summary": "2 failed"})
-    def test_state_failing_exits_2(self, _mock):
-        """Tests failing → exit 2."""
+    @patch.object(task_completed, "run_gate", return_value=(False, "FAIL: 2 tests"))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_tests_failing_exits_2(self, _mock_detect, _mock_gate):
+        """Tests failing (fresh run) → exit 2."""
         with self.assertRaises(SystemExit) as ctx:
             task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
         self.assertEqual(ctx.exception.code, 2)
 
     @patch("sys.stderr", new_callable=io.StringIO)
-    @patch.object(task_completed, "read_state", return_value={"passing": False, "summary": "1 failed"})
-    def test_failing_shows_summary_in_stderr(self, _mock_state, mock_stderr):
-        """Failure feedback includes the summary from state."""
+    @patch.object(task_completed, "run_gate", return_value=(False, "1 failed, 2 passed"))
+    @patch.object(task_completed, "detect_test_command", return_value="pytest")
+    def test_failing_shows_output_in_stderr(self, _mock_detect, _mock_gate, mock_stderr):
+        """Failure feedback includes fresh test output."""
         with self.assertRaises(SystemExit):
             task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
         output = mock_stderr.getvalue()

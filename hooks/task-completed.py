@@ -12,7 +12,7 @@ Decision logic:
     3. Coverage gate → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
     4. All gates pass → exit 0 + reset failures.json
   Non-ralph projects:
-    1. Read auto-test state → passing = exit 0, failing = exit 2
+    1. Detect test command → run fresh → passing = exit 0, failing = exit 2
 """
 import fcntl
 import json
@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    has_exit_suppression, read_skill_invoked, read_state,
+    detect_test_command, has_exit_suppression, read_skill_invoked,
     skill_invoked_path,
 )
 
@@ -222,13 +222,13 @@ def _fail_task(header, body, footer="Fix the issue before completing this task."
 # ─────────────────────────────────────────────────────────────────
 
 def _handle_non_ralph_completion(cwd, task_subject):
-    """Test gate for projects without ralph. Reads auto-test state."""
-    state = read_state(cwd)
-    if state is None:
-        return  # No test data → allow
-    if state.get("passing"):
-        return  # Tests pass → allow
-    _fail_task(f"Tests failed for: {task_subject}", state.get("summary", "tests failed"))
+    """Test gate for projects without ralph. Runs tests fresh."""
+    command = detect_test_command(cwd)
+    if not command:
+        return  # No test infrastructure → allow
+    passed, output = run_gate("test", command, cwd)
+    if not passed:
+        _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
 
 
 # ─────────────────────────────────────────────────────────────────
