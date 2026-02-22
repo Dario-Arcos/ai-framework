@@ -99,27 +99,6 @@ class TestAgeDays(unittest.TestCase):
             memory_check.time = _real_time
 
 
-class TestHasTestInfra(unittest.TestCase):
-    """Test _has_test_infra() with real filesystem."""
-
-    def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir, ignore_errors=True)
-
-    def test_tests_dir_exists(self):
-        os.makedirs(os.path.join(self.tmpdir, "tests"))
-        self.assertTrue(memory_check._has_test_infra(self.tmpdir))
-
-    def test_jest_config_exists(self):
-        Path(os.path.join(self.tmpdir, "jest.config.ts")).write_text("{}", encoding="utf-8")
-        self.assertTrue(memory_check._has_test_infra(self.tmpdir))
-
-    def test_nothing_exists(self):
-        self.assertFalse(memory_check._has_test_infra(self.tmpdir))
-
-
 class TestEnsureBaseline(unittest.TestCase):
     """Test _ensure_baseline() checksums management."""
 
@@ -315,26 +294,6 @@ class TestMain(unittest.TestCase):
         context = data["hookSpecificOutput"]["additionalContext"]
         self.assertIn("45d old", context)
         self.assertIn("Suggest /project-init", context)
-
-    def test_no_test_infra(self):
-        # Create rules + a manifest but NO test infrastructure
-        rules_dir = os.path.join(self.tmpdir, ".claude", "rules")
-        os.makedirs(rules_dir)
-        rule_file = os.path.join(rules_dir, "proj.md")
-        Path(rule_file).write_text("# Project", encoding="utf-8")
-        now = time.time()
-        os.utime(rule_file, (now, now))
-        # Create a manifest so has_manifest is True
-        pkg = os.path.join(self.tmpdir, "package.json")
-        Path(pkg).write_text('{"name":"app"}', encoding="utf-8")
-        # Set manifest mtime BEFORE rules so it's not flagged as changed
-        os.utime(pkg, (now - 100, now - 100))
-
-        output = self._run_main(mock_time_value=now)
-        data = json.loads(output)
-        context = data["hookSpecificOutput"]["additionalContext"]
-        self.assertEqual(context, "No test infrastructure detected. Flag proactively to user.")
-
 
 if __name__ == "__main__":
     unittest.main()

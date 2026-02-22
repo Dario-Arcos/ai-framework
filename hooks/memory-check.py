@@ -29,16 +29,6 @@ MANIFESTS = [
     "CMakeLists.txt",
 ]
 
-# Test infrastructure indicators (directories and config files)
-TEST_INDICATORS = [
-    "test", "tests", "__tests__", "spec", "e2e",
-    "jest.config.js", "jest.config.ts", "jest.config.mjs",
-    "vitest.config.js", "vitest.config.ts", "vitest.config.mjs",
-    "pytest.ini", "conftest.py",
-    "cypress.config.js", "cypress.config.ts",
-    "playwright.config.ts", "playwright.config.js",
-]
-
 RULES_DIR = os.path.join(".claude", "rules")
 CHECKSUMS_PATH = os.path.join(".claude", "rules", ".manifest-checksums")
 STALENESS_DAYS = 30
@@ -82,12 +72,6 @@ def main():
             messages.append(
                 f"Project memory {age}d old. Suggest /project-init."
             )
-
-    # Level 4: No test infrastructure (independent — always evaluated)
-    if has_manifest and not _has_test_infra(cwd):
-        messages.append(
-            "No test infrastructure detected. Flag proactively to user."
-        )
 
     emit(" ".join(messages))
 
@@ -204,14 +188,6 @@ def _rules_mtime(cwd):
 
 def _age_days(mtime):
     return int((time.time() - mtime) / 86400)
-
-
-def _has_test_infra(cwd):
-    """Check for test directories or config files. Short-circuits on first hit."""
-    for name in TEST_INDICATORS:
-        if os.path.exists(os.path.join(cwd, name)):
-            return True
-    return False
 
 
 def emit(message):
