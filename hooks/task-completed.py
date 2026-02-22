@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -284,11 +285,25 @@ def main():
         ("e2e", config["GATE_E2E"]),
     ]
 
+    # Budget: 270s total (hooks.json timeout=300s minus 30s margin)
+    gate_budget = 270
+    gate_start = time.monotonic()
+
     for gate_name, gate_cmd in gates:
         if not gate_cmd:
             continue
 
-        passed, output = run_gate(gate_name, gate_cmd, cwd)
+        elapsed = time.monotonic() - gate_start
+        remaining = gate_budget - elapsed
+        if remaining <= 0:
+            _fail_task(
+                f"Timeout budget exhausted before gate '{gate_name}' for: {task_subject}",
+                f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s. "
+                "Reduce gate execution times or remove unnecessary gates.",
+            )
+
+        gate_timeout = min(120, int(remaining))
+        passed, output = run_gate(gate_name, gate_cmd, cwd, timeout=gate_timeout)
 
         if not passed:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
@@ -307,7 +322,15 @@ def main():
     coverage_cmd = config["GATE_COVERAGE"]
 
     if min_coverage > 0 and coverage_cmd:
-        passed, output = run_gate("coverage", coverage_cmd, cwd)
+        elapsed = time.monotonic() - gate_start
+        remaining = gate_budget - elapsed
+        if remaining <= 0:
+            _fail_task(
+                f"Timeout budget exhausted before coverage gate for: {task_subject}",
+                f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s.",
+            )
+        cov_timeout = min(120, int(remaining))
+        passed, output = run_gate("coverage", coverage_cmd, cwd, timeout=cov_timeout)
 
         if not passed:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")

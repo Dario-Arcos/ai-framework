@@ -303,5 +303,113 @@ class TestSkillInvokedPerSkill(unittest.TestCase):
         self.assertEqual(str(p_default), str(p_explicit))
 
 
+class TestReadStateTTL(unittest.TestCase):
+    """Test TTL enforcement in read_state()."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        try:
+            state_path(self.tmpdir).unlink()
+        except FileNotFoundError:
+            pass
+
+    def tearDown(self):
+        try:
+            state_path(self.tmpdir).unlink()
+        except FileNotFoundError:
+            pass
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_fresh_state_returned(self):
+        """State written just now is returned (within TTL)."""
+        write_state(self.tmpdir, True, "5 passed")
+        self.assertIsNotNone(read_state(self.tmpdir))
+
+    def test_stale_state_returns_none(self):
+        """State older than max_age_seconds returns None."""
+        write_state(self.tmpdir, False, "1 failed")
+        # Force stale timestamp
+        import json, time
+        sp = state_path(self.tmpdir)
+        data = json.loads(sp.read_text())
+        old_ts = time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ",
+            time.gmtime(time.time() - 700),  # 700s ago > 600s default
+        )
+        data["timestamp"] = old_ts
+        sp.write_text(json.dumps(data))
+        self.assertIsNone(read_state(self.tmpdir))
+
+    def test_custom_max_age(self):
+        """Custom max_age_seconds is respected."""
+        write_state(self.tmpdir, True, "ok")
+        # Fresh state with very short TTL (0s) → expired
+        self.assertIsNone(read_state(self.tmpdir, max_age_seconds=0))
+
+    def test_missing_timestamp_treated_as_fresh(self):
+        """State without timestamp field is not expired (backward compat)."""
+        import json
+        sp = state_path(self.tmpdir)
+        sp.write_text(json.dumps({"passing": True, "summary": "ok"}))
+        self.assertIsNotNone(read_state(self.tmpdir))
+
+    def test_max_age_zero_always_expires(self):
+        """max_age_seconds=0 expires everything with a timestamp."""
+        write_state(self.tmpdir, True, "ok")
+        result = read_state(self.tmpdir, max_age_seconds=0)
+        self.assertIsNone(result)
+
+
+class TestReadSkillInvokedTTL(unittest.TestCase):
+    """Test TTL enforcement in read_skill_invoked()."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._paths = []
+
+    def tearDown(self):
+        for p in self._paths:
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _track(self, skill_name):
+        p = skill_invoked_path(self.tmpdir, skill_name)
+        self._paths.append(p)
+        return p
+
+    def test_fresh_skill_returned(self):
+        """Skill invoked just now is returned."""
+        self._track("sop-code-assist")
+        write_skill_invoked(self.tmpdir, "sop-code-assist")
+        self.assertIsNotNone(read_skill_invoked(self.tmpdir, "sop-code-assist"))
+
+    def test_stale_skill_returns_none(self):
+        """Skill state older than max_age returns None."""
+        self._track("sop-code-assist")
+        write_skill_invoked(self.tmpdir, "sop-code-assist")
+        # Force stale timestamp
+        import json, time
+        sp = skill_invoked_path(self.tmpdir, "sop-code-assist")
+        data = json.loads(sp.read_text())
+        old_ts = time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ",
+            time.gmtime(time.time() - 15000),  # 15000s > 14400s default
+        )
+        data["timestamp"] = old_ts
+        sp.write_text(json.dumps(data))
+        self.assertIsNone(read_skill_invoked(self.tmpdir, "sop-code-assist"))
+
+    def test_custom_max_age(self):
+        """Custom max_age_seconds is respected."""
+        self._track("sop-reviewer")
+        write_skill_invoked(self.tmpdir, "sop-reviewer")
+        self.assertIsNone(read_skill_invoked(self.tmpdir, "sop-reviewer", max_age_seconds=0))
+
+
 if __name__ == "__main__":
     unittest.main()

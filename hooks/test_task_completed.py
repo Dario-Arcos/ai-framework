@@ -652,5 +652,83 @@ class TestSkillStateClearOnSuccess(unittest.TestCase):
             self.assertEqual(ctx.exception.code, 0)
 
 
+# ─────────────────────────────────────────────────────────────────
+# TestGateTimeoutBudget
+# ─────────────────────────────────────────────────────────────────
+
+class TestGateTimeoutBudget(unittest.TestCase):
+    """Gate loop respects 270s total budget (hooks.json timeout=300s minus 30s margin)."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir(parents=True)
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="npm test"\nGATE_TYPECHECK="tsc"\nGATE_LINT="eslint"\nGATE_BUILD="npm run build"\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    def _default_input(self, **overrides):
+        base = {
+            "cwd": self.tmpdir,
+            "task_subject": "Feature X",
+            "task_description": "",
+            "teammate_name": "agent-1",
+        }
+        base.update(overrides)
+        return base
+
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
+    def test_gate_receives_timeout_param(self, _mock_skill):
+        """run_gate is called with a timeout <= 120 (budget-aware)."""
+        calls = []
+        def mock_gate(name, cmd, cwd, timeout=120):
+            calls.append((name, timeout))
+            return True, "ok"
+
+        with patch.object(task_completed, "run_gate", side_effect=mock_gate):
+            with patch("sys.stdin", self._make_stdin(self._default_input())):
+                with self.assertRaises(SystemExit) as ctx:
+                    task_completed.main()
+                self.assertEqual(ctx.exception.code, 0)
+
+        # All gates should have been called with timeout <= 120
+        for name, timeout in calls:
+            self.assertLessEqual(timeout, 120, f"Gate '{name}' timeout {timeout} exceeds 120")
+            self.assertGreater(timeout, 0, f"Gate '{name}' timeout must be positive")
+
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
+    def test_budget_exhaustion_fails_with_message(self, _mock_skill):
+        """When budget is exhausted, remaining gates fail with descriptive error."""
+        import time as _time
+
+        call_count = [0]
+        def slow_gate(name, cmd, cwd, timeout=120):
+            call_count[0] += 1
+            return True, "ok"
+
+        # Simulate budget exhaustion by patching time.monotonic
+        # First call returns 0 (start), subsequent calls return 280 (past budget)
+        call_idx = [0]
+        def mock_monotonic():
+            call_idx[0] += 1
+            if call_idx[0] <= 1:
+                return 0.0  # gate_start
+            return 280.0  # past 270s budget
+
+        with patch.object(task_completed, "run_gate", side_effect=slow_gate):
+            with patch("time.monotonic", side_effect=mock_monotonic):
+                with patch("sys.stdin", self._make_stdin(self._default_input())):
+                    with self.assertRaises(SystemExit) as ctx:
+                        task_completed.main()
+                    self.assertEqual(ctx.exception.code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

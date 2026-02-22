@@ -5,6 +5,7 @@ Imported by:
 - sdd-test-guard.py (PreToolUse)
 - task-completed.py (TaskCompleted)
 """
+import calendar
 import fcntl
 import hashlib
 import json
@@ -185,15 +186,32 @@ def is_test_running(cwd):
         return False
 
 
-def read_state(cwd):
-    """Read test state file with shared lock. Returns dict or None."""
+def read_state(cwd, max_age_seconds=600):
+    """Read test state file with shared lock. Returns dict or None.
+
+    Args:
+        max_age_seconds: Ignore state older than this (default 600s = 10min).
+            Prevents stale state from previous sessions causing false decisions.
+    """
     sp = state_path(cwd)
     try:
         with open(sp, "r", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_SH)
-            return json.load(f)
+            data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
+
+    # TTL check: ignore stale state from previous sessions
+    ts = data.get("timestamp")
+    if ts and max_age_seconds >= 0:
+        try:
+            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+            if time.time() - written > max_age_seconds:
+                return None
+        except (ValueError, OverflowError):
+            pass  # unparseable timestamp → treat as fresh (don't break)
+
+    return data
 
 
 def write_state(cwd, passing, summary):
@@ -245,12 +263,29 @@ def write_skill_invoked(cwd, skill_name):
             pass
 
 
-def read_skill_invoked(cwd, skill_name="sop-code-assist"):
-    """Read skill invocation state. Returns dict or None."""
+def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400):
+    """Read skill invocation state. Returns dict or None.
+
+    Args:
+        max_age_seconds: Ignore state older than this (default 14400s = 4h).
+            Prevents cross-session skill state inheritance between teammates.
+    """
     sp = skill_invoked_path(cwd, skill_name)
     try:
         with open(sp, "r", encoding="utf-8") as f:
             fcntl.flock(f, fcntl.LOCK_SH)
-            return json.load(f)
+            data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
+
+    # TTL check: ignore stale skill state from previous sessions
+    ts = data.get("timestamp")
+    if ts and max_age_seconds >= 0:
+        try:
+            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+            if time.time() - written > max_age_seconds:
+                return None
+        except (ValueError, OverflowError):
+            pass  # unparseable timestamp → treat as fresh
+
+    return data
