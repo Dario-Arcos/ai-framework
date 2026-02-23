@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Use when encountering any bug, scenario failure, or unexpected behavior, before proposing fixes
+description: "Use when encountering any bug, scenario failure, or unexpected behavior. Value: 4-phase root-cause investigation before any fix attempt. Skip risk: guessing at fixes without root-cause analysis — 40% first-fix rate vs 95% with investigation (SKILL.md:300)."
 ---
 
 # Systematic Debugging

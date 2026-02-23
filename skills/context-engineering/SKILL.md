@@ -1,6 +1,6 @@
 ---
 name: context-engineering
-description: Use when designing system prompts, auditing CLAUDE.md/AGENTS.md, optimizing context windows, or diagnosing agent underperformance.
+description: "Use when designing system prompts, auditing context files, or diagnosing agent underperformance. Value: applies Three Laws (passive>active, index>inline, retrieve>remember) with validation. Skip risk: naive prompt edits cause wording fragility — small changes produce large behavioral swings."
 ---
 
 # Context Engineering

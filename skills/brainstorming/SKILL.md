@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: Use when creating features, building components, adding functionality, or modifying behavior. Invoke FIRST — before any implementation skill.
+description: "Use when creating features or modifying behavior. Value: structured dialogue produces validated design with holdout scenarios before code — scenarios become acceptance criteria. Skip risk: building without scenarios means code confirms what you built, not what satisfies the user."
 ---
 
 # Brainstorming Ideas Into Designs

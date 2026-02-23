@@ -1,7 +1,7 @@
 <constraints>
 - ALWAYS define observable scenarios before executing — as task descriptions or response text, never implicit. When the work is code, encode as failing tests before implementation. Scenario → Test → Code. Work exists to satisfy scenarios; scenarios never exist to justify work.
 - NEVER claim complete, commit, or advance without FIRST invoking verification-before-completion: execute ALL scenarios → observe output → verify satisfaction → produce evidence. Unsatisfied → fix the work, never weaken scenarios or tests. Modifying scenarios to pass = reward hacking. Weakening a test to match a bug = reward hacking. Assumed ≠ observed.
-- ALWAYS look up the task in <skill-routing> and invoke the full chain before acting. NEVER skip a chain step. Skills encode current methodology that supersedes training.
+- ALWAYS invoke skills per <skill-routing> — they encode methodology that supersedes training. Skipping costs more than invoking; each description documents the failure mode.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
 - WHEN building or fixing: TaskCreate per step, delegate execution to Task sub-agents. Main session orchestrates and verifies — never executes implementation directly. Sub-agents protect context; without delegation, long tasks degrade past compaction.
 - ALWAYS state blast radius before modifying: list affected files, consumers, and docs — in your response, not mentally.
@@ -31,16 +31,14 @@ ALWAYS satisfy before advancing: the scenario satisfaction loop runs until holdo
 </workflow>
 
 <skill-routing>
-build/add feature: brainstorming → plan mode → scenario-driven-development
-build/change UI: brainstorming → plan mode → frontend-design → scenario-driven-development
-fix/debug: systematic-debugging → plan mode → scenario-driven-development
-autonomous build: ralph-orchestrator
-research: deep-research | context files: context-engineering | new skill: skill-creator
-project memory: project-init
-remove AI writing patterns: humanizer
-verify done: verification-before-completion
-commit: commit | PR: pull-request
-All build/fix chains end with verification-before-completion.
+building/changing behavior: brainstorming (produces design + holdout scenarios) → plan mode (user approves) → scenario-driven-development (consumes scenarios, produces satisfied code). Add frontend-design before SDD when work includes UI.
+fixing bugs: systematic-debugging (produces root cause) → scenario-driven-development (encodes fix as scenario, satisfies it).
+research: deep-research (produces cited findings). context-engineering (for prompt/context work).
+project setup: project-init (generates .claude/rules/).
+prose quality: humanizer (removes AI patterns from any user-facing text).
+completion: verification-before-completion before ANY completion claim, commit, or PR.
+git: commit (stages + formats). pull-request (reviews + creates PR).
+autonomous: ralph-orchestrator (multi-step orchestration with resume).
 </skill-routing>
 
 <communication>

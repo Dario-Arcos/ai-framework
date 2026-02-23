@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-description: Use when about to claim work is complete, fixed, or passing — before committing, creating PRs, or reporting results. Requires running verification commands and confirming output before making any success claims. Evidence before assertions, always.
+description: "Use before any completion claim, commit, PR, or status report. Value: 6-step evidence gate ensures every claim has fresh execution output. Skip risk: stale 'tests pass' claims — code changed since last run, skipped tests hide failures silently."
 ---
 
 # Verification Before Completion
