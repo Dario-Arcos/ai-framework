@@ -120,7 +120,11 @@ def sync_all_files(plugin_root, project_dir):
                 continue
             shutil.copy2(src, dst)
         except (OSError, IOError) as e:
-            sys.stderr.write(f"WARNING: Failed to sync {target_path}: {e}\n")
+            sys.stderr.write(
+                f"WARNING: Failed to sync template\n\n"
+                f"Target: {target_path}\n"
+                f"Error: {e}\n"
+            )
 
 
 def consume_stdin():
@@ -157,7 +161,11 @@ def main():
         plugin_root = Path(plugin_root_env) if plugin_root_env else find_plugin_root()
 
         if not plugin_root.exists():
-            sys.stderr.write("ERROR: Plugin root not found\n")
+            sys.stderr.write(
+                "ERROR: Plugin root not found\n\n"
+                "The AI Framework plugin directory does not exist.\n"
+                "Verify CLAUDE_PLUGIN_ROOT or reinstall the plugin.\n"
+            )
             output_hook_response("AI Framework: ✗ Plugin root not found")
             sys.exit(1)
 
@@ -168,7 +176,10 @@ def main():
         sys.exit(0)
 
     except Exception as e:
-        sys.stderr.write(f"ERROR: Installation failed: {e}\n")
+        sys.stderr.write(
+            f"ERROR: Installation failed\n\n"
+            f"{e}\n"
+        )
         output_hook_response(f"AI Framework: ✗ {e}")
         sys.exit(1)
 

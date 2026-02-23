@@ -142,9 +142,10 @@ def main():
         ralph_config = Path(cwd) / ".ralph" / "config.sh"
         if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer"):
             print(
-                "SDD Guard: writing review without invoking sop-reviewer. "
-                "Invoke: Skill(skill=\"sop-reviewer\", "
-                "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first.",
+                "SDD Guard: writing review without invoking sop-reviewer\n\n"
+                "Invoke sop-reviewer before writing to .ralph/reviews/.\n"
+                "Skill(skill=\"sop-reviewer\", "
+                "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"')",
                 file=sys.stderr,
             )
             sys.exit(2)
@@ -170,9 +171,11 @@ def main():
     if new_count < old_count:
         # DENY: reward hacking detected
         print(
-            f"SDD Guard: tests are failing and this edit reduces "
-            f"assertions ({old_count}\u2192{new_count}). "
-            f"Fix implementation code, not tests. "
+            f"SDD Guard: reward hacking detected \u2014 "
+            f"assertions reduced ({old_count}\u2192{new_count})\n\n"
+            f"Tests are failing and this edit removes "
+            f"{old_count - new_count} assertion(s).\n"
+            f"Fix implementation code, not tests.\n"
             f"Weakening a test to match a bug = reward hacking.",
             file=sys.stderr,
         )
@@ -183,10 +186,12 @@ def main():
     new_precise = count_precise(new_text)
     if old_precise > 0 and new_precise < old_precise:
         print(
-            f"SDD Guard: tests are failing and this edit reduces "
-            f"assertion precision ({old_precise}\u2192{new_precise} precise assertions). "
-            f"Replacing value comparisons with existence checks = reward hacking. "
-            f"Fix implementation code, not test precision.",
+            f"SDD Guard: reward hacking detected \u2014 "
+            f"precision reduced ({old_precise}\u2192{new_precise} precise assertions)\n\n"
+            f"Tests are failing and this edit replaces value comparisons "
+            f"with existence checks.\n"
+            f"Fix implementation code, not test precision.\n"
+            f"Replacing precise assertions with loose ones = reward hacking.",
             file=sys.stderr,
         )
         sys.exit(2)

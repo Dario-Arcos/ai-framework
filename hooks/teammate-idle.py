@@ -96,8 +96,9 @@ def main():
     abort_path = ralph_dir / "ABORT"
     if abort_path.exists():
         print(
-            f"ABORT file detected at {abort_path}. "
-            "Remove to resume orchestration.",
+            f"Orchestration aborted \u2014 ABORT file detected\n\n"
+            f"Path: {abort_path}\n"
+            f"Remove this file to resume orchestration.",
             file=sys.stderr,
         )
         sys.exit(0)
@@ -108,8 +109,9 @@ def main():
     teammate_failures = failures.get(teammate_name, 0)
     if teammate_failures >= max_failures:
         print(
-            f"Circuit breaker: {teammate_name} hit {teammate_failures} "
-            f"consecutive failures (max {max_failures}). Going idle.",
+            f"Circuit breaker triggered \u2014 {teammate_name} going idle\n\n"
+            f"{teammate_failures} consecutive failures (max allowed: {max_failures}).\n"
+            f"Teammate will not receive new tasks until failures are resolved.",
             file=sys.stderr,
         )
         sys.exit(0)
