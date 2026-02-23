@@ -1,6 +1,6 @@
 ---
 name: pull-request
-description: "Use when creating a PR or merging feature work. Value: runs parallel code-reviewer + security-reviewer agents, auto-detects protected branches. Skip risk: unreviewed security issues and undocumented breaking changes ship to main."
+description: Use when creating a PR or merging feature work. Value: runs parallel code-reviewer + security-reviewer agents, auto-detects protected branches. Skip risk: unreviewed security issues and undocumented breaking changes ship to main.
 ---
 
 # Git Pull Request Workflow

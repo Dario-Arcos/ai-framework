@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Use when starting work on a new project or after major dependency changes. Value: generates 4 rule files that prevent wrong assumptions about stack, architecture, and conventions. Skip risk: without project rules, Claude guesses at patterns and places files in wrong locations."
+description: Use when starting work on a new project or after major dependency changes. Value: generates 4 rule files that prevent wrong assumptions about stack, architecture, and conventions. Skip risk: without project rules, Claude guesses at patterns and places files in wrong locations.
 ---
 
 # Project Initialization
