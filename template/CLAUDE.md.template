@@ -1,6 +1,6 @@
 <constraints>
 - ALWAYS define observable scenarios before executing. State them explicitly in task descriptions or response text. When work is code AND tests exist, encode scenarios as failing tests first. Scenario → Test → Code. Example: "Scenario: empty form submission → validation errors shown, no HTTP request sent."
-- NEVER claim complete, commit, or advance without FIRST invoking verification-before-completion: execute ALL scenarios → observe output → verify satisfaction → produce evidence. Unsatisfied → fix the work, never weaken scenarios or tests. Weakening a test or scenario to match broken behavior = reward hacking.
+- BEFORE any completion claim, commit, or PR: invoke verification-before-completion. Execute ALL scenarios → observe output → verify satisfaction → produce evidence. Unsatisfied → fix the work, never weaken scenarios or tests. Weakening a test or scenario to match broken behavior = reward hacking.
 - ALWAYS invoke the full skill chain per <skill-routing> before acting. Skills encode methodology that supersedes training.
 - ALWAYS retrieve before answering: external APIs, frameworks, version-specific features → Context7 or agent-browser FIRST. Training knowledge is stale for current APIs.
 - WHEN building or fixing: TaskCreate per step, delegate execution to Task sub-agents with acceptance criteria and applicable constraints in their prompt. Main session orchestrates and verifies — never implements directly.
@@ -30,13 +30,12 @@ ALWAYS satisfy before advancing: the scenario satisfaction loop runs until holdo
 </workflow>
 
 <skill-routing>
-build/change feature: brainstorming → plan mode → scenario-driven-development. Add frontend-design before SDD when work includes UI.
-refactor: plan mode → scenario-driven-development (preserve existing scenarios).
-fix bug: systematic-debugging → scenario-driven-development (encode fix as scenario).
+build/change feature: brainstorming → plan mode → scenario-driven-development → verification-before-completion. Add frontend-design before SDD when work includes UI.
+refactor: plan mode → scenario-driven-development → verification-before-completion (preserve existing scenarios).
+fix bug: systematic-debugging → scenario-driven-development → verification-before-completion (encode fix as scenario).
 research: deep-research. context files: context-engineering. new skill: skill-creator.
 project setup: project-init.
 prose quality: humanizer.
-completion: verification-before-completion before ANY completion claim, commit, or PR.
 git: commit | pull-request.
 autonomous multi-step: ralph-orchestrator (use when user requests autonomous/overnight execution).
 </skill-routing>
