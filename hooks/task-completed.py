@@ -12,7 +12,8 @@ Decision logic:
     3. Coverage gate → if GATE_COVERAGE + MIN_TEST_COVERAGE: run and validate %
     4. All gates pass → exit 0 + reset failures.json
   Non-ralph projects:
-    1. Detect test command → run fresh → passing = exit 0, failing = exit 2
+    1. Agent Teams teammate → detect test command → run → passing = exit 0, failing = exit 2
+    2. Regular sub-agent (no teammate) → exit 0 (sdd-auto-test provides test feedback)
 """
 import fcntl
 import json
@@ -256,7 +257,12 @@ def main():
     ralph_dir = Path(cwd) / ".ralph"
     config_path = ralph_dir / "config.sh"
     if not config_path.exists():
-        _handle_non_ralph_completion(cwd, task_subject)
+        # Gate only Agent Teams teammates — regular sub-agents get continuous
+        # test feedback from sdd-auto-test (PostToolUse) and don't need a
+        # completion gate. Gating sub-agents with interdependent tasks causes
+        # deadlock: the full suite fails until ALL tasks are done.
+        if teammate_name != "unknown":
+            _handle_non_ralph_completion(cwd, task_subject)
         sys.exit(0)
 
     # SDD Skill enforcement: teammate must invoke the correct skill

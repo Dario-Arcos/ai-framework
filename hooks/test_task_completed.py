@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 task_completed = importlib.import_module("task-completed")
@@ -282,6 +282,53 @@ class TestHandleNonRalphCompletion(unittest.TestCase):
         output = mock_stderr.getvalue()
         self.assertIn("1 failed", output)
         self.assertIn("my task", output)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestNonRalphTeamGuard
+# ─────────────────────────────────────────────────────────────────
+
+class TestNonRalphTeamGuard(unittest.TestCase):
+    """Non-ralph path gates only Agent Teams teammates, not regular sub-agents."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    @patch.object(task_completed, "_handle_non_ralph_completion")
+    def test_regular_subagent_skips_gate(self, mock_handler):
+        """No teammate_name in input (defaults to 'unknown') → gate skipped."""
+        data = {"cwd": self.tmpdir, "task_subject": "Fix test file 15"}
+        with patch("sys.stdin", self._make_stdin(data)):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        mock_handler.assert_not_called()
+
+    @patch.object(task_completed, "_handle_non_ralph_completion")
+    def test_agent_teams_teammate_runs_gate(self, mock_handler):
+        """teammate_name present → gate runs."""
+        data = {"cwd": self.tmpdir, "task_subject": "Fix tests", "teammate_name": "impl-task-01"}
+        with patch("sys.stdin", self._make_stdin(data)):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        mock_handler.assert_called_once()
+
+    @patch.object(task_completed, "_handle_non_ralph_completion")
+    def test_explicit_unknown_teammate_skips_gate(self, mock_handler):
+        """Explicit teammate_name='unknown' → same as absent, gate skipped."""
+        data = {"cwd": self.tmpdir, "task_subject": "Task", "teammate_name": "unknown"}
+        with patch("sys.stdin", self._make_stdin(data)):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        mock_handler.assert_not_called()
 
 
 # ─────────────────────────────────────────────────────────────────
