@@ -22,19 +22,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import read_skill_invoked, read_state
+from _sdd_detect import is_test_file, read_skill_invoked, read_state
 
 
 # ─────────────────────────────────────────────────────────────────
 # PATTERNS
 # ─────────────────────────────────────────────────────────────────
-
-TEST_FILE_RE = re.compile(
-    r"(?:test|spec|__tests__)[/\\]|"
-    r"\.(?:test|spec)\.|"
-    r"_test\.|"
-    r"test_"
-)
 
 ASSERTION_RE = re.compile(
     r"\bassert\b|"
@@ -57,17 +50,6 @@ PRECISE_ASSERTION_RE = re.compile(
     r"assertEqual\(|assertNotEqual\(|"  # Python unittest
     r"\.to\.equal\(|\.to\.eql\("    # Chai
 )
-
-
-# ─────────────────────────────────────────────────────────────────
-# FILE CLASSIFICATION
-# ─────────────────────────────────────────────────────────────────
-
-def is_test_file(path):
-    """Check if path matches common test file patterns."""
-    if not path:
-        return False
-    return bool(TEST_FILE_RE.search(path))
 
 
 # ─────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-"""Shared SDD utilities — test detection, project hashing, and state I/O.
+"""Shared SDD utilities — detection, classification, state I/O, coverage tracking.
 
 Imported by:
 - sdd-auto-test.py (PostToolUse)
@@ -296,3 +296,189 @@ def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400)
             pass  # unparseable timestamp → treat as fresh
 
     return data
+
+
+# ─────────────────────────────────────────────────────────────────
+# FILE CLASSIFICATION — centralized source/test/exempt detection
+# ─────────────────────────────────────────────────────────────────
+
+SOURCE_EXTENSIONS = frozenset({
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
+    ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
+    ".vue", ".svelte",          # frontend frameworks
+    ".graphql", ".gql",         # schemas with logic
+    ".prisma",                  # ORM schemas
+    ".proto",                   # protobuf
+    ".sql",                     # database
+    ".sh", ".bash",             # shell scripts
+})
+
+# Compound extensions that look like source but are generated artifacts
+GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
+
+TEST_FILE_RE = re.compile(
+    r"(?:test|spec|__tests__)[/\\]|"
+    r"\.(?:test|spec)\.|"
+    r"_test\.|"
+    r"test_"
+)
+
+EXEMPT_RE = re.compile(
+    r"(?:^|/)(?:"
+    r"__init__\.py|conftest\.py|setup\.py|"
+    r"index\.(?:ts|js|tsx|jsx)|"
+    r"types\.(?:ts|d\.ts)|"
+    r"constants?\.(?:ts|js|py)|"
+    r"config[^/]*\.(?:ts|js|py|json|ya?ml|toml)"
+    r")$|"
+    r"(?:^|/)(?:migrations?|generated|vendor|scripts|docs?)/"
+)
+
+
+def is_source_file(path):
+    """Check if path is a source file worth triggering tests for."""
+    if not path:
+        return False
+    if GENERATED_COMPOUND_RE.search(path):
+        return False
+    return Path(path).suffix in SOURCE_EXTENSIONS
+
+
+def is_test_file(path):
+    """Check if path matches common test file patterns."""
+    if not path:
+        return False
+    return bool(TEST_FILE_RE.search(path))
+
+
+def is_exempt_from_tests(path):
+    """Check if a source file is exempt from coverage requirements.
+
+    Exempt: __init__.py, conftest.py, index.ts, types.ts, constants.ts,
+    config files, migrations/, generated/, vendor/, scripts/, docs/.
+    """
+    if not path:
+        return False
+    return bool(EXEMPT_RE.search(path))
+
+
+# ─────────────────────────────────────────────────────────────────
+# COVERAGE TRACKING STATE — anti reward-hacking by omission
+# ─────────────────────────────────────────────────────────────────
+
+def coverage_path(cwd):
+    """Path to coverage tracking state file."""
+    return Path(f"/tmp/sdd-coverage-{project_hash(cwd)}.json")
+
+
+def record_file_edit(cwd, file_path):
+    """Atomic append: add file to source_files or test_files set.
+
+    Uses LOCK_EX read-modify-write. ~1ms.
+    """
+    cp = coverage_path(cwd)
+    try:
+        # Ensure file exists
+        cp.touch(exist_ok=True)
+        with open(cp, "r+", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            raw = f.read()
+            try:
+                data = json.loads(raw) if raw.strip() else {}
+            except json.JSONDecodeError:
+                data = {}
+
+            source_files = set(data.get("source_files", []))
+            test_files = set(data.get("test_files", []))
+
+            if is_test_file(file_path):
+                test_files.add(file_path)
+            else:
+                source_files.add(file_path)
+
+            data["source_files"] = sorted(source_files)
+            data["test_files"] = sorted(test_files)
+            data["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+            f.seek(0)
+            f.truncate()
+            json.dump(data, f)
+            f.write("\n")
+    except OSError:
+        pass
+
+
+def read_coverage(cwd, max_age_seconds=14400):
+    """Read coverage state with LOCK_SH + TTL (4h). Returns dict or None."""
+    cp = coverage_path(cwd)
+    try:
+        with open(cp, "r", encoding="utf-8") as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+    ts = data.get("timestamp")
+    if ts and max_age_seconds >= 0:
+        try:
+            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+            if time.time() - written > max_age_seconds:
+                return None
+        except (ValueError, OverflowError):
+            pass
+
+    return data
+
+
+def clear_coverage(cwd):
+    """Remove coverage state file."""
+    try:
+        coverage_path(cwd).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def find_test_for_source(source_path, test_files):
+    """Convention match: find a test file for a source file by basename.
+
+    Matches:
+    - foo.py → test_foo.py, foo_test.py
+    - foo.ts → foo.test.ts, foo.spec.ts
+    - foo.go → foo_test.go
+
+    Returns matching path or None.
+    """
+    p = Path(source_path)
+    stem = p.stem
+    for tf in test_files:
+        tf_name = Path(tf).name
+        # Python: test_foo.py, foo_test.py
+        if tf_name == f"test_{stem}.py" or tf_name == f"{stem}_test.py":
+            return tf
+        # JS/TS: foo.test.ts, foo.spec.ts, foo.test.js, foo.spec.js, etc.
+        for ext in (".ts", ".tsx", ".js", ".jsx"):
+            if tf_name == f"{stem}.test{ext}" or tf_name == f"{stem}.spec{ext}":
+                return tf
+        # Go: foo_test.go
+        if tf_name == f"{stem}_test.go":
+            return tf
+    return None
+
+
+def compute_uncovered(cwd, state):
+    """Return source files without corresponding tests.
+
+    Exempt files excluded. Only non-exempt source files that have
+    no matching test file are returned.
+    """
+    source_files = state.get("source_files", [])
+    test_files = state.get("test_files", [])
+    uncovered = []
+    for sf in source_files:
+        if is_exempt_from_tests(sf):
+            continue
+        if is_test_file(sf):
+            continue
+        if not find_test_for_source(sf, test_files):
+            uncovered.append(sf)
+    return uncovered

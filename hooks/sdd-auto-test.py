@@ -11,54 +11,18 @@ State shared with sdd-test-guard.py via /tmp/ files (keyed by project hash).
 """
 import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    detect_test_command, has_exit_suppression, is_test_running,
-    parse_test_summary, pid_path, read_state,
-    write_skill_invoked, write_state,
+    compute_uncovered, detect_test_command, has_exit_suppression,
+    is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
+    parse_test_summary, pid_path, read_coverage, read_state,
+    record_file_edit, write_skill_invoked, write_state,
 )
 
-
-# ─────────────────────────────────────────────────────────────────
-# CONSTANTS
-# ─────────────────────────────────────────────────────────────────
-
-SOURCE_EXTENSIONS = frozenset({
-    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
-    ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
-    ".vue", ".svelte",          # frontend frameworks
-    ".graphql", ".gql",         # schemas with logic
-    ".prisma",                  # ORM schemas
-    ".proto",                   # protobuf
-    ".sql",                     # database
-    ".sh", ".bash",             # shell scripts
-})
-
-# Compound extensions that look like source but are generated artifacts
-GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
-
-
-# ─────────────────────────────────────────────────────────────────
-# FILE CLASSIFICATION
-# ─────────────────────────────────────────────────────────────────
-
-def is_source_file(path):
-    """Check if path is a source file worth triggering tests for."""
-    if not path:
-        return False
-    if GENERATED_COMPOUND_RE.search(path):
-        return False
-    return Path(path).suffix in SOURCE_EXTENSIONS
-
-
-# ─────────────────────────────────────────────────────────────────
-# DEBOUNCE
-# ─────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────
 # BACKGROUND EXECUTION
@@ -170,9 +134,21 @@ def main():
             write_skill_invoked(cwd, skill_name)
         sys.exit(0)
 
+    # Test file tracking: record for coverage, don't launch tests
+    if is_test_file(file_path):
+        record_file_edit(cwd, file_path)
+        sys.exit(0)
+
     # Guard: only source files
     if not is_source_file(file_path):
         sys.exit(0)
+
+    # Guard: exempt files tracked but don't trigger tests or nudge
+    if is_exempt_from_tests(file_path):
+        sys.exit(0)
+
+    # Track source file edit for coverage
+    record_file_edit(cwd, file_path)
 
     # Read previous test state — only report failures (passing = no signal needed)
     previous = read_state(cwd)
@@ -183,6 +159,18 @@ def main():
         command = detect_test_command(cwd)
         if command and not has_exit_suppression(command):
             run_tests_background(cwd, command)
+
+    # Coverage nudge: warn when >=3 source files lack tests
+    cov_state = read_coverage(cwd)
+    if cov_state:
+        uncovered = compute_uncovered(cwd, cov_state)
+        if len(uncovered) >= 3:
+            file_list = ", ".join(uncovered[:5])
+            nudge = (
+                f" | Coverage gap: {len(uncovered)} source file(s) without tests"
+                f" [{file_list}]. Write tests to avoid completion block."
+            )
+            msg = (msg + nudge) if msg else f"SDD Coverage{nudge}"
 
     # Report feedback as additionalContext (visible to Claude, not just user)
     if msg:

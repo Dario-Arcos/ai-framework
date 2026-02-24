@@ -26,7 +26,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    detect_test_command, has_exit_suppression, read_skill_invoked,
+    clear_coverage, compute_uncovered, detect_test_command,
+    has_exit_suppression, read_coverage, read_skill_invoked,
     skill_invoked_path,
 )
 
@@ -229,13 +230,26 @@ def _fail_task(header, body, footer="Fix the issue before completing this task."
 # ─────────────────────────────────────────────────────────────────
 
 def _handle_non_ralph_completion(cwd, task_subject):
-    """Test gate for projects without ralph. Runs tests fresh."""
+    """Test gate for projects without ralph. Runs tests fresh + coverage gate."""
     command = detect_test_command(cwd)
-    if not command:
-        return  # No test infrastructure → allow
-    passed, output = run_gate("test", command, cwd)
-    if not passed:
-        _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+    if command:
+        passed, output = run_gate("test", command, cwd)
+        if not passed:
+            _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+
+    # Coverage gate: fail if source files lack tests
+    state = read_coverage(cwd)
+    if state:
+        uncovered = compute_uncovered(cwd, state)
+        if uncovered:
+            file_list = "\n".join(f"  - {f}" for f in uncovered[:10])
+            _fail_task(
+                f"Untested source files for: {task_subject}",
+                f"New source files without tests:\n{file_list}",
+                "Write tests for new source files before completing. "
+                "Omitting tests = reward hacking by omission.",
+            )
+        clear_coverage(cwd)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -360,7 +374,22 @@ def main():
                 f"Increase test coverage before completing this task. (consecutive failures: {count})",
             )
 
-    # All gates passed
+    # All gates passed — check coverage before accepting
+    cov_state = read_coverage(cwd)
+    if cov_state:
+        uncovered = compute_uncovered(cwd, cov_state)
+        if uncovered:
+            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+            file_list = "\n".join(f"  - {f}" for f in uncovered[:10])
+            _fail_task(
+                f"Untested source files for: {task_subject}",
+                f"New source files without tests:\n{file_list}",
+                f"Write tests for new source files before completing. "
+                f"Omitting tests = reward hacking by omission. "
+                f"(consecutive failures: {count})",
+            )
+        clear_coverage(cwd)
+
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
 
     # Clear skill state so next teammate starts fresh (prevents inheritance)
