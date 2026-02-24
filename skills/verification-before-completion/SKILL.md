@@ -229,7 +229,7 @@ The delegating agent is responsible for verifying the subagent's claims through 
 
 ## Integration
 
-- **scenario-driven-development** — Precedes this gate. After SDD's Quality Integration (code-reviewer + code-simplifier agents), this gate runs. Scenario list and satisfaction criteria come from SDD's defined scenarios.
+- **scenario-driven-development** — Precedes this gate. After SDD's Quality Integration (code-reviewer + code-simplifier + edge-case-detector + performance-engineer agents), this gate runs. Scenario list and satisfaction criteria come from SDD's defined scenarios.
 - **ralph-orchestrator** — Confession markers require evidence from this gate:
   ```
   > confession: objective=[task], met=[Yes/No], confidence=[N], satisfaction=[N/M scenarios], evidence=[proof from completion gate]
@@ -247,6 +247,6 @@ The delegating agent is responsible for verifying the subagent's claims through 
 | Receives | Produces |
 |---|---|
 | Satisfaction evidence from SDD (scenarios + execution output) | Verified completion claim with evidence format |
-| Quality Integration results (code-reviewer + code-simplifier) | Satisfaction report: `[N/M] scenarios satisfied` |
+| Quality Integration results (code-reviewer + code-simplifier + edge-case-detector + performance-engineer) | Satisfaction report: `[N/M] scenarios satisfied` |
 
 **← From:** scenario-driven-development produces satisfaction evidence after SCENARIO→SATISFY→REFACTOR + Quality Integration.

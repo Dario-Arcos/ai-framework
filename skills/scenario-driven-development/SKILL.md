@@ -368,11 +368,9 @@ For complex bugs, invoke the systematic-debugging skill first to find root cause
 
 After all scenarios are satisfied and refactoring is complete:
 
-1. **Invoke `code-reviewer`** — validates against requirements, checks for bugs, security issues
-2. **Invoke `code-simplifier`** — reduces complexity, removes redundancy while preserving function
+1. **Invoke `code-reviewer` + `code-simplifier` + `edge-case-detector` + `performance-engineer`** (parallel — all four are read-only, independent, analyze the same diff)
+2. **Address Critical/Important issues** from all four agents before proceeding
 3. **Invoke verification-before-completion** — the 6-step evidence gate before any completion claim
-
-Address Critical/Important issues from agents before proceeding to the verification gate.
 
 ## Validation Anti-Patterns
 
@@ -393,7 +391,7 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 | Receives | Produces |
 |---|---|
 | Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Satisfied code with all scenarios passing |
-| | Quality Integration complete (code-reviewer + code-simplifier agents) |
+| | Quality Integration complete (code-reviewer + code-simplifier + edge-case-detector + performance-engineer agents) |
 
 **← From:** brainstorming produces the holdout scenarios, crystallized in the approved plan file.
 **→ Next:** verification-before-completion runs the 6-step evidence gate.

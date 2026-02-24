@@ -131,9 +131,8 @@ When mode="autonomous" AND `.ralph/config.sh` exists: skip quality_validation.
 Rationale: reviewer teammate + TaskCompleted hook handle validation externally.
 
 Otherwise (interactive mode or standalone usage):
-1. Invoke `code-simplifier` on modified artifacts
-2. Invoke `code-reviewer` to validate against requirements
-3. Address Critical/Important issues before Commit
+1. Invoke `code-simplifier` + `code-reviewer` + `edge-case-detector` + `performance-engineer` (parallel — all four are read-only, independent)
+2. Address Critical/Important issues from all four agents before Commit
 </quality_validation>
 
 <autonomous_signals>

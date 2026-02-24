@@ -2,13 +2,22 @@
 name: edge-case-detector
 memory: user
 description: |
-  Edge case detector for boundary violations, concurrency bugs, resource leaks, and silent failures in changed code.
+  Edge case detector for boundary violations, concurrency bugs, resource leaks, and silent failures in changed code. Focuses on correctness — not performance degradation (use performance-engineer).
   <example>
-  Context: User implemented a new data processing function
-  user: "I finished the CSV parser"
-  assistant: "Let me verify edge case coverage"
+  Context: User implemented a payment processing module
+  user: "I finished the payment splitting logic"
+  assistant: "Let me check for edge cases in the payment flow"
   <commentary>
-  Code with data handling logic requires edge case analysis for boundary conditions and failure modes.
+  Money calculations with state transitions involve boundary conditions (zero amounts, currency rounding), concurrency risks (double-charge on retry), and silent failures (swallowed payment errors) that unit tests typically miss.
+  </commentary>
+  assistant: Uses edge-case-detector agent to analyze boundary conditions, resource handling, and failure modes
+  </example>
+  <example>
+  Context: User built a file upload service
+  user: "The upload endpoint handles multipart files now"
+  assistant: "Let me analyze edge cases in the upload handling"
+  <commentary>
+  File I/O with user-supplied data combines resource cleanup risks (temp files on error paths), boundary violations (zero-byte files, filename injection), and integration failures (partial uploads, disk full) — correctness bugs that pass happy-path tests.
   </commentary>
   assistant: Uses edge-case-detector agent to analyze boundary conditions, resource handling, and failure modes
   </example>
@@ -29,6 +38,12 @@ FILES MODIFIED:
 
 ```
 !`git diff --name-only origin/HEAD...`
+```
+
+COMMITS:
+
+```
+!`git log --no-decorate origin/HEAD...`
 ```
 
 DIFF CONTENT:
@@ -154,10 +169,10 @@ Identify edge cases in the changed code that will cause runtime failures. Focus 
 
 | Score | Meaning | Report? |
 |-------|---------|---------|
-| 0.9-1.0 | Concrete reproduction path, tested or trivially verifiable | ✅ Always |
-| 0.8-0.9 | Clear pattern match with known failure mode | ✅ Yes |
-| 0.7-0.8 | Suspicious pattern, requires specific conditions | ⚠️ Only if HIGH severity |
-| < 0.7 | Theoretical concern, multiple assumptions needed | ❌ Never |
+| 0.9-1.0 | Concrete reproduction path, tested or trivially verifiable | Always |
+| 0.8-0.9 | Clear pattern match with known failure mode | Yes |
+| 0.7-0.8 | Suspicious pattern, requires specific conditions | Only if HIGH severity |
+| < 0.7 | Theoretical concern, multiple assumptions needed | Never |
 
 ## REQUIRED OUTPUT FORMAT
 
@@ -171,7 +186,7 @@ Identify edge cases in the changed code that will cause runtime failures. Focus 
 
 ---
 
-## 🚨 CRITICAL: [Title] — `file.ext:line`
+## CRITICAL: [Title] — `file.ext:line`
 
 **Category**: `boundary_violation` | `race_condition` | `integration_failure` | `silent_failure` | `resource_leak`
 
@@ -190,13 +205,13 @@ Identify edge cases in the changed code that will cause runtime failures. Focus 
 
 ---
 
-## ⚠️ HIGH: [Title] — `file.ext:line`
+## HIGH: [Title] — `file.ext:line`
 [Same structure as CRITICAL]
 
 ---
 
-## 💡 MEDIUM: [Title] — `file.ext:line`
-[Same structure, only if confidence ≥ 0.8]
+## MEDIUM: [Title] — `file.ext:line`
+[Same structure, only if confidence >= 0.8]
 ```
 
 ## EXECUTION PROTOCOL
@@ -210,6 +225,6 @@ Begin analysis in 3 phases:
    - Check against HARD EXCLUSIONS and PRECEDENTS
    - Assign confidence score with justification
 
-3. **Reporting Phase**: Filter to confidence ≥ 0.8, format as markdown report.
+3. **Reporting Phase**: Filter to confidence >= 0.8, format as markdown report.
 
 **Final output**: Markdown report only. No preamble, no explanations outside the report structure.

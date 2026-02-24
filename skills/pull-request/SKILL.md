@@ -83,7 +83,7 @@ Commits:
 
 ### 2.1 Dispatch Reviews (Parallel)
 
-**Execute TWO reviews in parallel using single message with 2 Task tool calls:**
+**Execute FOUR reviews in parallel using single message with 4 Task tool calls:**
 
 **Review A: Code Quality & Architecture**
 
@@ -101,6 +101,20 @@ Dispatch `ai-framework:security-reviewer` agent. The agent automatically:
 2. Analyzes against `origin/{target_branch}` (pass as context if needed)
 3. Returns findings in markdown format with severity levels
 
+**Review C: Edge Case Analysis**
+
+Dispatch `ai-framework:edge-case-detector` agent. The agent automatically:
+1. Reads git status, changed files, and diff
+2. Analyzes boundary violations, concurrency bugs, resource leaks, and silent failures
+3. Returns findings in markdown format with severity levels (Critical/High/Medium)
+
+**Review D: Performance Analysis**
+
+Dispatch `ai-framework:performance-engineer` agent. The agent automatically:
+1. Reads git status, changed files, and diff
+2. Analyzes query inefficiencies, algorithmic complexity, I/O bottlenecks, and scalability anti-patterns
+3. Returns findings in markdown format with severity levels (Critical/High/Medium)
+
 **Store outputs:**
 
 Code review:
@@ -110,6 +124,14 @@ Code review:
 Security review:
 - `sr_issues` (High/Medium vulnerabilities)
 - `sr_has_high`, `sr_has_medium` (booleans)
+
+Edge case review:
+- `ec_issues` (Critical/High/Medium edge cases)
+- `ec_has_critical`, `ec_has_high` (booleans)
+
+Performance review:
+- `pe_issues` (Critical/High/Medium performance issues)
+- `pe_has_critical`, `pe_has_high` (booleans)
 
 ### 2.2 Auto-Detect Observations
 
@@ -126,12 +148,14 @@ Run checks on `origin/{target_branch}..HEAD`:
 
 ### 2.3 Consolidate Findings
 
-Merge code review, security review, and observations into a single findings summary:
+Merge all four reviews and observations into a single findings summary:
 
 - **Code review**: assessment, issue counts by severity (critical/important/minor), strengths, full issues list
 - **Security review**: issue counts by severity (high/medium), full issues list
+- **Edge case review**: issue counts by severity (critical/high/medium), full issues list
+- **Performance review**: issue counts by severity (critical/high/medium), full issues list
 - **Observations**: status and detail for each check (tests, api, breaking, complexity)
-- **Summary flags**: `has_blockers` (any critical OR high), `total_issues` (all severities except minor), `attention_count` (non-OK observations)
+- **Summary flags**: `has_blockers` (any critical from code/edge-case/performance OR high from security), `total_issues` (all severities except minor/medium), `attention_count` (non-OK observations)
 
 ### 2.4 Present Findings
 
@@ -143,6 +167,12 @@ Merge code review, security review, and observations into a single findings summ
 
 ### Security Review: {sr_high_count} High, {sr_medium_count} Medium
 {Top 3 security issues if any}
+
+### Edge Case Review: {ec_critical_count} Critical, {ec_high_count} High
+{Top 3 edge case issues if any}
+
+### Performance Review: {pe_critical_count} Critical, {pe_high_count} High
+{Top 3 performance issues if any}
 
 **Strengths:**
 {cr_strengths as bullet list}
@@ -191,12 +221,12 @@ Only if user chose "Auto fix". See `examples/auto-fix-loop.md` for complete flow
 
 ### 2b.1 Prepare Fix List
 
-Extract issues from BOTH reviews based on `fix_scope`:
+Extract issues from ALL four reviews based on `fix_scope`:
 
-| fix_scope | Code Review | Security Review |
-|-----------|-------------|-----------------|
-| `all` | Critical, Important, Minor | High, Medium |
-| `blockers` | Critical, Important | High, Medium |
+| fix_scope | Code Review | Security Review | Edge Case Review | Performance Review |
+|-----------|-------------|-----------------|------------------|--------------------|
+| `all` | Critical, Important, Minor | High, Medium | Critical, High, Medium | Critical, High, Medium |
+| `blockers` | Critical, Important | High, Medium | Critical, High | Critical, High |
 
 Each entry: `{severity, source, file, line, problem, suggestion}`.
 
