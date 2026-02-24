@@ -6,7 +6,7 @@ Tests cover:
 - find_test_for_source() — convention matching
 - record_file_edit() — atomic state I/O
 - compute_uncovered() — coverage gap detection
-- sdd-auto-test.py main() — coverage tracking + nudge
+- sdd-auto-test.py main() — coverage tracking
 - task-completed.py — coverage gate
 """
 import importlib
@@ -350,7 +350,7 @@ class TestComputeUncovered(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────
 
 class TestAutoTestCoverageTracking(unittest.TestCase):
-    """Test sdd-auto-test.py main() coverage tracking + nudge."""
+    """Test sdd-auto-test.py main() coverage tracking."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -398,9 +398,8 @@ class TestAutoTestCoverageTracking(unittest.TestCase):
         # __init__.py is a .py source file but exempt → exits before record
         self.assertIsNone(state)
 
-    def test_nudge_at_threshold(self):
-        """Nudge appears when >=3 uncovered source files."""
-        # Pre-populate coverage state with 3 uncovered files
+    def test_no_coverage_nudge_emitted(self):
+        """Coverage tracking exists but no nudge is emitted to context."""
         for f in ["src/a.py", "src/b.py", "src/c.py"]:
             record_file_edit(self.tmpdir, f)
 
@@ -408,36 +407,7 @@ class TestAutoTestCoverageTracking(unittest.TestCase):
             "cwd": self.tmpdir,
             "tool_input": {"file_path": "src/d.py"},
         })
-        output = json.loads(stdout)
-        ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("Coverage gap", ctx)
-        self.assertIn("source file(s) without tests", ctx)
-
-    def test_no_nudge_below_threshold(self):
-        """No nudge when <3 uncovered files."""
-        record_file_edit(self.tmpdir, "src/a.py")
-        stdout, _ = self._run_main({
-            "cwd": self.tmpdir,
-            "tool_input": {"file_path": "src/b.py"},
-        })
-        self.assertEqual(stdout, "")
-
-    def test_no_nudge_when_covered(self):
-        """No nudge when all source files have tests."""
-        record_file_edit(self.tmpdir, "src/a.py")
-        record_file_edit(self.tmpdir, "src/b.py")
-        record_file_edit(self.tmpdir, "src/c.py")
-        record_file_edit(self.tmpdir, "tests/test_a.py")
-        record_file_edit(self.tmpdir, "tests/test_b.py")
-        record_file_edit(self.tmpdir, "tests/test_c.py")
-
-        stdout, _ = self._run_main({
-            "cwd": self.tmpdir,
-            "tool_input": {"file_path": "src/d.py"},
-        })
-        # d.py is uncovered but total uncovered is 1 (just d.py), below 3
-        # Actually after main runs, d.py is recorded too → 4 source, 3 tests
-        # d has no test → 1 uncovered → below threshold
+        # No nudge — coverage enforcement is at TaskCompleted, not PostToolUse
         self.assertEqual(stdout, "")
 
 

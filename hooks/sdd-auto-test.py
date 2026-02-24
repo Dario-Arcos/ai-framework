@@ -17,9 +17,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    compute_uncovered, detect_test_command, has_exit_suppression,
+    detect_test_command, has_exit_suppression,
     is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
-    parse_test_summary, pid_path, read_coverage, read_state,
+    parse_test_summary, pid_path, read_state,
     record_file_edit, write_skill_invoked, write_state,
 )
 
@@ -159,18 +159,6 @@ def main():
         command = detect_test_command(cwd)
         if command and not has_exit_suppression(command):
             run_tests_background(cwd, command)
-
-    # Coverage nudge: warn when >=3 source files lack tests
-    cov_state = read_coverage(cwd)
-    if cov_state:
-        uncovered = compute_uncovered(cwd, cov_state)
-        if len(uncovered) >= 3:
-            file_list = ", ".join(uncovered[:5])
-            nudge = (
-                f" | Coverage gap: {len(uncovered)} source file(s) without tests"
-                f" [{file_list}]. Write tests to avoid completion block."
-            )
-            msg = (msg + nudge) if msg else f"SDD Coverage{nudge}"
 
     # Report feedback as additionalContext (visible to Claude, not just user)
     if msg:
