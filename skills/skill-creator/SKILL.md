@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Use when creating a new skill or updating an existing skill definition.
+description: "Use when creating a new skill or updating an existing skill definition."
 ---
 
 # Skill Creator

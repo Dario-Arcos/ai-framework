@@ -1,6 +1,6 @@
 ---
 name: sop-planning
-description: Use when transforming a rough idea into implementation-ready design, after discovery phase completes and requirements need structured technical planning.
+description: "Use when transforming a rough idea into implementation-ready design, after discovery phase completes and requirements need structured technical planning."
 ---
 
 # SOP Planning - Prompt-Driven Development

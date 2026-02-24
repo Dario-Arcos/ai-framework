@@ -1,6 +1,6 @@
 ---
 name: branch-cleanup
-description: Use when cleaning up a branch after PR merge.
+description: "Use when cleaning up a branch after PR merge."
 ---
 
 # Post-Merge Cleanup

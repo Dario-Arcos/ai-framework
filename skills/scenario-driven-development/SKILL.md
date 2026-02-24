@@ -1,6 +1,6 @@
 ---
 name: scenario-driven-development
-description: Use when implementing any feature, fix, or change. Value: SCENARIO→SATISFY→REFACTOR loop with convergence gates ensures code satisfies user intent. Skip risk: without pre-defined scenarios, tests get rewritten to match bugs and edge cases go undetected.
+description: "Use when implementing any feature, fix, or change. Value: SCENARIO→SATISFY→REFACTOR loop with convergence gates ensures code satisfies user intent. Skip risk: without pre-defined scenarios, tests get rewritten to match bugs and edge cases go undetected."
 ---
 
 # Scenario-Driven Development

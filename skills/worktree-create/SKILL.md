@@ -1,6 +1,6 @@
 ---
 name: worktree-create
-description: Use when creating a git worktree for parallel development.
+description: "Use when creating a git worktree for parallel development."
 ---
 
 # Worktree Create

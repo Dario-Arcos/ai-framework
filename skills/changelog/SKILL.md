@@ -1,6 +1,6 @@
 ---
 name: changelog
-description: Use when updating CHANGELOG.md between versions.
+description: "Use when updating CHANGELOG.md between versions."
 ---
 
 # Truth-Based Changelog

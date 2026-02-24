@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Use when creating a git commit. Value: auto-classifies changes by type, groups related files, enforces conventional commit format. Skip risk: inconsistent messages, unrelated changes bundled in one commit.
+description: "Use when creating a git commit. Value: auto-classifies changes by type, groups related files, enforces conventional commit format. Skip risk: inconsistent messages, unrelated changes bundled in one commit."
 ---
 
 # Smart Git Commit

@@ -1,6 +1,6 @@
 ---
 name: sop-discovery
-description: Use when starting a new project, exploring a new technical direction, or when requirements are unclear and you need to identify constraints, risks, and prior art before planning.
+description: "Use when starting a new project, exploring a new technical direction, or when requirements are unclear and you need to identify constraints, risks, and prior art before planning."
 ---
 
 # SOP: Discovery Phase

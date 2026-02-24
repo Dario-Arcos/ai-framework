@@ -1,6 +1,6 @@
 ---
 name: worktree-cleanup
-description: Use when removing git worktrees or discovering existing worktrees.
+description: "Use when removing git worktrees or discovering existing worktrees."
 ---
 
 # Worktree Cleanup

@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Use when building web components, pages, dashboards, or any web UI. Value: researches world-class visual references first, extracts design DNA (typography, color, spacing). Skip risk: AI generates 'statistical average' designs — same fonts, same shadows, same generic layouts.
+description: "Use when building web components, pages, dashboards, or any web UI. Value: researches world-class visual references first, extracts design DNA (typography, color, spacing). Skip risk: AI generates 'statistical average' designs — same fonts, same shadows, same generic layouts."
 license: Complete terms in LICENSE.txt
 ---
 

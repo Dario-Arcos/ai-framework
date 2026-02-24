@@ -1,6 +1,6 @@
 ---
 name: sop-task-generator
-description: Use when converting designs, PDD plans, or descriptions into structured .code-task.md files for autonomous execution by ralph-orchestrator or sop-code-assist.
+description: "Use when converting designs, PDD plans, or descriptions into structured .code-task.md files for autonomous execution by ralph-orchestrator or sop-code-assist."
 ---
 
 # SOP Task Generator

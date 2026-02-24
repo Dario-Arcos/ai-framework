@@ -1,6 +1,6 @@
 ---
 name: sop-code-assist
-description: Use when executing .code-task.md files or when structured requirements are ready for implementation.
+description: "Use when executing .code-task.md files or when structured requirements are ready for implementation."
 ---
 
 # Code Assist
