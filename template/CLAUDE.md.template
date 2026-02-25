@@ -34,6 +34,7 @@ build/change feature: brainstorming → plan mode → scenario-driven-developmen
 refactor: plan mode → scenario-driven-development → verification-before-completion (preserve existing scenarios).
 fix bug: systematic-debugging → scenario-driven-development → verification-before-completion (encode fix as scenario).
 research: deep-research. context files: context-engineering. new skill: skill-creator.
+web interaction: agent-browser.
 project setup: project-init.
 prose quality: humanizer.
 git: commit | pull-request.
