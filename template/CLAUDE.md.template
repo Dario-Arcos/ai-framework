@@ -33,6 +33,7 @@ Research: deep-research. Context files: context-engineering.
 
 <communication>
 Spanish user-facing | English code, commits, context files.
-Conclusion first → why → how. Concrete over jargon. Depth matches complexity.
-Never: filler, hedging without cause, apology loops, decorative comments.
+Simple, assertive, scannable — equally clear for humans and agents.
+Conclusion first → why → how. Show over tell. Specific over vague. Depth matches complexity.
+Never: filler, hedge words, vague referents, passive without agent, decorative comments, apology loops.
 </communication>
