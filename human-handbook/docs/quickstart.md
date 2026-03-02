@@ -56,24 +56,10 @@ Al iniciar Claude Code después de instalar el plugin, los hooks ejecutan autom�
 
 1. **`session-start.py`** — Sincroniza templates del framework al proyecto (instantáneo)
 2. **`agent-browser-check.py`** — Instala `agent-browser` CLI + navegador Chromium en background (~30-60s)
-3. **`memory-check.py`** — Detecta reglas de proyecto faltantes u obsoletas y sugiere ejecutar `/project-init`
 
-Los hooks son silenciosos cuando todo funciona — solo inyectan mensajes cuando requieren tu atención:
+Los hooks son silenciosos cuando todo funciona — solo inyectan mensajes cuando requieren tu atención.
 
-::: code-group
-```txt [Primera sesión (sin /project-init)]
-# Claude te preguntará si quieres ejecutar /project-init
-# agent-browser se instala en background (sin mensajes visibles)
-```
-
-```txt [Sesión posterior (con reglas)]
-# Sin mensajes — todo funcionando correctamente
-```
-
-```txt [Reglas obsoletas]
-# Claude sugiere ejecutar /project-init (manifests cambiaron o reglas >30 días)
-```
-:::
+Además, el framework inyecta **spinner tips** personalizados via `spinnerTipsOverride` en `settings.json` — durante la ejecución verás recordatorios sobre `/project-init`, `/commit`, `/scenario-driven-development` y `/verification-before-completion` mezclados con los tips default de Claude Code.
 
 ::: tip Flujo recomendado de primera instalación
 1. Instala el plugin
@@ -99,7 +85,6 @@ La plataforma principal es **macOS**. Linux funciona completamente. Windows tien
 |------|--------|:-----:|:-----:|:-------:|
 | `session-start.py` | SessionStart | ✅ | ✅ | ✅ |
 | `agent-browser-check.py` | SessionStart | ✅ | ✅ | ⚠️ |
-| `memory-check.py` | SessionStart | ✅ | ✅ | ✅ |
 | `notify.sh` | Stop, Notification | ✅ | ➖ | ➖ |
 | `sdd-test-guard.py` | PreToolUse | ✅ | ✅ | ❌ |
 | `sdd-auto-test.py` | PostToolUse | ✅ | ✅ | ❌ |
@@ -111,8 +96,6 @@ La plataforma principal es **macOS**. Linux funciona completamente. Windows tien
 **session-start.py** — Python puro (stdlib), 100% cross-platform. Sincroniza templates y `.gitignore`.
 
 **agent-browser-check.py** — Usa `sh -c` para lanzar procesos en background. En macOS/Linux funciona nativamente. En Windows puede fallar si no hay shell POSIX disponible (Git Bash, WSL).
-
-**memory-check.py** — Python puro (stdlib), 100% cross-platform. Usa `os.stat()` para fast-path de timestamps y content hashing (MD5) para verificar cambios reales en manifests. Detecta 4 niveles: reglas faltantes, manifests modificados (verificado por contenido), reglas con >30 días de antigüedad, y ausencia de infraestructura de tests.
 
 **notify.sh** — Notificaciones nativas macOS (`afplay` para sonido, `osascript` para visual). En Linux y Windows se salta silenciosamente (`exit 0`). No afecta la funcionalidad del framework.
 

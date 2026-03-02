@@ -67,5 +67,13 @@
     "type": "command",
     "command": ".claude/statusline.sh",
     "padding": 0
+  },
+  "spinnerTipsOverride": {
+    "tips": [
+      "Run /project-init when starting a new project or after major dependency changes",
+      "Use /commit and /pull-request for git operations — they enforce quality gates",
+      "Invoke /scenario-driven-development for any feature, fix, or change",
+      "Run /verification-before-completion before claiming any task is done"
+    ]
   }
 }
