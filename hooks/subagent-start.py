@@ -2,7 +2,7 @@
 """SubagentStart hook — inject skill registry into sub-agents.
 
 SubagentStart (general-purpose): injects compressed skill index so
-sub-agents can invoke skills mandated by CLAUDE.md's skill-routing.
+sub-agents can invoke skills mandated by CLAUDE.md's workflow.
 
 Problem: sub-agents inherit CLAUDE.md (constraints) but not the skill
 registry (system-reminder). They know WHAT to do but not HOW.
@@ -12,15 +12,12 @@ import json
 import sys
 
 SKILL_INDEX = """\
-## Skill Registry — invoke via Skill tool
+Available skills (invoke via Skill tool):
+scenario-driven-development, verification-before-completion, systematic-debugging,
+frontend-design, agent-browser, deep-research, context-engineering, commit,
+pull-request, brainstorming, humanizer, project-init, skill-creator, ralph-orchestrator
 
-- Build/fix: Skill("scenario-driven-development") → Skill("verification-before-completion")
-- Bug: Skill("systematic-debugging") → SDD → verification
-- Web interaction: Skill("agent-browser", args="<query>")
-- UI: Skill("frontend-design") before SDD
-- Research: Skill("deep-research")
-- Context files: Skill("context-engineering")
-- Git: Skill("commit")\
+agent-browser: use for any web interaction, research, or runtime validation.\
 """
 
 

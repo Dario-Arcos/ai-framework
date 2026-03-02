@@ -22,17 +22,6 @@
             "statusMessage": "Checking browser..."
           }
         ]
-      },
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/memory-check.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/memory-check.py",
-            "timeout": 5,
-            "statusMessage": "Checking project memory..."
-          }
-        ]
       }
     ],
     "Stop": [

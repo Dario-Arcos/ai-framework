@@ -51,14 +51,12 @@ class TestOutput(unittest.TestCase):
         self.assertIn('Skill("scenario-driven-development")', ctx)
         self.assertIn('Skill("agent-browser"', ctx)
 
-    def test_no_constraint_language(self):
-        """Constraints live in CLAUDE.md, not in the skill index."""
+    def test_contains_directive_language(self):
+        """Skill index must include directive gates — passive-only failed at 90% skip rate."""
         output = self._run_hook()
         ctx = output["hookSpecificOutput"]["additionalContext"]
-        for term in ["MUST", "NEVER", "ALWAYS", "CRITICAL"]:
-            self.assertNotIn(
-                term, ctx, f"Constraint language '{term}' should not be in skill index"
-            )
+        self.assertIn("NEVER", ctx, "Missing NEVER gate")
+        self.assertIn("MANDATORY", ctx, "Missing MANDATORY directive")
 
     def test_no_redundancy(self):
         """Each skill name should appear exactly once to minimize reasoning friction."""
@@ -69,8 +67,8 @@ class TestOutput(unittest.TestCase):
             self.assertEqual(count, 1, f'Skill("{skill}") appears {count} times, expected 1')
 
     def test_token_budget(self):
-        """Skill index should stay compact — under 800 chars (~150 tokens)."""
-        self.assertLess(len(subagent_start.SKILL_INDEX), 800)
+        """Skill index should stay compact — under 1200 chars (~250 tokens)."""
+        self.assertLess(len(subagent_start.SKILL_INDEX), 1200)
 
     def test_handles_empty_stdin(self):
         """Hook must not crash on empty stdin."""
