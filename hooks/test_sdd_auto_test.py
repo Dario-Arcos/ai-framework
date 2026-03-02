@@ -53,41 +53,48 @@ class TestRunTestsWorker(unittest.TestCase):
         mock_write.assert_called_once_with(
             self.tmpdir, False,
             "gate command has exit code suppression — remove || true",
+            None,
         )
 
+    @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch("subprocess.run")
-    def test_passing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid):
+    def test_passing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid, mock_bp):
         mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file  # non-existent path
         mock_run.return_value = subprocess.CompletedProcess(
             args="pytest", returncode=0, stdout="5 passed\n", stderr="",
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, True, "5 passed")
+        mock_write.assert_called_once_with(self.tmpdir, True, "5 passed", None)
 
+    @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="2 failed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch("subprocess.run")
-    def test_failing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid):
+    def test_failing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid, mock_bp):
         mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file  # non-existent path
         mock_run.return_value = subprocess.CompletedProcess(
             args="pytest", returncode=1, stdout="2 failed\n", stderr="",
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, False, "2 failed")
+        mock_write.assert_called_once_with(self.tmpdir, False, "2 failed", None)
 
+    @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="summary")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch("subprocess.run")
-    def test_output_truncation_at_8k(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid):
+    def test_output_truncation_at_8k(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid, mock_bp):
         mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
         big_output = "x" * 10000
         mock_run.return_value = subprocess.CompletedProcess(
             args="pytest", returncode=0, stdout=big_output, stderr="",
@@ -97,13 +104,15 @@ class TestRunTestsWorker(unittest.TestCase):
         call_args = mock_summary.call_args[0]
         self.assertLessEqual(len(call_args[0]), 8192)
 
+    @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="summary")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch("subprocess.run")
-    def test_output_no_truncation(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid):
+    def test_output_no_truncation(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid, mock_bp):
         mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
         short_output = "5 passed"
         mock_run.return_value = subprocess.CompletedProcess(
             args="pytest", returncode=0, stdout=short_output, stderr="",
@@ -119,7 +128,7 @@ class TestRunTestsWorker(unittest.TestCase):
     def test_timeout_writes_failure(self, mock_run, mock_suppress, mock_write, mock_pid):
         mock_pid.return_value = self.pid_file
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, False, "tests timed out (300s)")
+        mock_write.assert_called_once_with(self.tmpdir, False, "tests timed out (300s)", None)
 
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "write_state")
@@ -134,13 +143,15 @@ class TestRunTestsWorker(unittest.TestCase):
         self.assertFalse(args[1])
         self.assertIn("test execution error:", args[2])
 
+    @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="ok")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch("subprocess.run")
-    def test_pid_cleanup_in_finally(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid):
+    def test_pid_cleanup_in_finally(self, mock_run, mock_suppress, mock_write, mock_summary, mock_pid, mock_bp):
         mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
         mock_run.return_value = subprocess.CompletedProcess(
             args="pytest", returncode=0, stdout="ok", stderr="",
         )
@@ -196,9 +207,9 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_auto_test, "_run_tests_worker")
     def test_worker_mode_dispatches(self, mock_worker):
         _, exit_code = self._run_main(
-            argv=["sdd-auto-test.py", "--run-tests", "/tmp/proj", "pytest"],
+            argv=["sdd-auto-test.py", "--run-tests", "/tmp/proj", "pytest", ""],
         )
-        mock_worker.assert_called_once_with("/tmp/proj", "pytest")
+        mock_worker.assert_called_once_with("/tmp/proj", "pytest", None)
 
     def test_invalid_json_exits_0(self):
         with patch.object(sys, "stdin", io.StringIO("not json")), \
@@ -234,7 +245,7 @@ class TestMain(unittest.TestCase):
             "cwd": "/tmp/proj",
             "tool_input": {"file_path": "app/main.py"},
         })
-        mock_bg.assert_called_once_with("/tmp/proj", "pytest")
+        mock_bg.assert_called_once_with("/tmp/proj", "pytest", None)
 
     @patch.object(sdd_auto_test, "run_tests_background")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
@@ -335,8 +346,8 @@ class TestMain(unittest.TestCase):
             self._run_main(input_data={
                 "tool_input": {"file_path": "app/main.py"},
             })
-        # read_state should have been called with the getcwd fallback
-        mock_read.assert_called_once_with(fake_cwd)
+        # read_state should have been called with the getcwd fallback and sid=None
+        mock_read.assert_called_once_with(fake_cwd, sid=None)
 
 
 class TestSourceExtensionsNew(unittest.TestCase):
@@ -415,7 +426,7 @@ class TestSkillTracking(unittest.TestCase):
             "tool_input": {"skill": "sop-code-assist"},
         })
         self.assertEqual(exit_code, 0)
-        mock_write.assert_called_once_with(self.tmpdir, "sop-code-assist")
+        mock_write.assert_called_once_with(self.tmpdir, "sop-code-assist", None)
 
     @patch.object(sdd_auto_test, "write_skill_invoked")
     def test_sop_reviewer_writes_state(self, mock_write):
@@ -426,7 +437,7 @@ class TestSkillTracking(unittest.TestCase):
             "tool_input": {"skill": "sop-reviewer"},
         })
         self.assertEqual(exit_code, 0)
-        mock_write.assert_called_once_with(self.tmpdir, "sop-reviewer")
+        mock_write.assert_called_once_with(self.tmpdir, "sop-reviewer", None)
 
     @patch.object(sdd_auto_test, "write_skill_invoked")
     def test_other_skill_no_state(self, mock_write):

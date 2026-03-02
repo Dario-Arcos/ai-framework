@@ -29,8 +29,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    clear_coverage, compute_uncovered, detect_test_command,
-    has_exit_suppression, read_coverage, read_skill_invoked,
+    clear_baseline, clear_coverage, compute_uncovered, detect_test_command,
+    extract_session_id, has_exit_suppression, parse_test_summary,
+    read_baseline, read_coverage, read_skill_invoked,
     skill_invoked_path,
 )
 
@@ -233,16 +234,40 @@ def _fail_task(header, body, footer="Fix the issue before completing this task."
 # NON-RALPH TEST GATE
 # ─────────────────────────────────────────────────────────────────
 
-def _handle_non_ralph_completion(cwd, task_subject):
+def _check_baseline(cwd, sid, current_output):
+    """Check if test failure is pre-existing (same as session baseline).
+
+    Returns True if pre-existing (should pass), False if new regression (should fail).
+    """
+    if not sid:
+        return False  # No session → can't compare → treat as new
+    baseline = read_baseline(cwd, sid)
+    if not baseline or baseline.get("passing", True):
+        return False  # Baseline was passing or absent → new failure
+    # Compare summaries (framework-agnostic)
+    current_summary = parse_test_summary(current_output, 1)
+    baseline_summary = baseline.get("summary", "")
+    return current_summary == baseline_summary
+
+
+def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     """Test gate for projects without ralph. Runs tests fresh + coverage gate."""
     command = detect_test_command(cwd)
     if command:
         passed, output = run_gate("test", command, cwd)
         if not passed:
-            _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+            if _check_baseline(cwd, sid, output):
+                print(
+                    f"Warning: test gate failing but pre-existing "
+                    f"(same failure pattern as session baseline). "
+                    f"Allowing completion.",
+                    file=sys.stderr,
+                )
+            else:
+                _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
 
     # Coverage gate: fail if source files lack tests
-    state = read_coverage(cwd)
+    state = read_coverage(cwd, sid=sid)
     if state:
         uncovered = compute_uncovered(cwd, state)
         if uncovered:
@@ -253,7 +278,7 @@ def _handle_non_ralph_completion(cwd, task_subject):
                 "Write tests for new source files before completing. "
                 "Omitting tests = reward hacking by omission.",
             )
-        clear_coverage(cwd)
+        clear_coverage(cwd, sid)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -270,6 +295,7 @@ def main():
     cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     task_subject = input_data.get("task_subject", "unknown task")
     teammate_name = input_data.get("teammate_name", "unknown")
+    sid = extract_session_id(input_data)
 
     # Guard: not a ralph-orchestrator project → state-aware test gate
     ralph_dir = Path(cwd) / ".ralph"
@@ -280,13 +306,13 @@ def main():
         # completion gate. Gating sub-agents with interdependent tasks causes
         # deadlock: the full suite fails until ALL tasks are done.
         if teammate_name != "unknown":
-            _handle_non_ralph_completion(cwd, task_subject)
+            _handle_non_ralph_completion(cwd, task_subject, sid)
         sys.exit(0)
 
     # SDD Skill enforcement: teammate must invoke the correct skill
     # rev-* teammates → sop-reviewer, all others → sop-code-assist
     if teammate_name.startswith("rev-"):
-        if not read_skill_invoked(cwd, "sop-reviewer"):
+        if not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
             _fail_task(
                 f"SDD skill not invoked for: {task_subject}",
                 "sop-reviewer was not invoked before review completion. "
@@ -294,7 +320,7 @@ def main():
                 "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first.",
             )
     else:
-        if not read_skill_invoked(cwd, "sop-code-assist"):
+        if not read_skill_invoked(cwd, "sop-code-assist", sid=sid):
             _fail_task(
                 f"SDD skill not invoked for: {task_subject}",
                 "sop-code-assist was not invoked before task completion. "
@@ -335,12 +361,20 @@ def main():
         passed, output = run_gate(gate_name, gate_cmd, cwd, timeout=gate_timeout)
 
         if not passed:
-            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-            _fail_task(
-                f"Quality gate '{gate_name}' failed for: {task_subject}",
-                f"Output:\n{output}",
-                f"Fix the issue before completing this task. (consecutive failures: {count})",
-            )
+            if _check_baseline(cwd, sid, output):
+                print(
+                    f"Warning: gate '{gate_name}' failing but pre-existing "
+                    f"(same failure pattern as session baseline). "
+                    f"Allowing completion.",
+                    file=sys.stderr,
+                )
+            else:
+                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+                _fail_task(
+                    f"Quality gate '{gate_name}' failed for: {task_subject}",
+                    f"Output:\n{output}",
+                    f"Fix the issue before completing this task. (consecutive failures: {count})",
+                )
 
     # Coverage gate (after quality gates pass)
     try:
@@ -379,7 +413,7 @@ def main():
             )
 
     # All gates passed — check coverage before accepting
-    cov_state = read_coverage(cwd)
+    cov_state = read_coverage(cwd, sid=sid)
     if cov_state:
         uncovered = compute_uncovered(cwd, cov_state)
         if uncovered:
@@ -392,16 +426,20 @@ def main():
                 f"Omitting tests = reward hacking by omission. "
                 f"(consecutive failures: {count})",
             )
-        clear_coverage(cwd)
+        clear_coverage(cwd, sid)
 
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
 
     # Clear skill state so next teammate starts fresh (prevents inheritance)
     for _skill in ("sop-code-assist", "sop-reviewer"):
         try:
-            skill_invoked_path(cwd, _skill).unlink(missing_ok=True)
+            skill_invoked_path(cwd, _skill, sid).unlink(missing_ok=True)
         except OSError:
             pass
+
+    # Clean up session-specific baseline on success
+    if sid:
+        clear_baseline(cwd, sid)
 
     sys.exit(0)
 

@@ -41,6 +41,22 @@ def project_hash(cwd):
     return hashlib.md5(cwd.encode()).hexdigest()[:12]
 
 
+def extract_session_id(input_data):
+    """Extract session-scoped ID from hook input for teammate isolation.
+
+    Claude Code provides session_id in all hook inputs. Each teammate runs
+    in its own session with a unique session_id. Falls back to transcript_path.
+
+    Returns 8-char hash string, or None if no session info available.
+    """
+    sid = input_data.get("session_id", "")
+    if not sid:
+        sid = input_data.get("transcript_path", "")
+    if not sid:
+        return None
+    return hashlib.md5(sid.encode()).hexdigest()[:8]
+
+
 def detect_test_command(cwd):
     """Detect the test command for a project.
 
@@ -172,22 +188,24 @@ def parse_test_summary(output, returncode):
 # STATE I/O — canonical implementations for shared temp state
 # ─────────────────────────────────────────────────────────────────
 
-def state_path(cwd):
-    """Path to shared test state file."""
-    return _tmp(f"sdd-test-state-{project_hash(cwd)}.json")
+def state_path(cwd, sid=None):
+    """Path to shared test state file. Session-scoped when sid provided."""
+    suffix = f"-{sid}" if sid else ""
+    return _tmp(f"sdd-test-state-{project_hash(cwd)}{suffix}.json")
 
 
-def pid_path(cwd):
-    """Path to PID file for debounce."""
-    return _tmp(f"sdd-test-run-{project_hash(cwd)}.pid")
+def pid_path(cwd, sid=None):
+    """Path to PID file for debounce. Session-scoped when sid provided."""
+    suffix = f"-{sid}" if sid else ""
+    return _tmp(f"sdd-test-run-{project_hash(cwd)}{suffix}.pid")
 
 
-def is_test_running(cwd):
+def is_test_running(cwd, sid=None):
     """Check if a test process is already running (debounce).
 
     Cleans up stale PID files when the process no longer exists.
     """
-    pf = pid_path(cwd)
+    pf = pid_path(cwd, sid)
     try:
         pid = int(pf.read_text().strip())
         os.kill(pid, 0)  # signal 0 = check existence
@@ -201,14 +219,15 @@ def is_test_running(cwd):
         return False
 
 
-def read_state(cwd, max_age_seconds=600):
+def read_state(cwd, max_age_seconds=600, sid=None):
     """Read test state file with shared lock. Returns dict or None.
 
     Args:
         max_age_seconds: Ignore state older than this (default 600s = 10min).
             Prevents stale state from previous sessions causing false decisions.
+        sid: Session ID hash for teammate isolation.
     """
-    sp = state_path(cwd)
+    sp = state_path(cwd, sid)
     try:
         with open(sp, "r", encoding="utf-8") as f:
             if fcntl:
@@ -230,9 +249,9 @@ def read_state(cwd, max_age_seconds=600):
     return data
 
 
-def write_state(cwd, passing, summary):
+def write_state(cwd, passing, summary, sid=None):
     """Atomic write of test state via tmpfile + rename."""
-    sp = state_path(cwd)
+    sp = state_path(cwd, sid)
     data = {
         "passing": passing,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -255,14 +274,15 @@ def write_state(cwd, passing, summary):
 # SKILL INVOCATION STATE — tracks sop-code-assist invocations
 # ─────────────────────────────────────────────────────────────────
 
-def skill_invoked_path(cwd, skill_name="sop-code-assist"):
-    """Path to SDD skill invocation state file (per-skill)."""
-    return _tmp(f"sdd-skill-{skill_name}-{project_hash(cwd)}.json")
+def skill_invoked_path(cwd, skill_name="sop-code-assist", sid=None):
+    """Path to SDD skill invocation state file (per-skill). Session-scoped when sid provided."""
+    suffix = f"-{sid}" if sid else ""
+    return _tmp(f"sdd-skill-{skill_name}-{project_hash(cwd)}{suffix}.json")
 
 
-def write_skill_invoked(cwd, skill_name):
+def write_skill_invoked(cwd, skill_name, sid=None):
     """Record that an SDD skill was invoked."""
-    sp = skill_invoked_path(cwd, skill_name)
+    sp = skill_invoked_path(cwd, skill_name, sid)
     data = {
         "skill": skill_name,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -279,14 +299,15 @@ def write_skill_invoked(cwd, skill_name):
             pass
 
 
-def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400):
+def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400, sid=None):
     """Read skill invocation state. Returns dict or None.
 
     Args:
         max_age_seconds: Ignore state older than this (default 14400s = 4h).
             Prevents cross-session skill state inheritance between teammates.
+        sid: Session ID hash for teammate isolation.
     """
-    sp = skill_invoked_path(cwd, skill_name)
+    sp = skill_invoked_path(cwd, skill_name, sid)
     try:
         with open(sp, "r", encoding="utf-8") as f:
             if fcntl:
@@ -376,17 +397,18 @@ def is_exempt_from_tests(path):
 # COVERAGE TRACKING STATE — anti reward-hacking by omission
 # ─────────────────────────────────────────────────────────────────
 
-def coverage_path(cwd):
-    """Path to coverage tracking state file."""
-    return _tmp(f"sdd-coverage-{project_hash(cwd)}.json")
+def coverage_path(cwd, sid=None):
+    """Path to coverage tracking state file. Session-scoped when sid provided."""
+    suffix = f"-{sid}" if sid else ""
+    return _tmp(f"sdd-coverage-{project_hash(cwd)}{suffix}.json")
 
 
-def record_file_edit(cwd, file_path):
+def record_file_edit(cwd, file_path, sid=None):
     """Atomic append: add file to source_files or test_files set.
 
     Uses LOCK_EX read-modify-write. ~1ms.
     """
-    cp = coverage_path(cwd)
+    cp = coverage_path(cwd, sid)
     try:
         # Ensure file exists
         cp.touch(exist_ok=True)
@@ -419,9 +441,9 @@ def record_file_edit(cwd, file_path):
         pass
 
 
-def read_coverage(cwd, max_age_seconds=14400):
+def read_coverage(cwd, max_age_seconds=14400, sid=None):
     """Read coverage state with LOCK_SH + TTL (4h). Returns dict or None."""
-    cp = coverage_path(cwd)
+    cp = coverage_path(cwd, sid)
     try:
         with open(cp, "r", encoding="utf-8") as f:
             if fcntl:
@@ -442,10 +464,10 @@ def read_coverage(cwd, max_age_seconds=14400):
     return data
 
 
-def clear_coverage(cwd):
+def clear_coverage(cwd, sid=None):
     """Remove coverage state file."""
     try:
-        coverage_path(cwd).unlink(missing_ok=True)
+        coverage_path(cwd, sid).unlink(missing_ok=True)
     except OSError:
         pass
 
@@ -475,6 +497,73 @@ def find_test_for_source(source_path, test_files):
         if tf_name == f"{stem}_test.go":
             return tf
     return None
+
+
+# ─────────────────────────────────────────────────────────────────
+# TEST BASELINE STATE — pre-existing failure detection for teammates
+# ─────────────────────────────────────────────────────────────────
+
+def baseline_path(cwd, sid):
+    """Path to test baseline state file (always session-scoped)."""
+    return _tmp(f"sdd-test-baseline-{project_hash(cwd)}-{sid}.json")
+
+
+def write_baseline(cwd, sid, passing, summary):
+    """Write test baseline on first run only (write-once semantics).
+
+    Preserves the initial test state so TaskCompleted can distinguish
+    pre-existing failures from new regressions.
+    """
+    bp = baseline_path(cwd, sid)
+    if bp.exists():
+        return  # Write-once: preserve first baseline
+    data = {
+        "passing": passing,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "summary": summary,
+    }
+    try:
+        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-baseline-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+            f.write("\n")
+        os.replace(tmp, str(bp))
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+def read_baseline(cwd, sid, max_age_seconds=14400):
+    """Read test baseline state with TTL (4h). Returns dict or None."""
+    bp = baseline_path(cwd, sid)
+    try:
+        with open(bp, "r", encoding="utf-8") as f:
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+    ts = data.get("timestamp")
+    if ts and max_age_seconds >= 0:
+        try:
+            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+            if time.time() - written > max_age_seconds:
+                return None
+        except (ValueError, OverflowError):
+            pass
+
+    return data
+
+
+def clear_baseline(cwd, sid):
+    """Remove test baseline state file."""
+    try:
+        baseline_path(cwd, sid).unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def compute_uncovered(cwd, state):

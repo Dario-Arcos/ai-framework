@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import is_test_file, read_skill_invoked, read_state
+from _sdd_detect import extract_session_id, is_test_file, read_skill_invoked, read_state
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -117,12 +117,13 @@ def main():
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
+    sid = extract_session_id(input_data)
 
     # ─── REVIEW FILE GUARD ────────────────────────────────────────
     # Deny Write to .ralph/reviews/ without sop-reviewer skill
     if tool_name == "Write" and ".ralph/reviews/" in file_path:
         ralph_config = Path(cwd) / ".ralph" / "config.sh"
-        if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer"):
+        if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
             print(
                 "SDD Guard: writing review without invoking sop-reviewer\n\n"
                 "Invoke sop-reviewer before writing to .ralph/reviews/.\n"
@@ -137,7 +138,7 @@ def main():
         sys.exit(0)
 
     # Read test state
-    state = read_state(cwd)
+    state = read_state(cwd, sid=sid)
 
     # No state → allow (no data = no block)
     if state is None:

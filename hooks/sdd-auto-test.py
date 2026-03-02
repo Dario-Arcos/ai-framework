@@ -17,10 +17,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    detect_test_command, has_exit_suppression,
+    baseline_path, detect_test_command, extract_session_id,
+    has_exit_suppression,
     is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
     parse_test_summary, pid_path, read_state,
-    record_file_edit, write_skill_invoked, write_state,
+    record_file_edit, write_baseline, write_skill_invoked, write_state,
 )
 
 
@@ -28,7 +29,7 @@ from _sdd_detect import (
 # BACKGROUND EXECUTION
 # ─────────────────────────────────────────────────────────────────
 
-def run_tests_background(cwd, command):
+def run_tests_background(cwd, command, sid=None):
     """Fork a detached subprocess to run tests in background.
 
     Invokes this script with --run-tests flag so the worker logic
@@ -36,7 +37,7 @@ def run_tests_background(cwd, command):
     """
     try:
         subprocess.Popen(
-            [sys.executable, __file__, "--run-tests", cwd, command],
+            [sys.executable, __file__, "--run-tests", cwd, command, sid or ""],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -47,17 +48,17 @@ def run_tests_background(cwd, command):
         pass
 
 
-def _run_tests_worker(cwd, command):
+def _run_tests_worker(cwd, command, sid=None):
     """Worker mode: run tests, write state, clean up PID.
 
     Called when script is invoked with --run-tests flag.
     """
     # Reject commands with exit code suppression (|| true, ; true, etc.)
     if has_exit_suppression(command):
-        write_state(cwd, False, "gate command has exit code suppression — remove || true")
+        write_state(cwd, False, "gate command has exit code suppression — remove || true", sid)
         return
 
-    pf = pid_path(cwd)
+    pf = pid_path(cwd, sid)
     try:
         pf.write_text(str(os.getpid()))
     except OSError:
@@ -72,12 +73,16 @@ def _run_tests_worker(cwd, command):
         if len(raw) > 8192:
             raw = raw[-8192:]
         output = raw.strip()
+        passing = result.returncode == 0
         summary = parse_test_summary(output, result.returncode)
-        write_state(cwd, result.returncode == 0, summary)
+        write_state(cwd, passing, summary, sid)
+        # Capture baseline on first run (write-once)
+        if sid and not baseline_path(cwd, sid).exists():
+            write_baseline(cwd, sid, passing, summary)
     except subprocess.TimeoutExpired:
-        write_state(cwd, False, "tests timed out (300s)")
+        write_state(cwd, False, "tests timed out (300s)", sid)
     except OSError as e:
-        write_state(cwd, False, f"test execution error: {e}")
+        write_state(cwd, False, f"test execution error: {e}", sid)
     finally:
         try:
             pf.unlink(missing_ok=True)
@@ -111,7 +116,8 @@ def main():
     """Hook entry point (PostToolUse). ~10ms blocking."""
     # Worker mode: invoked with --run-tests
     if len(sys.argv) >= 4 and sys.argv[1] == "--run-tests":
-        _run_tests_worker(sys.argv[2], sys.argv[3])
+        worker_sid = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] else None
+        _run_tests_worker(sys.argv[2], sys.argv[3], worker_sid)
         return
 
     # Hook mode: read stdin
@@ -122,6 +128,7 @@ def main():
 
     cwd = os.environ.get("CLAUDE_PROJECT_DIR", input_data.get("cwd", os.getcwd()))
     tool_name = input_data.get("tool_name", "")
+    sid = extract_session_id(input_data)
 
     # Extract file path from tool input
     tool_input = input_data.get("tool_input", {})
@@ -131,12 +138,12 @@ def main():
     if tool_name == "Skill":
         skill_name = tool_input.get("skill", "")
         if skill_name in ("sop-code-assist", "sop-reviewer"):
-            write_skill_invoked(cwd, skill_name)
+            write_skill_invoked(cwd, skill_name, sid)
         sys.exit(0)
 
     # Test file tracking: record for coverage, don't launch tests
     if is_test_file(file_path):
-        record_file_edit(cwd, file_path)
+        record_file_edit(cwd, file_path, sid)
         sys.exit(0)
 
     # Guard: only source files
@@ -148,17 +155,17 @@ def main():
         sys.exit(0)
 
     # Track source file edit for coverage
-    record_file_edit(cwd, file_path)
+    record_file_edit(cwd, file_path, sid)
 
     # Read previous test state — only report failures (passing = no signal needed)
-    previous = read_state(cwd)
+    previous = read_state(cwd, sid=sid)
     msg = format_feedback(previous) if previous and not previous.get("passing") else None
 
     # Guard: debounce — don't launch if tests already running
-    if not is_test_running(cwd):
+    if not is_test_running(cwd, sid):
         command = detect_test_command(cwd)
         if command and not has_exit_suppression(command):
-            run_tests_background(cwd, command)
+            run_tests_background(cwd, command, sid)
 
     # Report feedback as additionalContext (visible to Claude, not just user)
     if msg:

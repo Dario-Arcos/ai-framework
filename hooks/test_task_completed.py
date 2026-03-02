@@ -582,7 +582,7 @@ class TestSkillEnforcement(unittest.TestCase):
     def test_rev_checks_sop_reviewer_not_sop_code_assist(self):
         """rev-* teammate checks for sop-reviewer specifically (not sop-code-assist)."""
         calls = []
-        def mock_read_skill(cwd, skill_name):
+        def mock_read_skill(cwd, skill_name, **kwargs):
             calls.append(skill_name)
             return {"skill": skill_name}
 
@@ -597,7 +597,7 @@ class TestSkillEnforcement(unittest.TestCase):
     def test_non_rev_checks_sop_code_assist(self):
         """Non-rev teammate checks for sop-code-assist specifically."""
         calls = []
-        def mock_read_skill(cwd, skill_name):
+        def mock_read_skill(cwd, skill_name, **kwargs):
             calls.append(skill_name)
             return {"skill": skill_name}
 
