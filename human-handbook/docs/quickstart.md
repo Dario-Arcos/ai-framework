@@ -27,11 +27,9 @@ Esta guía te lleva de cero a usar AI Framework en tu proyecto: instalar el plug
 /plugin install ai-framework@ai-framework-marketplace
 ```
 
-```bash [Actualizar]
-# Sincronizar marketplace (necesario, no se hace automático)
+```bash [Actualizar (manual)]
+# Solo necesario si NO habilitaste auto-update
 /plugin marketplace update ai-framework-marketplace
-
-# Actualizar plugin
 /plugin update ai-framework@ai-framework-marketplace
 ```
 
@@ -40,6 +38,31 @@ Esta guía te lleva de cero a usar AI Framework en tu proyecto: instalar el plug
 /plugin marketplace add Dario-Arcos/ai-framework-marketplace
 /plugin install ai-framework@ai-framework-marketplace
 ```
+:::
+
+---
+
+## Habilitar actualización automática {#auto-update}
+
+::: warning Altamente recomendado
+Los plugins de terceros **no se actualizan automáticamente** por defecto. Sin este paso, tendrás que ejecutar `/plugin marketplace update` + `/plugin update` manualmente cada vez que haya una nueva versión. Habilitar auto-update te asegura tener siempre la última versión sin intervención.
+:::
+
+**Paso a paso:**
+
+1. Ejecuta `/plugin` en Claude Code
+2. Selecciona la pestaña **Marketplaces**
+3. Selecciona **ai-framework-marketplace**
+4. Selecciona **Enable auto-update**
+
+Una vez habilitado, Claude Code sincroniza el marketplace y actualiza el plugin automáticamente al inicio de cada sesión. Si hay una actualización, verás una notificación sugiriendo reiniciar.
+
+::: details ¿Cómo funciona internamente?
+Al iniciar sesión, Claude Code verifica si hay nuevas versiones en el marketplace. Si la versión publicada es mayor a la instalada, descarga e instala la nueva versión automáticamente. El plugin no se actualiza mid-session — solo al inicio de la siguiente.
+:::
+
+::: details ¿Puedo desactivarlo después?
+Sí. Repite el mismo proceso (`/plugin` → Marketplaces → ai-framework-marketplace) y selecciona **Disable auto-update**. Volverás al modo manual.
 :::
 
 ---
@@ -230,5 +253,5 @@ cat /tmp/agent-browser-update.log
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-13
+**Fecha**: 2026-03-02
 :::
