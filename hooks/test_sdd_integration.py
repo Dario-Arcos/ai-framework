@@ -9,7 +9,7 @@ Verifies the REAL MECHANISM works during coding:
 
 These tests create real mini-projects with real test files, execute
 real pytest processes, and verify the hooks communicate correctly via
-/tmp/ state files.
+shared state files.
 
 IMPORTANT: these tests must pass after any change to hooks/.
 """
@@ -70,11 +70,12 @@ def _run_hook_stdin(hook_main, input_data):
 
 
 def _cleanup_state(cwd):
-    """Remove /tmp/ state and PID files for a project directory."""
+    """Remove state and PID files for a project directory."""
     h = _sdd_detect.project_hash(cwd)
-    for pattern in [f"/tmp/sdd-test-state-{h}.json",
-                    f"/tmp/sdd-test-run-{h}.pid",
-                    f"/tmp/sdd-test-lock-{h}"]:
+    tmp = tempfile.gettempdir()
+    for pattern in [os.path.join(tmp, f"sdd-test-state-{h}.json"),
+                    os.path.join(tmp, f"sdd-test-run-{h}.pid"),
+                    os.path.join(tmp, f"sdd-test-lock-{h}")]:
         try:
             os.unlink(pattern)
         except FileNotFoundError:
@@ -86,7 +87,7 @@ def _cleanup_state(cwd):
 # ─────────────────────────────────────────────────────────────────
 
 class TestSharedStateCommunication(unittest.TestCase):
-    """Verify hooks communicate via the same /tmp/ state file."""
+    """Verify hooks communicate via shared state files."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-")

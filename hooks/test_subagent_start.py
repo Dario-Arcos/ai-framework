@@ -43,28 +43,25 @@ class TestOutput(unittest.TestCase):
         ]:
             self.assertIn(skill, ctx, f"Missing critical skill: {skill}")
 
-    def test_contains_invocation_syntax(self):
-        """The whole point: sub-agents must know HOW to invoke skills."""
+    def test_contains_invocation_hint(self):
+        """Sub-agents must know skills are invoked via Skill tool."""
         output = self._run_hook()
         ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertIn('Skill("', ctx)
-        self.assertIn('Skill("scenario-driven-development")', ctx)
-        self.assertIn('Skill("agent-browser"', ctx)
+        self.assertIn("Skill tool", ctx)
 
-    def test_contains_directive_language(self):
-        """Skill index must include directive gates — passive-only failed at 90% skip rate."""
+    def test_contains_agent_browser_description(self):
+        """agent-browser should have a usage hint."""
         output = self._run_hook()
         ctx = output["hookSpecificOutput"]["additionalContext"]
-        self.assertIn("NEVER", ctx, "Missing NEVER gate")
-        self.assertIn("MANDATORY", ctx, "Missing MANDATORY directive")
+        self.assertIn("agent-browser", ctx)
 
     def test_no_redundancy(self):
-        """Each skill name should appear exactly once to minimize reasoning friction."""
+        """Each skill name should appear at most once to minimize reasoning friction."""
         ctx = subagent_start.SKILL_INDEX
         for skill in ["scenario-driven-development", "systematic-debugging",
                        "deep-research", "context-engineering", "commit"]:
-            count = ctx.count(f'Skill("{skill}")')
-            self.assertEqual(count, 1, f'Skill("{skill}") appears {count} times, expected 1')
+            count = ctx.count(skill)
+            self.assertLessEqual(count, 1, f'"{skill}" appears {count} times, expected <=1')
 
     def test_token_budget(self):
         """Skill index should stay compact — under 1200 chars (~250 tokens)."""

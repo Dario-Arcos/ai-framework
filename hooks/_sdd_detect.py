@@ -6,7 +6,10 @@ Imported by:
 - task-completed.py (TaskCompleted)
 """
 import calendar
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # Windows — file locking skipped
 import hashlib
 import json
 import os
@@ -15,6 +18,11 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+
+
+def _tmp(*parts):
+    """Cross-platform temp directory."""
+    return Path(tempfile.gettempdir(), *parts)
 
 
 EXIT_SUPPRESSION_RE = re.compile(
@@ -161,17 +169,17 @@ def parse_test_summary(output, returncode):
 
 
 # ─────────────────────────────────────────────────────────────────
-# STATE I/O — canonical implementations for /tmp/ shared state
+# STATE I/O — canonical implementations for shared temp state
 # ─────────────────────────────────────────────────────────────────
 
 def state_path(cwd):
     """Path to shared test state file."""
-    return Path(f"/tmp/sdd-test-state-{project_hash(cwd)}.json")
+    return _tmp(f"sdd-test-state-{project_hash(cwd)}.json")
 
 
 def pid_path(cwd):
     """Path to PID file for debounce."""
-    return Path(f"/tmp/sdd-test-run-{project_hash(cwd)}.pid")
+    return _tmp(f"sdd-test-run-{project_hash(cwd)}.pid")
 
 
 def is_test_running(cwd):
@@ -184,7 +192,7 @@ def is_test_running(cwd):
         pid = int(pf.read_text().strip())
         os.kill(pid, 0)  # signal 0 = check existence
         return True
-    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+    except (FileNotFoundError, ValueError, OSError):
         # Clean up stale PID file
         try:
             pf.unlink(missing_ok=True)
@@ -203,7 +211,8 @@ def read_state(cwd, max_age_seconds=600):
     sp = state_path(cwd)
     try:
         with open(sp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
@@ -230,11 +239,11 @@ def write_state(cwd, passing, summary):
         "summary": summary,
     }
     try:
-        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-state-")
+        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-state-")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f)
             f.write("\n")
-        os.rename(tmp, str(sp))
+        os.replace(tmp, str(sp))
     except OSError:
         try:
             os.unlink(tmp)
@@ -248,7 +257,7 @@ def write_state(cwd, passing, summary):
 
 def skill_invoked_path(cwd, skill_name="sop-code-assist"):
     """Path to SDD skill invocation state file (per-skill)."""
-    return Path(f"/tmp/sdd-skill-{skill_name}-{project_hash(cwd)}.json")
+    return _tmp(f"sdd-skill-{skill_name}-{project_hash(cwd)}.json")
 
 
 def write_skill_invoked(cwd, skill_name):
@@ -259,10 +268,10 @@ def write_skill_invoked(cwd, skill_name):
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     try:
-        fd, tmp = tempfile.mkstemp(dir="/tmp", prefix="sdd-skill-")
+        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-skill-")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f)
-        os.rename(tmp, str(sp))
+        os.replace(tmp, str(sp))
     except OSError:
         try:
             os.unlink(tmp)
@@ -280,7 +289,8 @@ def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400)
     sp = skill_invoked_path(cwd, skill_name)
     try:
         with open(sp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
@@ -368,7 +378,7 @@ def is_exempt_from_tests(path):
 
 def coverage_path(cwd):
     """Path to coverage tracking state file."""
-    return Path(f"/tmp/sdd-coverage-{project_hash(cwd)}.json")
+    return _tmp(f"sdd-coverage-{project_hash(cwd)}.json")
 
 
 def record_file_edit(cwd, file_path):
@@ -381,7 +391,8 @@ def record_file_edit(cwd, file_path):
         # Ensure file exists
         cp.touch(exist_ok=True)
         with open(cp, "r+", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_EX)
             raw = f.read()
             try:
                 data = json.loads(raw) if raw.strip() else {}
@@ -413,7 +424,8 @@ def read_coverage(cwd, max_age_seconds=14400):
     cp = coverage_path(cwd)
     try:
         with open(cp, "r", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_SH)
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None

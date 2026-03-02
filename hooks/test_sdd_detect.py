@@ -260,12 +260,14 @@ class TestStateIO(unittest.TestCase):
 
     def test_state_path_format(self):
         sp = state_path(self.tmpdir)
-        self.assertTrue(str(sp).startswith("/tmp/sdd-test-state-"))
+        expected = os.path.join(tempfile.gettempdir(), "sdd-test-state-")
+        self.assertTrue(str(sp).startswith(expected))
         self.assertTrue(str(sp).endswith(".json"))
 
     def test_pid_path_format(self):
         pp = pid_path(self.tmpdir)
-        self.assertTrue(str(pp).startswith("/tmp/sdd-test-run-"))
+        expected = os.path.join(tempfile.gettempdir(), "sdd-test-run-")
+        self.assertTrue(str(pp).startswith(expected))
         self.assertTrue(str(pp).endswith(".pid"))
 
     def test_read_state_missing_returns_none(self):

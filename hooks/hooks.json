@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
             "timeout": 10,
             "statusMessage": "Syncing templates..."
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
             "timeout": 10,
             "statusMessage": "Checking browser..."
           }
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/teammate-idle.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/teammate-idle.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/teammate-idle.py",
             "timeout": 10
           }
         ]
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/task-completed.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/task-completed.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/task-completed.py",
             "timeout": 300
           }
         ]
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-test-guard.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-test-guard.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-test-guard.py",
             "timeout": 5
           }
         ]
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-auto-test.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-auto-test.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/sdd-auto-test.py",
             "timeout": 10
           }
         ]
@@ -99,7 +99,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-start.py ] || exit 0; python3 -B ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-start.py",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-start.py",
             "timeout": 5
           }
         ]

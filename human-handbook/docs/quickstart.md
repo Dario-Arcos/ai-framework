@@ -77,45 +77,44 @@ Claude Code necesita unos segundos para registrar los hooks del plugin en su con
 
 ## Compatibilidad de plataformas {#platforms}
 
-La plataforma principal es **macOS**. Linux funciona completamente. Windows tiene limitaciones significativas.
+La plataforma principal es **macOS**. Linux funciona completamente. Windows es compatible con Git for Windows.
 
 ### Hooks por plataforma
 
 | Hook | Evento | macOS | Linux | Windows |
 |------|--------|:-----:|:-----:|:-------:|
 | `session-start.py` | SessionStart | ✅ | ✅ | ✅ |
-| `agent-browser-check.py` | SessionStart | ✅ | ✅ | ⚠️ |
+| `agent-browser-check.py` | SessionStart | ✅ | ✅ | ✅ |
 | `notify.sh` | Stop, Notification | ✅ | ➖ | ➖ |
-| `sdd-test-guard.py` | PreToolUse | ✅ | ✅ | ❌ |
-| `sdd-auto-test.py` | PostToolUse | ✅ | ✅ | ❌ |
-| `teammate-idle.py` | TeammateIdle | ✅ | ✅ | ❌ |
-| `task-completed.py` | TaskCompleted | ✅ | ✅ | ❌ |
+| `sdd-test-guard.py` | PreToolUse | ✅ | ✅ | ✅ |
+| `sdd-auto-test.py` | PostToolUse | ✅ | ✅ | ✅ |
+| `teammate-idle.py` | TeammateIdle | ✅ | ✅ | ✅ |
+| `task-completed.py` | TaskCompleted | ✅ | ✅ | ✅ |
 
 ::: details Detalles por hook
 
 **session-start.py** — Python puro (stdlib), 100% cross-platform. Sincroniza templates y `.gitignore`.
 
-**agent-browser-check.py** — Usa `sh -c` para lanzar procesos en background. En macOS/Linux funciona nativamente. En Windows puede fallar si no hay shell POSIX disponible (Git Bash, WSL).
+**agent-browser-check.py** — Usa `bash -c` para lanzar procesos en background. Cross-platform: Git for Windows provee `bash` en Windows.
 
 **notify.sh** — Notificaciones nativas macOS (`afplay` para sonido, `osascript` para visual). En Linux y Windows se salta silenciosamente (`exit 0`). No afecta la funcionalidad del framework.
 
-**sdd-test-guard.py** — Valida que ediciones a archivos de test no reduzcan assertions cuando los tests están fallando (protección contra reward hacking). Depende de `_sdd_detect.py` que usa `fcntl` (POSIX-only) y paths `/tmp/` hardcodeados.
+**sdd-test-guard.py** — Valida que ediciones a archivos de test no reduzcan assertions cuando los tests están fallando (protección contra reward hacking). Cross-platform: file locking gracefully degradado en Windows, paths temporales portables.
 
-**sdd-auto-test.py** — Ejecuta tests en background después de cada edición a archivos fuente. Misma dependencia en `fcntl` y `/tmp/` que `sdd-test-guard.py`.
+**sdd-auto-test.py** — Ejecuta tests en background después de cada edición a archivos fuente. Cross-platform: file locking gracefully degradado en Windows, paths temporales portables.
 
-**teammate-idle.py** — Safety net para ralph-orchestrator. Usa `fcntl` para file locking y `bash -c` para leer configuración. No funciona en Windows.
+**teammate-idle.py** — Safety net para ralph-orchestrator. Cross-platform: file locking gracefully degradado en Windows.
 
-**task-completed.py** — Quality gates para validar tareas completadas. Usa `fcntl` para atomic read-modify-write de contadores de fallos y métricas. No funciona en Windows.
+**task-completed.py** — Quality gates para validar tareas completadas. Cross-platform: file locking gracefully degradado en Windows.
 :::
 
 ### Windows
 
-::: warning Limitaciones en Windows
-- **SDD hooks (4 hooks)**: `sdd-test-guard`, `sdd-auto-test`, `teammate-idle`, `task-completed` usan `fcntl` (módulo POSIX) — fallan al importar en Windows. Sin estos hooks no hay protección contra reward hacking, auto-test continuo, ni quality gates automatizados
-- **Paths `/tmp/` hardcodeados**: `_sdd_detect.py` usa `/tmp/` para estado compartido entre hooks — no existe en Windows
+::: info Notas para Windows
+- **Requisito**: [Git for Windows](https://git-scm.com/download/win) (Git Bash ejecuta los hooks)
+- **File locking**: Degradado gracefully — `fcntl` se omite en Windows sin afectar funcionalidad en uso single-user
+- **Statusline**: Usa Python embebido en el script (no requiere `jq`)
 - **Notificaciones**: No disponibles (requieren macOS)
-- **agent-browser auto-install**: Puede fallar sin shell POSIX
-- **Workaround parcial**: Usa WSL para obtener compatibilidad completa. Git Bash solo resuelve los hooks que dependen de `sh -c`, no los que usan `fcntl`
 :::
 
 Para desactivar la auto-instalación de `agent-browser` en entornos donde falla:
@@ -203,7 +202,7 @@ Para commits y PRs:
 | `agent-browser` no funciona | Revisa log en `/tmp/agent-browser-install.log`. Si falló: `npm install -g agent-browser` |
 | `agent-browser install failed` en sesión | Verifica Node.js 18+: `node --version`. Instala manualmente con `npm install -g agent-browser` |
 | Notificaciones no suenan | Solo disponibles en macOS. Verifica permisos de Script Editor en System Settings → Privacy |
-| Hook falla en Windows | Usa Git Bash o WSL como shell. O desactiva con `AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1` |
+| Hook falla en Windows | Verifica Git for Windows instalado. Los hooks SDD funcionan nativamente. Para `agent-browser`: `npm install -g agent-browser` |
 
 ::: details Ver logs de instalación de agent-browser
 ```bash

@@ -85,7 +85,7 @@ def run_background(cmd, log_name):
         log_file = Path(tempfile.gettempdir()) / log_name
         with open(log_file, "w", encoding="utf-8") as log:
             subprocess.Popen(
-                ["sh", "-c", cmd],
+                ["bash", "-c", cmd],
                 stdout=log,
                 stderr=log,
                 start_new_session=True,

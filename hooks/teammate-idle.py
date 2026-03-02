@@ -13,7 +13,10 @@ Decision logic:
   3. Default                    → exit 0 (allow idle, lead assigns work)
 """
 import calendar
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # Windows — file locking skipped
 import json
 import os
 import subprocess
@@ -52,9 +55,11 @@ def read_failures(ralph_dir, max_age_seconds=7200):
     try:
         if failures_path.exists():
             with open(failures_path, "r", encoding="utf-8") as f:
-                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                if fcntl:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_SH)
                 data = json.load(f)
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                if fcntl:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
             # TTL check: ignore stale failures from previous runs
             ts = data.get("_updated_at")

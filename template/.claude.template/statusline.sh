@@ -1,133 +1,132 @@
 #!/bin/bash
-# Native statusline for Claude Code - Minimal Pro Edition
-# Clean unicode symbols, no emoji clutter
-
-# Check jq dependency
-if ! command -v jq >/dev/null 2>&1; then
-    echo "◆ Claude │ ⚠ jq required"
-    exit 0
-fi
-
+# Statusline renderer for Claude Code — Python embedded via heredoc
+# Flow: settings.json → .claude/statusline.sh → python3 -c (JSON stdin → ANSI stdout)
 input=$(cat)
+P=python3; command -v "$P" >/dev/null 2>&1 || P=python
+printf '%s' "$input" | "$P" -c "$(cat <<'PYEOF'
+import json, math, subprocess, sys
 
-# Single jq call: extract all fields + compute fallback percentage
-# Replaces 6-9 separate jq invocations with one process spawn
-IFS=$'\t' read -r MODEL VERSION DURATION_MS LINES_ADDED LINES_REMOVED PERCENT <<< "$(
-    echo "$input" | jq -r '
-        [
-            (.model.display_name // "Claude"),
-            (.version // "?"),
-            ((.cost.total_duration_ms // 0) | tostring),
-            ((.cost.total_lines_added // 0) | tostring),
-            ((.cost.total_lines_removed // 0) | tostring),
-            (
-                if .context_window.used_percentage != null then
-                    .context_window.used_percentage | floor
-                else
-                    ((.context_window.context_window_size // 200000) | if . == 0 then 200000 else . end) as $size |
-                    if .context_window.current_usage != null then
-                        ((.context_window.current_usage.input_tokens // 0) +
-                         (.context_window.current_usage.cache_creation_input_tokens // 0) +
-                         (.context_window.current_usage.cache_read_input_tokens // 0)) * 100 / $size | floor
-                    else 0 end
-                end | tostring
+
+def get_git_info():
+    branch = ""
+    worktree = ""
+    try:
+        current_root = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=5
+        )
+        if current_root.returncode == 0:
+            current = current_root.stdout.strip()
+            br = subprocess.run(
+                ["git", "branch", "--show-current"],
+                capture_output=True, text=True, timeout=5
             )
-        ] | join("\t")
-    '
+            if br.returncode == 0:
+                branch = br.stdout.strip()
+            wt = subprocess.run(
+                ["git", "worktree", "list"],
+                capture_output=True, text=True, timeout=5
+            )
+            if wt.returncode == 0:
+                lines = wt.stdout.strip().splitlines()
+                if lines:
+                    main_root = lines[0].split()[0] if lines[0].split() else ""
+                    if main_root and current != main_root:
+                        worktree = current.rsplit("/", 1)[-1] if "/" in current else current.rsplit("\\", 1)[-1]
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return branch, worktree
+
+
+def format_duration(duration_ms):
+    if duration_ms > 0:
+        minutes = duration_ms // 60000
+        if minutes == 0:
+            return "<1m"
+        return f"{minutes}m"
+    return "0m"
+
+
+def build_context_bar(percent, bar_width=10):
+    filled = min(percent * bar_width // 100, bar_width)
+    empty = bar_width - filled
+    bar = "\u2588" * filled + "\u2591" * empty
+    if percent < 50:
+        color = "\033[32m"
+    elif percent < 80:
+        color = "\033[33m"
+    else:
+        color = "\033[31m"
+    return bar, color
+
+
+def main():
+    try:
+        data = json.loads(sys.stdin.read())
+    except (json.JSONDecodeError, ValueError):
+        data = {}
+
+    model = (data.get("model") or {}).get("display_name") or "Claude"
+    version = data.get("version") or "?"
+    duration_ms = int((data.get("cost") or {}).get("total_duration_ms") or 0)
+    lines_added = int((data.get("cost") or {}).get("total_lines_added") or 0)
+    lines_removed = int((data.get("cost") or {}).get("total_lines_removed") or 0)
+
+    ctx = data.get("context_window") or {}
+    if ctx.get("used_percentage") is not None:
+        percent = int(math.floor(ctx["used_percentage"]))
+    elif ctx.get("current_usage") is not None:
+        usage = ctx["current_usage"]
+        tokens = (
+            int(usage.get("input_tokens") or 0)
+            + int(usage.get("cache_creation_input_tokens") or 0)
+            + int(usage.get("cache_read_input_tokens") or 0)
+        )
+        size = int(ctx.get("context_window_size") or 200000) or 200000
+        percent = int(math.floor(tokens * 100 / size))
+    else:
+        percent = 0
+
+    if percent > 100:
+        percent = 100
+
+    branch, worktree = get_git_info()
+    duration = format_duration(duration_ms)
+    bar, ctx_color = build_context_bar(percent)
+
+    CYAN = "\033[36m"
+    MAGENTA = "\033[35m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    DIM = "\033[2m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+    SEP = "\u2502"
+
+    out = []
+    out.append(f"{CYAN}{BOLD}\u25c6 {model}{RESET}")
+    out.append(f"{DIM} v{version}{RESET}")
+    out.append(f" {DIM}{SEP}{RESET} ")
+    out.append(f"{ctx_color}~{percent}%{RESET}")
+    out.append(f" {DIM}{bar}{RESET}")
+
+    if branch:
+        out.append(f" {DIM}{SEP}{RESET} ")
+        out.append(f"{GREEN}\u2387 {branch}{RESET}")
+
+    if worktree:
+        out.append(f" {MAGENTA}\u21b3 {worktree}{RESET}")
+
+    out.append(f" {DIM}{SEP}{RESET} ")
+    out.append(f"{YELLOW}\u00b1{lines_added}/{lines_removed}{RESET}")
+    out.append(f" {DIM}{SEP}{RESET} ")
+    out.append(f"{BLUE}{duration}{RESET}")
+
+    sys.stdout.write("".join(out) + "\n")
+
+
+if __name__ == "__main__":
+    main()
+PYEOF
 )"
-
-# Guard against jq failure
-[ -z "$MODEL" ] && MODEL="Claude"
-[ -z "$PERCENT" ] && PERCENT=0
-PERCENT=${PERCENT%.*}
-[ "$PERCENT" -gt 100 ] 2>/dev/null && PERCENT=100
-
-# Git: single rev-parse gives repo check + toplevel in one call
-GIT_BRANCH=""
-WORKTREE=""
-CURRENT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-if [ -n "$CURRENT_ROOT" ]; then
-    GIT_BRANCH=$(git branch --show-current 2>/dev/null)
-    MAIN_ROOT=$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')
-    if [ -n "$MAIN_ROOT" ] && [ "$CURRENT_ROOT" != "$MAIN_ROOT" ]; then
-        WORKTREE=$(basename "$CURRENT_ROOT")
-    fi
-fi
-
-# Format duration
-if [ "$DURATION_MS" -gt 0 ]; then
-    DURATION_MIN=$((DURATION_MS / 60000))
-    [ "$DURATION_MIN" -eq 0 ] && DURATION_MIN="<1"
-    DURATION="${DURATION_MIN}m"
-else
-    DURATION="0m"
-fi
-
-# Context bar (portable - works on macOS and Linux)
-BAR_WIDTH=10
-FILLED=$((PERCENT * BAR_WIDTH / 100))
-[ "$FILLED" -gt "$BAR_WIDTH" ] && FILLED=$BAR_WIDTH
-EMPTY=$((BAR_WIDTH - FILLED))
-
-# Build bar without seq (macOS seq counts down for seq 1 0)
-BAR=""
-i=0; while [ "$i" -lt "$FILLED" ]; do BAR+="█"; i=$((i + 1)); done
-i=0; while [ "$i" -lt "$EMPTY" ]; do BAR+="░"; i=$((i + 1)); done
-
-# Color based on context usage
-if [ "$PERCENT" -lt 50 ]; then
-    CTX_COLOR='\033[32m'  # Green
-elif [ "$PERCENT" -lt 80 ]; then
-    CTX_COLOR='\033[33m'  # Yellow
-else
-    CTX_COLOR='\033[31m'  # Red
-fi
-
-# ANSI colors
-CYAN='\033[36m'
-MAGENTA='\033[35m'
-GREEN='\033[32m'
-YELLOW='\033[33m'
-BLUE='\033[34m'
-DIM='\033[2m'
-BOLD='\033[1m'
-RESET='\033[0m'
-
-# Minimal unicode symbols
-SEP="│"
-
-# Build output
-OUTPUT=""
-
-# Model + Version: ◆ Opus v1.0.85
-OUTPUT+="${CYAN}${BOLD}◆ ${MODEL}${RESET}"
-OUTPUT+="${DIM} v${VERSION}${RESET}"
-
-OUTPUT+=" ${DIM}${SEP}${RESET} "
-
-# Context: ~32% ━━━╌╌╌╌╌╌╌ (~ indicates approximate due to MCP limitation)
-OUTPUT+="${CTX_COLOR}~${PERCENT}%${RESET}"
-OUTPUT+=" ${DIM}${BAR}${RESET}"
-
-# Git branch: ⎇ main
-if [ -n "$GIT_BRANCH" ]; then
-    OUTPUT+=" ${DIM}${SEP}${RESET} "
-    OUTPUT+="${GREEN}⎇ ${GIT_BRANCH}${RESET}"
-fi
-
-# Worktree: ↳ feature-wt
-if [ -n "$WORKTREE" ]; then
-    OUTPUT+=" ${MAGENTA}↳ ${WORKTREE}${RESET}"
-fi
-
-OUTPUT+=" ${DIM}${SEP}${RESET} "
-
-# Lines changed: ±156/23
-OUTPUT+="${YELLOW}±${LINES_ADDED}/${LINES_REMOVED}${RESET}"
-
-OUTPUT+=" ${DIM}${SEP}${RESET} "
-
-# Duration: 45m
-OUTPUT+="${BLUE}${DURATION}${RESET}"
-
-echo -e "$OUTPUT"

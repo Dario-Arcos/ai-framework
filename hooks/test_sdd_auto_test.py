@@ -380,7 +380,7 @@ class TestSkillTracking(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
         # Clean up any state files
         import glob as g
-        for f in g.glob("/tmp/sdd-skill-invoked-*.json"):
+        for f in g.glob(os.path.join(tempfile.gettempdir(), "sdd-skill-invoked-*.json")):
             try:
                 os.unlink(f)
             except OSError:

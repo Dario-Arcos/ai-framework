@@ -15,7 +15,10 @@ Decision logic:
     1. Agent Teams teammate → detect test command → run → passing = exit 0, failing = exit 2
     2. Regular sub-agent (no teammate) → exit 0 (sdd-auto-test provides test feedback)
 """
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # Windows — file locking skipped
 import json
 import os
 import re
@@ -111,7 +114,8 @@ def _atomic_update_failures(ralph_dir, teammate_name, operation):
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with open(path, "a+", encoding="utf-8") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_EX)
             f.seek(0)
             raw = f.read()
             try:
