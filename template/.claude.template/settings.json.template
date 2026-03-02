@@ -70,10 +70,10 @@
   },
   "spinnerTipsOverride": {
     "tips": [
-      "Run /project-init when starting a new project or after major dependency changes",
-      "Use /commit and /pull-request for git operations — they enforce quality gates",
-      "Invoke /scenario-driven-development for any feature, fix, or change",
-      "Run /verification-before-completion before claiming any task is done"
+      "Ejecuta /project-init al iniciar un proyecto o tras cambios importantes en dependencias",
+      "Usa /commit y /pull-request para operaciones git — imponen quality gates automáticos",
+      "Invoca /scenario-driven-development para cualquier feature, fix o cambio",
+      "Ejecuta /verification-before-completion antes de declarar cualquier tarea como terminada"
     ]
   }
 }
