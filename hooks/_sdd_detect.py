@@ -219,6 +219,20 @@ def is_test_running(cwd, sid=None):
         return False
 
 
+def await_test_completion(cwd, timeout=30, sid=None):
+    """Wait for a running test worker to finish, then return its state.
+
+    Polls is_test_running() every 0.5s up to timeout seconds.
+    Returns read_state() result (dict or None).
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not is_test_running(cwd, sid):
+            return read_state(cwd, max_age_seconds=60, sid=sid)
+        time.sleep(0.5)
+    return None  # Timed out waiting
+
+
 def read_state(cwd, max_age_seconds=600, sid=None):
     """Read test state file with shared lock. Returns dict or None.
 

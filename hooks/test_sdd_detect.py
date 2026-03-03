@@ -8,10 +8,12 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from unittest.mock import patch
 from _sdd_detect import (
-    detect_test_command, has_exit_suppression, is_test_running,
-    parse_test_summary, pid_path, read_skill_invoked, read_state,
-    skill_invoked_path, state_path, write_skill_invoked, write_state,
+    await_test_completion, detect_test_command, has_exit_suppression,
+    is_test_running, parse_test_summary, pid_path, read_skill_invoked,
+    read_state, skill_invoked_path, state_path, write_skill_invoked,
+    write_state,
 )
 
 
@@ -449,6 +451,38 @@ class TestReadSkillInvokedTTL(unittest.TestCase):
         self._track("sop-reviewer")
         write_skill_invoked(self.tmpdir, "sop-reviewer")
         self.assertIsNone(read_skill_invoked(self.tmpdir, "sop-reviewer", max_age_seconds=0))
+
+
+class TestAwaitTestCompletion(unittest.TestCase):
+    """Test await_test_completion() polling and timeout behavior."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch("_sdd_detect.time.sleep")
+    @patch("_sdd_detect.is_test_running")
+    def test_polls_until_worker_finishes(self, mock_running, mock_sleep):
+        """Worker running 3 polls then stops → returns read_state()."""
+        mock_running.side_effect = [True, True, True, False]
+        write_state(self.tmpdir, True, "5 passed")
+        result = await_test_completion(self.tmpdir, timeout=30)
+        self.assertIsNotNone(result)
+        self.assertTrue(result["passing"])
+        self.assertEqual(mock_sleep.call_count, 3)
+
+    @patch("_sdd_detect.time.monotonic")
+    @patch("_sdd_detect.time.sleep")
+    @patch("_sdd_detect.is_test_running", return_value=True)
+    def test_timeout_returns_none(self, mock_running, mock_sleep, mock_mono):
+        """Worker never finishes → returns None after timeout."""
+        # monotonic: start=0, then always past deadline
+        mock_mono.side_effect = [0.0, 31.0]
+        result = await_test_completion(self.tmpdir, timeout=30)
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":
