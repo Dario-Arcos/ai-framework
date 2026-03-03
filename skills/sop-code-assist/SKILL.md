@@ -64,8 +64,8 @@ Analyze requirements and research patterns.
 - Analyze acceptance criteria from `.code-task.md`
 - Research existing patterns in repository
 - Check `.code-task.md` Metadata for `Scenario-Strategy`
-  - If `not-applicable`: skip SDD cycle (Steps 3-4), implement directly, proceed to Commit
-  - If `required` or absent: proceed with full SDD
+  - If `not-applicable`: skip Plan (Step 3) and SDD cycle (Step 4a). Implement directly, then proceed to validation (Step 4b).
+  - If `required` or absent: proceed with full SDD (Steps 3 → 4a → 4b)
 - Identify scenario strategy
 
 <bug_fix_detection>
@@ -98,14 +98,22 @@ Design scenarios covering all acceptance criteria.
 
 ### 4. Code
 
-Implement using the scenario-driven-development skill.
+Implement changes and validate quality.
 
-- Follow the scenario-driven-development skill for the full SCENARIO → SATISFY → REFACTOR cycle
+#### 4a. Implementation
+
+**When Scenario-Strategy is `required` or absent (default):**
+
+Follow the scenario-driven-development skill for the full SCENARIO → SATISFY → REFACTOR cycle.
+
 - Follow its Iron Law: no production code without a defined scenario first
 - Follow its Gate Functions at each phase transition
-- After all tests pass, run quality validation
 
-#### Anti-Reward-Hacking Constraint
+**When Scenario-Strategy is `not-applicable`:**
+
+Implement directly without SDD cycle. Apply existing patterns from the repository.
+
+##### Anti-Reward-Hacking Constraint
 - NEVER modify existing tests to make them pass new code because scenarios are holdout sets — modifying them to match code is reward hacking
 - NEVER weaken acceptance criteria to match implementation limitations because criteria define user intent, not implementation convenience
 - If a scenario cannot be satisfied, escalate as blocker — do not adjust the scenario
@@ -121,32 +129,70 @@ Implement using the scenario-driven-development skill.
 **You MUST NOT** retry the same approach more than twice without diagnosing why it fails. Thrashing wastes iterations and triggers the circuit breaker.
 </failure_escalation>
 
-**Constraints:**
-- Implementation MUST be in `repo_root`, not `documentation_dir`
-- You MUST run quality validation after tests pass
-- You MUST escalate to systematic-debugging after 2 unexpected failures
-
-<quality_validation>
-When mode="autonomous" AND `.ralph/config.sh` exists: skip quality_validation.
-Rationale: reviewer teammate + TaskCompleted hook handle validation externally.
-
-Otherwise (interactive mode or standalone usage):
-1. Invoke `code-simplifier` + `code-reviewer` + `edge-case-detector` + `performance-engineer` (parallel — all four are read-only, independent)
-2. Address Critical/Important issues from all four agents before Commit
-</quality_validation>
-
 <autonomous_signals>
 > sdd:scenario {scenario_name}
 > sdd:satisfy {scenario_name}
 </autonomous_signals>
 
-### Satisfaction Model
+##### Satisfaction Model
 Satisfaction is NOT boolean (green/red). It is convergence:
 - Run scenarios → observe trajectories → measure fraction satisfying intent
 - A scenario "satisfies" when the observable behavior matches the acceptance criteria
   across multiple execution paths, not just the happy path
 - Report satisfaction as [M/N scenarios satisfied] — partial satisfaction is valid signal
 - The SDD cycle runs UNTIL satisfaction converges (scenarios pass AND STAY PASSING)
+
+#### 4b. Validate
+
+Runs for ALL tasks after implementation, regardless of Scenario-Strategy.
+
+<quality_validation>
+Invoke `code-simplifier` + `code-reviewer` + `edge-case-detector` + `performance-engineer` (parallel — all four are read-only, independent).
+
+<mode_interactive>
+1. Present findings summary grouped by severity (Critical, Important, Suggestion)
+2. Ask user to confirm which issues to address before Commit
+3. Address all confirmed Critical/Important issues
+</mode_interactive>
+
+<mode_autonomous>
+1. Resolve all Critical and Important issues — fix the code, re-run affected tests, confirm green
+2. Resolve Suggestion-level issues when the fix is straightforward (< 5 min)
+3. Document what was resolved and rationale in guardrails.md
+</mode_autonomous>
+</quality_validation>
+
+<runtime_validation>
+**WHEN** the project has web or mobile UI (detect from: AGENTS.md/agents.md stack field, package.json dependencies, or presence of frontend frameworks):
+
+Invoke the agent-browser skill for runtime validation. The skill loads the complete browser automation methodology — do NOT use CLI commands directly without loading the skill first.
+
+Validation checks:
+1. Navigate to the application URL, wait for load
+2. Verify zero console errors
+3. Verify zero page errors and zero failed network requests
+4. **IF** the task modified UI components: take screenshots of affected views for visual verification
+5. **IF** iOS flows apply: use platform-specific validation via the skill
+
+<mode_interactive>
+1. Present console/errors output and screenshots to user
+2. Ask user to confirm runtime is clean or identify issues to fix
+3. Fix confirmed issues, re-validate until clean
+</mode_interactive>
+
+<mode_autonomous>
+1. If console errors or network failures found: fix the root cause in code, re-validate until clean
+2. If unfixable after 2 attempts (external dependency, environment issue): document in blockers.md with evidence and emit BLOCKED signal
+3. Do NOT proceed to Commit with known runtime errors — either fix or block
+</mode_autonomous>
+
+**WHEN** the project has NO web/mobile UI: skip runtime_validation.
+</runtime_validation>
+
+**Constraints:**
+- Implementation MUST be in `repo_root`, not `documentation_dir`
+- You MUST run validation (Step 4b) after implementation, regardless of Scenario-Strategy
+- You MUST escalate to systematic-debugging after 2 unexpected failures
 
 ### 5. Commit
 
@@ -218,6 +264,10 @@ Secondary (in `{documentation_dir}/`):
 
 **code-reviewer**: Invoke before commit. Validates against requirements. Applies to code, designs, plans, any deliverable.
 
+**edge-case-detector**: Invoke after tests pass. Detects boundary violations, concurrency bugs, resource leaks, silent failures.
+
+**performance-engineer**: Invoke after tests pass. Detects query inefficiencies, algorithmic complexity, I/O bottlenecks, scalability anti-patterns.
+
 ## Related
 
 - **sop-task-generator**: Creates `.code-task.md` inputs
@@ -229,6 +279,6 @@ Secondary (in `{documentation_dir}/`):
 - `references/mode-behavior.md` - Interactive vs autonomous
 - `references/troubleshooting.md` - Common issues
 - `references/examples.md` - Usage examples
-- scenario-driven-development skill - Full SDD workflow (Step 4)
+- scenario-driven-development skill - Full SDD workflow (Step 4a)
 - verification-before-completion skill - Completion verification (Step 5)
-- systematic-debugging skill - Root cause investigation (Step 2 bug fixes, Step 4 failure escalation)
+- systematic-debugging skill - Root cause investigation (Step 2 bug fixes, Step 4a failure escalation)

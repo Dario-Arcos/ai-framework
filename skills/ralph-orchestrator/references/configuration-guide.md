@@ -88,16 +88,14 @@ MAX_TEAMMATES=3                   # Maximum concurrent teammates (hard cap: 3)
 
 ## Scenario-Strategy and Quality Gates
 
-The `Scenario-Strategy` field in `.code-task.md` files controls whether GATE_TEST runs for a given task:
+The `Scenario-Strategy` field in `.code-task.md` files controls the SDD cycle in sop-code-assist, not the quality gates:
 
-| Scenario-Strategy | Effect on Gates |
-|---|---|
-| `required` (default) | All gates run. SDD mandatory. |
-| `not-applicable` | GATE_TEST skipped. GATE_TYPECHECK, GATE_LINT, GATE_BUILD still run. |
+| Scenario-Strategy | SDD Cycle | Quality Gates | Quality Agents (Step 4b) |
+|---|---|---|---|
+| `required` (default) | Full SCENARIO → SATISFY → REFACTOR | All gates run | All 4 agents run |
+| `not-applicable` | Skip (implement directly) | All gates run | All 4 agents run |
 
-All tasks run full SDD + all gates. Tasks with `Scenario-Strategy: not-applicable` skip GATE_TEST but other gates still run.
-
-The `sop-task-generator` classifies tasks automatically. When in doubt, it defaults to `required` (safe default). The `task-completed.py` hook reads the field at gate execution time.
+All quality gates and quality agents run unconditionally regardless of Scenario-Strategy. Running behavioral gates on non-code changes catches unexpected side effects. The `sop-task-generator` classifies tasks automatically and defaults to `required` when in doubt.
 
 ---
 

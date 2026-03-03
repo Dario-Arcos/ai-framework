@@ -68,6 +68,8 @@ The `mode` parameter controls how sop-code-assist interacts with the user throug
 | Test results | Present full results | Log summary |
 | Build results | Present output | Log success/failure |
 | Coverage report | Discuss if below target | Note in commit message |
+| Quality agents (4) | Present findings, ask which to address | Resolve Critical/Important/easy Suggestions, document in guardrails.md |
+| Runtime validation (web/mobile) | Present results, ask user to verify | Fix until clean or block after 2 failed attempts |
 | Checklist review | Walk through with user | Verify programmatically |
 
 ### Commit Phase
@@ -267,4 +269,4 @@ After resolution, would you like to continue in autonomous or interactive mode?"
 
 ---
 
-*Version: 1.0.0 | Updated: 2026-02-11*
+*Version: 1.1.0 | Updated: 2026-03-03*

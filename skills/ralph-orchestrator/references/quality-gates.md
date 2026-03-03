@@ -87,18 +87,7 @@ If any gate fails, the `task-completed.py` hook returns exit 2 with failure outp
 3. Implementation satisfies the scenario (satisfy)
 4. Refactor while satisfied
 
-Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip behavioral gates (test, integration, e2e) but structural gates (typecheck, lint, build) still apply.
-
-### Scenario-Strategy Override
-
-Tasks with `Scenario-Strategy: not-applicable` skip behavioral gates but run structural gates.
-
-| Scenario-Strategy | GATE_TEST | GATE_TYPECHECK | GATE_LINT | GATE_BUILD | GATE_INTEGRATION | GATE_E2E |
-|---|---|---|---|---|---|---|
-| `required` | Run | Run | Run | Run | Run | Run |
-| `not-applicable` | **Skip** | Run | Run | Run | **Skip** | **Skip** |
-
-Default: field absent → `required` (all gates run).
+Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip the SDD cycle in sop-code-assist (Step 4a) but all quality gates run unconditionally — behavioral gates on non-code changes catch unexpected side effects and align with correctness over comfort.
 
 ---
 
