@@ -6,6 +6,75 @@ Sources: RAE (Real Academia Española), AESLA/RAEL linguistic study, Wikipedia W
 
 ---
 
+## How natural Spanish sounds — the target
+
+The patterns below tell you what to AVOID. This section tells you what to AIM FOR. Use this as the reference for how the rewritten text should feel.
+
+### Directness over circumlocution
+
+AI Spanish circles around ideas. Natural Spanish hits them.
+
+- **AI:** "Resulta fundamental tener en consideración que la implementación de estas medidas podría contribuir a una mejora significativa."
+- **Natural:** "Estas medidas funcionan. Los datos lo confirman."
+
+"Ser" and "estar" are the most common verbs in Spanish. Use them. Nothing "se erige como" or "se consolida como" — things ARE.
+
+### Warmth without informality
+
+Even formal Spanish has warmth. The language itself is warmer than English — use that.
+
+- **AI:** "Se recomienda considerar las siguientes alternativas para optimizar los resultados."
+- **Natural:** "Hay varias opciones. La que mejor nos ha funcionado es..."
+
+First person is natural in Spanish. "Creemos que", "nos parece que", "lo que vemos es" — these are professional, not casual.
+
+### Rhythm as identity
+
+Spanish prose has strong natural rhythm. Vary sentence length aggressively.
+
+- **AI:** "La inteligencia artificial ha transformado múltiples sectores. Su capacidad para procesar datos permite identificar patrones. Las organizaciones que la adoptan obtienen ventajas competitivas."
+- **Natural:** "La IA ya está en todo. En las fábricas. En los hospitales. En tu móvil. Y aún así, la mayoría de empresas no saben para qué la quieren. Spoiler: muchas no la necesitan."
+
+Fragments are acceptable. Questions too. "¿Y eso qué significa?" is a valid transition.
+
+### Connectors: less is more
+
+Natural Spanish barely needs explicit connectors. The logic flows from content, not from "Asimismo" and "En consecuencia."
+
+- **AI:** "Además, es importante señalar que los resultados fueron positivos. Asimismo, cabe destacar que se superaron las expectativas. Por lo tanto, se recomienda continuar."
+- **Natural:** "Los resultados fueron buenos. Mejor de lo esperado. Vamos a seguir."
+
+When you do need a connector, use the simple ones: "y", "pero", "aunque", "eso sí", "ahora bien". Reserve "no obstante", "en consecuencia" for when the logical relationship is genuinely complex.
+
+### Register consistency
+
+Pick one and hold it through the entire text:
+
+- **Tuteo formal:** professional but approachable ("puedes ver que...", "te recomendamos...")
+- **Ustedeo:** formal distance ("puede observar que...", "le recomendamos...")
+- **Neutral:** avoids direct address ("se observa que...", "se recomienda...")
+
+Never mix. If the input text mixes registers, pick the dominant one and normalize.
+
+### Closings that earn their place
+
+Never close with "Sin duda alguna", "El futuro es prometedor", or "Queda claro que." These are AI comfort blankets.
+
+Good closings:
+- A concrete fact: "La empresa abre dos tiendas más el año que viene."
+- An honest question: "Nadie sabe todavía si esto va a funcionar."
+- Just stop: if the last substantive point was strong, don't add a conclusion.
+
+### Example of complete voice transformation
+
+**AI version:**
+> En el contexto actual de la transformación digital, resulta imprescindible que las organizaciones adopten un enfoque holístico e integral para potenciar sus capacidades tecnológicas. Asimismo, cabe destacar que la sinergia entre equipos transversales constituye un pilar fundamental para impulsar la innovación. Sin duda alguna, el futuro es prometedor para aquellas empresas que se posicionen como líderes en este ámbito.
+
+**Natural version:**
+> La mayoría de empresas dicen que están en "transformación digital." En la práctica, compraron licencias de software que nadie usa. Las que sí lo hacen bien tienen algo en común: los equipos hablan entre sí. No porque un consultor les dijo que "fomentaran sinergias", sino porque alguien tuvo el sentido común de sentar a desarrollo y a negocio en la misma mesa. ¿El futuro? Depende de si alguien abre esas licencias.
+
+---
+
 ## 1. Vocabulario inflado (Lexical Bloat)
 
 **Sustantivos abstractos:** ámbito, panorama, paradigma, sinergia, ecosistema, entorno, paisaje, marco, contexto, dinámica

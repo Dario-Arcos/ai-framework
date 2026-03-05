@@ -16,6 +16,7 @@ When given text to humanize:
 3. **Preserve meaning** - Keep the core message intact
 4. **Maintain voice** - Match the intended tone (formal, casual, technical, etc.)
 5. **Add soul** - Don't just remove bad patterns; inject actual personality
+6. **Do a final anti-AI pass** - Ask yourself: "What makes the below so obviously AI generated?" Answer briefly with remaining tells, then rewrite to fix them
 
 ---
 
@@ -44,6 +45,24 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 **Let some mess in.** Perfect structure feels algorithmic. Tangents, asides, and half-formed thoughts are human.
 
 **Be specific about feelings.** Not "this is concerning" but "there's something unsettling about agents churning away at 3am while nobody's watching."
+
+### Voice in Spanish
+
+Spanish AI text is easy to spot: reads like a bad translation, avoids "ser", chains connectors, uses a formal-academic register nobody actually speaks. Natural Spanish is warm, direct, and rhythmic.
+
+**Be direct.** Spanish rewards clarity. "El proyecto fracaso" beats "El proyecto no logro alcanzar los resultados esperados." Use "ser" and "estar" — they're the backbone of the language, not a sign of poverty.
+
+**Write like people talk.** Not slang — but real register. "Esto funciona" instead of "Esto constituye una solucion efectiva." "Nadie sabe" instead of "Se desconoce." Even formal Spanish has warmth.
+
+**Use natural connectors.** "Y", "pero", "aunque", "eso si" — not "Asimismo", "No obstante", "En consecuencia" in every paragraph. Reserve formal connectors for when the logic genuinely demands them.
+
+**Vary the rhythm hard.** Spanish prose lives in rhythm variation. Fragment. Question. Then a long sentence that takes its time. "La IA ya esta en todo. En las fabricas. En los hospitales. En tu movil. Y aun asi, la mayoria de empresas no saben para que la quieren."
+
+**Pick a register and hold it.** Tu or usted. Peninsular or Latin American. Never mix. If you're not sure, ask. A text that mixes "vale" with "chido" or tuteo with ustedeo screams AI.
+
+**Close with substance, not platitudes.** Never "El futuro es prometedor." Close with a fact, a question, or just stop. "Nadie sabe todavia si la IA mejorara la educacion o la empeorara. Lo que si sabemos es que ya esta aqui, y los profesores van a ciegas."
+
+For the full list of Spanish-specific patterns with before/after examples and academic sources, read [references/spanish-patterns.md](references/spanish-patterns.md). It covers 17 patterns unique to Spanish AI text.
 
 ### Before (clean but soulless):
 > The experiment produced interesting results. The agents generated 3 million lines of code. Some developers were impressed while others were skeptical. The implications remain unclear.
@@ -377,7 +396,9 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ## SPANISH-SPECIFIC PATTERNS
 
-Many English patterns (rule of three, negative parallelism, copula avoidance, vague attributions, generic conclusions) apply identically in Spanish with different vocabulary. The patterns below are unique to Spanish or have significantly different manifestation. For full details with before/after examples, see [references/spanish-patterns.md](references/spanish-patterns.md).
+**When the input text is in Spanish, ALWAYS read [references/spanish-patterns.md](references/spanish-patterns.md) first.** It contains 17 patterns with full before/after examples and academic sources (RAE, AESLA/RAEL, UCM, Fundacion Comillas). The summary below covers the most critical ones.
+
+Many English patterns (rule of three, negative parallelism, copula avoidance, vague attributions, generic conclusions) apply identically in Spanish with different vocabulary. The patterns below are unique to Spanish or have significantly different manifestation.
 
 ### 25. Gerundio de posterioridad
 
@@ -428,41 +449,81 @@ Many English patterns (rule of three, negative parallelism, copula avoidance, va
 ## Process
 
 1. Read the input text carefully
-2. Identify all instances of the patterns above
-3. Rewrite each problematic section
-4. Ensure the revised text:
+2. Detect the language (English or Spanish) — apply language-specific patterns accordingly
+3. For Spanish text, read [references/spanish-patterns.md](references/spanish-patterns.md) for the full pattern catalog
+4. Identify all instances of the patterns above
+5. Rewrite each problematic section
+6. Ensure the revised text:
    - Sounds natural when read aloud
    - Varies sentence structure naturally
    - Uses specific details over vague claims
    - Maintains appropriate tone for context
-   - Uses simple constructions (is/are/has) where appropriate
-5. Present the humanized version
+   - Uses simple constructions ("is"/"are"/"has" in EN; "ser"/"estar"/"tener" in ES) where appropriate
+7. Present a draft humanized version
+8. Anti-AI audit: "What makes the below so obviously AI generated?" — answer briefly with remaining tells
+9. Rewrite to fix the remaining tells
+10. Present the final version
 
 ## Output Format
 
 Provide:
-1. The rewritten text
-2. A brief summary of changes made (optional, if helpful)
+1. Draft rewrite
+2. "What makes the below so obviously AI generated?" (brief bullets listing remaining tells)
+3. Final rewrite (revised after the audit)
+4. A brief summary of changes made (optional, if helpful)
 
 ---
 
-## Full Example
+## Full Example (English)
 
 **Before (AI-sounding):**
-> The new software update serves as a testament to the company's commitment to innovation. Moreover, it provides a seamless, intuitive, and powerful user experience—ensuring that users can accomplish their goals efficiently. It's not just an update, it's a revolution in how we think about productivity. Industry experts believe this will have a lasting impact on the entire sector, highlighting the company's pivotal role in the evolving technological landscape.
+> Great question! Here is an essay on this topic. I hope this helps!
+>
+> AI-assisted coding serves as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the evolution of software development. In today's rapidly evolving technological landscape, these groundbreaking tools—nestled at the intersection of research and practice—are reshaping how engineers ideate, iterate, and deliver, underscoring their vital role in modern workflows.
+>
+> At its core, the value proposition is clear: streamlining processes, enhancing collaboration, and fostering alignment. It's not just about autocomplete; it's about unlocking creativity at scale, ensuring that organizations can remain agile while delivering seamless, intuitive, and powerful experiences to users. The tool serves as a catalyst. The assistant functions as a partner. The system stands as a foundation for innovation.
 
-**After (Humanized):**
-> The software update adds batch processing, keyboard shortcuts, and offline mode. Early feedback from beta testers has been positive, with most reporting faster task completion.
+**Draft rewrite:**
+> AI coding assistants can speed up the boring parts of the job. They're great at boilerplate: config files and the little glue code you don't want to write. They can also help you sketch a test, but you still have to read it.
+>
+> The dangerous part is how confident the suggestions look. I've accepted code that compiled and passed lint, then discovered later it missed the point because I stopped paying attention.
+>
+> If you treat it like autocomplete and review every line, it's useful. If you use it to avoid thinking, it will help you ship bugs faster.
 
-**Changes made:**
-- Removed "serves as a testament" (inflated symbolism)
-- Removed "Moreover" (AI vocabulary)
-- Removed "seamless, intuitive, and powerful" (rule of three + promotional)
-- Removed em dash and "-ensuring" phrase (superficial analysis)
-- Removed "It's not just...it's..." (negative parallelism)
-- Removed "Industry experts believe" (vague attribution)
-- Removed "pivotal role" and "evolving landscape" (AI vocabulary)
-- Added specific features and concrete feedback
+**What makes the below so obviously AI generated?**
+- The rhythm is still a bit too tidy — evenly paced paragraphs, clean contrasts
+- The closer leans slogan-y ("help you ship bugs faster")
+
+**Final rewrite:**
+> AI coding assistants can make you faster at the boring parts. Not everything. Definitely not architecture.
+>
+> They're great at boilerplate: config files, test scaffolding, repetitive refactors. They're also great at sounding right while being wrong. I've accepted suggestions that compiled, passed lint, and still missed the point because I stopped paying attention.
+>
+> People I talk to tend to land in two camps. Some use it like autocomplete for chores and review every line. Others disable it after it keeps suggesting patterns they don't want. Both feel reasonable.
+
+## Full Example (Spanish)
+
+**Before (AI-sounding):**
+> En el panorama actual de la inteligencia artificial, las herramientas de asistencia al codigo se erigen como un testimonio del potencial transformador de los modelos de lenguaje. Estas soluciones innovadoras no solo optimizan los flujos de trabajo, sino que tambien potencian la sinergia entre equipos de desarrollo, contribuyendo al impulso de una cultura de colaboracion integral. Cabe destacar que la adopcion de estas tecnologias ha experimentado un crecimiento significativo, posicionandose como un pilar fundamental en la evolucion del ecosistema tecnologico. Sin duda alguna, el futuro es prometedor.
+
+**Draft rewrite:**
+> Los asistentes de codigo te ahorran tiempo en lo aburrido: ficheros de configuracion, scaffolding de tests, refactors repetitivos. Ahi brillan. Pero cuando el problema requiere pensar de verdad — arquitectura, edge cases, decisiones de diseno — el asistente no tiene criterio. Repite patrones.
+>
+> Lo peligroso es que las sugerencias parecen correctas. Compilan, pasan lint, y tu aceptas sin leer. Yo lo he hecho. Luego descubres que el codigo hacia otra cosa.
+>
+> Si lo tratas como autocompletado y revisas cada linea, funciona. Si lo usas para no pensar, vas a meter bugs mas rapido.
+
+**What makes the below so obviously AI generated?**
+- "Ahi brillan" suena a muletilla colocada para dar ritmo artificial
+- El cierre "vas a meter bugs mas rapido" es calco del ejemplo en ingles
+- Falta algo de desorden — es demasiado limpio
+
+**Final rewrite:**
+> Los asistentes de codigo sirven para lo aburrido. Configuracion, tests basicos, refactors que no quieres hacer a mano. Para eso van bien.
+>
+> El problema es cuando te fias. Las sugerencias compilan, pasan lint, parecen razonables. Y aceptas sin mirar. A mi me ha pasado: codigo que funcionaba pero hacia otra cosa distinta de la que yo necesitaba.
+>
+> Hay gente que lo usa como autocompletado y revisa todo. Hay gente que lo apaga porque le mete ruido. Las dos posturas me parecen validas. Lo que no funciona es aceptar a ciegas.
 
 ---
 
