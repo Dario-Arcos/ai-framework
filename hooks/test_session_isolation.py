@@ -23,13 +23,14 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _sdd_detect
 from _sdd_detect import (
-    baseline_path, clear_baseline, clear_coverage, coverage_path,
-    extract_session_id, pid_path, read_baseline, read_coverage,
+    baseline_path, can_trust_state, clear_baseline, clear_coverage,
+    coverage_path, extract_session_id, last_edit_path, pid_path,
+    read_baseline, read_coverage, read_edit_time, record_edit_time,
     record_file_edit, read_state, skill_invoked_path, state_path,
     write_baseline, write_state,
 )
@@ -508,6 +509,105 @@ class TestTaskCompletedBaseline(unittest.TestCase):
         write_baseline(self.tmpdir, self.sid, True, "5 passed")
         result = task_completed._check_baseline(self.tmpdir, self.sid, "2 failed")
         self.assertFalse(result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestEditTimestamps
+# ─────────────────────────────────────────────────────────────────
+
+class TestEditTimestamps(unittest.TestCase):
+    """Test record_edit_time / read_edit_time per-session primitives."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.sid = "editts01"
+
+    def tearDown(self):
+        try:
+            last_edit_path(self.tmpdir, self.sid).unlink(missing_ok=True)
+        except OSError:
+            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_edit_returns_zero(self):
+        """read_edit_time returns 0.0 when no file exists."""
+        self.assertEqual(read_edit_time(self.tmpdir, self.sid), 0.0)
+
+    def test_record_then_read(self):
+        """record_edit_time → read_edit_time returns > 0."""
+        record_edit_time(self.tmpdir, self.sid)
+        result = read_edit_time(self.tmpdir, self.sid)
+        self.assertGreater(result, 0)
+        self.assertAlmostEqual(result, time.time(), delta=2)
+
+    def test_none_sid_no_crash(self):
+        """record/read with None sid → safe, returns 0.0."""
+        record_edit_time(self.tmpdir, None)
+        self.assertEqual(read_edit_time(self.tmpdir, None), 0.0)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestCanTrustState
+# ─────────────────────────────────────────────────────────────────
+
+class TestCanTrustState(unittest.TestCase):
+    """Test can_trust_state() trust validation logic."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.sid = "trust001"
+
+    def tearDown(self):
+        try:
+            last_edit_path(self.tmpdir, self.sid).unlink(missing_ok=True)
+        except OSError:
+            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_state_returns_false(self):
+        """can_trust_state(None, ...) → False."""
+        self.assertFalse(can_trust_state(None, self.tmpdir, self.sid))
+
+    def test_no_sid_trusts_if_state_exists(self):
+        """can_trust_state(state, ..., None) → True."""
+        state = {"passing": True, "summary": "ok"}
+        self.assertTrue(can_trust_state(state, self.tmpdir, None))
+
+    def test_started_after_edit_trusts(self):
+        """started_at > last_edit → True."""
+        record_edit_time(self.tmpdir, self.sid)
+        edit_t = read_edit_time(self.tmpdir, self.sid)
+        state = {"passing": True, "summary": "ok", "started_at": edit_t + 1}
+        self.assertTrue(can_trust_state(state, self.tmpdir, self.sid))
+
+    def test_started_before_edit_distrusts(self):
+        """started_at < last_edit → False."""
+        record_edit_time(self.tmpdir, self.sid)
+        edit_t = read_edit_time(self.tmpdir, self.sid)
+        state = {"passing": True, "summary": "ok", "started_at": edit_t - 1}
+        self.assertFalse(can_trust_state(state, self.tmpdir, self.sid))
+
+    def test_no_edits_recorded_trusts(self):
+        """edit_time=0.0 → True (nothing to distrust)."""
+        state = {"passing": True, "summary": "ok", "started_at": time.time()}
+        self.assertTrue(can_trust_state(state, self.tmpdir, self.sid))
+
+    def test_legacy_state_very_fresh_trusts(self):
+        """Legacy state (no started_at) with fresh timestamp → True."""
+        state = {
+            "passing": True, "summary": "ok",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        self.assertTrue(can_trust_state(state, self.tmpdir, self.sid))
+
+    def test_legacy_state_old_distrusts(self):
+        """Legacy state (no started_at) with old timestamp → False."""
+        old_ts = time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ",
+            time.gmtime(time.time() - 60),
+        )
+        state = {"passing": True, "summary": "ok", "timestamp": old_ts}
+        self.assertFalse(can_trust_state(state, self.tmpdir, self.sid))
 
 
 # ─────────────────────────────────────────────────────────────────

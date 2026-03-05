@@ -29,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    await_test_completion, clear_baseline, clear_coverage,
+    await_test_completion, can_trust_state, clear_baseline, clear_coverage,
     compute_uncovered, detect_test_command, extract_session_id,
     has_exit_suppression, is_test_running, parse_test_summary,
     read_baseline, read_coverage, read_skill_invoked, read_state,
@@ -232,25 +232,36 @@ def _fail_task(header, body, footer="Fix the issue before completing this task."
 
 
 def _try_cached_test_gate(cwd, sid, max_age=30):
-    """Try to resolve test gate from auto-test state without running fresh.
+    """Try to resolve test gate from auto-test state with trust validation.
 
     Returns (resolved, passed, output):
-      - resolved=True, passed=True  → tests passing, skip fresh run
-      - resolved=True, passed=False → tests failing, output has details
-      - resolved=False              → no usable state, caller must run fresh
+      - resolved=True, passed=True   → tests passing AND trusted
+      - resolved=True, passed=False  → tests failing AND trusted, output has raw details
+      - resolved=False               → no usable/trusted state, caller must run fresh
     """
     if is_test_running(cwd, sid):
-        state = await_test_completion(cwd, timeout=30, sid=sid)
+        state = await_test_completion(cwd, timeout=60, sid=sid)
     else:
         state = read_state(cwd, max_age_seconds=max_age, sid=sid)
 
     if not state:
         return False, False, ""
 
+    # Trust check: does state cover this session's edits?
+    if not can_trust_state(state, cwd, sid):
+        return False, False, ""
+
     if state.get("passing"):
         return True, True, state.get("summary", "tests passed")
 
-    # Failing state → caller needs fresh run for raw output
+    # Failing + trusted → return raw output for feedback (NO re-run needed)
+    raw = state.get("raw_output", "")
+    if raw:
+        if len(raw) > 800:
+            raw = "...\n" + raw[-800:]
+        return True, False, raw
+
+    # Failing but no raw_output (legacy state) → caller must run fresh
     return False, False, ""
 
 
@@ -275,14 +286,26 @@ def _check_baseline(cwd, sid, current_output):
 
 
 def _handle_non_ralph_completion(cwd, task_subject, sid=None):
-    """Test gate for projects without ralph. Reuses auto-test state when passing."""
+    """Test gate for projects without ralph. Reuses auto-test state when trusted."""
     command = detect_test_command(cwd)
     if command:
         # Fast path: reuse recent auto-test state
-        resolved, passed, _ = _try_cached_test_gate(cwd, sid)
+        resolved, passed, output = _try_cached_test_gate(cwd, sid)
         if resolved and passed:
             pass  # Skip fresh run — auto-test already confirmed passing
+        elif resolved and not passed:
+            # Trusted failing state with raw output — no need for fresh run
+            if _check_baseline(cwd, sid, output):
+                print(
+                    f"Warning: test gate failing but pre-existing "
+                    f"(same failure pattern as session baseline). "
+                    f"Allowing completion.",
+                    file=sys.stderr,
+                )
+            else:
+                _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
         else:
+            # No trusted state — run fresh
             passed, output = run_gate("test", command, cwd)
             if not passed:
                 if _check_baseline(cwd, sid, output):
@@ -379,9 +402,24 @@ def main():
 
         # Fast path for test gate: reuse recent auto-test state
         if gate_name == "test":
-            resolved, passed, _ = _try_cached_test_gate(cwd, sid)
+            resolved, passed, output = _try_cached_test_gate(cwd, sid)
             if resolved and passed:
                 continue  # Skip to next gate
+            if resolved and not passed:
+                if _check_baseline(cwd, sid, output):
+                    print(
+                        f"Warning: gate 'test' failing but pre-existing "
+                        f"(same failure pattern as session baseline). "
+                        f"Allowing completion.",
+                        file=sys.stderr,
+                    )
+                    continue
+                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+                _fail_task(
+                    f"Quality gate 'test' failed for: {task_subject}",
+                    f"Output:\n{output}",
+                    f"Fix the issue before completing this task. (consecutive failures: {count})",
+                )
 
         elapsed = time.monotonic() - gate_start
         remaining = gate_budget - elapsed

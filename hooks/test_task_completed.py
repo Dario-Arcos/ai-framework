@@ -790,19 +790,41 @@ class TestTryCachedTestGate(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
+    @patch.object(task_completed, "can_trust_state", return_value=True)
     @patch.object(task_completed, "is_test_running", return_value=False)
     @patch.object(task_completed, "read_state", return_value={"passing": True, "summary": "5 passed"})
-    def test_passing_state_resolves(self, _mock_state, _mock_running):
-        """Recent passing state → resolved=True, passed=True."""
+    def test_passing_state_resolves(self, _mock_state, _mock_running, _mock_trust):
+        """Recent passing + trusted state → resolved=True, passed=True."""
         resolved, passed, output = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
         self.assertTrue(resolved)
         self.assertTrue(passed)
         self.assertEqual(output, "5 passed")
 
+    @patch.object(task_completed, "can_trust_state", return_value=True)
+    @patch.object(task_completed, "is_test_running", return_value=False)
+    @patch.object(task_completed, "read_state", return_value={
+        "passing": False, "summary": "1 failed", "raw_output": "FAILED test_x.py\n"
+    })
+    def test_failing_trusted_with_raw_resolves(self, _mock_state, _mock_running, _mock_trust):
+        """Failing + trusted + has raw_output → resolved=True, passed=False."""
+        resolved, passed, output = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
+        self.assertTrue(resolved)
+        self.assertFalse(passed)
+        self.assertIn("FAILED", output)
+
+    @patch.object(task_completed, "can_trust_state", return_value=True)
     @patch.object(task_completed, "is_test_running", return_value=False)
     @patch.object(task_completed, "read_state", return_value={"passing": False, "summary": "1 failed"})
-    def test_failing_state_unresolved(self, _mock_state, _mock_running):
-        """Failing state → resolved=False (forces fresh run for raw output)."""
+    def test_failing_no_raw_unresolved(self, _mock_state, _mock_running, _mock_trust):
+        """Failing + trusted but no raw_output (legacy) → unresolved."""
+        resolved, passed, output = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
+        self.assertFalse(resolved)
+
+    @patch.object(task_completed, "can_trust_state", return_value=False)
+    @patch.object(task_completed, "is_test_running", return_value=False)
+    @patch.object(task_completed, "read_state", return_value={"passing": True, "summary": "5 passed"})
+    def test_untrusted_state_unresolved(self, _mock_state, _mock_running, _mock_trust):
+        """Passing state but untrusted → resolved=False."""
         resolved, passed, output = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
         self.assertFalse(resolved)
 
@@ -813,9 +835,10 @@ class TestTryCachedTestGate(unittest.TestCase):
         resolved, passed, output = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
         self.assertFalse(resolved)
 
+    @patch.object(task_completed, "can_trust_state", return_value=True)
     @patch.object(task_completed, "await_test_completion", return_value={"passing": True, "summary": "ok"})
     @patch.object(task_completed, "is_test_running", return_value=True)
-    def test_worker_running_waits(self, _mock_running, mock_await):
+    def test_worker_running_waits(self, _mock_running, mock_await, _mock_trust):
         """Worker running → calls await_test_completion instead of read_state."""
         resolved, passed, _ = task_completed._try_cached_test_gate(self.tmpdir, sid="abc")
         self.assertTrue(resolved)
@@ -860,6 +883,17 @@ class TestNonRalphCachedTestGate(unittest.TestCase):
         """No cached state → falls through to run_gate."""
         task_completed._handle_non_ralph_completion(self.tmpdir, "my task", sid="abc")
         mock_gate.assert_called_once()
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(True, False, "FAIL test_x.py"))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_cached_failing_skips_run_gate(self, _detect, _cached, mock_gate, _cov):
+        """Cached failing state with raw output → run_gate NOT called, exit 2."""
+        with self.assertRaises(SystemExit) as ctx:
+            task_completed._handle_non_ralph_completion(self.tmpdir, "my task", sid="abc")
+        self.assertEqual(ctx.exception.code, 2)
+        mock_gate.assert_not_called()
 
 
 if __name__ == "__main__":

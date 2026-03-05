@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -21,7 +22,8 @@ from _sdd_detect import (
     has_exit_suppression,
     is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
     parse_test_summary, pid_path, read_state,
-    record_file_edit, write_baseline, write_skill_invoked, write_state,
+    record_edit_time, record_file_edit, write_baseline, write_skill_invoked,
+    write_state,
 )
 
 
@@ -65,6 +67,7 @@ def _run_tests_worker(cwd, command, sid=None):
         pass
 
     try:
+        started_at = time.time()
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True,
             cwd=cwd, timeout=300,
@@ -75,14 +78,18 @@ def _run_tests_worker(cwd, command, sid=None):
         output = raw.strip()
         passing = result.returncode == 0
         summary = parse_test_summary(output, result.returncode)
-        write_state(cwd, passing, summary, sid)
+        raw_tail = raw[-4096:] if raw else ""
+        write_state(cwd, passing, summary, sid,
+                    raw_output=raw_tail, started_at=started_at)
         # Capture baseline on first run (write-once)
         if sid and not baseline_path(cwd, sid).exists():
             write_baseline(cwd, sid, passing, summary)
     except subprocess.TimeoutExpired:
-        write_state(cwd, False, "tests timed out (300s)", sid)
+        write_state(cwd, False, "tests timed out (300s)", sid,
+                    started_at=time.time())
     except OSError as e:
-        write_state(cwd, False, f"test execution error: {e}", sid)
+        write_state(cwd, False, f"test execution error: {e}", sid,
+                    started_at=time.time())
     finally:
         try:
             pf.unlink(missing_ok=True)
@@ -156,6 +163,7 @@ def main():
 
     # Track source file edit for coverage
     record_file_edit(cwd, file_path, sid)
+    record_edit_time(cwd, sid)
 
     # Read previous test state — only report failures (passing = no signal needed)
     previous = read_state(cwd, sid=sid)

@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sdd_auto_test = importlib.import_module("sdd-auto-test")
@@ -69,7 +69,10 @@ class TestRunTestsWorker(unittest.TestCase):
             args="pytest", returncode=0, stdout="5 passed\n", stderr="",
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, True, "5 passed", None)
+        mock_write.assert_called_once_with(
+            self.tmpdir, True, "5 passed", None,
+            raw_output=ANY, started_at=ANY,
+        )
 
     @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
@@ -84,7 +87,10 @@ class TestRunTestsWorker(unittest.TestCase):
             args="pytest", returncode=1, stdout="2 failed\n", stderr="",
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, False, "2 failed", None)
+        mock_write.assert_called_once_with(
+            self.tmpdir, False, "2 failed", None,
+            raw_output=ANY, started_at=ANY,
+        )
 
     @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")
@@ -128,7 +134,10 @@ class TestRunTestsWorker(unittest.TestCase):
     def test_timeout_writes_failure(self, mock_run, mock_suppress, mock_write, mock_pid):
         mock_pid.return_value = self.pid_file
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(self.tmpdir, False, "tests timed out (300s)", None)
+        mock_write.assert_called_once_with(
+            self.tmpdir, False, "tests timed out (300s)", None,
+            started_at=ANY,
+        )
 
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "write_state")
@@ -142,6 +151,8 @@ class TestRunTestsWorker(unittest.TestCase):
         self.assertEqual(args[0], self.tmpdir)
         self.assertFalse(args[1])
         self.assertIn("test execution error:", args[2])
+        # started_at passed as kwarg
+        self.assertIn("started_at", mock_write.call_args[1])
 
     @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "pid_path")

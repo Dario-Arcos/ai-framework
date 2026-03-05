@@ -263,7 +263,7 @@ def read_state(cwd, max_age_seconds=600, sid=None):
     return data
 
 
-def write_state(cwd, passing, summary, sid=None):
+def write_state(cwd, passing, summary, sid=None, raw_output=None, started_at=None):
     """Atomic write of test state via tmpfile + rename."""
     sp = state_path(cwd, sid)
     data = {
@@ -271,6 +271,10 @@ def write_state(cwd, passing, summary, sid=None):
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "summary": summary,
     }
+    if raw_output is not None:
+        data["raw_output"] = raw_output
+    if started_at is not None:
+        data["started_at"] = started_at
     try:
         fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-state-")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -282,6 +286,68 @@ def write_state(cwd, passing, summary, sid=None):
             os.unlink(tmp)
         except OSError:
             pass
+
+
+# ─────────────────────────────────────────────────────────────────
+# EDIT TIMESTAMPS — per-session last-edit tracking for trust validation
+# ─────────────────────────────────────────────────────────────────
+
+def last_edit_path(cwd, sid):
+    """Path to per-session last-edit timestamp file."""
+    return _tmp(f"sdd-last-edit-{project_hash(cwd)}-{sid}.ts")
+
+
+def record_edit_time(cwd, sid):
+    """Write current UTC epoch to per-session edit timestamp file."""
+    if not sid:
+        return
+    try:
+        last_edit_path(cwd, sid).write_text(str(time.time()))
+    except OSError:
+        pass
+
+
+def read_edit_time(cwd, sid):
+    """Read last edit timestamp for session. Returns float or 0.0."""
+    if not sid:
+        return 0.0
+    try:
+        return float(last_edit_path(cwd, sid).read_text().strip())
+    except (FileNotFoundError, ValueError, OSError):
+        return 0.0
+
+
+def can_trust_state(state, cwd, sid):
+    """Return True if test state covers this session's edits.
+
+    Trust invariant: state.started_at >= session.last_edit_time.
+    - No state → False
+    - No sid → trust if state exists (solo session, no teammate context)
+    - No edits recorded (0.0) → trust (nothing to distrust)
+    - No started_at in state (legacy) → trust only if very fresh (<5s)
+    """
+    if not state:
+        return False
+    if not sid:
+        return True
+
+    started_at = state.get("started_at")
+    if started_at is None:
+        # Legacy state without started_at: trust only if very fresh
+        ts = state.get("timestamp")
+        if not ts:
+            return False
+        try:
+            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+            return time.time() - written < 5
+        except (ValueError, OverflowError):
+            return False
+
+    edit_time = read_edit_time(cwd, sid)
+    if edit_time == 0.0:
+        return True  # No edits recorded = nothing to distrust
+
+    return started_at >= edit_time
 
 
 # ─────────────────────────────────────────────────────────────────
