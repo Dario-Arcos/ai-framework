@@ -341,6 +341,9 @@ class TestMainRalph(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        p = patch.object(task_completed, "_has_source_edits", return_value=True)
+        p.start()
+        self.addCleanup(p.stop)
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -508,6 +511,9 @@ class TestSkillEnforcement(unittest.TestCase):
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
             encoding="utf-8",
         )
+        p = patch.object(task_completed, "_has_source_edits", return_value=True)
+        p.start()
+        self.addCleanup(p.stop)
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -625,6 +631,9 @@ class TestSkillStateClearOnSuccess(unittest.TestCase):
             'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
             encoding="utf-8",
         )
+        p = patch.object(task_completed, "_has_source_edits", return_value=True)
+        p.start()
+        self.addCleanup(p.stop)
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -714,6 +723,9 @@ class TestGateTimeoutBudget(unittest.TestCase):
             'GATE_TEST="npm test"\nGATE_TYPECHECK="tsc"\nGATE_LINT="eslint"\nGATE_BUILD="npm run build"\n',
             encoding="utf-8",
         )
+        p = patch.object(task_completed, "_has_source_edits", return_value=True)
+        p.start()
+        self.addCleanup(p.stop)
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -894,6 +906,80 @@ class TestNonRalphCachedTestGate(unittest.TestCase):
             task_completed._handle_non_ralph_completion(self.tmpdir, "my task", sid="abc")
         self.assertEqual(ctx.exception.code, 2)
         mock_gate.assert_not_called()
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestResearchTaskBypass
+# ─────────────────────────────────────────────────────────────────
+
+class TestResearchTaskBypass(unittest.TestCase):
+    """Research/planning tasks with no source edits bypass all ralph gates."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir(parents=True)
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="npm test"\nGATE_TYPECHECK="tsc"\nGATE_LINT="eslint"\nGATE_BUILD="npm run build"\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    def _default_input(self, **overrides):
+        base = {
+            "cwd": self.tmpdir,
+            "task_subject": "Research Europeana API",
+            "teammate_name": "impl-research-europeana",
+        }
+        base.update(overrides)
+        return base
+
+    def test_no_coverage_state_exits_0(self):
+        """No coverage state (only .md edits) → exit 0, no gates run."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+
+    def test_only_test_files_exits_0(self):
+        """Coverage state with only test_files (no source_files) → exit 0."""
+        import _sdd_detect
+        _sdd_detect.record_file_edit(self.tmpdir, "tests/test_research.py")
+        try:
+            with patch("sys.stdin", self._make_stdin(self._default_input())):
+                with self.assertRaises(SystemExit) as ctx:
+                    task_completed.main()
+                self.assertEqual(ctx.exception.code, 0)
+        finally:
+            _sdd_detect.clear_coverage(self.tmpdir)
+
+    @patch.object(task_completed, "read_skill_invoked", return_value=None)
+    def test_with_source_edits_proceeds_to_skill_check(self, _mock_skill):
+        """Source edits present → does NOT bypass, reaches skill enforcement."""
+        import _sdd_detect
+        _sdd_detect.record_file_edit(self.tmpdir, "src/handler.ts")
+        try:
+            with patch("sys.stdin", self._make_stdin(self._default_input())):
+                with self.assertRaises(SystemExit) as ctx:
+                    task_completed.main()
+                # Should fail at skill enforcement (exit 2), NOT bypass (exit 0)
+                self.assertEqual(ctx.exception.code, 2)
+        finally:
+            _sdd_detect.clear_coverage(self.tmpdir)
+
+    def test_cleanup_called_on_bypass(self):
+        """Bypass path calls clear_coverage to clean up partial state."""
+        with patch.object(task_completed, "clear_coverage") as mock_clear:
+            with patch("sys.stdin", self._make_stdin(self._default_input())):
+                with self.assertRaises(SystemExit) as ctx:
+                    task_completed.main()
+                self.assertEqual(ctx.exception.code, 0)
+            mock_clear.assert_called_once()
 
 
 if __name__ == "__main__":

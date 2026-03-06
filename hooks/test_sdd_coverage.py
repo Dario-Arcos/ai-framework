@@ -108,6 +108,12 @@ class TestIsExemptFromTests(unittest.TestCase):
     def test_docs_dir_exempt(self):
         self.assertTrue(is_exempt_from_tests("docs/guide.py"))
 
+    def test_ralph_dir_exempt(self):
+        """Files in .ralph/ are orchestration infrastructure, not source code."""
+        self.assertTrue(is_exempt_from_tests(".ralph/config.sh"))
+        self.assertTrue(is_exempt_from_tests(".ralph/specs/goal/implementation/plan.sh"))
+        self.assertTrue(is_exempt_from_tests("project/.ralph/scripts/setup.sh"))
+
     def test_regular_source_not_exempt(self):
         self.assertFalse(is_exempt_from_tests("src/main.py"))
 

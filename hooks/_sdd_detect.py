@@ -442,7 +442,7 @@ EXEMPT_RE = re.compile(
     r"constants?\.(?:ts|js|py)|"
     r"config[^/]*\.(?:ts|js|py|json|ya?ml|toml)"
     r")$|"
-    r"(?:^|/)(?:migrations?|generated|vendor|scripts|docs?)/"
+    r"(?:^|/)(?:migrations?|generated|vendor|scripts|docs?|\.ralph)/"
 )
 
 

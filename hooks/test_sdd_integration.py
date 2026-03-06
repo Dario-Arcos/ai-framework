@@ -891,6 +891,10 @@ class TestRalphGateSequence(unittest.TestCase):
         self.ralph_dir.mkdir()
         # Simulate sop-code-assist invocation (required by skill enforcement)
         _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        # Simulate source-file edits (required by research-task bypass guard)
+        p = patch.object(task_completed, "_has_source_edits", return_value=True)
+        p.start()
+        self.addCleanup(p.stop)
 
     def tearDown(self):
         _cleanup_state(self.tmpdir)

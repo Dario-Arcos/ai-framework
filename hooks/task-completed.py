@@ -225,6 +225,16 @@ def extract_coverage_pct(output):
 # FAILURE FEEDBACK
 # ─────────────────────────────────────────────────────────────────
 
+def _has_source_edits(cwd, sid):
+    """Check if this session edited any non-exempt source files.
+
+    Research/planning tasks only write markdown/docs — no source edits.
+    Used to skip SDD enforcement for non-implementation tasks.
+    """
+    state = read_coverage(cwd, sid=sid)
+    return bool(state and state.get("source_files"))
+
+
 def _fail_task(header, body, footer="Fix the issue before completing this task."):
     """Print failure feedback to stderr and exit 2 (task not complete)."""
     print(f"{header}\n\n{body}\n\n{footer}", file=sys.stderr)
@@ -359,6 +369,11 @@ def main():
         # deadlock: the full suite fails until ALL tasks are done.
         if teammate_name != "unknown":
             _handle_non_ralph_completion(cwd, task_subject, sid)
+        sys.exit(0)
+
+    # Guard: no source-file edits → research/planning task, skip enforcement
+    if not _has_source_edits(cwd, sid):
+        clear_coverage(cwd, sid)
         sys.exit(0)
 
     # SDD Skill enforcement: teammate must invoke the correct skill
