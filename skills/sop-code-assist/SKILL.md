@@ -148,7 +148,7 @@ Before moving to validation, self-check against the criteria your reviewer will 
 
 1. **Criteria coverage** — build a `Criterion → Scenario → Covered?` table. Every acceptance criterion from `.code-task.md` must map to at least one scenario.
 2. **Input diversity** — each scenario must exercise 2+ distinct inputs with distinct expected outputs. A single-input test can be satisfied by a hardcoded return value.
-3. **Assertion precision** — use exact comparisons (`toBe`, `toEqual`, `===`). Loose matchers (`toBeTruthy`, `string.contains`) mask incorrect behavior and trigger automatic review failure.
+3. **Assertion precision** — use exact comparisons (`toBe`, `toEqual`, `===`). Loose matchers (`toBeTruthy`, `string.contains`) and try/catch wrappers without value assertions mask incorrect behavior and trigger automatic review failure.
 
 Address gaps before proceeding. The reviewer cannot see your reasoning — only your tests speak.
 
