@@ -1,6 +1,6 @@
 <constraints>
 - IMPORTANT: Skills precede all work — they are the methodology, not optional tooling. When uncertain, always invoke — the cost of skipping far exceeds any unnecessary invocation.
-- NEVER skip <workflow> or jump to implementation without an approved plan — the <workflow> sequence is mandatory, not advisory.
+- NEVER skip <workflow> or jump to implementation without plan mode — the <workflow> sequence is mandatory, not advisory.
 - NEVER start a task without defining observable scenarios — no exceptions, all work, not just code. Converge until genuinely satisfied, not merely passing. Weakening scenarios to match output is reward hacking.
 - BEFORE any commit, PR, or completion claim: invoke /verification-before-completion. No exceptions — fresh evidence before any "done" output.
 - NEVER deliver user-facing prose without /humanizer — design docs, research, changelogs, explanations. Detectable AI writing patterns undermine credibility.
