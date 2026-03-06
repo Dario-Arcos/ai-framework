@@ -52,15 +52,24 @@ def _create_mini_project(tmpdir, app_code, test_code):
 
 
 def _run_hook_stdin(hook_main, input_data):
-    """Run a hook's main() with JSON stdin, capture stdout/stderr and exit code."""
+    """Run a hook's main() with JSON stdin, capture stdout/stderr and exit code.
+
+    Patches CLAUDE_PROJECT_DIR to match input_data["cwd"] so the env var
+    doesn't override the test's intended working directory.
+    """
     stdin_mock = io.StringIO(json.dumps(input_data))
     stdout_capture = io.StringIO()
     stderr_capture = io.StringIO()
     exit_code = 0
 
+    env_patch = {}
+    if "cwd" in input_data:
+        env_patch["CLAUDE_PROJECT_DIR"] = input_data["cwd"]
+
     with patch("sys.stdin", stdin_mock), \
          patch("sys.stdout", stdout_capture), \
-         patch("sys.stderr", stderr_capture):
+         patch("sys.stderr", stderr_capture), \
+         patch.dict(os.environ, env_patch):
         try:
             hook_main()
         except SystemExit as e:

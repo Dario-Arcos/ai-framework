@@ -177,9 +177,10 @@ def run_gate(name, command, cwd, timeout=120):
         return False, error
 
     try:
+        env = dict(os.environ, _SDD_RECURSION_GUARD="1")
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True,
-            cwd=cwd, timeout=timeout,
+            cwd=cwd, timeout=timeout, env=env,
         )
         output = (result.stdout + result.stderr).strip()
         # Truncate to last 800 chars for readable feedback

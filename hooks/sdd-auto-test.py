@@ -37,6 +37,8 @@ def run_tests_background(cwd, command, sid=None):
     Invokes this script with --run-tests flag so the worker logic
     runs in a separate process with no connection to the hook.
     """
+    if os.environ.get("_SDD_RECURSION_GUARD"):
+        return
     try:
         subprocess.Popen(
             [sys.executable, __file__, "--run-tests", cwd, command, sid or ""],
@@ -68,9 +70,10 @@ def _run_tests_worker(cwd, command, sid=None):
 
     try:
         started_at = time.time()
+        env = dict(os.environ, _SDD_RECURSION_GUARD="1")
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True,
-            cwd=cwd, timeout=300,
+            cwd=cwd, timeout=300, env=env,
         )
         raw = result.stdout + result.stderr
         if len(raw) > 8192:
