@@ -56,6 +56,7 @@ Read context and prepare environment.
 - You MUST read AGENTS.md before any implementation
 - You MUST read guardrails.md to avoid repeating past mistakes
 - You MUST read all files listed in the task's `Reference Documentation` section
+- After reading guardrails.md, list the 3 entries most relevant to this task and how each changes your approach — active engagement surfaces patterns that passive reading misses
 
 ### 2. Explore
 
@@ -141,6 +142,15 @@ Satisfaction is NOT boolean (green/red). It is convergence:
   across multiple execution paths, not just the happy path
 - Report satisfaction as [M/N scenarios satisfied] — partial satisfaction is valid signal
 - The SDD cycle runs UNTIL satisfaction converges (scenarios pass AND STAY PASSING)
+
+##### Review Alignment Check
+Before moving to validation, self-check against the criteria your reviewer will evaluate — failing review means rework with a fresh teammate, and all your implementation context is lost:
+
+1. **Criteria coverage** — build a `Criterion → Scenario → Covered?` table. Every acceptance criterion from `.code-task.md` must map to at least one scenario.
+2. **Input diversity** — each scenario must exercise 2+ distinct inputs with distinct expected outputs. A single-input test can be satisfied by a hardcoded return value.
+3. **Assertion precision** — use exact comparisons (`toBe`, `toEqual`, `===`). Loose matchers (`toBeTruthy`, `string.contains`) mask incorrect behavior and trigger automatic review failure.
+
+Address gaps before proceeding. The reviewer cannot see your reasoning — only your tests speak.
 
 #### 4b. Validate
 
