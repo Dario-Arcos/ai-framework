@@ -66,10 +66,9 @@ These scenarios become the holdout set for implementation. They are NOT tests �
 3. Call `ExitPlanMode` for user approval
 4. Observable scenarios are the holdout set — they MUST NOT be modified during implementation without returning to brainstorming
 
-**Post-approval:**
-- For UI work: invoke frontend-design next, then scenario-driven-development
-- For everything else: invoke scenario-driven-development directly
-- The approved plan file's Observable Scenarios become the holdout set for the SCENARIO→SATISFY→REFACTOR convergence loop
+**Post-approval — next skill:**
+- UI work → frontend-design, then scenario-driven-development
+- Everything else → scenario-driven-development directly
 
 ## Key Principles
 
