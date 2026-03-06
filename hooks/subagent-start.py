@@ -15,7 +15,7 @@ SKILL_INDEX = """\
 Available skills (invoke via Skill tool):
 scenario-driven-development, verification-before-completion, systematic-debugging,
 frontend-design, agent-browser, deep-research, context-engineering, commit,
-pull-request, brainstorming, humanizer, project-init, skill-creator, ralph-orchestrator
+pull-request, brainstorming, humanizer, skill-creator, sop-code-assist, sop-reviewer
 
 agent-browser: use for any web interaction, research, or runtime validation.\
 """
