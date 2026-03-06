@@ -102,7 +102,7 @@ Rules are committed to the repo (shared with team). `CLAUDE.md` and `settings.js
 | **SOP Pipeline** | `sop-discovery`, `sop-reverse`, `sop-planning`, `sop-task-generator`, `sop-code-assist`, `sop-reviewer` |
 | **Orchestration** | `ralph-orchestrator` |
 | **Git/GitHub** | `commit`, `pull-request`, `branch-cleanup`, `worktree-create`, `worktree-cleanup`, `changelog` |
-| **Context** | `context-engineering`, `deep-research`, `project-init`, `using-ai-framework` |
+| **Context** | `context-engineering`, `deep-research`, `project-init` |
 | **Utilities** | `skill-creator`, `humanizer` |
 
 Invoke with `/ai-framework:<skill-name>` or let Claude route automatically.

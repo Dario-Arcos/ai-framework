@@ -41,7 +41,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `worktree-cleanup` | Eliminar worktrees con validación | Terminar con worktrees |
 | `project-init` | Genera rules de proyecto (stack, architecture, conventions) | Proyecto nuevo o stack cambiado |
 | `deep-research` | Investigación multi-fuente con verificación y confidence ratings | Investigación compleja |
-| `using-ai-framework` | Enforcement de skills y agentes — inyectado automáticamente | Session start (automático), o manual si falta |
+
 
 ### Ralph Orchestrator + SOP Skills (desarrollo autónomo)
 
@@ -481,24 +481,6 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 | 6. REPORT | Reporta [M/N satisfechos] con evidencia |
 
 "Lo corrí antes" no cuenta. "Los tests pasan" sin output no cuenta. Solo evidencia fresca y observable.
-
----
-
-## using-ai-framework
-
-Reglas de enforcement que aseguran que Claude invoque skills y agentes por contexto. Inyectado automáticamente al inicio de cada sesión via SessionStart hook.
-
-**Regla:** invocar skills antes de responder. Solo saltar cuando es **seguro** que ningún skill aplica. En duda, invocar — los falsos positivos son baratos, los skills perdidos son caros.
-
-**Red flags** — si piensas esto, STOP e invoca:
-
-| Pensamiento | Realidad |
-|-------------|---------|
-| "Puedo con mi training" | Training es stale. Skills tienen metodología actual. |
-| "El skill es overkill" | Lo simple se complica. Invoca. |
-| "Déjame explorar primero" | Skills dicen CÓMO explorar. Invoca primero. |
-
-**Prioridad:** skills de proceso primero (brainstorming, debugging, discovery), luego skills de implementación (scenario-driven-development, frontend-design).
 
 ---
 
