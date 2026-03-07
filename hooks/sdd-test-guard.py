@@ -22,7 +22,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _sdd_detect import extract_session_id, is_test_file, read_skill_invoked, read_state
+from _sdd_detect import (
+    extract_session_id, is_exempt_from_tests, is_source_file, is_test_file,
+    read_coverage, read_skill_invoked, read_state, has_test_on_disk,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -133,12 +136,31 @@ def main():
             )
             sys.exit(2)
 
+    # ─── SDD ORDERING GUARD ──────────────────────────────────────
+    # Source file without test files in session → block (scenarios-first)
+    if is_source_file(file_path) and not is_exempt_from_tests(file_path) and not is_test_file(file_path):
+        # Test exists on disk → editing already-tested code → allow
+        if not has_test_on_disk(file_path, cwd):
+            # No test on disk → check session coverage state
+            cov = read_coverage(cwd, sid=sid)
+            if cov and cov.get("source_files") and len(cov.get("test_files", [])) == 0:
+                source_count = len(cov.get("source_files", []))
+                print(
+                    f"SDD Guard: write test scenarios before implementation\n\n"
+                    f"Source files edited: {source_count}, test files: 0\n"
+                    f"No test file found on disk for: {Path(file_path).name}\n"
+                    f"SDD ordering: define scenarios \u2192 write failing tests \u2192 implement.\n"
+                    f"Write test files first.",
+                    file=sys.stderr,
+                )
+                sys.exit(2)
+
     # Fast path: not a test file → allow (~1ms)
     if not is_test_file(file_path):
         sys.exit(0)
 
     # Read test state
-    state = read_state(cwd, sid=sid)
+    state = read_state(cwd)
 
     # No state → allow (no data = no block)
     if state is None:

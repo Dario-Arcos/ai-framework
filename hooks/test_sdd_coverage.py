@@ -404,8 +404,8 @@ class TestAutoTestCoverageTracking(unittest.TestCase):
         # __init__.py is a .py source file but exempt → exits before record
         self.assertIsNone(state)
 
-    def test_no_coverage_nudge_emitted(self):
-        """Coverage tracking exists but no nudge is emitted to context."""
+    def test_ordering_nudge_emitted_when_no_tests(self):
+        """Source files without test files → SDD ordering nudge emitted."""
         for f in ["src/a.py", "src/b.py", "src/c.py"]:
             record_file_edit(self.tmpdir, f)
 
@@ -413,7 +413,18 @@ class TestAutoTestCoverageTracking(unittest.TestCase):
             "cwd": self.tmpdir,
             "tool_input": {"file_path": "src/d.py"},
         })
-        # No nudge — coverage enforcement is at TaskCompleted, not PostToolUse
+        # Nudge emitted — source files edited without test files
+        self.assertIn("SDD ordering", stdout)
+
+    def test_no_nudge_when_tests_present(self):
+        """Source + test files in session → no nudge."""
+        record_file_edit(self.tmpdir, "src/a.py")
+        record_file_edit(self.tmpdir, "tests/test_a.py")
+
+        stdout, _ = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "src/b.py"},
+        })
         self.assertEqual(stdout, "")
 
 

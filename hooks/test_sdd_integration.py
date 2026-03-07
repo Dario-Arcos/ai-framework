@@ -360,8 +360,9 @@ class TestAutoTestHookFeedback(unittest.TestCase):
         _cleanup_state(self.tmpdir)
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
+    @patch.object(sdd_auto_test, "read_coverage", return_value=None)
     @patch.object(sdd_auto_test, "run_tests_background")
-    def test_passing_state_silent(self, mock_bg):
+    def test_passing_state_silent(self, mock_bg, _mock_cov):
         """Previous state was passing → silent (no attention dilution)."""
         _sdd_detect.write_state(self.tmpdir, True, "3 passed")
 
@@ -386,8 +387,9 @@ class TestAutoTestHookFeedback(unittest.TestCase):
         self.assertIn("[FAIL]", ctx)
         self.assertIn("fix implementation", ctx)
 
+    @patch.object(sdd_auto_test, "read_coverage", return_value=None)
     @patch.object(sdd_auto_test, "run_tests_background")
-    def test_no_feedback_when_no_state(self, mock_bg):
+    def test_no_feedback_when_no_state(self, mock_bg, _mock_cov):
         """No previous state → no feedback output."""
         exit_code, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
             "cwd": self.tmpdir,
@@ -718,7 +720,8 @@ class TestFullSDDCycle(unittest.TestCase):
         )
 
         # Edit 1: No state yet → no feedback
-        with patch.object(sdd_auto_test, "run_tests_background"):
+        with patch.object(sdd_auto_test, "run_tests_background"), \
+             patch.object(sdd_auto_test, "read_coverage", return_value=None):
             _, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
                 "cwd": self.tmpdir,
                 "tool_input": {"file_path": "app.py"},
@@ -742,7 +745,8 @@ class TestFullSDDCycle(unittest.TestCase):
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
 
         # Edit 3: State updated to passing → silent (FAIL→silence = fix confirmed)
-        with patch.object(sdd_auto_test, "run_tests_background"):
+        with patch.object(sdd_auto_test, "run_tests_background"), \
+             patch.object(sdd_auto_test, "read_coverage", return_value=None):
             _, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
                 "cwd": self.tmpdir,
                 "tool_input": {"file_path": "app.py"},

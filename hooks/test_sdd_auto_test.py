@@ -53,7 +53,6 @@ class TestRunTestsWorker(unittest.TestCase):
         mock_write.assert_called_once_with(
             self.tmpdir, False,
             "gate command has exit code suppression — remove || true",
-            None,
         )
 
     @patch.object(sdd_auto_test, "baseline_path")
@@ -70,7 +69,7 @@ class TestRunTestsWorker(unittest.TestCase):
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
-            self.tmpdir, True, "5 passed", None,
+            self.tmpdir, True, "5 passed",
             raw_output=ANY, started_at=ANY,
         )
 
@@ -88,7 +87,7 @@ class TestRunTestsWorker(unittest.TestCase):
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
-            self.tmpdir, False, "2 failed", None,
+            self.tmpdir, False, "2 failed",
             raw_output=ANY, started_at=ANY,
         )
 
@@ -135,7 +134,7 @@ class TestRunTestsWorker(unittest.TestCase):
         mock_pid.return_value = self.pid_file
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
-            self.tmpdir, False, "tests timed out (300s)", None,
+            self.tmpdir, False, "tests timed out (300s)",
             started_at=ANY,
         )
 
@@ -168,6 +167,118 @@ class TestRunTestsWorker(unittest.TestCase):
         )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         self.assertFalse(self.pid_file.exists(), "PID file should be cleaned up in finally block")
+
+
+class TestCoalescingWorker(unittest.TestCase):
+    """Test coalescing behavior: rerun marker, max reruns, project-scoped lock."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.pid_file = Path(self.tmpdir) / "test.pid"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch.object(sdd_auto_test, "baseline_path")
+    @patch.object(sdd_auto_test, "pid_path")
+    @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
+    @patch.object(sdd_auto_test, "write_state")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch("subprocess.run")
+    def test_worker_reruns_when_marker_set(self, mock_run, _suppress,
+                                           mock_write, _summary, mock_pid, mock_bp):
+        """Worker runs twice when rerun marker exists after first run."""
+        mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
+        mock_run.return_value = subprocess.CompletedProcess(
+            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
+        )
+        # Simulate: marker set after clear_rerun_marker in first iteration
+        call_count = [0]
+        original_has = sdd_auto_test.has_rerun_marker
+
+        def fake_has_marker(cwd):
+            call_count[0] += 1
+            return call_count[0] == 1  # True after first run, False after second
+
+        with patch.object(sdd_auto_test, "has_rerun_marker", side_effect=fake_has_marker):
+            sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
+
+        self.assertEqual(mock_run.call_count, 2, "Worker should have run tests twice")
+        self.assertEqual(mock_write.call_count, 2, "State should be written twice")
+
+    @patch.object(sdd_auto_test, "baseline_path")
+    @patch.object(sdd_auto_test, "pid_path")
+    @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
+    @patch.object(sdd_auto_test, "write_state")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch("subprocess.run")
+    def test_worker_respects_max_reruns(self, mock_run, _suppress,
+                                        mock_write, _summary, mock_pid, mock_bp):
+        """Worker stops after _MAX_RERUNS+1 total runs even if marker keeps appearing."""
+        mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
+        mock_run.return_value = subprocess.CompletedProcess(
+            args="pytest", returncode=0, stdout="ok\n", stderr="",
+        )
+        # Marker always present → should still stop at max
+        with patch.object(sdd_auto_test, "has_rerun_marker", return_value=True):
+            sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
+
+        max_runs = sdd_auto_test._MAX_RERUNS + 1
+        self.assertEqual(mock_run.call_count, max_runs,
+                         f"Worker should stop after {max_runs} runs")
+
+    @patch.object(sdd_auto_test, "baseline_path")
+    @patch.object(sdd_auto_test, "pid_path")
+    @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
+    @patch.object(sdd_auto_test, "write_state")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch("subprocess.run")
+    def test_worker_no_rerun_without_marker(self, mock_run, _suppress,
+                                             _write, _summary, mock_pid, mock_bp):
+        """Worker runs once when no rerun marker exists."""
+        mock_pid.return_value = self.pid_file
+        mock_bp.return_value = self.pid_file
+        mock_run.return_value = subprocess.CompletedProcess(
+            args="pytest", returncode=0, stdout="ok\n", stderr="",
+        )
+        sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
+        self.assertEqual(mock_run.call_count, 1, "Should run exactly once")
+
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch("subprocess.Popen")
+    def test_launcher_writes_child_pid(self, mock_popen, _running):
+        """run_tests_background writes child PID from parent (closes TOCTOU)."""
+        mock_proc = MagicMock()
+        mock_proc.pid = 12345
+        mock_popen.return_value = mock_proc
+
+        from _sdd_detect import pid_path as real_pid_path
+        pf = real_pid_path(self.tmpdir)
+
+        sdd_auto_test.run_tests_background(self.tmpdir, "pytest")
+        self.assertTrue(pf.exists(), "PID file should be written by parent")
+        self.assertEqual(pf.read_text(), "12345")
+        pf.unlink(missing_ok=True)
+
+    @patch.object(sdd_auto_test, "is_test_running", return_value=True)
+    @patch("subprocess.Popen")
+    def test_launcher_skips_when_running(self, mock_popen, _running):
+        """run_tests_background skips launch when runner is active."""
+        sdd_auto_test.run_tests_background(self.tmpdir, "pytest")
+        mock_popen.assert_not_called()
+
+    @patch.object(sdd_auto_test, "is_test_running", return_value=True)
+    def test_launcher_sets_rerun_marker_when_skipping(self, _running):
+        """Skipped launch still sets rerun marker for the running worker."""
+        from _sdd_detect import rerun_marker_path
+        marker = rerun_marker_path(self.tmpdir)
+        marker.unlink(missing_ok=True)
+
+        sdd_auto_test.run_tests_background(self.tmpdir, "pytest")
+        self.assertTrue(marker.exists(), "Rerun marker should be set even when skipping")
+        marker.unlink(missing_ok=True)
 
 
 class TestFormatFeedback(unittest.TestCase):
@@ -263,7 +374,8 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
     @patch.object(sdd_auto_test, "is_test_running", return_value=False)
     @patch.object(sdd_auto_test, "read_state", return_value={"passing": True, "summary": "5 passed"})
-    def test_previous_passing_state_silent(self, mock_read, mock_running,
+    @patch.object(sdd_auto_test, "read_coverage", return_value=None)
+    def test_previous_passing_state_silent(self, _cov, mock_read, mock_running,
                                             mock_detect, mock_suppress, mock_bg):
         stdout, _ = self._run_main(input_data={
             "cwd": "/tmp/proj",
@@ -324,7 +436,8 @@ class TestMain(unittest.TestCase):
     @patch.object(sdd_auto_test, "is_test_running", return_value=False)
     @patch.object(sdd_auto_test, "detect_test_command", return_value=None)
     @patch.object(sdd_auto_test, "read_state", return_value=None)
-    def test_no_previous_state_no_output(self, mock_read, mock_detect, mock_running, mock_bg):
+    @patch.object(sdd_auto_test, "read_coverage", return_value=None)
+    def test_no_previous_state_no_output(self, _cov, mock_read, mock_detect, mock_running, mock_bg):
         stdout, _ = self._run_main(input_data={
             "cwd": "/tmp/proj",
             "tool_input": {"file_path": "app/main.py"},
@@ -357,8 +470,96 @@ class TestMain(unittest.TestCase):
             self._run_main(input_data={
                 "tool_input": {"file_path": "app/main.py"},
             })
-        # read_state should have been called with the getcwd fallback and sid=None
-        mock_read.assert_called_once_with(fake_cwd, sid=None)
+        # read_state should have been called with the getcwd fallback (project-scoped)
+        mock_read.assert_called_once_with(fake_cwd)
+
+
+class TestSddOrderingNudge(unittest.TestCase):
+    """Test SDD ordering nudge in PostToolUse additionalContext."""
+
+    def _run_main(self, input_data=None):
+        stdin_text = json.dumps(input_data) if input_data is not None else ""
+        stdout_capture = io.StringIO()
+        exit_code = 0
+        with patch.object(sys, "argv", ["sdd-auto-test.py"]), \
+             patch.object(sys, "stdin", io.StringIO(stdin_text)), \
+             patch.object(sys, "stdout", stdout_capture):
+            try:
+                sdd_auto_test.main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return stdout_capture.getvalue(), exit_code
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    @patch.object(sdd_auto_test, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": [],
+    })
+    def test_nudge_when_source_no_tests(self, _cov, _state, _running,
+                                         _detect, _suppress, _bg):
+        """Source files edited, no test files → nudge emitted."""
+        stdout, _ = self._run_main(input_data={
+            "cwd": "/tmp/proj",
+            "tool_input": {"file_path": "src/b.py"},
+        })
+        self.assertIn("SDD ordering", stdout)
+        data = json.loads(stdout)
+        self.assertIn("additionalContext", data["hookSpecificOutput"])
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    @patch.object(sdd_auto_test, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": ["tests/test_a.py"],
+    })
+    def test_no_nudge_when_tests_present(self, _cov, _state, _running,
+                                          _detect, _suppress, _bg):
+        """Source + test files in session → no nudge."""
+        stdout, _ = self._run_main(input_data={
+            "cwd": "/tmp/proj",
+            "tool_input": {"file_path": "src/b.py"},
+        })
+        self.assertEqual(stdout, "")
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value={"passing": True, "summary": "3 passed"})
+    @patch.object(sdd_auto_test, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": [],
+    })
+    def test_no_nudge_when_passing(self, _cov, _state, _running,
+                                    _detect, _suppress, _bg):
+        """Tests passing + source-only coverage → no nudge (tests validate the code)."""
+        stdout, _ = self._run_main(input_data={
+            "cwd": "/tmp/proj",
+            "tool_input": {"file_path": "src/b.py"},
+        })
+        self.assertEqual(stdout, "")
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=False)
+    @patch.object(sdd_auto_test, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    @patch.object(sdd_auto_test, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": [],
+    })
+    def test_failure_takes_priority_over_nudge(self, _cov, _state, _running,
+                                                _detect, _suppress, _bg):
+        """Test failure message takes priority over ordering nudge."""
+        stdout, _ = self._run_main(input_data={
+            "cwd": "/tmp/proj",
+            "tool_input": {"file_path": "src/b.py"},
+        })
+        self.assertIn("[FAIL]", stdout)
+        self.assertNotIn("SDD ordering", stdout)
 
 
 class TestSourceExtensionsNew(unittest.TestCase):

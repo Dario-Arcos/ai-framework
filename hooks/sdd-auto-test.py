@@ -18,12 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    baseline_path, detect_test_command, extract_session_id,
-    has_exit_suppression,
+    baseline_path, clear_rerun_marker, detect_test_command,
+    extract_session_id, has_exit_suppression, has_rerun_marker,
     is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
-    parse_test_summary, pid_path, read_state,
-    record_edit_time, record_file_edit, write_baseline, write_skill_invoked,
-    write_state,
+    parse_test_summary, pid_path, read_coverage, read_state,
+    record_edit_time, record_file_edit, write_baseline,
+    write_rerun_marker, write_skill_invoked, write_state,
 )
 
 
@@ -34,13 +34,26 @@ from _sdd_detect import (
 def run_tests_background(cwd, command, sid=None):
     """Fork a detached subprocess to run tests in background.
 
-    Invokes this script with --run-tests flag so the worker logic
-    runs in a separate process with no connection to the hook.
+    Coalescing design: at most 1 test process per project at any time.
+    Rapid edits set a rerun marker; the running worker picks it up.
+
+    Guarantees:
+    - Max 1 process per project (project-scoped lock via PID file)
+    - Trailing-edge: last edit always tested (rerun marker)
+    - TOCTOU-safe: parent writes child PID before returning
     """
     if os.environ.get("_SDD_RECURSION_GUARD"):
         return
+
+    # Signal rerun needed (project-scoped, any session can set)
+    write_rerun_marker(cwd)
+
+    # Project-scoped debounce — one runner at a time
+    if is_test_running(cwd):
+        return  # Running worker will pick up the rerun marker
+
     try:
-        subprocess.Popen(
+        proc = subprocess.Popen(
             [sys.executable, __file__, "--run-tests", cwd, command, sid or ""],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
@@ -48,51 +61,64 @@ def run_tests_background(cwd, command, sid=None):
             start_new_session=True,
             cwd=cwd,
         )
+        # Write child PID from parent — closes TOCTOU race window
+        pid_path(cwd).write_text(str(proc.pid))
     except OSError:
         pass
 
 
+_MAX_RERUNS = 3  # Safety valve: prevent infinite rerun loops
+
+
 def _run_tests_worker(cwd, command, sid=None):
-    """Worker mode: run tests, write state, clean up PID.
+    """Coalescing worker: run tests, check for pending edits, rerun if needed.
 
     Called when script is invoked with --run-tests flag.
+    Loops up to _MAX_RERUNS+1 times to cover edits that arrive during execution.
+    State is project-scoped; baseline is session-scoped (write-once).
     """
-    # Reject commands with exit code suppression (|| true, ; true, etc.)
     if has_exit_suppression(command):
-        write_state(cwd, False, "gate command has exit code suppression — remove || true", sid)
+        write_state(cwd, False, "gate command has exit code suppression — remove || true")
         return
 
-    pf = pid_path(cwd, sid)
+    pf = pid_path(cwd)  # Project-scoped lock
     try:
         pf.write_text(str(os.getpid()))
     except OSError:
         pass
 
     try:
-        started_at = time.time()
-        env = dict(os.environ, _SDD_RECURSION_GUARD="1")
-        result = subprocess.run(
-            command, shell=True, capture_output=True, text=True,
-            cwd=cwd, timeout=300, env=env,
-        )
-        raw = result.stdout + result.stderr
-        if len(raw) > 8192:
-            raw = raw[-8192:]
-        output = raw.strip()
-        passing = result.returncode == 0
-        summary = parse_test_summary(output, result.returncode)
-        raw_tail = raw[-4096:] if raw else ""
-        write_state(cwd, passing, summary, sid,
-                    raw_output=raw_tail, started_at=started_at)
-        # Capture baseline on first run (write-once)
-        if sid and not baseline_path(cwd, sid).exists():
-            write_baseline(cwd, sid, passing, summary)
-    except subprocess.TimeoutExpired:
-        write_state(cwd, False, "tests timed out (300s)", sid,
-                    started_at=time.time())
-    except OSError as e:
-        write_state(cwd, False, f"test execution error: {e}", sid,
-                    started_at=time.time())
+        for _ in range(_MAX_RERUNS + 1):
+            clear_rerun_marker(cwd)
+
+            started_at = time.time()
+            env = dict(os.environ, _SDD_RECURSION_GUARD="1")
+            try:
+                result = subprocess.run(
+                    command, shell=True, capture_output=True, text=True,
+                    cwd=cwd, timeout=300, env=env,
+                )
+                raw = result.stdout + result.stderr
+                if len(raw) > 8192:
+                    raw = raw[-8192:]
+                passing = result.returncode == 0
+                summary = parse_test_summary(raw.strip(), result.returncode)
+                raw_tail = raw[-4096:] if raw else ""
+                write_state(cwd, passing, summary,
+                            raw_output=raw_tail, started_at=started_at)
+                # Baseline: session-scoped, write-once
+                if sid and not baseline_path(cwd, sid).exists():
+                    write_baseline(cwd, sid, passing, summary)
+            except subprocess.TimeoutExpired:
+                write_state(cwd, False, "tests timed out (300s)",
+                            started_at=time.time())
+            except OSError as e:
+                write_state(cwd, False, f"test execution error: {e}",
+                            started_at=time.time())
+
+            # No pending edits → done
+            if not has_rerun_marker(cwd):
+                break
     finally:
         try:
             pf.unlink(missing_ok=True)
@@ -168,12 +194,21 @@ def main():
     record_file_edit(cwd, file_path, sid)
     record_edit_time(cwd, sid)
 
-    # Read previous test state — only report failures (passing = no signal needed)
-    previous = read_state(cwd, sid=sid)
+    # Read previous test state (project-scoped) — only report failures
+    previous = read_state(cwd)
     msg = format_feedback(previous) if previous and not previous.get("passing") else None
 
-    # Guard: debounce — don't launch if tests already running
-    if not is_test_running(cwd, sid):
+    # SDD ordering nudge (when no test failure to report AND no passing state)
+    if not msg and not (previous and previous.get("passing")):
+        cov = read_coverage(cwd, sid=sid)
+        if cov and cov.get("source_files") and not cov.get("test_files"):
+            msg = (
+                "SDD ordering: source files edited without test files in this session. "
+                "Define test scenarios before continuing with implementation."
+            )
+
+    # Guard: debounce — project-scoped, one runner at a time
+    if not is_test_running(cwd):
         command = detect_test_command(cwd)
         if command and not has_exit_suppression(command):
             run_tests_background(cwd, command, sid)

@@ -395,6 +395,21 @@ class TestPrecisionDenyInMain(unittest.TestCase):
         self.assertEqual(stdout, "")
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
+    def test_assertions_increased_but_precision_decreased_denies(self, _mock):
+        """assert x == 42 → assert x + assert y + assert z is not None: count 1→3, precise 1→0 → DENY."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert x == 42",
+                "new_string": "assert x\nassert y\nassert z is not None",
+            },
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("precision", stderr)
+
+    @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_no_old_precise_allows_any_change(self, _mock):
         """No precise assertions in old → can't drop precision → ALLOW."""
         exit_code, stdout, stderr = self._run_main({
@@ -408,6 +423,138 @@ class TestPrecisionDenyInMain(unittest.TestCase):
         })
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout, "")
+
+
+class TestSourceOrderingGuard(unittest.TestCase):
+    """PreToolUse blocks source edits when no test files in session and no test on disk."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _run_main(self, input_data):
+        stdin_mock = io.StringIO(json.dumps(input_data))
+        stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
+        exit_code = 0
+        with patch("sys.stdin", stdin_mock), \
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
+            try:
+                main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
+
+    @patch.object(sdd_test_guard, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": [],
+    })
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=False)
+    def test_source_no_tests_no_disk_denies(self, _mock_disk, _mock_cov):
+        """Source file + no test files in session + no test on disk → DENY."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("SDD Guard", stderr)
+        self.assertIn("write test scenarios", stderr.lower())
+
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=True)
+    def test_source_test_on_disk_allows(self, _mock_disk):
+        """Source file + test exists on disk → ALLOW (bug fix / refactoring)."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+
+    @patch.object(sdd_test_guard, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": ["tests/test_a.py"],
+    })
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=False)
+    def test_source_with_session_tests_allows(self, _mock_disk, _mock_cov):
+        """Source file + test files edited in session → ALLOW."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+
+    @patch.object(sdd_test_guard, "read_coverage", return_value=None)
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=False)
+    def test_source_no_coverage_state_allows(self, _mock_disk, _mock_cov):
+        """Source file + no coverage state (first edit) → ALLOW (grace)."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+
+    def test_exempt_file_not_blocked(self):
+        """Exempt file (e.g. __init__.py) → ALLOW regardless of coverage."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/__init__.py",
+                "old_string": "",
+                "new_string": "from .main import foo",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+
+    def test_non_source_file_not_blocked(self):
+        """Non-source file (e.g. README.md) → ALLOW."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "README.md",
+                "old_string": "# Old",
+                "new_string": "# New",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+
+    @patch.object(sdd_test_guard, "read_coverage", return_value={
+        "source_files": [], "test_files": [],
+    })
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=False)
+    def test_empty_coverage_state_allows(self, _mock_disk, _mock_cov):
+        """Coverage state exists but both lists empty → ALLOW (no meaningful edits yet)."""
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 0)
 
 
 class TestReviewFileGuard(unittest.TestCase):

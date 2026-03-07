@@ -219,6 +219,32 @@ def is_test_running(cwd, sid=None):
         return False
 
 
+def rerun_marker_path(cwd):
+    """Path to rerun marker file (always project-scoped)."""
+    return _tmp(f"sdd-rerun-{project_hash(cwd)}.marker")
+
+
+def write_rerun_marker(cwd):
+    """Signal that tests should rerun after current execution."""
+    try:
+        rerun_marker_path(cwd).write_text(str(time.time()))
+    except OSError:
+        pass
+
+
+def has_rerun_marker(cwd):
+    """Check if a rerun has been requested."""
+    return rerun_marker_path(cwd).exists()
+
+
+def clear_rerun_marker(cwd):
+    """Clear the rerun marker."""
+    try:
+        rerun_marker_path(cwd).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def await_test_completion(cwd, timeout=30, sid=None):
     """Wait for a running test worker to finish, then return its state.
 
@@ -644,6 +670,53 @@ def clear_baseline(cwd, sid):
         baseline_path(cwd, sid).unlink(missing_ok=True)
     except OSError:
         pass
+
+
+def has_test_on_disk(source_path, cwd):
+    """Check if a test file exists on disk for a given source file.
+
+    Convention-based lookup: same directory, __tests__/, project-level tests/.
+    Returns True if any matching test file exists on the filesystem.
+    """
+    p = Path(source_path)
+    stem = p.stem
+
+    # Resolve relative paths against cwd
+    if not p.is_absolute():
+        p = Path(cwd) / p
+    parent = p.parent
+
+    candidates = []
+
+    # Python: test_foo.py, foo_test.py
+    candidates.append(parent / f"test_{stem}.py")
+    candidates.append(parent / f"{stem}_test.py")
+
+    # JS/TS: foo.test.ts, foo.spec.ts, etc.
+    for ext in (".ts", ".tsx", ".js", ".jsx"):
+        candidates.append(parent / f"{stem}.test{ext}")
+        candidates.append(parent / f"{stem}.spec{ext}")
+
+    # Go: foo_test.go
+    candidates.append(parent / f"{stem}_test.go")
+
+    # __tests__ sibling directory
+    tests_dir = parent / "__tests__"
+    for ext in (".ts", ".tsx", ".js", ".jsx"):
+        candidates.append(tests_dir / f"{stem}.test{ext}")
+        candidates.append(tests_dir / f"{stem}.spec{ext}")
+
+    # Project-level test directories (tests/, test/)
+    cwd_path = Path(cwd)
+    for test_dir_name in ("tests", "test"):
+        test_dir = cwd_path / test_dir_name
+        candidates.append(test_dir / f"test_{stem}.py")
+        candidates.append(test_dir / f"{stem}_test.py")
+        for ext in (".ts", ".tsx", ".js", ".jsx"):
+            candidates.append(test_dir / f"{stem}.test{ext}")
+            candidates.append(test_dir / f"{stem}.spec{ext}")
+
+    return any(c.exists() for c in candidates)
 
 
 def compute_uncovered(cwd, state):

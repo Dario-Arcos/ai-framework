@@ -2,6 +2,7 @@
 """Tests for _sdd_detect.py — detect_test_command() and parse_test_summary()."""
 import os
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -12,8 +13,8 @@ from unittest.mock import patch
 from _sdd_detect import (
     await_test_completion, detect_test_command, has_exit_suppression,
     is_test_running, parse_test_summary, pid_path, read_skill_invoked,
-    read_state, skill_invoked_path, state_path, write_skill_invoked,
-    write_state,
+    read_state, skill_invoked_path, state_path, has_test_on_disk,
+    write_skill_invoked, write_state,
 )
 
 
@@ -483,6 +484,117 @@ class TestAwaitTestCompletion(unittest.TestCase):
         mock_mono.side_effect = [0.0, 31.0]
         result = await_test_completion(self.tmpdir, timeout=30)
         self.assertIsNone(result)
+
+
+class TestRerunMarker(unittest.TestCase):
+    """Test rerun marker primitives for coalescing worker."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_write_and_has(self):
+        from _sdd_detect import write_rerun_marker, has_rerun_marker
+        self.assertFalse(has_rerun_marker(self.tmpdir))
+        write_rerun_marker(self.tmpdir)
+        self.assertTrue(has_rerun_marker(self.tmpdir))
+
+    def test_clear(self):
+        from _sdd_detect import write_rerun_marker, has_rerun_marker, clear_rerun_marker
+        write_rerun_marker(self.tmpdir)
+        clear_rerun_marker(self.tmpdir)
+        self.assertFalse(has_rerun_marker(self.tmpdir))
+
+    def test_clear_when_not_exists(self):
+        from _sdd_detect import clear_rerun_marker
+        clear_rerun_marker(self.tmpdir)  # Should not raise
+
+    def test_marker_is_project_scoped(self):
+        """Same cwd always produces the same marker path."""
+        from _sdd_detect import rerun_marker_path
+        p1 = rerun_marker_path(self.tmpdir)
+        p2 = rerun_marker_path(self.tmpdir)
+        self.assertEqual(p1, p2)
+        # No sid in path
+        self.assertNotIn("sid", str(p1))
+
+
+class TestTestExistsOnDisk(unittest.TestCase):
+    """Test has_test_on_disk() convention-based lookup."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_test_returns_false(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "main.py").write_text("pass", encoding="utf-8")
+        self.assertFalse(has_test_on_disk("src/main.py", self.tmpdir))
+
+    def test_python_test_prefix(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "main.py").write_text("pass", encoding="utf-8")
+        Path(src, "test_main.py").write_text("pass", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/main.py", self.tmpdir))
+
+    def test_python_test_suffix(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "main.py").write_text("pass", encoding="utf-8")
+        Path(src, "main_test.py").write_text("pass", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/main.py", self.tmpdir))
+
+    def test_ts_test_file(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "service.ts").write_text("", encoding="utf-8")
+        Path(src, "service.test.ts").write_text("", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/service.ts", self.tmpdir))
+
+    def test_ts_spec_file(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "service.ts").write_text("", encoding="utf-8")
+        Path(src, "service.spec.ts").write_text("", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/service.ts", self.tmpdir))
+
+    def test_dunder_tests_dir(self):
+        src = os.path.join(self.tmpdir, "src")
+        tests = os.path.join(src, "__tests__")
+        os.makedirs(tests)
+        Path(src, "Button.tsx").write_text("", encoding="utf-8")
+        Path(tests, "Button.test.tsx").write_text("", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/Button.tsx", self.tmpdir))
+
+    def test_project_level_tests_dir(self):
+        src = os.path.join(self.tmpdir, "src")
+        tests = os.path.join(self.tmpdir, "tests")
+        os.makedirs(src)
+        os.makedirs(tests)
+        Path(src, "foo.py").write_text("pass", encoding="utf-8")
+        Path(tests, "test_foo.py").write_text("pass", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("src/foo.py", self.tmpdir))
+
+    def test_go_test_file(self):
+        pkg = os.path.join(self.tmpdir, "pkg")
+        os.makedirs(pkg)
+        Path(pkg, "handler.go").write_text("", encoding="utf-8")
+        Path(pkg, "handler_test.go").write_text("", encoding="utf-8")
+        self.assertTrue(has_test_on_disk("pkg/handler.go", self.tmpdir))
+
+    def test_no_match_different_stem(self):
+        src = os.path.join(self.tmpdir, "src")
+        os.makedirs(src)
+        Path(src, "foo.py").write_text("pass", encoding="utf-8")
+        Path(src, "test_bar.py").write_text("pass", encoding="utf-8")
+        self.assertFalse(has_test_on_disk("src/foo.py", self.tmpdir))
 
 
 if __name__ == "__main__":

@@ -250,10 +250,10 @@ def _try_cached_test_gate(cwd, sid, max_age=30):
       - resolved=True, passed=False  → tests failing AND trusted, output has raw details
       - resolved=False               → no usable/trusted state, caller must run fresh
     """
-    if is_test_running(cwd, sid):
-        state = await_test_completion(cwd, timeout=60, sid=sid)
+    if is_test_running(cwd):
+        state = await_test_completion(cwd, timeout=60)
     else:
-        state = read_state(cwd, max_age_seconds=max_age, sid=sid)
+        state = read_state(cwd, max_age_seconds=max_age)
 
     if not state:
         return False, False, ""
