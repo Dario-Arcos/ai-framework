@@ -104,6 +104,18 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/constraint-reinforcement.py",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

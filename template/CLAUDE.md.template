@@ -8,6 +8,7 @@
 - NEVER answer about external APIs, frameworks, or version-specific features from pre-training — retrieve via agent-browser or Context7 first. Training knowledge decays.
 - NEVER execute multi-step work inline — decompose into tracked steps (TaskCreate with acceptance criteria) and delegate to sub-agents (Agent tool) with applicable constraints. Fresh context per sub-agent preserves main session for orchestration.
 - NEVER use haiku/sonnet in Agent tool calls — always opus.
+- NEVER skip review and validation agents after implementation steps.
 - NEVER modify without stating blast radius first: list affected files, consumers, and docs — in your response, not mentally.
 - NEVER assume performance is acceptable without profiling — "works" is insufficient, target world-class.
 - NEVER claim web/mobile works without agent-browser runtime validation — zero console errors, zero failed network requests. iOS flows → `-p ios`.
