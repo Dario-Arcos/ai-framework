@@ -280,6 +280,34 @@ def _try_cached_test_gate(cwd, sid, max_age=30):
 # NON-RALPH TEST GATE
 # ─────────────────────────────────────────────────────────────────
 
+def _gate_with_baseline(gate_name, output, cwd, sid,
+                        ralph_dir=None, teammate_name=None, task_subject=""):
+    """Handle a failing gate with baseline comparison.
+
+    - Pre-existing failure (same as baseline) → warning + allow (return True)
+    - New regression + ralph → increment failures + _fail_task with count
+    - New regression + non-ralph → _fail_task without count
+    - Returns True if pre-existing (caller should continue), never returns on new regression.
+    """
+    if _check_baseline(cwd, sid, output):
+        print(
+            f"Warning: gate '{gate_name}' failing but pre-existing "
+            f"(same failure pattern as session baseline). "
+            f"Allowing completion.",
+            file=sys.stderr,
+        )
+        return True
+    if ralph_dir and teammate_name:
+        count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+        _fail_task(
+            f"Quality gate '{gate_name}' failed for: {task_subject}",
+            f"Output:\n{output}",
+            f"Fix the issue before completing this task. (consecutive failures: {count})",
+        )
+    else:
+        _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+
+
 def _check_baseline(cwd, sid, current_output):
     """Check if test failure is pre-existing (same as session baseline).
 
@@ -305,29 +333,12 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
         if resolved and passed:
             pass  # Skip fresh run — auto-test already confirmed passing
         elif resolved and not passed:
-            # Trusted failing state with raw output — no need for fresh run
-            if _check_baseline(cwd, sid, output):
-                print(
-                    f"Warning: test gate failing but pre-existing "
-                    f"(same failure pattern as session baseline). "
-                    f"Allowing completion.",
-                    file=sys.stderr,
-                )
-            else:
-                _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+            _gate_with_baseline("test", output, cwd, sid, task_subject=task_subject)
         else:
             # No trusted state — run fresh
             passed, output = run_gate("test", command, cwd)
             if not passed:
-                if _check_baseline(cwd, sid, output):
-                    print(
-                        f"Warning: test gate failing but pre-existing "
-                        f"(same failure pattern as session baseline). "
-                        f"Allowing completion.",
-                        file=sys.stderr,
-                    )
-                else:
-                    _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+                _gate_with_baseline("test", output, cwd, sid, task_subject=task_subject)
 
     # Coverage gate: fail if source files lack tests
     state = read_coverage(cwd, sid=sid)
@@ -422,20 +433,10 @@ def main():
             if resolved and passed:
                 continue  # Skip to next gate
             if resolved and not passed:
-                if _check_baseline(cwd, sid, output):
-                    print(
-                        f"Warning: gate 'test' failing but pre-existing "
-                        f"(same failure pattern as session baseline). "
-                        f"Allowing completion.",
-                        file=sys.stderr,
-                    )
-                    continue
-                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-                _fail_task(
-                    f"Quality gate 'test' failed for: {task_subject}",
-                    f"Output:\n{output}",
-                    f"Fix the issue before completing this task. (consecutive failures: {count})",
-                )
+                _gate_with_baseline("test", output, cwd, sid,
+                                    ralph_dir=ralph_dir, teammate_name=teammate_name,
+                                    task_subject=task_subject)
+                continue
 
         elapsed = time.monotonic() - gate_start
         remaining = gate_budget - elapsed
@@ -450,20 +451,9 @@ def main():
         passed, output = run_gate(gate_name, gate_cmd, cwd, timeout=gate_timeout)
 
         if not passed:
-            if _check_baseline(cwd, sid, output):
-                print(
-                    f"Warning: gate '{gate_name}' failing but pre-existing "
-                    f"(same failure pattern as session baseline). "
-                    f"Allowing completion.",
-                    file=sys.stderr,
-                )
-            else:
-                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-                _fail_task(
-                    f"Quality gate '{gate_name}' failed for: {task_subject}",
-                    f"Output:\n{output}",
-                    f"Fix the issue before completing this task. (consecutive failures: {count})",
-                )
+            _gate_with_baseline(gate_name, output, cwd, sid,
+                                ralph_dir=ralph_dir, teammate_name=teammate_name,
+                                task_subject=task_subject)
 
     # Coverage gate (after quality gates pass)
     try:
