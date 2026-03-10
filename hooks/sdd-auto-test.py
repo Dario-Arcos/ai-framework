@@ -18,12 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    baseline_path, clear_rerun_marker, detect_test_command,
-    extract_session_id, has_exit_suppression, has_rerun_marker,
-    is_exempt_from_tests, is_source_file, is_test_file, is_test_running,
-    parse_test_summary, pid_path, read_coverage, read_state,
-    record_edit_time, record_file_edit, write_baseline,
-    write_rerun_marker, write_skill_invoked, write_state,
+    acquire_runner_lock, baseline_path, clear_rerun_marker,
+    detect_test_command, extract_session_id, has_exit_suppression,
+    has_rerun_marker, is_exempt_from_tests, is_source_file, is_test_file,
+    is_test_running, parse_test_summary, pid_path, read_coverage,
+    read_state, record_edit_time, record_file_edit, release_runner_lock,
+    write_baseline, write_rerun_marker, write_skill_invoked, write_state,
 )
 
 
@@ -81,11 +81,9 @@ def _run_tests_worker(cwd, command, sid=None):
         write_state(cwd, False, "gate command has exit code suppression — remove || true")
         return
 
-    pf = pid_path(cwd)  # Project-scoped lock
-    try:
-        pf.write_text(str(os.getpid()))
-    except OSError:
-        pass
+    lock_fd = acquire_runner_lock(cwd)
+    if lock_fd is None:
+        return  # Another worker holds the lock
 
     try:
         for _ in range(_MAX_RERUNS + 1):
@@ -120,10 +118,7 @@ def _run_tests_worker(cwd, command, sid=None):
             if not has_rerun_marker(cwd):
                 break
     finally:
-        try:
-            pf.unlink(missing_ok=True)
-        except OSError:
-            pass
+        release_runner_lock(lock_fd, cwd)
 
 
 # ─────────────────────────────────────────────────────────────────

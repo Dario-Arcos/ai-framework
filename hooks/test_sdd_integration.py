@@ -193,8 +193,8 @@ class TestAutoTestWorkerRealExecution(unittest.TestCase):
         # Summary text varies by pytest version/ordering — the critical signal
         # is passing=False (based on returncode), not the summary text content
 
-    def test_pid_file_cleaned_after_execution(self):
-        """PID file is created during execution and cleaned after."""
+    def test_pid_file_after_execution(self):
+        """PID file persists after worker (cleaned by is_test_running probe)."""
         _create_mini_project(self.tmpdir,
             app_code="x = 1\n",
             test_code="def test_true(): assert True\n",
@@ -203,7 +203,10 @@ class TestAutoTestWorkerRealExecution(unittest.TestCase):
 
         self.assertFalse(pid_file.exists())
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        self.assertFalse(pid_file.exists(), "PID file should be cleaned up")
+        # PID file persists (no unlink on Unix — avoids inode race)
+        # Probe detects lock released and cleans up
+        self.assertFalse(_sdd_detect.is_test_running(self.tmpdir))
+        self.assertFalse(pid_file.exists(), "Probe should clean stale PID file")
 
     def test_invalid_command_writes_error_state(self):
         """Nonexistent test command writes error state, doesn't crash."""
@@ -420,9 +423,9 @@ class TestAutoTestHookFeedback(unittest.TestCase):
 
     @patch.object(sdd_auto_test, "run_tests_background")
     def test_debounce_prevents_parallel_runs(self, mock_bg):
-        """If tests are already running (PID exists), skip launching new ones."""
-        pid_file = _sdd_detect.pid_path(self.tmpdir)
-        pid_file.write_text(str(os.getpid()))
+        """If tests are already running (lock held), skip launching new ones."""
+        lock_fd = _sdd_detect.acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(lock_fd, "Should acquire lock (no other worker)")
         try:
             exit_code, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
                 "cwd": self.tmpdir,
@@ -430,7 +433,7 @@ class TestAutoTestHookFeedback(unittest.TestCase):
             })
             mock_bg.assert_not_called()
         finally:
-            pid_file.unlink(missing_ok=True)
+            _sdd_detect.release_runner_lock(lock_fd, self.tmpdir)
 
 
 # ─────────────────────────────────────────────────────────────────

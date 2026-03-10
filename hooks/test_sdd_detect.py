@@ -11,10 +11,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from unittest.mock import patch
 from _sdd_detect import (
-    await_test_completion, detect_test_command, has_exit_suppression,
-    is_test_running, parse_test_summary, pid_path, read_skill_invoked,
-    read_state, skill_invoked_path, state_path, has_test_on_disk,
-    write_skill_invoked, write_state,
+    acquire_runner_lock, await_test_completion, detect_test_command,
+    has_exit_suppression, is_test_running, parse_test_summary, pid_path,
+    read_skill_invoked, read_state, release_runner_lock, skill_invoked_path,
+    state_path, has_test_on_disk, write_skill_invoked, write_state,
 )
 
 
@@ -292,6 +292,97 @@ class TestStateIO(unittest.TestCase):
         pf.write_text("999999999")  # non-existent PID
         self.assertFalse(is_test_running(self.tmpdir))
         self.assertFalse(pf.exists(), "Stale PID file should be cleaned up")
+
+    def test_is_test_running_with_lock_held(self):
+        """flock held on PID file → is_test_running returns True."""
+        lock_fd = acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(lock_fd)
+        try:
+            self.assertTrue(is_test_running(self.tmpdir))
+        finally:
+            release_runner_lock(lock_fd, self.tmpdir)
+
+    def test_is_test_running_after_lock_released(self):
+        """flock released → is_test_running returns False."""
+        lock_fd = acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(lock_fd)
+        release_runner_lock(lock_fd, self.tmpdir)
+        self.assertFalse(is_test_running(self.tmpdir))
+
+
+class TestRunnerLock(unittest.TestCase):
+    """Test acquire_runner_lock / release_runner_lock atomicity."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        for p in [pid_path(self.tmpdir)]:
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+
+    def tearDown(self):
+        for p in [pid_path(self.tmpdir)]:
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_acquire_returns_fd(self):
+        fd = acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(fd)
+        release_runner_lock(fd, self.tmpdir)
+
+    def test_acquire_writes_pid(self):
+        fd = acquire_runner_lock(self.tmpdir)
+        try:
+            pf = pid_path(self.tmpdir)
+            pid = int(pf.read_text().strip())
+            self.assertEqual(pid, os.getpid())
+        finally:
+            release_runner_lock(fd, self.tmpdir)
+
+    def test_second_acquire_returns_none(self):
+        """Second acquire while first holds lock → None (rejected)."""
+        fd1 = acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(fd1)
+        try:
+            fd2 = acquire_runner_lock(self.tmpdir)
+            self.assertIsNone(fd2, "Second acquire should fail while lock is held")
+        finally:
+            release_runner_lock(fd1, self.tmpdir)
+
+    def test_acquire_after_release_succeeds(self):
+        """After release, a new acquire should succeed."""
+        fd1 = acquire_runner_lock(self.tmpdir)
+        release_runner_lock(fd1, self.tmpdir)
+        fd2 = acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(fd2)
+        release_runner_lock(fd2, self.tmpdir)
+
+    def test_release_leaves_pid_file(self):
+        """PID file persists after release — cleaned by is_test_running probe."""
+        fd = acquire_runner_lock(self.tmpdir)
+        pf = pid_path(self.tmpdir)
+        self.assertTrue(pf.exists())
+        release_runner_lock(fd, self.tmpdir)
+        self.assertTrue(pf.exists(), "PID file should persist (cleaned by probe)")
+        # Probe cleans it up
+        self.assertFalse(is_test_running(self.tmpdir))
+        self.assertFalse(pf.exists(), "Probe should clean stale PID file")
+
+    def test_release_none_is_noop(self):
+        """release_runner_lock(None, cwd) should not raise."""
+        release_runner_lock(None, self.tmpdir)
+
+    def test_release_sentinel_cleans_pid(self):
+        """release_runner_lock(-1, cwd) handles Windows sentinel."""
+        pf = pid_path(self.tmpdir)
+        pf.write_text("12345")
+        release_runner_lock(-1, self.tmpdir)
+        self.assertFalse(pf.exists())
 
 
 class TestSkillInvokedPerSkill(unittest.TestCase):
