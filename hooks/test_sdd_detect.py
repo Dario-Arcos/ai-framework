@@ -688,5 +688,173 @@ class TestTestExistsOnDisk(unittest.TestCase):
         self.assertFalse(has_test_on_disk("src/foo.py", self.tmpdir))
 
 
+class TestDetectTestCommandCache(unittest.TestCase):
+    """Test file-based caching for detect_test_command()."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        # Clear any cached state
+        from _sdd_detect import project_hash, _tmp
+        self.cache_path = _tmp(f"sdd-test-cmd-{project_hash(self.tmpdir)}.json")
+        try:
+            self.cache_path.unlink()
+        except FileNotFoundError:
+            pass
+
+    def tearDown(self):
+        try:
+            self.cache_path.unlink()
+        except FileNotFoundError:
+            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_detect_test_command_caches_result(self):
+        """Second call returns cached result without re-scanning filesystem."""
+        # Use go.mod — not tracked by mtime invalidation (only config.sh/package.json are)
+        (Path(self.tmpdir) / "go.mod").write_text("module example.com/m", encoding="utf-8")
+        result1 = detect_test_command(self.tmpdir)
+        self.assertEqual(result1, "go test ./...")
+        # Cache file should exist
+        self.assertTrue(self.cache_path.exists())
+        # Remove go.mod — cached result persists (mtime keys unchanged)
+        (Path(self.tmpdir) / "go.mod").unlink()
+        result2 = detect_test_command(self.tmpdir)
+        self.assertEqual(result2, "go test ./...")
+
+    def test_detect_test_command_cache_invalidates_on_mtime(self):
+        """Cache invalidated when package.json mtime changes."""
+        import json as json_mod
+        pkg = Path(self.tmpdir) / "package.json"
+        pkg.write_text('{"scripts": {"test": "jest"}}', encoding="utf-8")
+        detect_test_command(self.tmpdir)  # populate cache
+        self.assertTrue(self.cache_path.exists())
+        # Force cache to have old pkg_mtime
+        cache_data = json_mod.loads(self.cache_path.read_text())
+        cache_data["pkg_mtime"] = 0.0
+        self.cache_path.write_text(json_mod.dumps(cache_data))
+        # Should re-detect (cache invalidated)
+        result = detect_test_command(self.tmpdir)
+        self.assertEqual(result, "npm test")
+
+    def test_detect_test_command_cache_invalidates_on_ttl(self):
+        """Cache invalidated when TTL expires."""
+        import json as json_mod
+        (Path(self.tmpdir) / "go.mod").write_text("module example.com/m", encoding="utf-8")
+        detect_test_command(self.tmpdir)  # populate cache
+        # Force expired TTL
+        cache_data = json_mod.loads(self.cache_path.read_text())
+        cache_data["detected_at"] = 0.0  # epoch = very old
+        self.cache_path.write_text(json_mod.dumps(cache_data))
+        # Should re-detect
+        result = detect_test_command(self.tmpdir)
+        self.assertEqual(result, "go test ./...")
+
+    def test_detect_test_command_cache_handles_missing_file(self):
+        """Missing cache file doesn't crash — falls through to detection."""
+        (Path(self.tmpdir) / "Cargo.toml").write_text('[package]\nname = "p"', encoding="utf-8")
+        # No cache file exists
+        result = detect_test_command(self.tmpdir)
+        self.assertEqual(result, "cargo test")
+
+    def test_detect_test_command_cache_handles_corrupt_file(self):
+        """Corrupt cache file doesn't crash — falls through to detection."""
+        (Path(self.tmpdir) / "go.mod").write_text("module example.com/m", encoding="utf-8")
+        self.cache_path.write_text("not json at all")
+        result = detect_test_command(self.tmpdir)
+        self.assertEqual(result, "go test ./...")
+
+
+class TestParseUtcTimestamp(unittest.TestCase):
+    """Test _parse_utc_timestamp() helper."""
+
+    def test_valid_timestamp(self):
+        from _sdd_detect import _parse_utc_timestamp
+        result = _parse_utc_timestamp("2026-01-15T10:30:00Z")
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, float)
+        self.assertGreater(result, 0)
+
+    def test_invalid_format(self):
+        from _sdd_detect import _parse_utc_timestamp
+        self.assertIsNone(_parse_utc_timestamp("not-a-timestamp"))
+
+    def test_none_input(self):
+        from _sdd_detect import _parse_utc_timestamp
+        self.assertIsNone(_parse_utc_timestamp(None))
+
+    def test_empty_string(self):
+        from _sdd_detect import _parse_utc_timestamp
+        self.assertIsNone(_parse_utc_timestamp(""))
+
+
+class TestReadJsonWithTtl(unittest.TestCase):
+    """Test _read_json_with_ttl() helper."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_fresh_data_returned(self):
+        import json as json_mod, time as time_mod
+        from _sdd_detect import _read_json_with_ttl
+        p = Path(self.tmpdir) / "test.json"
+        data = {"value": 42, "timestamp": time_mod.strftime("%Y-%m-%dT%H:%M:%SZ", time_mod.gmtime())}
+        p.write_text(json_mod.dumps(data))
+        result = _read_json_with_ttl(p, max_age_seconds=600)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["value"], 42)
+
+    def test_expired_data_returns_none(self):
+        import json as json_mod, time as time_mod
+        from _sdd_detect import _read_json_with_ttl
+        p = Path(self.tmpdir) / "test.json"
+        old_ts = time_mod.strftime("%Y-%m-%dT%H:%M:%SZ", time_mod.gmtime(time_mod.time() - 7200))
+        data = {"value": 42, "timestamp": old_ts}
+        p.write_text(json_mod.dumps(data))
+        result = _read_json_with_ttl(p, max_age_seconds=600)
+        self.assertIsNone(result)
+
+    def test_missing_file_returns_none(self):
+        from _sdd_detect import _read_json_with_ttl
+        p = Path(self.tmpdir) / "nonexistent.json"
+        self.assertIsNone(_read_json_with_ttl(p, max_age_seconds=600))
+
+    def test_corrupt_file_returns_none(self):
+        from _sdd_detect import _read_json_with_ttl
+        p = Path(self.tmpdir) / "corrupt.json"
+        p.write_text("not json")
+        self.assertIsNone(_read_json_with_ttl(p, max_age_seconds=600))
+
+
+class TestWriteJsonAtomic(unittest.TestCase):
+    """Test _write_json_atomic() helper."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_roundtrip(self):
+        import json as json_mod
+        from _sdd_detect import _write_json_atomic
+        p = Path(self.tmpdir) / "output.json"
+        _write_json_atomic(p, {"key": "value"})
+        self.assertTrue(p.exists())
+        data = json_mod.loads(p.read_text())
+        self.assertEqual(data["key"], "value")
+
+    def test_atomic_overwrite(self):
+        import json as json_mod
+        from _sdd_detect import _write_json_atomic
+        p = Path(self.tmpdir) / "output.json"
+        _write_json_atomic(p, {"v": 1})
+        _write_json_atomic(p, {"v": 2})
+        data = json_mod.loads(p.read_text())
+        self.assertEqual(data["v"], 2)
+
+
 if __name__ == "__main__":
     unittest.main()

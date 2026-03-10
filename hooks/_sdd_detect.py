@@ -6,6 +6,7 @@ Imported by:
 - task-completed.py (TaskCompleted)
 """
 import calendar
+import functools
 try:
     import fcntl
 except ImportError:
@@ -25,6 +26,56 @@ def _tmp(*parts):
     return Path(tempfile.gettempdir(), *parts)
 
 
+def _parse_utc_timestamp(ts):
+    """Parse ISO 8601 UTC timestamp to epoch float. Returns None on failure."""
+    if not ts:
+        return None
+    try:
+        return float(calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")))
+    except (ValueError, OverflowError):
+        return None
+
+
+def _read_json_with_ttl(path, max_age_seconds, use_flock=False):
+    """Read a JSON file with TTL validation. Returns dict or None.
+
+    Args:
+        path: Path to JSON file.
+        max_age_seconds: Ignore data older than this. Negative = no TTL.
+        use_flock: Acquire shared lock before reading (for contended files).
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            if use_flock and fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+    ts = data.get("timestamp")
+    if ts and max_age_seconds >= 0:
+        written = _parse_utc_timestamp(ts)
+        if written is not None and time.time() - written > max_age_seconds:
+            return None
+
+    return data
+
+
+def _write_json_atomic(path, data, prefix="sdd-"):
+    """Atomic write of JSON data via tmpfile + rename."""
+    try:
+        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix=prefix)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+            f.write("\n")
+        os.replace(tmp, str(path))
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
 EXIT_SUPPRESSION_RE = re.compile(
     r"\|\|\s*(?:(?:[\w/]*/)?true\b|:(?:\s|$)|exit\s+0\b)"
     r"|;\s*(?:(?:[\w/]*/)?true\b|:(?:\s|$)|exit\s+0\b)"
@@ -36,6 +87,7 @@ def has_exit_suppression(command):
     return bool(EXIT_SUPPRESSION_RE.search(command))
 
 
+@functools.lru_cache(maxsize=4)
 def project_hash(cwd):
     """Short hash of project root for unique temp file names."""
     return hashlib.md5(cwd.encode()).hexdigest()[:12]
@@ -57,6 +109,9 @@ def extract_session_id(input_data):
     return hashlib.md5(sid.encode()).hexdigest()[:8]
 
 
+_TEST_CMD_CACHE_TTL = 3600  # 1 hour
+
+
 def detect_test_command(cwd):
     """Detect the test command for a project.
 
@@ -74,8 +129,44 @@ def detect_test_command(cwd):
     """
     cwd_path = Path(cwd)
 
-    # Priority 1: explicit GATE_TEST from ralph config
+    # File-based cache: check before scanning filesystem
+    cache_file = _tmp(f"sdd-test-cmd-{project_hash(cwd)}.json")
     config_path = cwd_path / ".ralph" / "config.sh"
+    pkg_path = cwd_path / "package.json"
+    try:
+        raw = cache_file.read_text(encoding="utf-8")
+        cache = json.loads(raw)
+        # TTL check
+        if time.time() - cache.get("detected_at", 0) < _TEST_CMD_CACHE_TTL:
+            # mtime invalidation
+            config_mtime = config_path.stat().st_mtime if config_path.exists() else 0.0
+            pkg_mtime = pkg_path.stat().st_mtime if pkg_path.exists() else 0.0
+            if (cache.get("config_mtime", 0.0) == config_mtime and
+                    cache.get("pkg_mtime", 0.0) == pkg_mtime):
+                return cache.get("command")  # None is a valid cached result
+    except (FileNotFoundError, json.JSONDecodeError, OSError, KeyError):
+        pass  # Cache miss — fall through to detection
+
+    result = _detect_test_command_uncached(cwd_path, config_path, pkg_path)
+
+    # Write cache atomically
+    config_mtime = config_path.stat().st_mtime if config_path.exists() else 0.0
+    pkg_mtime = pkg_path.stat().st_mtime if pkg_path.exists() else 0.0
+    cache_data = {
+        "command": result,
+        "config_mtime": config_mtime,
+        "pkg_mtime": pkg_mtime,
+        "detected_at": time.time(),
+    }
+    _write_json_atomic(cache_file, cache_data, prefix="sdd-test-cmd-")
+
+    return result
+
+
+def _detect_test_command_uncached(cwd_path, config_path, pkg_path):
+    """Core detection logic without caching."""
+
+    # Priority 1: explicit GATE_TEST from ralph config
     if config_path.exists():
         try:
             script = (
@@ -93,7 +184,6 @@ def detect_test_command(cwd):
             pass
 
     # Priority 2: package.json — parse and verify scripts.test exists
-    pkg_path = cwd_path / "package.json"
     if pkg_path.exists():
         try:
             pkg = json.loads(pkg_path.read_text(encoding="utf-8"))
@@ -359,31 +449,11 @@ def read_state(cwd, max_age_seconds=600, sid=None):
             Prevents stale state from previous sessions causing false decisions.
         sid: Session ID hash for teammate isolation.
     """
-    sp = state_path(cwd, sid)
-    try:
-        with open(sp, "r", encoding="utf-8") as f:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_SH)
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-    # TTL check: ignore stale state from previous sessions
-    ts = data.get("timestamp")
-    if ts and max_age_seconds >= 0:
-        try:
-            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
-            if time.time() - written > max_age_seconds:
-                return None
-        except (ValueError, OverflowError):
-            pass  # unparseable timestamp → treat as fresh (don't break)
-
-    return data
+    return _read_json_with_ttl(state_path(cwd, sid), max_age_seconds, use_flock=True)
 
 
 def write_state(cwd, passing, summary, sid=None, raw_output=None, started_at=None):
     """Atomic write of test state via tmpfile + rename."""
-    sp = state_path(cwd, sid)
     data = {
         "passing": passing,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -393,17 +463,7 @@ def write_state(cwd, passing, summary, sid=None, raw_output=None, started_at=Non
         data["raw_output"] = raw_output
     if started_at is not None:
         data["started_at"] = started_at
-    try:
-        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-state-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-            f.write("\n")
-        os.replace(tmp, str(sp))
-    except OSError:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
+    _write_json_atomic(state_path(cwd, sid), data, prefix="sdd-state-")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -416,19 +476,34 @@ def last_edit_path(cwd, sid):
 
 
 def record_edit_time(cwd, sid):
-    """Write current UTC epoch to per-session edit timestamp file."""
-    if not sid:
-        return
-    try:
-        last_edit_path(cwd, sid).write_text(str(time.time()))
-    except OSError:
-        pass
+    """Deprecated: edit time now recorded inside record_file_edit().
+
+    Kept as no-op for backward compatibility.
+    """
+    pass
 
 
 def read_edit_time(cwd, sid):
-    """Read last edit timestamp for session. Returns float or 0.0."""
+    """Read last edit timestamp for session. Returns float or 0.0.
+
+    Primary source: coverage JSON's last_edit_time key (merged write).
+    Fallback: legacy sdd-last-edit-*.ts file (returns 0.0 = trust).
+    """
     if not sid:
         return 0.0
+    # Primary: read from coverage JSON
+    try:
+        cp = coverage_path(cwd, sid)
+        with open(cp, "r", encoding="utf-8") as f:
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_SH)
+            data = json.load(f)
+        t = data.get("last_edit_time")
+        if t is not None:
+            return float(t)
+    except (FileNotFoundError, json.JSONDecodeError, OSError, ValueError):
+        pass
+    # Fallback: legacy file (orphans from pre-merge)
     try:
         return float(last_edit_path(cwd, sid).read_text().strip())
     except (FileNotFoundError, ValueError, OSError):
@@ -452,14 +527,10 @@ def can_trust_state(state, cwd, sid):
     started_at = state.get("started_at")
     if started_at is None:
         # Legacy state without started_at: trust only if very fresh
-        ts = state.get("timestamp")
-        if not ts:
+        written = _parse_utc_timestamp(state.get("timestamp"))
+        if written is None:
             return False
-        try:
-            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
-            return time.time() - written < 5
-        except (ValueError, OverflowError):
-            return False
+        return time.time() - written < 5
 
     edit_time = read_edit_time(cwd, sid)
     if edit_time == 0.0:
@@ -480,21 +551,11 @@ def skill_invoked_path(cwd, skill_name="sop-code-assist", sid=None):
 
 def write_skill_invoked(cwd, skill_name, sid=None):
     """Record that an SDD skill was invoked."""
-    sp = skill_invoked_path(cwd, skill_name, sid)
     data = {
         "skill": skill_name,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    try:
-        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-skill-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-        os.replace(tmp, str(sp))
-    except OSError:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
+    _write_json_atomic(skill_invoked_path(cwd, skill_name, sid), data, prefix="sdd-skill-")
 
 
 def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400, sid=None):
@@ -505,26 +566,9 @@ def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400,
             Prevents cross-session skill state inheritance between teammates.
         sid: Session ID hash for teammate isolation.
     """
-    sp = skill_invoked_path(cwd, skill_name, sid)
-    try:
-        with open(sp, "r", encoding="utf-8") as f:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_SH)
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-    # TTL check: ignore stale skill state from previous sessions
-    ts = data.get("timestamp")
-    if ts and max_age_seconds >= 0:
-        try:
-            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
-            if time.time() - written > max_age_seconds:
-                return None
-        except (ValueError, OverflowError):
-            pass  # unparseable timestamp → treat as fresh
-
-    return data
+    return _read_json_with_ttl(
+        skill_invoked_path(cwd, skill_name, sid), max_age_seconds, use_flock=True
+    )
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -630,6 +674,8 @@ def record_file_edit(cwd, file_path, sid=None):
             data["source_files"] = sorted(source_files)
             data["test_files"] = sorted(test_files)
             data["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            if sid:
+                data["last_edit_time"] = time.time()
 
             f.seek(0)
             f.truncate()
@@ -641,25 +687,7 @@ def record_file_edit(cwd, file_path, sid=None):
 
 def read_coverage(cwd, max_age_seconds=14400, sid=None):
     """Read coverage state with LOCK_SH + TTL (4h). Returns dict or None."""
-    cp = coverage_path(cwd, sid)
-    try:
-        with open(cp, "r", encoding="utf-8") as f:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_SH)
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-    ts = data.get("timestamp")
-    if ts and max_age_seconds >= 0:
-        try:
-            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
-            if time.time() - written > max_age_seconds:
-                return None
-        except (ValueError, OverflowError):
-            pass
-
-    return data
+    return _read_json_with_ttl(coverage_path(cwd, sid), max_age_seconds, use_flock=True)
 
 
 def clear_coverage(cwd, sid=None):
@@ -720,40 +748,12 @@ def write_baseline(cwd, sid, passing, summary):
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "summary": summary,
     }
-    try:
-        fd, tmp = tempfile.mkstemp(dir=tempfile.gettempdir(), prefix="sdd-baseline-")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-            f.write("\n")
-        os.replace(tmp, str(bp))
-    except OSError:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
+    _write_json_atomic(bp, data, prefix="sdd-baseline-")
 
 
 def read_baseline(cwd, sid, max_age_seconds=14400):
     """Read test baseline state with TTL (4h). Returns dict or None."""
-    bp = baseline_path(cwd, sid)
-    try:
-        with open(bp, "r", encoding="utf-8") as f:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_SH)
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return None
-
-    ts = data.get("timestamp")
-    if ts and max_age_seconds >= 0:
-        try:
-            written = calendar.timegm(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
-            if time.time() - written > max_age_seconds:
-                return None
-        except (ValueError, OverflowError):
-            pass
-
-    return data
+    return _read_json_with_ttl(baseline_path(cwd, sid), max_age_seconds, use_flock=True)
 
 
 def clear_baseline(cwd, sid):
