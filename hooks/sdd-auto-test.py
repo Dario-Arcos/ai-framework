@@ -22,7 +22,7 @@ from _sdd_detect import (
     detect_test_command, extract_session_id, has_exit_suppression,
     has_rerun_marker, is_exempt_from_tests, is_source_file, is_test_file,
     is_test_running, parse_test_summary, pid_path, read_coverage,
-    read_state, record_edit_time, record_file_edit, release_runner_lock,
+    read_state, record_file_edit, release_runner_lock,
     write_baseline, write_rerun_marker, write_skill_invoked, write_state,
 )
 
@@ -185,9 +185,8 @@ def main():
     if is_exempt_from_tests(file_path):
         sys.exit(0)
 
-    # Track source file edit for coverage
+    # Track source file edit for coverage (also records edit timestamp)
     record_file_edit(cwd, file_path, sid)
-    record_edit_time(cwd, sid)
 
     # Read previous test state (project-scoped) — only report failures
     previous = read_state(cwd)
