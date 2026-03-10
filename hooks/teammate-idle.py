@@ -12,7 +12,6 @@ Decision logic:
   2. Circuit breaker triggered  → exit 0 (consecutive failures exceeded)
   3. Default                    → exit 0 (allow idle, lead assigns work)
 """
-import calendar
 try:
     import fcntl
 except ImportError:
@@ -23,6 +22,9 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _sdd_detect import _parse_utc_timestamp
 
 
 
@@ -65,14 +67,11 @@ def read_failures(ralph_dir, max_age_seconds=7200):
             ts = data.get("_updated_at")
             if not ts:
                 return {}  # No timestamp → legacy/stale → ignore
-            try:
-                written = calendar.timegm(
-                    time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
-                )
-                if time.time() - written > max_age_seconds:
-                    return {}
-            except (ValueError, OverflowError):
+            written = _parse_utc_timestamp(ts)
+            if written is None:
                 return {}  # Unparseable → treat as stale
+            if time.time() - written > max_age_seconds:
+                return {}
 
             return data
     except (json.JSONDecodeError, OSError):
