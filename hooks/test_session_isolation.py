@@ -516,7 +516,7 @@ class TestTaskCompletedBaseline(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────
 
 class TestEditTimestamps(unittest.TestCase):
-    """Test record_edit_time / read_edit_time per-session primitives."""
+    """Test edit timestamp tracking via record_file_edit / read_edit_time."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -527,6 +527,7 @@ class TestEditTimestamps(unittest.TestCase):
             last_edit_path(self.tmpdir, self.sid).unlink(missing_ok=True)
         except OSError:
             pass
+        clear_coverage(self.tmpdir, self.sid)
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_no_edit_returns_zero(self):
@@ -534,8 +535,8 @@ class TestEditTimestamps(unittest.TestCase):
         self.assertEqual(read_edit_time(self.tmpdir, self.sid), 0.0)
 
     def test_record_then_read(self):
-        """record_edit_time → read_edit_time returns > 0."""
-        record_edit_time(self.tmpdir, self.sid)
+        """record_file_edit with sid → read_edit_time returns > 0."""
+        record_file_edit(self.tmpdir, "src/main.py", self.sid)
         result = read_edit_time(self.tmpdir, self.sid)
         self.assertGreater(result, 0)
         self.assertAlmostEqual(result, time.time(), delta=2)
@@ -562,6 +563,7 @@ class TestCanTrustState(unittest.TestCase):
             last_edit_path(self.tmpdir, self.sid).unlink(missing_ok=True)
         except OSError:
             pass
+        clear_coverage(self.tmpdir, self.sid)
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_no_state_returns_false(self):
@@ -575,14 +577,14 @@ class TestCanTrustState(unittest.TestCase):
 
     def test_started_after_edit_trusts(self):
         """started_at > last_edit → True."""
-        record_edit_time(self.tmpdir, self.sid)
+        record_file_edit(self.tmpdir, "src/main.py", self.sid)
         edit_t = read_edit_time(self.tmpdir, self.sid)
         state = {"passing": True, "summary": "ok", "started_at": edit_t + 1}
         self.assertTrue(can_trust_state(state, self.tmpdir, self.sid))
 
     def test_started_before_edit_distrusts(self):
         """started_at < last_edit → False."""
-        record_edit_time(self.tmpdir, self.sid)
+        record_file_edit(self.tmpdir, "src/main.py", self.sid)
         edit_t = read_edit_time(self.tmpdir, self.sid)
         state = {"passing": True, "summary": "ok", "started_at": edit_t - 1}
         self.assertFalse(can_trust_state(state, self.tmpdir, self.sid))
