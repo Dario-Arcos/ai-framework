@@ -9,12 +9,7 @@
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py",
             "timeout": 10,
             "statusMessage": "Syncing templates..."
-          }
-        ]
-      },
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/_run.sh ${CLAUDE_PLUGIN_ROOT}/hooks/agent-browser-check.py",
