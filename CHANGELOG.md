@@ -12,6 +12,64 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [2026.2.0] - 2026-03-11
+
+### Añadido
+
+- **Hook constraint-reinforcement**: Añadir refuerzo constitucional en recency zone en cada prompt del usuario (UserPromptSubmit) — contrarresta dilución de atención en conversaciones largas (~55 tokens inyectados) (commit `c752197`)
+- **Hook subagent-start**: Inyectar registro de skills en sub-agentes (SubagentStart) para que puedan invocar skills sin que el padre pase la lista manualmente (commit `3679a45`)
+- **Hooks cross-platform Windows**: Añadir wrapper `_run.sh` con fallback python3→python y flag -B, condicionalizar `fcntl` con fallback no-op, usar `tempfile.gettempdir()` en lugar de `/tmp/` hardcoded. Todos los hooks ruteados via `bash _run.sh HOOK.py` (commit `3fd6204`)
+- **Hook SDD session isolation**: Añadir estado session-scoped para teammates paralelos — coverage, baseline, skill tracking y trust validation aislados por sesión. Estado project-scoped (test results, PID, rerun marker) para coordinación entre teammates (commit `89a24c2`)
+- **Hook SDD coalescing runner**: Añadir ejecución background con trailing-edge coalescing (1 runner máximo por proyecto), flock-based locking (TOCTOU-safe), rerun markers, y timeouts adaptativos basados en duración histórica de tests (commit `68ebeed`)
+- **Hook SDD coverage enforcement**: Registrar ediciones source/test por sesión y detectar archivos sin tests en TaskCompleted — "reward hacking by omission" bloqueado (commit `a405c8a`)
+- **Hook SDD precision detection**: Detectar downgrade de precisión de assertions (assertEqual→assertTrue) incluso cuando el conteo se mantiene — bloquear weakening semántico como reward hacking (commit `3d83606`)
+- **Hook SDD baseline comparison**: Escribir baseline write-once al inicio de sesión para distinguir fallos preexistentes de regresiones nuevas — evitar deadlock por fallos heredados (commit `89a24c2`)
+- **Hook SDD skill enforcement**: Requerir invocación de sop-code-assist (o sop-reviewer para rev-* teammates) antes de completar tarea. Gate de coverage valida que source files tengan tests correspondientes (commit `7c938a0`)
+- **Hook SDD ordering guard**: Bloquear escritura a source files cuando no existe test file editado en la sesión y no hay test en disco para el archivo (commit `3d83606`)
+- **Hooks subprocess validation**: Añadir 27 tests de validación real — contrato hooks.json (scripts existen, matchers compilan, timeouts coherentes), compliance gaps (assertion weakening, detección de archivos), 6 flujos E2E, y 4 thresholds de performance (commits `21fc0ff`, `1fd5fa7`)
+- **Skill skill-creator**: Reescribir con sistema eval/benchmark — evals paralelos (con-skill vs baseline), grading cuantitativo, agregación de varianza, viewer HTML, y optimización de descriptions para triggering (commit `a3a5886`)
+- **Skill deep-research**: Rediseñar como motor SOP con patrón STORM (investigación multi-perspectiva), protocolo anti-alucinación, routing Context7/agent-browser, y artefactos persistentes en `.research/` (commit `e6ac4ce`)
+- **Template spinner tips**: Añadir 4 tips contextuales en español durante tiempos de espera del spinner (commit `a0193a4`)
+- **Docs quickstart**: Añadir guía de auto-update para plugin marketplace con proceso step-by-step (commit `f9b0eb3`)
+
+### Cambiado
+
+- **Template CLAUDE.md**: Reescribir constraints con formato NEVER-first para máxima activación LLM, comprimir identidad, simplificar workflow a cadena única (brainstorming→plan mode→SDD→verification), eliminar tabla skill-routing (absorbida por constraints) (commit `344cb7c`)
+- **Skill humanizer**: Añadir guía de voz en español con 6 directrices, 69 líneas de referencia con ejemplos before/after, y paso anti-AI audit explícito. Proceso expandido de 5 a 10 pasos con detección de idioma y ciclo draft/audit/rewrite (commit `a77cd61`)
+- **Skill brainstorming**: Reemplazar escritura de design docs markdown + git commit con flujo EnterPlanMode/ExitPlanMode. Plan file ahora tiene secciones estructuradas (Context, Design, Observable Scenarios, Blast Radius, Verification) (commit `bc0ddce`)
+- **Skill sop-code-assist**: Separar Step 4 en Implementation + Validate. Validación ahora incondicional con 4 agentes en paralelo (code-reviewer + code-simplifier + edge-case-detector + performance-engineer). Añadir Review Alignment Check y runtime validation via agent-browser (commits `4f81e49`, `d4b647a`)
+- **Skill verification-before-completion**: Endurecer contra evasión — verificación de estabilidad (re-run obligatorio), ciclo red-green para regression tests, verificación independiente de claims de sub-agentes, scope expandido a paráfrasis e implicaciones de éxito (commit `8780fe5`)
+- **Skill SDD**: Expandir Quality Integration de 2 a 4 agentes en paralelo (+ edge-case-detector + performance-engineer) (commit `8780fe5`)
+- **Skill descriptions**: Reescribir descriptions de 20+ skills con formato "Value: [beneficio]. Skip risk: [consecuencia]" para mejorar precisión de triggering (commit `6efb409`)
+- **Hook task-completed**: Eliminar validación scenario-strategy y tracking de métricas. Añadir gates de coverage, skill enforcement, y baseline comparison. Reusar estado de auto-test con trust validation (ahorro 30-120s). Eximir sub-agentes regulares del gate de completion (commit `e4ef515`)
+- **Hooks context noise**: Silenciar session-start en éxito (era "AI Framework: checkmark"), agent-browser excepto en fallo de instalación, auto-test reporta solo fallos, eliminar nudge de coverage de PostToolUse (commits `485d7af`, `4a3af24`)
+- **Hooks hooks.json**: Consolidar 3 entradas SessionStart en 1, expandir matcher PostToolUse a `Edit|Write|Skill`, rutear todos los hooks via _run.sh (commit `582d510`)
+- **Hooks _sdd_detect performance**: Añadir lru_cache a project_hash, file-based cache con TTL+mtime para detect_test_command, deduplicar ~90 líneas con helpers genéricos de I/O JSON (commit `6600d62`)
+- **Agents edge-case-detector y performance-engineer**: Añadir segundo ejemplo para mejorar triggering, clarificar scope boundaries entre correctness y performance, añadir commit log al contexto (commit `81e2bac`)
+
+### Eliminado
+
+- **Hook memory-check**: Eliminar detección automática de staleness de project rules en SessionStart — usar `/project-init` manualmente cuando la estructura del proyecto cambie (commit `1ecf83f`)
+- **Skill using-ai-framework**: Eliminar skill de routing redundante — lógica absorbida por constraints de CLAUDE.md template ("Skills precede all work") (commit `7bc82de`)
+
+### Arreglado
+
+- **Hook adaptive_gate_timeout**: Corregir espiral de timeout en cold-start — default=60→120 alineado con worker background para prevenir que el gate mate la primera ejecución antes de escribir estado (commit `8f7c889`)
+- **Hook rerun marker**: Corregir gap de coalescing — escribir marker antes del debounce check para que workers en ejecución detecten edits que llegan durante el test run (commit `8f7c889`)
+- **Hook PID debounce**: Reemplazar check PID-only con flock de proyecto — eliminar race condition TOCTOU en concurrencia de teammates (commit `321bfc3`)
+- **Hook orphan processes**: Añadir process group isolation via os.killpg para prevenir acumulación de procesos pytest/node huérfanos que consumen CPU (commit `82c2b9a`)
+- **Hook stale failure counter**: Añadir TTL de 2h a failures.json en teammate-idle para prevenir triggers fantasma del circuit breaker por failures de ejecuciones anteriores (commit `89f0a70`)
+- **Hook sub-agent deadlock**: Eximir sub-agentes regulares (non-ralph) del gate de completion en TaskCompleted — fix deadlock donde tareas interdependientes se bloquean mutuamente (commit `aab9509`)
+- **Hook try/catch anti-pattern**: Añadir `try/catch` que traga excepciones como anti-patrón explícito en detección de precision de assertions (commit `b203bcd`)
+- **Hook fork bomb prevention**: Añadir `_SDD_RECURSION_GUARD` para prevenir fork bomb cuando sdd-auto-test.py se re-invoca a sí mismo como subprocess (commit `79b1d94`)
+- **Hook file-existence guard**: Añadir guard de existencia de archivo para prevenir ENOENT bloqueando todas las operaciones Edit/Write cuando CLAUDE_PLUGIN_ROOT apunta a path stale (commit `93c8eb1`)
+- **Hook research task bypass**: Saltar enforcement SDD para tareas de research/planning sin ediciones de source files — prevenir bloqueos falsos en tareas de investigación (commit `3b373bf`)
+- **Hook cwd resolution**: Usar CLAUDE_PROJECT_DIR como fuente primaria de cwd en todos los hooks — corregir resolución incorrecta en contexto de plugin (commit `f700e07`)
+- **Skills ralph quality gates**: Corregir documentación incorrecta que implicaba que gates podían saltarse con scenario-strategy `not-applicable` — todos los gates corren incondicionalmente (commit `4f81e49`)
+- **Skills YAML frontmatter**: Corregir parseo de descriptions con caracteres especiales — unificar quoting en frontmatter YAML de 20+ skills (commits `74701de`, `b903f92`)
+
+---
+
 ## [2026.1.1] - 2026-02-19
 
 ### Añadido
@@ -423,5 +481,5 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 ::: info Última actualización
-**Versión**: 2026.1.1 | **Fecha**: 2026-02-19
+**Versión**: 2026.2.0 | **Fecha**: 2026-03-11
 :::
