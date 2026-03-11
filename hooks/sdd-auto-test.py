@@ -201,6 +201,10 @@ def main():
                 "Define test scenarios before continuing with implementation."
             )
 
+    # Signal rerun needed — written before debounce check so a running
+    # worker picks up this edit even if we skip spawning a new one
+    write_rerun_marker(cwd)
+
     # Guard: debounce — project-scoped, one runner at a time
     if not is_test_running(cwd):
         command = detect_test_command(cwd)

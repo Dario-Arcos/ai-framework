@@ -109,7 +109,7 @@ def run_in_process_group(command, cwd, timeout, env=None):
         return -1, "", "", True
 
 
-def adaptive_gate_timeout(cwd, default=60, multiplier=3,
+def adaptive_gate_timeout(cwd, default=120, multiplier=3,
                           min_timeout=30, max_timeout=300):
     """Compute gate timeout from historical test duration.
 
@@ -117,7 +117,9 @@ def adaptive_gate_timeout(cwd, default=60, multiplier=3,
     Automatically adapts to project size — small suites get tight
     timeouts, large suites get proportionally more time.
 
-    First run (no history): uses default.
+    First run (no history): uses default (120s — aligned with background
+    worker to prevent cold-start timeout spiral where gate kills the run
+    before state is written, blocking the learning cycle).
     """
     state = read_state(cwd, max_age_seconds=7200)  # 2h history window
     if state and state.get("duration"):

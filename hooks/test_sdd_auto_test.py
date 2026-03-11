@@ -401,6 +401,29 @@ class TestMain(unittest.TestCase):
         mock_bg.assert_not_called()
 
     @patch.object(sdd_auto_test, "run_tests_background")
+    @patch.object(sdd_auto_test, "detect_test_command", return_value="pytest")
+    @patch.object(sdd_auto_test, "is_test_running", return_value=True)
+    @patch.object(sdd_auto_test, "read_state", return_value=None)
+    def test_rerun_marker_written_when_tests_running(self, mock_read,
+                                                      mock_running, mock_detect, mock_bg):
+        """Rerun marker written even when is_test_running=True (coalescing guarantee)."""
+        from _sdd_detect import rerun_marker_path
+        tmpdir = tempfile.mkdtemp()
+        try:
+            marker = rerun_marker_path(tmpdir)
+            marker.unlink(missing_ok=True)
+            self._run_main(input_data={
+                "cwd": tmpdir,
+                "tool_input": {"file_path": f"{tmpdir}/app/main.py"},
+            })
+            self.assertTrue(marker.exists(),
+                            "Rerun marker must be written even when tests are running "
+                            "so the worker retests after this edit")
+            mock_bg.assert_not_called()
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    @patch.object(sdd_auto_test, "run_tests_background")
     @patch.object(sdd_auto_test, "detect_test_command", return_value=None)
     @patch.object(sdd_auto_test, "is_test_running", return_value=False)
     @patch.object(sdd_auto_test, "read_state", return_value=None)
