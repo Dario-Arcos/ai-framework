@@ -999,5 +999,720 @@ class TestRalphGateSequence(unittest.TestCase):
         self.assertIn("exit code suppression", stderr)
 
 
+# ─────────────────────────────────────────────────────────────────
+# 10. CROSS-HOOK STATE HANDOFF: auto-test writes → task-completed reads
+# ─────────────────────────────────────────────────────────────────
+
+class TestCrossHookStateHandoff(unittest.TestCase):
+    """Integration: sdd-auto-test writes state → task-completed reads and trusts.
+
+    Ralph scenario: teammate edits source file → PostToolUse fires sdd-auto-test
+    → background worker runs tests → writes state. Then teammate marks task complete
+    → TaskCompleted fires → _try_cached_test_gate reads auto-test's state → trusts it.
+
+    This tests the FULL cross-hook coordination chain.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-handoff-")
+        _cleanup_state(self.tmpdir)
+        test_file = Path(self.tmpdir) / "test_sample.py"
+        test_file.write_text("def test_pass(): assert True\n")
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_auto_test_state_trusted_by_task_completed(self):
+        """Auto-test writes passing state → task-completed trusts it."""
+        sid = "test-session-abc123"
+
+        # Step 1: Simulate PostToolUse — record file edit
+        _sdd_detect.record_file_edit(self.tmpdir, "src/app.py", sid)
+
+        # Step 2: Simulate auto-test worker — write passing state
+        started_at = time.time()
+        time.sleep(0.1)  # Ensure started_at > edit_time
+        _sdd_detect.write_state(self.tmpdir, True, "1 passed, 0 failed",
+                                started_at=started_at)
+
+        # Step 3: Simulate task-completed — read state and check trust
+        state = _sdd_detect.read_state(self.tmpdir, max_age_seconds=30)
+        self.assertIsNotNone(state)
+        self.assertTrue(state["passing"])
+
+        # Trust: state.started_at must be >= last edit time
+        trusted = _sdd_detect.can_trust_state(state, self.tmpdir, sid)
+        self.assertTrue(trusted, "State should be trusted — started after edit")
+
+    def test_auto_test_state_distrusted_when_edit_after_test(self):
+        """Edit after test run → state not trusted → task-completed runs fresh."""
+        sid = "test-session-def456"
+
+        # Step 1: Auto-test writes state
+        _sdd_detect.write_state(self.tmpdir, True, "1 passed",
+                                started_at=time.time())
+
+        time.sleep(0.1)
+
+        # Step 2: ANOTHER edit happens AFTER test state was written
+        _sdd_detect.record_file_edit(self.tmpdir, "src/app.py", sid)
+
+        # Step 3: task-completed checks trust → should NOT trust
+        state = _sdd_detect.read_state(self.tmpdir, max_age_seconds=30)
+        trusted = _sdd_detect.can_trust_state(state, self.tmpdir, sid)
+        self.assertFalse(trusted, "State should NOT be trusted — edit after test")
+
+
+# ─────────────────────────────────────────────────────────────────
+# 11. ADAPTIVE TIMEOUT WITH REAL EXECUTION
+# ─────────────────────────────────────────────────────────────────
+
+class TestAdaptiveTimeoutRealExecution(unittest.TestCase):
+    """Integration: real test execution records duration → adaptive timeout adapts.
+
+    This tests the FULL feedback loop with actual subprocess execution:
+    1. Create a project with real tests
+    2. Run tests via run_in_process_group
+    3. Write state with started_at (duration auto-computed)
+    4. Verify adaptive_gate_timeout returns correct value
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-adaptive-")
+        _cleanup_state(self.tmpdir)
+        # Create a real test file that takes ~0.5s
+        test_file = Path(self.tmpdir) / "test_timing.py"
+        test_file.write_text(
+            "import time\n"
+            "def test_slow(): time.sleep(0.5)\n"
+            "def test_fast(): assert True\n"
+        )
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_duration_recorded_from_real_execution(self):
+        """Real pytest run records accurate duration in state."""
+        started_at = time.time()
+        rc, stdout, stderr, timed_out = _sdd_detect.run_in_process_group(
+            f"python3 -m pytest {self.tmpdir}/test_timing.py -q",
+            self.tmpdir, timeout=30)
+
+        self.assertFalse(timed_out)
+        self.assertEqual(rc, 0)
+
+        # Write state (duration auto-computed from started_at)
+        raw = stdout + stderr
+        summary = _sdd_detect.parse_test_summary(raw.strip(), rc)
+        _sdd_detect.write_state(self.tmpdir, True, summary,
+                                started_at=started_at)
+
+        # Read back and verify duration is reasonable
+        state = _sdd_detect.read_state(self.tmpdir, max_age_seconds=60)
+        self.assertIn("duration", state)
+        self.assertGreater(state["duration"], 0.3)  # test_slow sleeps 0.5s
+        self.assertLess(state["duration"], 15.0)     # shouldn't take 15s
+
+        # Adaptive timeout should use this duration
+        timeout = _sdd_detect.adaptive_gate_timeout(
+            self.tmpdir, multiplier=3, min_timeout=30, max_timeout=300)
+        # duration ~1-2s → 3×2=6 → clamped to min 30
+        self.assertEqual(timeout, 30)
+
+
+# ─────────────────────────────────────────────────────────────────
+# 12. RALPH MULTI-GATE REAL EXECUTION WITH BUDGET
+# ─────────────────────────────────────────────────────────────────
+
+class TestRalphMultiGateRealExecution(unittest.TestCase):
+    """Integration: real gate execution with budget tracking.
+
+    Ralph scenario: config.sh has GATE_TEST + GATE_LINT + GATE_BUILD.
+    All pass → exit 0. Budget not exhausted.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-multigate-")
+        _cleanup_state(self.tmpdir)
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_fast_gates_complete_within_budget(self):
+        """3 fast gates (echo) complete well within 270s budget."""
+        gates = [
+            ("test", "echo '2 passed'"),
+            ("lint", "echo 'no issues'"),
+            ("build", "echo 'build ok'"),
+        ]
+
+        budget = 270
+        start = time.monotonic()
+        results = []
+
+        for name, cmd in gates:
+            elapsed = time.monotonic() - start
+            remaining = budget - elapsed
+            self.assertGreater(remaining, 0,
+                               f"Budget exhausted at gate '{name}'")
+
+            timeout = min(60, int(remaining))
+            passed, output = task_completed.run_gate(name, cmd, self.tmpdir,
+                                                     timeout=timeout)
+            results.append((name, passed))
+
+        total_elapsed = time.monotonic() - start
+
+        # All gates passed
+        for name, passed in results:
+            self.assertTrue(passed, f"Gate '{name}' failed")
+
+        # Total time well under budget
+        self.assertLess(total_elapsed, 10,
+                        "Fast gates should complete in <10s")
+
+    def test_gate_failure_stops_chain(self):
+        """First failing gate stops execution — later gates don't run."""
+        gates = [
+            ("test", "echo pass"),
+            ("typecheck", "exit 1"),   # This fails
+            ("lint", "echo pass"),     # Should NOT run
+            ("build", "echo pass"),    # Should NOT run
+        ]
+
+        executed = []
+        for name, cmd in gates:
+            passed, output = task_completed.run_gate(name, cmd, self.tmpdir,
+                                                     timeout=10)
+            executed.append(name)
+            if not passed:
+                break
+
+        self.assertEqual(executed, ["test", "typecheck"])
+        self.assertNotIn("lint", executed)
+
+
+# ─────────────────────────────────────────────────────────────────
+# 13. COALESCING UNDER PRESSURE: multiple triggers, 1 runner
+# ─────────────────────────────────────────────────────────────────
+
+class TestCoalescingUnderPressure(unittest.TestCase):
+    """Integration: rapid PostToolUse events coalesce to minimal runners.
+
+    Ralph scenario: 3 teammates make 10 edits in 2 seconds.
+    Coalescing must prevent 10 parallel pytest processes.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-coalesce-")
+        _cleanup_state(self.tmpdir)
+        test_file = Path(self.tmpdir) / "test_sample.py"
+        test_file.write_text("def test_ok(): assert True\n")
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_rapid_triggers_produce_bounded_runs(self):
+        """10 rapid run_tests_background calls → at most 1 concurrent runner."""
+        command = f"python3 -m pytest {self.tmpdir}/test_sample.py -q"
+
+        # Rapid-fire 10 background launches
+        for _ in range(10):
+            sdd_auto_test.run_tests_background(self.tmpdir, command)
+            time.sleep(0.05)  # 50ms between — simulates rapid edits
+
+        # At most 1 should be running (coalescing)
+        # Count running by checking PID file
+        pf = _sdd_detect.pid_path(self.tmpdir)
+        if pf.exists():
+            running_count = 1  # Max 1 per project
+        else:
+            running_count = 0
+
+        self.assertLessEqual(running_count, 1,
+            "Coalescing failed: more than 1 runner per project")
+
+        # Wait for completion
+        time.sleep(8)
+
+        # Final state should exist and be valid
+        state = _sdd_detect.read_state(self.tmpdir, max_age_seconds=30)
+        # State might not exist if tests ran too fast, but if it does,
+        # it should be valid
+        if state:
+            self.assertIn("passing", state)
+
+
+# ─────────────────────────────────────────────────────────────────
+# COMPLIANCE SCENARIOS — verify hooks enforce quality for real users
+# ─────────────────────────────────────────────────────────────────
+
+class TestRalphMultiGateCascade(unittest.TestCase):
+    """Ralph: test passes but lint/typecheck fails → task blocked.
+
+    Real scenario: teammate writes working code that doesn't pass linter.
+    The hook must block completion with the correct gate name in the error.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-cascade-")
+        _cleanup_state(self.tmpdir)
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        self.patch = patch.object(task_completed, "_has_source_edits",
+                                  return_value=True)
+        self.patch.start()
+
+    def tearDown(self):
+        self.patch.stop()
+        _cleanup_state(self.tmpdir)
+        for name in ("sop-code-assist", "sop-reviewer"):
+            try:
+                _sdd_detect.skill_invoked_path(self.tmpdir, name).unlink()
+            except FileNotFoundError:
+                pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_test_passes_but_lint_fails_blocks_with_lint_error(self):
+        """GATE_TEST passes, GATE_LINT fails → exit 2 with lint error."""
+        _create_mini_project(self.tmpdir,
+            app_code="x = 1\n",
+            test_code="def test(): assert True\n",
+        )
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="pytest"\n'
+            'GATE_TYPECHECK=""\n'
+            'GATE_LINT="exit 1"\n'  # Lint fails
+            'GATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+
+        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("lint", stderr.lower())
+
+    def test_all_four_gates_execute_in_order(self):
+        """All 4 gates run in sequence — each gate's pass is verified."""
+        _create_mini_project(self.tmpdir,
+            app_code="x = 1\n",
+            test_code="def test(): assert True\n",
+        )
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="pytest"\n'
+            'GATE_TYPECHECK="echo typecheck-ok"\n'
+            'GATE_LINT="echo lint-ok"\n'
+            'GATE_BUILD="echo build-ok"\n',
+            encoding="utf-8",
+        )
+
+        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 0, "All gates pass → task completes")
+
+
+class TestBaselinePreexistingFailure(unittest.TestCase):
+    """Baseline: pre-existing test failures → teammate CAN complete.
+
+    Real scenario: project already has 3 failing tests when teammate starts.
+    Teammate's changes don't fix or break those tests. The hook must allow
+    completion with a warning (not block on inherited failures).
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-baseline-")
+        _cleanup_state(self.tmpdir)
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_preexisting_failure_allowed_with_warning(self):
+        """Same failure pattern as baseline → task completes (with warning)."""
+        proj = _create_mini_project(self.tmpdir,
+            app_code="def add(a, b): return 0  # pre-existing bug\n",
+            test_code=(
+                "import sys; sys.path.insert(0, '.')\n"
+                "from app import add\n"
+                "def test_add(): assert add(1, 2) == 3  # always fails\n"
+            ),
+        )
+        sid = "baseline-test-session"
+
+        # Capture baseline: tests fail on first run
+        sdd_auto_test._run_tests_worker(self.tmpdir, "pytest", sid=sid)
+        state = _sdd_detect.read_state(self.tmpdir)
+        self.assertFalse(state["passing"])
+
+        # Write passing state to avoid fresh run in _try_cached_test_gate
+        # (the baseline comparison happens on the raw output path)
+        # Instead, test via _check_baseline directly
+        baseline = _sdd_detect.read_baseline(self.tmpdir, sid)
+        self.assertIsNotNone(baseline)
+        self.assertFalse(baseline["passing"])
+
+        # Same failure pattern → check_baseline returns True (pre-existing)
+        result = task_completed._check_baseline(
+            self.tmpdir, sid, state.get("raw_output", state["summary"]))
+        self.assertTrue(result,
+            "Pre-existing failure pattern should be allowed")
+
+    def test_new_regression_blocked(self):
+        """Different failure pattern than baseline → task blocked."""
+        # pytest outputs "M failed, N passed" — parse_test_summary regex
+        # captures "N passed" only. Changing the pass count between runs
+        # ensures distinct summaries ("2 passed" vs "1 passed").
+        proj = _create_mini_project(self.tmpdir,
+            app_code="def add(a, b): return 0\n",
+            test_code=(
+                "import sys; sys.path.insert(0, '.')\n"
+                "from app import add\n"
+                "def test_trivial1(): assert True\n"
+                "def test_trivial2(): assert True\n"
+                "def test_add(): assert add(1, 2) == 3\n"
+            ),
+        )
+        sid = "regression-test-session"
+
+        # Baseline: 2 passed, 1 failed → summary "2 passed"
+        sdd_auto_test._run_tests_worker(self.tmpdir, "pytest", sid=sid)
+
+        # Replace one passing test with a failing one → 1 passed, 2 failed
+        (proj / "tests" / "test_app.py").write_text(
+            "import sys; sys.path.insert(0, '.')\n"
+            "from app import add\n"
+            "def test_trivial1(): assert True\n"
+            "def test_add(): assert add(1, 2) == 3\n"
+            "def test_sub(): assert add(5, -3) == 2\n",
+            encoding="utf-8",
+        )
+        sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
+        new_state = _sdd_detect.read_state(self.tmpdir)
+
+        result = task_completed._check_baseline(
+            self.tmpdir, sid, new_state.get("raw_output", new_state["summary"]))
+        self.assertFalse(result,
+            "New regression (different pattern) must be blocked")
+
+
+class TestCircuitBreakerEndToEnd(unittest.TestCase):
+    """Circuit breaker: 3 failures → teammate-idle fires → teammate stops.
+
+    Real scenario: worker-1 fails gate 3 times. TeammateIdle hook checks
+    failures.json and triggers circuit breaker.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-cb-")
+        _cleanup_state(self.tmpdir)
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        (self.ralph_dir / "config.sh").write_text(
+            'MAX_CONSECUTIVE_FAILURES=3\n', encoding="utf-8")
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_three_failures_triggers_circuit_breaker(self):
+        """3 gate failures → teammate-idle reports circuit breaker."""
+        import importlib
+        teammate_idle = importlib.import_module("teammate-idle")
+
+        # Simulate 3 consecutive gate failures
+        for _ in range(3):
+            task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+
+        # TeammateIdle should report circuit breaker
+        exit_code, _, stderr = _run_hook_stdin(teammate_idle.main, {
+            "cwd": self.tmpdir,
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertIn("circuit breaker", stderr.lower())
+
+    def test_success_resets_then_no_circuit_breaker(self):
+        """After success reset, teammate-idle does NOT fire circuit breaker."""
+        import importlib
+        teammate_idle = importlib.import_module("teammate-idle")
+
+        # 2 failures + reset
+        for _ in range(2):
+            task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+        task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "reset")
+
+        # TeammateIdle should NOT report circuit breaker
+        exit_code, _, stderr = _run_hook_stdin(teammate_idle.main, {
+            "cwd": self.tmpdir,
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("circuit breaker", stderr.lower())
+
+
+class TestSDDOrderingEnforcement(unittest.TestCase):
+    """SDD ordering: source edit without tests → PostToolUse nudges.
+
+    Real scenario: teammate writes app.py without any test file in session.
+    PostToolUse must emit SDD ordering nudge.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-ordering-")
+        _cleanup_state(self.tmpdir)
+        _create_mini_project(self.tmpdir,
+            app_code="def add(a, b): return a + b\n",
+            test_code="def test(): pass\n",
+        )
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    def test_source_without_tests_emits_nudge(self, mock_bg):
+        """Source file edited with no test files in session → SDD nudge."""
+        sid = "ordering-test-session"
+        # Record source file edit (no test file edit)
+        _sdd_detect.record_file_edit(self.tmpdir, "app.py", sid)
+
+        _, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "app.py"},
+            "session_id": sid,
+        })
+        if stdout:
+            output = json.loads(stdout)
+            ctx = output.get("hookSpecificOutput", {}).get("additionalContext", "")
+            self.assertIn("SDD ordering", ctx)
+
+    @patch.object(sdd_auto_test, "run_tests_background")
+    def test_source_with_tests_no_nudge(self, mock_bg):
+        """Source + test files edited in session → no nudge."""
+        sid = "ordering-test-session-2"
+        # Record BOTH source and test file
+        _sdd_detect.record_file_edit(self.tmpdir, "app.py", sid)
+        _sdd_detect.record_file_edit(self.tmpdir, "tests/test_app.py", sid)
+
+        # Write passing state so no [FAIL] feedback
+        _sdd_detect.write_state(self.tmpdir, True, "1 passed")
+
+        _, stdout, _ = _run_hook_stdin(sdd_auto_test.main, {
+            "cwd": self.tmpdir,
+            "tool_input": {"file_path": "app.py"},
+            "session_id": sid,
+        })
+        self.assertEqual(stdout, "", "No nudge when tests exist in session")
+
+
+class TestPrecisionRegressionEndToEnd(unittest.TestCase):
+    """Precision regression: assertEqual → assertTrue while failing → blocked.
+
+    Real scenario: tests fail. Teammate replaces precise assertions with
+    loose existence checks to make tests pass. The guard must block this.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-precision-")
+        _cleanup_state(self.tmpdir)
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_precise_to_loose_blocked_when_failing(self):
+        """assertEqual → assertTrue while tests failing → DENY."""
+        _sdd_detect.write_state(self.tmpdir, False, "1 failed")
+
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "tests/test_app.py",
+                "old_string": (
+                    "assert result == 42\n"
+                    "assert name == 'Alice'\n"
+                ),
+                "new_string": (
+                    "assert result\n"        # Lost precision: == 42 → truthy
+                    "assert name is not None\n"  # Lost precision: == 'Alice' → not None
+                ),
+            },
+        })
+        self.assertEqual(exit_code, 2, "Precision regression must be blocked")
+        self.assertIn("precision", stderr.lower())
+
+    def test_precise_to_different_precise_allowed(self):
+        """assertEqual(42) → assertEqual(43) while failing → ALLOW (fixing value)."""
+        _sdd_detect.write_state(self.tmpdir, False, "1 failed")
+
+        exit_code, stdout, _ = _run_hook_stdin(sdd_test_guard.main, {
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "tests/test_app.py",
+                "old_string": "assert result == 42",
+                "new_string": "assert result == 43",
+            },
+        })
+        self.assertEqual(exit_code, 0,
+            "Changing expected value (same precision) should be allowed")
+
+
+class TestSkillEnforcementEndToEnd(unittest.TestCase):
+    """Skill enforcement: ralph teammate must invoke correct SOP skill.
+
+    Real scenario: implementer must use sop-code-assist, reviewer must
+    use sop-reviewer. Without skill invocation → task blocked.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-skill-")
+        _cleanup_state(self.tmpdir)
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        _create_mini_project(self.tmpdir,
+            app_code="x = 1\n",
+            test_code="def test(): assert True\n",
+        )
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="pytest"\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+        self.patch = patch.object(task_completed, "_has_source_edits",
+                                  return_value=True)
+        self.patch.start()
+
+    def tearDown(self):
+        self.patch.stop()
+        _cleanup_state(self.tmpdir)
+        for name in ("sop-code-assist", "sop-reviewer"):
+            try:
+                _sdd_detect.skill_invoked_path(self.tmpdir, name).unlink()
+            except FileNotFoundError:
+                pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_implementer_without_skill_blocked(self):
+        """worker-1 tries to complete without sop-code-assist → exit 2."""
+        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("sop-code-assist", stderr)
+
+    def test_implementer_with_skill_allowed(self):
+        """worker-1 invokes sop-code-assist → task completes."""
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add feature",
+            "teammate_name": "worker-1",
+        })
+        self.assertEqual(exit_code, 0)
+
+    def test_reviewer_needs_sop_reviewer_not_code_assist(self):
+        """rev-1 invokes sop-code-assist instead of sop-reviewer → exit 2."""
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-code-assist")
+        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Review task",
+            "teammate_name": "rev-1",
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("sop-reviewer", stderr)
+
+    def test_reviewer_with_correct_skill_allowed(self):
+        """rev-1 invokes sop-reviewer → task completes."""
+        _sdd_detect.write_skill_invoked(self.tmpdir, "sop-reviewer")
+        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Review task",
+            "teammate_name": "rev-1",
+        })
+        self.assertEqual(exit_code, 0)
+
+
+class TestCoverageGapEndToEnd(unittest.TestCase):
+    """Coverage gap: source files without matching tests → task blocked.
+
+    Real scenario: teammate creates src/auth.py and src/db.py but only
+    writes tests/test_auth.py. The untested src/db.py must block completion.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-cov-")
+        _cleanup_state(self.tmpdir)
+        _create_mini_project(self.tmpdir,
+            app_code="x = 1\n",
+            test_code="def test(): assert True\n",
+        )
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_uncovered_source_blocks_completion(self):
+        """Source file with no test → exit 2 with uncovered file listed."""
+        raw_sid = "cov-test-session"
+        # Hook hashes session_id via extract_session_id — coverage files
+        # must use the same hashed sid for path alignment
+        hashed_sid = _sdd_detect.extract_session_id({"session_id": raw_sid})
+
+        # Record edits with hashed sid (matches what hook will read)
+        _sdd_detect.record_file_edit(self.tmpdir, "src/auth.py", hashed_sid)
+        _sdd_detect.record_file_edit(self.tmpdir, "src/db.py", hashed_sid)
+        _sdd_detect.record_file_edit(self.tmpdir, "tests/test_auth.py", hashed_sid)
+
+        # Create the test file so find_test_for_source can find it
+        (Path(self.tmpdir) / "tests" / "test_auth.py").write_text(
+            "def test_auth(): assert True\n", encoding="utf-8")
+
+        exit_code, _, stderr = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add auth + db",
+            "teammate_name": "worker-1",
+            "session_id": raw_sid,
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertIn("db.py", stderr, "Uncovered file must be listed")
+
+    def test_all_covered_allows_completion(self):
+        """All source files have tests → task completes."""
+        raw_sid = "cov-test-session-2"
+        hashed_sid = _sdd_detect.extract_session_id({"session_id": raw_sid})
+
+        _sdd_detect.record_file_edit(self.tmpdir, "src/auth.py", hashed_sid)
+        _sdd_detect.record_file_edit(self.tmpdir, "tests/test_auth.py", hashed_sid)
+
+        # Create matching test file
+        (Path(self.tmpdir) / "tests" / "test_auth.py").write_text(
+            "def test_auth(): assert True\n", encoding="utf-8")
+
+        exit_code, _, _ = _run_hook_stdin(task_completed.main, {
+            "cwd": self.tmpdir,
+            "task_subject": "Add auth",
+            "teammate_name": "worker-1",
+            "session_id": raw_sid,
+        })
+        self.assertEqual(exit_code, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

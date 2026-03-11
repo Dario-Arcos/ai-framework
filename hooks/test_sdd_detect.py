@@ -11,9 +11,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from unittest.mock import patch
 from _sdd_detect import (
-    acquire_runner_lock, await_test_completion, detect_test_command,
-    has_exit_suppression, is_test_running, parse_test_summary, pid_path,
-    read_skill_invoked, read_state, release_runner_lock, skill_invoked_path,
+    acquire_runner_lock, adaptive_gate_timeout, await_test_completion,
+    detect_test_command, has_exit_suppression, is_test_running,
+    parse_test_summary, pid_path, read_skill_invoked, read_state,
+    release_runner_lock, run_in_process_group, skill_invoked_path,
     state_path, has_test_on_disk, write_skill_invoked, write_state,
 )
 
@@ -854,6 +855,273 @@ class TestWriteJsonAtomic(unittest.TestCase):
         _write_json_atomic(p, {"v": 2})
         data = json_mod.loads(p.read_text())
         self.assertEqual(data["v"], 2)
+
+
+class TestRunInProcessGroup(unittest.TestCase):
+    """Test run_in_process_group() process tree management."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_successful_command(self):
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            "echo hello", self.tmpdir, timeout=10)
+        self.assertEqual(rc, 0)
+        self.assertIn("hello", stdout)
+        self.assertFalse(timed_out)
+
+    def test_failing_command(self):
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            "exit 1", self.tmpdir, timeout=10)
+        self.assertNotEqual(rc, 0)
+        self.assertFalse(timed_out)
+
+    def test_timeout_kills_process_tree(self):
+        """Timeout kills the entire process group — no orphans."""
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            "sleep 60", self.tmpdir, timeout=1)
+        self.assertTrue(timed_out)
+        self.assertEqual(rc, -1)
+
+    def test_captures_stderr(self):
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            "echo err >&2", self.tmpdir, timeout=10)
+        self.assertEqual(rc, 0)
+        self.assertIn("err", stderr)
+
+    def test_no_orphan_child_processes_after_timeout(self):
+        """CPU safety: timeout must kill entire process tree, not just shell.
+
+        This test reproduces the exact bug that caused 122 orphan pytest processes
+        to accumulate and throttle CPU to 100%.
+
+        Bug: subprocess.run(shell=True, timeout=N) only kills the shell parent
+        (sh -c ...), the grandchild process (pytest/sleep) survives as orphan.
+
+        Fix: run_in_process_group uses start_new_session=True + os.killpg(SIGKILL)
+        to kill the entire process group including grandchildren.
+        """
+        import subprocess as sp
+        # Shell spawns a background sleeper — without process group kill,
+        # the sleeper survives as an orphan consuming CPU
+        marker_dur = "98761"  # Unique duration to avoid pgrep collisions
+        cmd = f"sleep {marker_dur} & echo child_started; wait"
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            cmd, self.tmpdir, timeout=2)
+        self.assertTrue(timed_out)
+        import time as t
+        t.sleep(0.5)  # Allow OS to reap processes
+        # Verify the background sleep was killed by process group SIGKILL
+        result = sp.run(["pgrep", "-f", f"sleep {marker_dur}"],
+                        capture_output=True, text=True)
+        # pgrep exit code 1 = no matching processes (orphan was killed)
+        self.assertNotEqual(result.returncode, 0,
+            f"ORPHAN SURVIVED: sleep {marker_dur} still alive: PIDs={result.stdout.strip()}")
+
+
+class TestAdaptiveGateTimeout(unittest.TestCase):
+    """Test adaptive_gate_timeout() learns from historical test duration."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_default_when_no_history(self):
+        timeout = adaptive_gate_timeout(self.tmpdir, default=60)
+        self.assertEqual(timeout, 60)
+
+    def test_adapts_to_fast_tests(self):
+        """5s tests → 3×5=15 → clamped to min 30s."""
+        write_state(self.tmpdir, True, "5 passed", started_at=100.0)
+        # Patch time.time to control duration (write_state computes duration)
+        # Duration was computed at write time, so read the state
+        state = read_state(self.tmpdir, max_age_seconds=60)
+        # Duration should be time.time() - 100.0, which is large
+        # Instead test with a mock that writes duration directly
+        import json
+        sp = state_path(self.tmpdir)
+        data = json.loads(sp.read_text())
+        data["duration"] = 5.0
+        sp.write_text(json.dumps(data))
+
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        self.assertEqual(timeout, 30)  # 5*3=15 < 30 → clamped to 30
+
+    def test_adapts_to_slow_tests(self):
+        """60s tests → 3×60=180s."""
+        import json, time as t
+        sp = state_path(self.tmpdir)
+        now_ts = t.strftime("%Y-%m-%dT%H:%M:%SZ", t.gmtime())
+        data = {"passing": True, "summary": "ok",
+                "timestamp": now_ts, "duration": 60.0}
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sp.write_text(json.dumps(data))
+
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        self.assertEqual(timeout, 180)
+
+    def test_clamps_to_max(self):
+        """120s tests → 3×120=360 → clamped to 300s."""
+        import json, time as t
+        sp = state_path(self.tmpdir)
+        now_ts = t.strftime("%Y-%m-%dT%H:%M:%SZ", t.gmtime())
+        data = {"passing": True, "summary": "ok",
+                "timestamp": now_ts, "duration": 120.0}
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sp.write_text(json.dumps(data))
+
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        self.assertEqual(timeout, 300)
+
+
+class TestWriteStateDuration(unittest.TestCase):
+    """Test that write_state records execution duration."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_duration_recorded_with_started_at(self):
+        import json
+        import time as time_mod
+        started = time_mod.time() - 5.0  # simulate 5s ago
+        write_state(self.tmpdir, True, "ok", started_at=started)
+        state = read_state(self.tmpdir, max_age_seconds=60)
+        self.assertIn("duration", state)
+        self.assertGreaterEqual(state["duration"], 4.5)
+        self.assertLessEqual(state["duration"], 10.0)
+
+    def test_no_duration_without_started_at(self):
+        write_state(self.tmpdir, True, "ok")
+        state = read_state(self.tmpdir, max_age_seconds=60)
+        self.assertNotIn("duration", state)
+
+
+class TestAdaptiveTimeoutFeedbackLoop(unittest.TestCase):
+    """Integration: verify the full duration -> adaptive timeout cycle.
+
+    Real scenario: ralph teammate runs 90s test suite. write_state records
+    duration=90. Next TaskCompleted uses adaptive_gate_timeout -> 3x90=270s.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_full_cycle_fast_tests(self):
+        """Fast tests (2s) -> adaptive timeout = max(30, 3x2) = 30s."""
+        # Simulate: run a fast command, state records duration
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            "echo fast", self.tmpdir, timeout=10)
+        self.assertFalse(timed_out)
+        # Write state with realistic started_at (2s ago)
+        import time as t
+        write_state(self.tmpdir, True, "10 passed",
+                    started_at=t.time() - 2.0)
+        # Read back and verify duration
+        state = read_state(self.tmpdir, max_age_seconds=60)
+        self.assertIn("duration", state)
+        # Now adaptive_gate_timeout should use this duration
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        # 3 x ~2s = ~6s -> clamped to min 30s
+        self.assertEqual(timeout, 30)
+
+    def test_full_cycle_medium_tests(self):
+        """Medium tests (45s) -> adaptive timeout = 3x45 = 135s."""
+        import time as t, json
+        # Write state as if tests took 45s
+        write_state(self.tmpdir, True, "200 passed",
+                    started_at=t.time() - 45.0)
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        # 3 x 45 = 135
+        self.assertEqual(timeout, 135)
+
+    def test_full_cycle_large_suite(self):
+        """Large tests (120s) -> adaptive timeout = min(300, 3x120=360) = 300s."""
+        import time as t
+        write_state(self.tmpdir, True, "2000 passed",
+                    started_at=t.time() - 120.0)
+        timeout = adaptive_gate_timeout(self.tmpdir, multiplier=3,
+                                        min_timeout=30, max_timeout=300)
+        # 3 x 120 = 360 -> clamped to 300
+        self.assertEqual(timeout, 300)
+
+    def test_stale_history_uses_default(self):
+        """State older than 2h is ignored -> falls back to default."""
+        import json, time as t
+        sp = state_path(self.tmpdir)
+        # Write state with timestamp 3h ago
+        old_ts = t.strftime("%Y-%m-%dT%H:%M:%SZ",
+                            t.gmtime(t.time() - 10800))
+        data = {"passing": True, "summary": "ok",
+                "timestamp": old_ts, "duration": 90.0}
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sp.write_text(json.dumps(data))
+        timeout = adaptive_gate_timeout(self.tmpdir, default=60)
+        self.assertEqual(timeout, 60)  # Fallback, not 3x90=270
+
+    def test_no_duration_field_uses_default(self):
+        """State without duration (legacy) -> falls back to default."""
+        import json, time as t
+        sp = state_path(self.tmpdir)
+        now_ts = t.strftime("%Y-%m-%dT%H:%M:%SZ", t.gmtime())
+        data = {"passing": True, "summary": "ok", "timestamp": now_ts}
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sp.write_text(json.dumps(data))
+        timeout = adaptive_gate_timeout(self.tmpdir, default=60)
+        self.assertEqual(timeout, 60)
+
+
+class TestRunInProcessGroupConcurrent(unittest.TestCase):
+    """Verify process safety under concurrent invocations."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_multiple_timeouts_no_orphans(self):
+        """3 concurrent timeouts (ralph 3-teammate scenario) leave no orphans."""
+        import subprocess as sp, threading
+        marker = "98762"  # Unique sleep duration
+        results = []
+
+        def run_and_timeout():
+            rc, _, _, timed_out = run_in_process_group(
+                f"sleep {marker} & wait", self.tmpdir, timeout=1)
+            results.append(timed_out)
+
+        threads = [threading.Thread(target=run_and_timeout) for _ in range(3)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+
+        import time as t2
+        t2.sleep(0.5)
+        # All 3 should have timed out
+        self.assertEqual(len(results), 3)
+        self.assertTrue(all(results))
+        # Zero orphans
+        result = sp.run(["pgrep", "-f", f"sleep {marker}"],
+                       capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0,
+            f"Orphan processes from concurrent timeouts: {result.stdout.strip()}")
 
 
 if __name__ == "__main__":

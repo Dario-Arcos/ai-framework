@@ -137,42 +137,38 @@ class TestRunGate(unittest.TestCase):
         self.assertFalse(passed)
         self.assertIn("exit code suppression", output)
 
-    @patch("subprocess.run")
+    @patch.object(task_completed, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_passing_command(self, mock_run):
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="npm test", returncode=0, stdout="5 passed\n", stderr=""
-        )
         passed, output = task_completed.run_gate("test", "npm test", "/tmp")
         self.assertTrue(passed)
         self.assertIn("5 passed", output)
 
-    @patch("subprocess.run")
+    @patch.object(task_completed, "run_in_process_group",
+                  return_value=(1, "", "FAIL src/app.test.js\n", False))
     def test_failing_command(self, mock_run):
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="npm test", returncode=1, stdout="", stderr="FAIL src/app.test.js\n"
-        )
         passed, output = task_completed.run_gate("test", "npm test", "/tmp")
         self.assertFalse(passed)
         self.assertIn("FAIL", output)
 
-    @patch("subprocess.run")
+    @patch.object(task_completed, "run_in_process_group")
     def test_output_truncation(self, mock_run):
         long_output = "x" * 1200
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="npm test", returncode=0, stdout=long_output, stderr=""
-        )
+        mock_run.return_value = (0, long_output, "", False)
         passed, output = task_completed.run_gate("test", "npm test", "/tmp")
         self.assertTrue(passed)
         self.assertTrue(output.startswith("...\n"))
         self.assertEqual(len(output), 800 + len("...\n"))
 
-    @patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="npm test", timeout=120))
+    @patch.object(task_completed, "run_in_process_group",
+                  return_value=(-1, "", "", True))
     def test_timeout(self, _mock):
         passed, output = task_completed.run_gate("test", "npm test", "/tmp")
         self.assertFalse(passed)
         self.assertIn("timed out", output)
 
-    @patch("subprocess.run", side_effect=OSError("No such file"))
+    @patch.object(task_completed, "run_in_process_group",
+                  side_effect=OSError("No such file"))
     def test_oserror(self, _mock):
         passed, output = task_completed.run_gate("test", "npm test", "/tmp")
         self.assertFalse(passed)
@@ -980,6 +976,205 @@ class TestResearchTaskBypass(unittest.TestCase):
                     task_completed.main()
                 self.assertEqual(ctx.exception.code, 0)
             mock_clear.assert_called_once()
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestConcurrentFailuresJson
+# ─────────────────────────────────────────────────────────────────
+
+class TestConcurrentFailuresJson(unittest.TestCase):
+    """Verify failures.json atomic updates under 3-teammate concurrent writes.
+
+    Ralph scenario: 3 teammates all fail gates simultaneously. Each calls
+    _atomic_update_failures(increment). flock(LOCK_EX) must prevent lost updates.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_three_concurrent_increments(self):
+        """3 threads incrementing same teammate → final count must be 3."""
+        import threading
+        results = []
+
+        def increment():
+            count = task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+            results.append(count)
+
+        threads = [threading.Thread(target=increment) for _ in range(3)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+
+        # Final count must be exactly 3 (no lost updates)
+        self.assertEqual(max(results), 3)
+
+    def test_three_different_teammates_concurrent(self):
+        """3 different teammates incrementing simultaneously → each has count 1."""
+        import threading
+        results = {}
+
+        def increment(name):
+            count = task_completed._atomic_update_failures(
+                self.ralph_dir, name, "increment")
+            results[name] = count
+
+        names = ["worker-1", "worker-2", "worker-3"]
+        threads = [threading.Thread(target=increment, args=(n,)) for n in names]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+
+        # Each teammate should have exactly 1
+        for name in names:
+            self.assertEqual(results[name], 1, f"{name} has wrong count")
+
+    def test_increment_then_reset_under_contention(self):
+        """Increment 5 times → reset → verify count is 0."""
+        for _ in range(5):
+            task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+        task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "reset")
+        # Verify by incrementing again — should be 1, not 6
+        count = task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "increment")
+        self.assertEqual(count, 1)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestGateBudgetAdaptiveInteraction
+# ─────────────────────────────────────────────────────────────────
+
+class TestGateBudgetAdaptiveInteraction(unittest.TestCase):
+    """Verify gate timeout respects both adaptive history AND budget remaining.
+
+    Ralph scenario: test suite takes 90s historically (adaptive=270s).
+    But after typecheck+lint consumed 200s, only 70s budget remains.
+    Gate timeout must be min(270, 70) = 70s.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        # Write config with all gates
+        config_path = self.ralph_dir / "config.sh"
+        config_path.write_text(
+            'GATE_TEST="echo pass"\n'
+            'GATE_TYPECHECK="echo pass"\n'
+            'GATE_LINT="echo pass"\n'
+            'GATE_BUILD="echo pass"\n'
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch.object(task_completed, "run_in_process_group")
+    @patch.object(task_completed, "adaptive_gate_timeout", return_value=270)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    def test_test_gate_uses_adaptive(self, mock_cache, mock_adaptive, mock_run):
+        """Test gate timeout = min(adaptive, remaining_budget)."""
+        mock_run.return_value = (0, "pass", "", False)
+        # Call run_gate for test gate — should use adaptive
+        passed, output = task_completed.run_gate("test", "echo pass", self.tmpdir)
+        self.assertTrue(passed)
+        # Verify adaptive_gate_timeout was called (via run_gate's default)
+        mock_adaptive.assert_called_once()
+
+    @patch.object(task_completed, "run_in_process_group")
+    def test_non_test_gate_timeout_capped_at_120(self, mock_run):
+        """Non-test gates (typecheck, lint, build) use 120s cap, not adaptive."""
+        mock_run.return_value = (0, "pass", "", False)
+        # Explicit timeout=120 for non-test gates
+        passed, _ = task_completed.run_gate("typecheck", "echo pass",
+                                            self.tmpdir, timeout=120)
+        self.assertTrue(passed)
+        # run_in_process_group should receive timeout=120
+        call_args = mock_run.call_args
+        self.assertEqual(call_args[0][2], 120)  # third positional = timeout
+
+    @patch.object(task_completed, "run_in_process_group")
+    def test_run_gate_explicit_timeout_overrides_adaptive(self, mock_run):
+        """Explicit timeout parameter overrides adaptive computation."""
+        mock_run.return_value = (0, "pass", "", False)
+        passed, _ = task_completed.run_gate("test", "echo pass",
+                                            self.tmpdir, timeout=42)
+        # run_in_process_group should receive timeout=42, not adaptive
+        call_args = mock_run.call_args
+        self.assertEqual(call_args[0][2], 42)
+
+    @patch.object(task_completed, "run_in_process_group")
+    @patch.object(task_completed, "adaptive_gate_timeout", return_value=60)
+    def test_run_gate_none_timeout_triggers_adaptive(self, mock_adaptive, mock_run):
+        """timeout=None (default) triggers adaptive_gate_timeout computation."""
+        mock_run.return_value = (0, "pass", "", False)
+        task_completed.run_gate("test", "echo pass", self.tmpdir)
+        mock_adaptive.assert_called_once_with(self.tmpdir)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestCircuitBreakerFullFlow
+# ─────────────────────────────────────────────────────────────────
+
+class TestCircuitBreakerFullFlow(unittest.TestCase):
+    """End-to-end: 3 gate failures → circuit breaker → success → reset.
+
+    Ralph scenario: worker-1 fails gate 3 times consecutively.
+    teammate-idle reads failures.json → circuit breaker fires.
+    Then worker-1 succeeds → counter resets to 0.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_three_failures_then_success_resets(self):
+        """Increment 3 times → count=3 → reset → count=0 → increment → count=1."""
+        for i in range(3):
+            count = task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+            self.assertEqual(count, i + 1)
+
+        # After 3 failures, count should be 3
+        self.assertEqual(count, 3)
+
+        # Success resets
+        task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "reset")
+
+        # Next increment starts from 0
+        count = task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "increment")
+        self.assertEqual(count, 1)
+
+    def test_independent_teammate_counters(self):
+        """worker-1 at 3 failures doesn't affect worker-2."""
+        for _ in range(3):
+            task_completed._atomic_update_failures(
+                self.ralph_dir, "worker-1", "increment")
+
+        # worker-2 is independent
+        count = task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-2", "increment")
+        self.assertEqual(count, 1)
+
+        # worker-1 still at 3
+        count = task_completed._atomic_update_failures(
+            self.ralph_dir, "worker-1", "increment")
+        self.assertEqual(count, 4)
 
 
 if __name__ == "__main__":
