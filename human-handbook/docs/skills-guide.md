@@ -184,7 +184,7 @@ Interfaces web con dirección estética bold. Sin look genérico.
 
 ## humanizer
 
-Elimina 28 patrones de texto AI — 24 generales + 4 Spanish-specific (basado en Wikipedia's "Signs of AI writing" y estudios AESLA/RAE).
+Identifica y elimina 33 patrones documentados de texto AI (EN+ES) del taxonomy Wikipedia AI Cleanup, con guía de voz en español.
 
 | Patrón | Ejemplos |
 |--------|----------|
@@ -192,6 +192,19 @@ Elimina 28 patrones de texto AI — 24 generales + 4 Spanish-specific (basado en
 | Inflación | "serves as a testament", "pivotal moment" |
 | Estructura | Rule of three, em dashes excesivos |
 | Tono | "Great question!", "I hope this helps!" |
+| Spanish-specific | "cabe destacar", "en el ámbito de", sinónimo cycling |
+
+**Proceso (10 pasos):**
+1. Detectar idioma del texto
+2. Identificar patrones AI (33 EN + ES patterns)
+3. Reescribir secciones problemáticas
+4. Preservar significado y tono
+5. Inyectar personalidad y voz
+6. Anti-AI audit — "¿qué hace esto obviamente AI?"
+7. Reescribir para eliminar tells restantes
+8. Guía de voz español (6 directrices con 69 líneas de referencia before/after)
+9. Ciclo draft/audit/rewrite hasta satisfacción
+10. Verificación final
 
 ::: details Ejemplo
 **Antes:**
@@ -207,21 +220,24 @@ No solo limpia — añade voz. Texto estéril es tan obvio como slop.
 
 ## skill-creator
 
-Guía para crear skills efectivas. Basado en el [skill-creator de Anthropic](https://github.com/anthropics/skills/tree/main/skills/skill-creator).
+Crea, mejora y mide skills con un ciclo eval/benchmark integrado.
 
-```bash
-# Inicializar un skill nuevo
-python skills/skill-creator/scripts/init_skill.py my-skill --path skills/
-
-# Validar estructura
-python skills/skill-creator/scripts/quick_validate.py skills/my-skill/
-
-# Empaquetar para distribución
-python skills/skill-creator/scripts/package_skill.py skills/my-skill/
+```
+"Quiero crear un skill para X"
+"Mejora el triggering del skill Y"
+"Corre evals para comparar con y sin skill"
 ```
 
+**Ciclo:**
+1. Capturar intent — entender qué debe hacer el skill
+2. Escribir draft del SKILL.md
+3. Crear test prompts y correr evals paralelos (con-skill vs baseline)
+4. Grading cuantitativo con assertions + viewer HTML para revisión cualitativa
+5. Reescribir basado en feedback → repetir hasta satisfacción
+6. Optimizar description para mejor triggering con script dedicado
+
 **Principios clave:**
-- **Conciso**: El context window es recurso compartido. Solo añade lo que Claude no sabe.
+- **Eval-driven**: No publiques sin medir. Evals paralelos comparan resultado con y sin skill.
 - **Progressive Disclosure**: Metadata siempre → SKILL.md al activar → references bajo demanda.
 - **Grados de libertad**: Bridge estrecho = guardrails estrictos. Campo abierto = instrucciones flexibles.
 
@@ -383,27 +399,33 @@ Si el proyecto ya tiene `docs/claude-rules/`, no necesitas ejecutar `/project-in
 
 ## deep-research
 
-Investigación multi-fuente con verificación y confidence ratings.
+Motor de investigación con patrón STORM (multi-perspectiva), protocolo anti-alucinación, y artefactos persistentes.
 
 ```bash
 /deep-research "análisis competitivo sector fintech"
 ```
 
-**Metodología:**
-- 3-5 pases iterativos de búsqueda
-- Mínimo 3 fuentes independientes por claim
-- Confidence rating (High/Medium/Low/Uncertain)
-- Cada afirmación citada con URL y fecha
+**Ley de hierro:**
+```
+NO CLAIM WITHOUT CITATION.
+NO CITATION WITHOUT NAVIGATION.
+NO SYNTHESIS WITHOUT CROSS-VALIDATION.
+INSUFFICIENT EVIDENCE → SAY SO.
+```
 
-::: details Jerarquía de fuentes
-| Tier | Ejemplos |
-|------|----------|
-| **1 (Primary)** | .gov, SEC, peer-reviewed, World Bank |
-| **2 (Industry)** | McKinsey, Gartner, Bloomberg, FT |
-| **3 (Corroborative)** | WSJ, The Economist, industry bodies |
-:::
+**Metodología (patrón STORM):**
+- Genera 2+ perspectivas por sub-pregunta — cobertura casi se duplica vs single-viewpoint
+- Routing inteligente: API/framework → Context7 primero, navegación compleja → agent-browser
+- Validación incremental con confidence por claim (High/Medium/Low/Insufficient)
+- Artefactos persistentes en `.research/` (research-state.md como source of truth)
 
-Usa `agent-browser` para navegación real, no cached data.
+**Protocolo anti-alucinación:**
+- Confabulation → no facts sin URL navegada
+- Citation fabrication → verificar que URL carga y contiene el claim
+- Plausible interpolation → "typically/generally" no es evidencia
+- Authority laundering → navegar a fuente primaria, no citar secundarias
+
+Usa `agent-browser` y Context7 para navegación real, no training data.
 
 ---
 
@@ -530,5 +552,5 @@ Verifica que existe `specs/` en tu proyecto.
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-15
+**Fecha**: 2026-03-11
 :::

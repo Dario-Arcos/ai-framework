@@ -195,12 +195,14 @@ if (count >= planLimits[plan]) {          // [!code ++]
 
 ### Enforcement automático <Badge type="warning" text="invisible" />
 
-Dos hooks operan en background durante toda implementación — no requieren configuración ni invocación manual:
+Múltiples hooks operan en background durante toda implementación — no requieren configuración ni invocación manual:
 
 | Hook | Trigger | Qué hace |
 |------|---------|----------|
-| `sdd-test-guard` | **PreToolUse** (Edit\|Write) | Si los tests están fallando Y un edit reduce el número de assertions → **deniega el edit**. Previene que Claude debilite tests para que pasen en vez de arreglar el código. |
-| `sdd-auto-test` | **PostToolUse** (Edit\|Write) | Después de cada edit a código fuente, lanza tests en background (~10ms de bloqueo). Los resultados se reportan en el siguiente edit — loop continuo de feedback. |
+| `sdd-test-guard` | **PreToolUse** (Edit\|Write) | Si los tests están fallando Y un edit reduce assertions o debilita precisión (assertEqual→assertTrue, try/catch) → **deniega el edit**. Previene reward hacking. |
+| `sdd-auto-test` | **PostToolUse** (Edit\|Write\|Skill) | Después de cada edit, lanza tests en background con trailing-edge coalescing (1 runner máximo por proyecto). Timeouts adaptativos basados en duración histórica. |
+| `constraint-reinforcement` | **UserPromptSubmit** | Inyecta ~55 tokens de constraints en recency zone de cada prompt — contrarresta dilución de atención en conversaciones largas. |
+| `task-completed` | **TaskCompleted** | Coverage enforcement: detecta archivos sin tests. Skill enforcement: valida que SOP skills fueron invocados. Baseline comparison: distingue fallos preexistentes de regresiones. |
 
 **`sdd-test-guard`** implementa la ley de hierro: "Not M/M → fix code, never weaken scenarios." Su matriz de decisión:
 
@@ -209,11 +211,14 @@ Dos hooks operan en background durante toda implementación — no requieren con
 | Passing + cualquier cambio | → ALLOW | Refactoring legítimo |
 | Failing + assertions ≥ | → ALLOW | Fix o test nuevo |
 | Failing + assertions < | → **DENY** | Reward hacking detectado |
+| Failing + precision downgrade | → **DENY** | Weakening semántico detectado |
 | Sin estado + cualquier cambio | → ALLOW | Sin datos = sin bloqueo |
 
-**`sdd-auto-test`** cierra el loop de SDD: cada cambio al código fuente dispara tests automáticamente. No necesitas recordar correr tests — el hook lo hace por ti y reporta resultados en el contexto del siguiente edit.
+**`sdd-auto-test`** cierra el loop de SDD: cada cambio al código fuente dispara tests automáticamente con coalescing (evita runners paralelos redundantes). Los resultados se reportan en el contexto del siguiente edit.
 
-Ambos hooks comparten estado via archivos temporales y son invisibles en operación normal. Solo se manifiestan cuando detectan reward hacking (guard) o cuando reportan resultados (auto-test).
+**`task-completed`** valida al completar tareas: que archivos source tengan tests correspondientes (coverage enforcement), que skills SOP fueron invocados antes de completar (skill enforcement), y que fallos nuevos no se confundan con preexistentes (baseline comparison).
+
+Los hooks comparten estado via archivos temporales con session isolation para teammates paralelos y son invisibles en operación normal.
 
 ::: details SDD vs TDD
 | | Scenario (SDD) | Test (TDD) |
@@ -417,5 +422,5 @@ Ver instalación y detalles en [Integraciones](./integrations.md).
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-03-11
 :::

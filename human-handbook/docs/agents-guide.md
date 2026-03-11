@@ -169,5 +169,5 @@ Análisis estático de rendimiento en código modificado. Identifica patrones qu
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-03-11
 :::

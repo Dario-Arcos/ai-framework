@@ -178,9 +178,9 @@ Seis agents se activan automáticamente según el contexto:
 | `performance-engineer` | Bottlenecks, algorithmic complexity, I/O | Problemas de rendimiento |
 | `code-simplifier` | Reduce complejidad preservando funcionalidad | Después de escribir código |
 
-### Skills como workflows <Badge type="info" text="24 skills" />
+### Skills como workflows <Badge type="info" text="23 skills" />
 
-24 skills cubren el ciclo completo: desde brainstorming y discovery hasta implementación con SDD, commits inteligentes, y pull requests. Cada skill es un workflow estructurado que se carga cuando el contexto lo requiere — no un template estático.
+23 skills cubren el ciclo completo: desde brainstorming y discovery hasta implementación con SDD, commits inteligentes, y pull requests. Cada skill es un workflow estructurado que se carga cuando el contexto lo requiere — no un template estático.
 
 ::: tip Ralph Orchestrator
 Ralph puede ejecutar proyectos multi-step de forma autónoma: planifica, genera tareas, ejecuta con verificación doble, y tiene circuit breakers que detienen la ejecución si detecta loops o thrashing.
@@ -242,5 +242,5 @@ AGENTS.md estáticos alcanzan **100% pass rate** donde skills invocables logran 
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-10
+**Fecha**: 2026-03-11
 :::

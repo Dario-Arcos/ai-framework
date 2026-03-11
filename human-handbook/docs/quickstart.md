@@ -108,6 +108,8 @@ La plataforma principal es **macOS**. Linux funciona completamente. Windows es c
 |------|--------|:-----:|:-----:|:-------:|
 | `session-start.py` | SessionStart | ✅ | ✅ | ✅ |
 | `agent-browser-check.py` | SessionStart | ✅ | ✅ | ✅ |
+| `constraint-reinforcement.py` | UserPromptSubmit | ✅ | ✅ | ✅ |
+| `subagent-start.py` | SubagentStart | ✅ | ✅ | ✅ |
 | `notify.sh` | Stop, Notification | ✅ | ➖ | ➖ |
 | `sdd-test-guard.py` | PreToolUse | ✅ | ✅ | ✅ |
 | `sdd-auto-test.py` | PostToolUse | ✅ | ✅ | ✅ |
@@ -117,6 +119,10 @@ La plataforma principal es **macOS**. Linux funciona completamente. Windows es c
 ::: details Detalles por hook
 
 **session-start.py** — Python puro (stdlib), 100% cross-platform. Sincroniza templates y `.gitignore`.
+
+**constraint-reinforcement.py** — Refuerzo constitucional en recency zone. Inyecta ~55 tokens de constraints del framework en cada prompt del usuario para contrarrestar dilución de atención en conversaciones largas. Cross-platform: Python puro.
+
+**subagent-start.py** — Inyecta registro de skills en sub-agentes (general-purpose) para que puedan invocar skills sin que el padre pase la lista manualmente. Cross-platform: Python puro.
 
 **agent-browser-check.py** — Usa `bash -c` para lanzar procesos en background. Cross-platform: Git for Windows provee `bash` en Windows.
 
@@ -244,7 +250,7 @@ cat /tmp/agent-browser-update.log
 
 ## Siguientes pasos
 
-- [Skills Guide](./skills-guide.md) — Los 24 skills del framework
+- [Skills Guide](./skills-guide.md) — Los 23 skills del framework
 - [Agents Guide](./agents-guide.md) — 6 agentes especializados
 - [Integrations](./integrations.md) — Plugins, MCPs y herramientas externas
 
@@ -253,5 +259,5 @@ cat /tmp/agent-browser-update.log
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-03-02
+**Fecha**: 2026-03-11
 :::

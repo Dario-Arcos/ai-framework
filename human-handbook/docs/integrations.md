@@ -213,5 +213,5 @@ Reinicia Claude Code para aplicar cambios.
 
 ---
 ::: info Última actualización
-**Fecha**: 2026-02-08
+**Fecha**: 2026-03-11
 :::
