@@ -630,6 +630,7 @@ SOURCE_EXTENSIONS = frozenset({
     ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
     ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
     ".vue", ".svelte",          # frontend frameworks
+    ".mts", ".cts", ".mjs",    # ES module variants
     ".graphql", ".gql",         # schemas with logic
     ".prisma",                  # ORM schemas
     ".proto",                   # protobuf
@@ -643,7 +644,7 @@ GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
 TEST_FILE_RE = re.compile(
     r"(?:test|spec|__tests__)[/\\]|"
     r"\.(?:test|spec)\.|"
-    r"_test\.|"
+    r"_tests?\.|"
     r"test_"
 )
 
