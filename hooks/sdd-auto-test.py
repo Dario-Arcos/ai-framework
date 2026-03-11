@@ -18,12 +18,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    acquire_runner_lock, baseline_path, clear_rerun_marker,
-    detect_test_command, extract_session_id, has_exit_suppression,
-    has_rerun_marker, is_exempt_from_tests, is_source_file, is_test_file,
-    is_test_running, parse_test_summary, pid_path, read_coverage,
-    read_state, record_file_edit, release_runner_lock,
-    write_baseline, write_rerun_marker, write_skill_invoked, write_state,
+    acquire_runner_lock, adaptive_gate_timeout, baseline_path,
+    clear_rerun_marker, detect_test_command, extract_session_id,
+    has_exit_suppression, has_rerun_marker, is_exempt_from_tests,
+    is_source_file, is_test_file, is_test_running, parse_test_summary,
+    pid_path, read_coverage, read_state, record_file_edit,
+    release_runner_lock, run_in_process_group, write_baseline,
+    write_rerun_marker, write_skill_invoked, write_state,
 )
 
 
@@ -90,26 +91,25 @@ def _run_tests_worker(cwd, command, sid=None):
             clear_rerun_marker(cwd)
 
             started_at = time.time()
-            env = dict(os.environ, _SDD_RECURSION_GUARD="1")
+            timeout = adaptive_gate_timeout(cwd, default=120, max_timeout=300)
             try:
-                result = subprocess.run(
-                    command, shell=True, capture_output=True, text=True,
-                    cwd=cwd, timeout=300, env=env,
-                )
-                raw = result.stdout + result.stderr
+                rc, stdout, stderr, timed_out = run_in_process_group(
+                    command, cwd, timeout)
+                if timed_out:
+                    write_state(cwd, False, f"tests timed out ({timeout}s)",
+                                started_at=started_at)
+                    continue
+                raw = stdout + stderr
                 if len(raw) > 8192:
                     raw = raw[-8192:]
-                passing = result.returncode == 0
-                summary = parse_test_summary(raw.strip(), result.returncode)
+                passing = rc == 0
+                summary = parse_test_summary(raw.strip(), rc)
                 raw_tail = raw[-4096:] if raw else ""
                 write_state(cwd, passing, summary,
                             raw_output=raw_tail, started_at=started_at)
                 # Baseline: session-scoped, write-once
                 if sid and not baseline_path(cwd, sid).exists():
                     write_baseline(cwd, sid, passing, summary)
-            except subprocess.TimeoutExpired:
-                write_state(cwd, False, "tests timed out (300s)",
-                            started_at=time.time())
             except OSError as e:
                 write_state(cwd, False, f"test execution error: {e}",
                             started_at=time.time())

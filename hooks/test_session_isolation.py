@@ -389,7 +389,8 @@ class TestAutoTestWorkerSid(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_worker_writes_baseline_on_first_run(self, mock_run, mock_suppress,
                                                    mock_write, mock_summary,
                                                    mock_pid, mock_bp):
@@ -398,9 +399,6 @@ class TestAutoTestWorkerSid(unittest.TestCase):
         # baseline_path returns a non-existent file → triggers write
         bp = Path(self.tmpdir) / "nonexistent-baseline.json"
         mock_bp.return_value = bp
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
-        )
         with patch.object(sdd_auto_test, "write_baseline") as mock_wb:
             sdd_auto_test._run_tests_worker(self.tmpdir, "pytest", "abc12345")
             mock_wb.assert_called_once_with(self.tmpdir, "abc12345", True, "5 passed")
@@ -410,7 +408,8 @@ class TestAutoTestWorkerSid(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_worker_skips_baseline_on_subsequent_run(self, mock_run, mock_suppress,
                                                        mock_write, mock_summary,
                                                        mock_pid, mock_bp):
@@ -420,9 +419,6 @@ class TestAutoTestWorkerSid(unittest.TestCase):
         bp = Path(self.tmpdir) / "existing-baseline.json"
         bp.write_text("{}")
         mock_bp.return_value = bp
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
-        )
         with patch.object(sdd_auto_test, "write_baseline") as mock_wb:
             sdd_auto_test._run_tests_worker(self.tmpdir, "pytest", "abc12345")
             mock_wb.assert_not_called()
@@ -430,14 +426,12 @@ class TestAutoTestWorkerSid(unittest.TestCase):
     @patch.object(sdd_auto_test, "pid_path")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_worker_no_baseline_without_sid(self, mock_run, mock_suppress,
                                              mock_write, mock_pid):
         """No baseline capture when sid is None."""
         mock_pid.return_value = self.pid_file
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
-        )
         with patch.object(sdd_auto_test, "write_baseline") as mock_wb:
             sdd_auto_test._run_tests_worker(self.tmpdir, "pytest", None)
             mock_wb.assert_not_called()

@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
 import tempfile
 import time
@@ -74,6 +75,55 @@ def _write_json_atomic(path, data, prefix="sdd-"):
             os.unlink(tmp)
         except OSError:
             pass
+
+
+# ─────────────────────────────────────────────────────────────────
+# PROCESS GROUP EXECUTION — prevents orphan child processes
+# ─────────────────────────────────────────────────────────────────
+
+def run_in_process_group(command, cwd, timeout, env=None):
+    """Run command with process group isolation for clean timeout killing.
+
+    Uses start_new_session to create a new process group. On timeout,
+    kills the entire group (shell + all children) — prevents orphan
+    pytest/node processes that accumulate and throttle CPU.
+
+    Returns:
+        (returncode: int, stdout: str, stderr: str, timed_out: bool)
+    """
+    if env is None:
+        env = dict(os.environ, _SDD_RECURSION_GUARD="1")
+    proc = subprocess.Popen(
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, cwd=cwd, env=env, start_new_session=True,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+        return proc.returncode, stdout, stderr, False
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            proc.kill()
+        proc.wait()
+        return -1, "", "", True
+
+
+def adaptive_gate_timeout(cwd, default=60, multiplier=3,
+                          min_timeout=30, max_timeout=300):
+    """Compute gate timeout from historical test duration.
+
+    Strategy: multiplier × last known duration, clamped to [min, max].
+    Automatically adapts to project size — small suites get tight
+    timeouts, large suites get proportionally more time.
+
+    First run (no history): uses default.
+    """
+    state = read_state(cwd, max_age_seconds=7200)  # 2h history window
+    if state and state.get("duration"):
+        return max(min_timeout, min(max_timeout,
+                                    int(state["duration"] * multiplier)))
+    return default
 
 
 EXIT_SUPPRESSION_RE = re.compile(
@@ -463,6 +513,7 @@ def write_state(cwd, passing, summary, sid=None, raw_output=None, started_at=Non
         data["raw_output"] = raw_output
     if started_at is not None:
         data["started_at"] = started_at
+        data["duration"] = round(time.time() - started_at, 2)
     _write_json_atomic(state_path(cwd, sid), data, prefix="sdd-state-")
 
 

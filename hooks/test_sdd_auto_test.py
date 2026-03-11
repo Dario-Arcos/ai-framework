@@ -61,12 +61,10 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_passing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file  # non-existent path
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
-        )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
             self.tmpdir, True, "5 passed",
@@ -79,12 +77,10 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="2 failed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(1, "2 failed\n", "", False))
     def test_failing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file  # non-existent path
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=1, stdout="2 failed\n", stderr="",
-        )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
             self.tmpdir, False, "2 failed",
@@ -97,13 +93,11 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="summary")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group")
     def test_output_truncation_at_8k(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file
         big_output = "x" * 10000
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout=big_output, stderr="",
-        )
+        mock_run.return_value = (0, big_output, "", False)
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         call_args = mock_summary.call_args[0]
         self.assertLessEqual(len(call_args[0]), 8192)
@@ -114,34 +108,37 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="summary")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed", "", False))
     def test_output_no_truncation(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file
-        short_output = "5 passed"
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout=short_output, stderr="",
-        )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         call_args = mock_summary.call_args[0]
-        self.assertEqual(call_args[0], short_output)
+        self.assertEqual(call_args[0], "5 passed")
 
     @patch.object(sdd_auto_test, "release_runner_lock")
     @patch.object(sdd_auto_test, "acquire_runner_lock", return_value=99)
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="pytest", timeout=300))
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(-1, "", "", True))
     def test_timeout_writes_failure(self, mock_run, mock_suppress, mock_write, mock_acquire, mock_release):
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
-        mock_write.assert_called_once_with(
-            self.tmpdir, False, "tests timed out (300s)",
-            started_at=ANY,
-        )
+        # Timeout triggers `continue` in the loop, so write_state is called
+        # up to _MAX_RERUNS+1 times. Validate the first call's content.
+        self.assertGreaterEqual(mock_write.call_count, 1)
+        args, kwargs = mock_write.call_args_list[0]
+        self.assertEqual(args[0], self.tmpdir)
+        self.assertFalse(args[1])
+        self.assertIn("timed out", args[2])
+        self.assertIn("started_at", kwargs)
 
     @patch.object(sdd_auto_test, "release_runner_lock")
     @patch.object(sdd_auto_test, "acquire_runner_lock", return_value=99)
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run", side_effect=OSError("No such file"))
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  side_effect=OSError("No such file"))
     def test_oserror_writes_failure(self, mock_run, mock_suppress, mock_write, mock_acquire, mock_release):
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once()
@@ -157,18 +154,16 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="ok")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "ok", "", False))
     def test_lock_released_in_finally(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="ok", stderr="",
-        )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_release.assert_called_once_with(99, self.tmpdir)
 
     @patch.object(sdd_auto_test, "acquire_runner_lock", return_value=None)
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group")
     def test_worker_exits_when_locked(self, mock_run, mock_suppress, mock_acquire):
         """Worker exits immediately when another worker holds the lock."""
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
@@ -191,14 +186,12 @@ class TestCoalescingWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "5 passed\n", "", False))
     def test_worker_reruns_when_marker_set(self, mock_run, _suppress,
                                            mock_write, _summary, mock_bp, mock_acquire, mock_release):
         """Worker runs twice when rerun marker exists after first run."""
         mock_bp.return_value = self.pid_file
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="5 passed\n", stderr="",
-        )
         call_count = [0]
 
         def fake_has_marker(cwd):
@@ -217,14 +210,12 @@ class TestCoalescingWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "ok\n", "", False))
     def test_worker_respects_max_reruns(self, mock_run, _suppress,
                                         mock_write, _summary, mock_bp, mock_acquire, mock_release):
         """Worker stops after _MAX_RERUNS+1 total runs even if marker keeps appearing."""
         mock_bp.return_value = self.pid_file
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="ok\n", stderr="",
-        )
         with patch.object(sdd_auto_test, "has_rerun_marker", return_value=True):
             sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
 
@@ -238,14 +229,12 @@ class TestCoalescingWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
-    @patch("subprocess.run")
+    @patch.object(sdd_auto_test, "run_in_process_group",
+                  return_value=(0, "ok\n", "", False))
     def test_worker_no_rerun_without_marker(self, mock_run, _suppress,
                                              _write, _summary, mock_bp, mock_acquire, mock_release):
         """Worker runs once when no rerun marker exists."""
         mock_bp.return_value = self.pid_file
-        mock_run.return_value = subprocess.CompletedProcess(
-            args="pytest", returncode=0, stdout="ok\n", stderr="",
-        )
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         self.assertEqual(mock_run.call_count, 1, "Should run exactly once")
 

@@ -29,11 +29,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    await_test_completion, can_trust_state, clear_baseline, clear_coverage,
-    compute_uncovered, detect_test_command, extract_session_id,
-    has_exit_suppression, is_test_running, parse_test_summary,
-    read_baseline, read_coverage, read_skill_invoked, read_state,
-    skill_invoked_path,
+    adaptive_gate_timeout, await_test_completion, can_trust_state,
+    clear_baseline, clear_coverage, compute_uncovered, detect_test_command,
+    extract_session_id, has_exit_suppression, is_test_running,
+    parse_test_summary, read_baseline, read_coverage, read_skill_invoked,
+    read_state, run_in_process_group, skill_invoked_path,
 )
 
 
@@ -163,8 +163,15 @@ def _validate_gate_command(name, command):
     return None
 
 
-def run_gate(name, command, cwd, timeout=120):
+def run_gate(name, command, cwd, timeout=None):
     """Run a single quality gate.
+
+    Timeout strategy: adaptive from historical test duration (3× last run,
+    clamped [30s, 300s]). Falls back to 60s on first run. Caller can
+    override with explicit timeout for budget-constrained gates.
+
+    Uses process groups via run_in_process_group() — timeout kills the
+    entire process tree, preventing orphan child processes.
 
     Returns:
         (passed: bool, output: str)
@@ -176,19 +183,19 @@ def run_gate(name, command, cwd, timeout=120):
     if error:
         return False, error
 
+    if timeout is None:
+        timeout = adaptive_gate_timeout(cwd)
+
     try:
-        env = dict(os.environ, _SDD_RECURSION_GUARD="1")
-        result = subprocess.run(
-            command, shell=True, capture_output=True, text=True,
-            cwd=cwd, timeout=timeout, env=env,
-        )
-        output = (result.stdout + result.stderr).strip()
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            command, cwd, timeout)
+        if timed_out:
+            return False, f"Gate '{name}' timed out after {timeout}s"
+        output = (stdout + stderr).strip()
         # Truncate to last 800 chars for readable feedback
         if len(output) > 800:
             output = "...\n" + output[-800:]
-        return result.returncode == 0, output
-    except subprocess.TimeoutExpired:
-        return False, f"Gate '{name}' timed out after {timeout}s"
+        return rc == 0, output
     except OSError as e:
         return False, f"Gate '{name}' failed to execute: {e}"
 
@@ -447,7 +454,9 @@ def main():
                 "Reduce gate execution times or remove unnecessary gates.",
             )
 
-        gate_timeout = min(120, int(remaining))
+        # Adaptive timeout for test gate (history-based); 120s cap for others
+        max_gate = adaptive_gate_timeout(cwd) if gate_name == "test" else 120
+        gate_timeout = min(max_gate, int(remaining))
         passed, output = run_gate(gate_name, gate_cmd, cwd, timeout=gate_timeout)
 
         if not passed:
