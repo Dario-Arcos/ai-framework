@@ -126,13 +126,14 @@ All agents use `memory: user` for cross-session knowledge accumulation.
 |-------|------|---------|
 | **SessionStart** | `session-start.py` | Sync templates to project |
 | **SessionStart** | `agent-browser-check.py` | Browser daemon health + orphan cleanup |
-| **SessionStart** | `memory-check.py` | Project rules staleness detection (4 levels, content hashing) |
 | **Stop** | `notify.sh` | macOS desktop notification |
 | **Notification** | `notify.sh` | Permission/idle/auth notifications with distinct sounds |
+| **UserPromptSubmit** | `constraint-reinforcement.py` | Reinforce CLAUDE.md constraints every prompt |
+| **SubagentStart** | `subagent-start.py` | Inject skill registry into general-purpose subagents |
 | **TeammateIdle** | `teammate-idle.py` | ABORT detection + circuit breaker for Agent Teams |
 | **TaskCompleted** | `task-completed.py` | Quality gate: test, typecheck, lint, build, integration, e2e, coverage |
 | **PreToolUse** | `sdd-test-guard.py` | Block edits that reduce assertions when tests fail |
-| **PostToolUse** | `sdd-auto-test.py` | Run tests in background after every code edit |
+| **PostToolUse** | `sdd-auto-test.py` | Run tests in background after code edits and skill invocations |
 
 Hooks are Python 3 (stdlib only) and Bash. Full test coverage.
 
@@ -142,7 +143,7 @@ Hooks are Python 3 (stdlib only) and Bash. Full test coverage.
 
 **Settings:** `.claude/settings.local.json` overrides `settings.json` (personal always wins)
 
-**Integrations:** Zero MCP servers enabled by default (Context7 is plugin-level). Use `/plugin install` for additional plugins — [Docs](https://dario-arcos.github.io/ai-framework/docs/integrations)
+**Integrations:** Context7 MCP included at plugin level for API documentation retrieval. Use `/plugin install` for additional plugins — [Docs](https://dario-arcos.github.io/ai-framework/docs/integrations)
 
 **Personal instructions:** `CLAUDE.local.md` (optional, auto-gitignored) — [Best practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 
