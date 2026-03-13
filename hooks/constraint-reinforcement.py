@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """UserPromptSubmit hook — constitutional constraint reinforcement.
 
-Injects a ~55-token reminder into the recency zone on every user prompt.
+Injects a ~65-token reminder into the recency zone on every user prompt.
 Counters attention dilution in long conversations by reinforcing CLAUDE.md
 authority via the bookend pattern (primacy + recency).
 
@@ -12,10 +12,11 @@ import json
 import sys
 
 REINFORCEMENT = """\
-CLAUDE.md constraints apply — mandatory, not advisory.
-Workflow: brainstorming → plan mode → scenario-driven-development → GATE: /verification-before-completion.
-Multi-step → TaskCreate + Agent (opus only). Flaw → better path → evidence → user decides.
-Never skip review and validation agents after implementation steps."""
+CLAUDE.md constraints MANDATORY. Skills precede ALL work.
+Workflow: /brainstorming → plan mode → /scenario-driven-development → /verification-before-completion.
+NEVER start without observable scenarios + satisfaction criteria. Weakening = reward hacking.
+Multi-step → TaskCreate + Agent (opus only). NEVER pre-training — /agent-browser or Context7.
+NEVER skip review/validation agents."""
 
 
 def main():

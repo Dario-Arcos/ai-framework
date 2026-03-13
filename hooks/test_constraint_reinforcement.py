@@ -39,18 +39,22 @@ class TestOutput(unittest.TestCase):
         ctx = output["hookSpecificOutput"]["additionalContext"]
         for token in [
             "CLAUDE.md",
-            "mandatory, not advisory",
-            "brainstorming",
+            "MANDATORY",
+            "Skills precede ALL work",
+            "/brainstorming",
             "plan mode",
-            "scenario-driven-development",
-            "GATE: /verification-before-completion",
+            "/scenario-driven-development",
+            "/verification-before-completion",
+            "NEVER start without observable scenarios",
+            "satisfaction criteria",
+            "reward hacking",
             "opus only",
-            "user decides",
+            "/agent-browser",
         ]:
             self.assertIn(token, ctx, f"Missing activation token: {token}")
 
     def test_token_budget(self):
-        """Reminder should stay compact — under 400 chars (~55 tokens)."""
+        """Reminder should stay compact — under 400 chars."""
         self.assertLess(len(constraint_reinforcement.REINFORCEMENT), 400)
 
     def test_no_aggressive_language(self):
