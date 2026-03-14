@@ -81,6 +81,41 @@ def _write_json_atomic(path, data, prefix="sdd-"):
 # PROCESS GROUP EXECUTION — prevents orphan child processes
 # ─────────────────────────────────────────────────────────────────
 
+_IS_WINDOWS = os.name == "nt"
+
+
+def _kill_process_tree(proc):
+    """Kill a subprocess and all its children, cross-platform.
+
+    POSIX: os.killpg sends SIGKILL to the entire process group.
+    Windows: taskkill /T /F kills the process tree by PID.
+    Fallback: proc.kill() if both fail.
+    """
+    try:
+        if _IS_WINDOWS:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True, timeout=5,
+            )
+        else:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except OSError:
+        proc.kill()
+
+
+def _kill_pgid(pgid):
+    """Kill a process group by PGID, cross-platform. No-op on failure."""
+    try:
+        if _IS_WINDOWS:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pgid)],
+                capture_output=True, timeout=5,
+            )
+        else:
+            os.killpg(pgid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError):
+        pass
+
 def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
     """Run command with process group isolation for clean timeout killing.
 
@@ -110,10 +145,7 @@ def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
         stdout, stderr = proc.communicate(timeout=timeout)
         return proc.returncode, stdout, stderr, False
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            proc.kill()
+        _kill_process_tree(proc)
         proc.wait()
         return -1, "", "", True
 
@@ -483,9 +515,8 @@ def kill_orphan_test_group(cwd):
     pgid_file = test_pgid_path(cwd)
     try:
         pgid = int(pgid_file.read_text().strip())
-        os.killpg(pgid, signal.SIGKILL)
-    except (FileNotFoundError, ValueError, ProcessLookupError,
-            PermissionError, OSError):
+        _kill_pgid(pgid)
+    except (FileNotFoundError, ValueError):
         pass
 
 
