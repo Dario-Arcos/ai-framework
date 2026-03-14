@@ -144,7 +144,7 @@ scripts/stop-server.sh $SCREEN_DIR
 ```
 
 If the user agrees to the companion, read the detailed operational guide before proceeding:
-`visual-companion.md`
+`skills/frontend-design/visual-companion.md`
 
 That guide covers: server lifecycle, the write-preview-feedback loop, HTML content fragments vs full documents, CSS classes available in the frame template, browser event handling, and file naming conventions.
 
