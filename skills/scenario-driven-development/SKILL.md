@@ -1,6 +1,6 @@
 ---
 name: scenario-driven-development
-description: "Use when implementing any feature, fix, or change. Value: SCENARIO→SATISFY→REFACTOR loop with convergence gates ensures code satisfies user intent. Skip risk: without pre-defined scenarios, tests get rewritten to match bugs and edge cases go undetected."
+description: "Use when implementing any feature, fix, or change. Defines observable scenarios before code, then converges until behavior satisfies user intent — scenarios first, tests encode them, code satisfies tests."
 ---
 
 # Scenario-Driven Development
@@ -379,6 +379,10 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 - Mock-only validation (testing what mocks do, not what code does)
 - Narrow assertions that miss semantic bugs
 - Structural and process anti-patterns
+
+Before writing or modifying scenarios, review the testing anti-patterns to avoid common traps with mocks, test-only production methods, and incomplete test doubles:
+
+@references/testing-anti-patterns.md
 
 ## Related
 

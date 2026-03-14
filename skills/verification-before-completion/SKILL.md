@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-description: "Use before any completion claim, commit, PR, or status report. Value: 6-step evidence gate ensures every claim has fresh execution output. Skip risk: stale 'tests pass' claims — code changed since last run, skipped tests hide failures silently."
+description: "Use before any completion claim, commit, PR, or status report. Requires fresh verification evidence — memory of passing tests is not proof, only observable output counts."
 ---
 
 # Verification Before Completion

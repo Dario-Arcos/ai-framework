@@ -1,6 +1,6 @@
 ---
 name: humanizer
-description: "Use on any user-facing prose — design docs, research reports, changelogs. Value: identifies and removes 33 documented AI writing patterns (EN+ES) from Wikipedia AI Cleanup taxonomy. Skip risk: unhumanized AI prose is identifiable — inflated significance, synonym cycling, filler phrases."
+description: "Use on any user-facing prose — design docs, research reports, changelogs, explanations. Identifies and removes AI writing patterns to make text sound natural, with real personality and voice."
 ---
 
 # Humanizer: Remove AI Writing Patterns

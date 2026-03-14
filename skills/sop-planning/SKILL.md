@@ -272,6 +272,27 @@ Create `{project_dir}/design/detailed-design.md` using `templates/detailed-desig
 
 ---
 
+### Step 6.5: File Structure
+
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
+
+- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
+- You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
+- Files that change together should live together. Split by responsibility, not by technical layer.
+- In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
+
+This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
+
+**Constraints:**
+- You MUST produce a file-level map before writing implementation steps because task decomposition without a file structure leads to overlapping responsibilities and unclear boundaries
+- You MUST include the file map in `{project_dir}/implementation/plan.md` as the first section before tasks
+- In interactive mode: Present the file structure for user review before proceeding to tasks
+- In autonomous mode: Generate file structure, document rationale for decomposition decisions
+
+**Verification**: File structure map exists and each file has a single, clear responsibility.
+
+---
+
 ### Step 7: Develop Implementation Plan
 
 Create `{project_dir}/implementation/plan.md`:
@@ -330,6 +351,38 @@ Create `{project_dir}/implementation/plan.md`:
 - In autonomous mode: Generate complete plan, flag any steps with uncertainty
 
 **Verification**: User has reviewed and approved implementation plan (interactive) or plan complete with flagged uncertainties (autonomous).
+
+---
+
+### Step 7.5: Plan Review Loop
+
+Before finalizing the plan, dispatch a review subagent to validate quality.
+
+After completing each chunk of the plan:
+
+1. Dispatch plan-document-reviewer subagent (see @references/plan-document-reviewer-prompt.md) with precisely crafted review context -- never your session history. This keeps the reviewer focused on the plan, not your thought process.
+   - Provide: chunk content, path to spec document
+2. If Issues Found:
+   - Fix the issues in the chunk
+   - Re-dispatch reviewer for that chunk
+   - Repeat until Approved
+3. If Approved: proceed to next chunk (or Step 8 if last chunk)
+
+**Chunk boundaries:** Use `## Chunk N: <name>` headings to delimit chunks. Each chunk should be <=1000 lines and logically self-contained.
+
+**Review loop guidance:**
+- Same agent that wrote the plan fixes it (preserves context)
+- If loop exceeds 5 iterations, surface to human for guidance
+- Reviewers are advisory -- explain disagreements if you believe feedback is incorrect
+
+**Constraints:**
+- You MUST dispatch the reviewer subagent for every plan chunk before proceeding because unreviewed plans accumulate structural issues that compound during implementation
+- You MUST NOT skip review in autonomous mode because autonomous execution has no human safety net
+- You MUST pass only the plan chunk and spec path to the reviewer -- never session history or intermediate reasoning
+
+@references/plan-document-reviewer-prompt.md
+
+**Verification**: All plan chunks have received Approved status from the reviewer subagent.
 
 ---
 

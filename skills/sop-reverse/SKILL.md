@@ -1,6 +1,6 @@
 ---
 name: sop-reverse
-description: "Use when finding world-class referents before building something new, inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration. Discovers exemplar implementations AND investigates existing artifacts to generate structured specifications."
+description: "Use when finding world-class referents before building something new, inheriting undocumented systems, integrating with third-party APIs, or preparing legacy systems for migration."
 ---
 
 # SOP Referent Discovery & Reverse Engineering

@@ -1,6 +1,6 @@
 ---
 name: ralph-orchestrator
-description: "Use when building features requiring planning + autonomous execution. Triggers on multi-step implementations, overnight development, or when parallel ephemeral teammates with fresh 200K context improve quality. Orchestrates SOP skills (referent discovery, planning, task-generation) then launches Agent Teams."
+description: "Use when building features requiring planning and autonomous execution, multi-step implementations, or overnight development."
 ---
 
 # Ralph Orchestrator

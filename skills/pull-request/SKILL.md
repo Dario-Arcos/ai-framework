@@ -1,11 +1,11 @@
 ---
 name: pull-request
-description: "Use when creating a PR or merging feature work. Value: runs parallel code-reviewer + security-reviewer agents, auto-detects protected branches. Skip risk: unreviewed security issues and undocumented breaking changes ship to main."
+description: "Use when creating a PR or merging feature work. Runs parallel code-reviewer, security-reviewer, edge-case-detector, and performance-engineer agents as an integrated quality gate before submission."
 ---
 
 # Git Pull Request Workflow
 
-Create PRs with integrated quality gate. Human always decides.
+Create PRs with integrated quality gate. Runs parallel code-reviewer, security-reviewer, edge-case-detector, and performance-engineer agents. Auto-detects protected branches. Human always decides.
 
 **Input:** Target branch from `$ARGUMENTS` (e.g., "main").
 

@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Use when creating a git commit. Value: auto-classifies changes by type, groups related files, enforces conventional commit format. Skip risk: inconsistent messages, unrelated changes bundled in one commit."
+description: "Use when creating a git commit. Intelligently analyzes changes, groups related modifications, and applies quality checks — producing well-structured conventional commits."
 ---
 
 # Smart Git Commit
@@ -62,6 +62,10 @@ Read [references/commit-formats.md](references/commit-formats.md) for corporate 
 ```bash
 git log --oneline -n 3
 ```
+
+## Value
+
+Auto-classifies changes by type, groups related files, and enforces conventional commit format. Without this skill, commit messages tend to be inconsistent and unrelated changes get bundled in one commit.
 
 ## Important Notes
 

@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: "Use for technology decisions, API comparisons, or architecture exploration. Value: multi-source investigation with per-claim citations and cross-validation. Skip risk: research from training knowledge alone hallucinates on version-specific details and recent APIs."
+description: "Use when making technology decisions, comparing APIs, exploring architecture, or answering any question requiring verified external evidence. Produces cross-validated findings through multi-perspective investigation — claims without evidence are flagged, not fabricated."
 ---
 
 # Deep Research

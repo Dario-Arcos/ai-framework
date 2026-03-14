@@ -1,7 +1,6 @@
 ---
 name: frontend-design
-description: "Use when building web components, pages, dashboards, or any web UI. Value: researches world-class visual references first, extracts design DNA (typography, color, spacing). Skip risk: AI generates 'statistical average' designs — same fonts, same shadows, same generic layouts."
-license: Complete terms in LICENSE.txt
+description: "Use when building web components, pages, dashboards, or any web UI. Creates distinctive, production-grade interfaces grounded in real-world references — avoids generic AI-generated aesthetics."
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
@@ -41,7 +40,7 @@ Task: Navigate to awwwards.com, filter by [category], capture full-page screensh
 
 **Fallback** (only if agent-browser unavailable): Use Chrome extension tools (mcp__claude-in-chrome__*) to navigate and take screenshots.
 
-**Last resort** (only if browser tools fail): Use WebFetch to extract content, but acknowledge this provides inferior analysis.
+**Last resort** (only if browser tools fail): Use agent-browser with direct URL navigation to extract content, but acknowledge this provides inferior analysis compared to visual screenshots.
 
 ### Step 2: Extract Design DNA
 
@@ -102,6 +101,55 @@ Remember: Claude is capable of extraordinary creative work. Don't hold back, sho
 
 ---
 
+## Visual Companion
+
+A browser-based companion for showing live HTML previews of design explorations — layout alternatives, color palettes, component states, and responsive breakpoints. Available as a tool, not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every design step goes through the browser.
+
+### Consent Flow
+
+When you anticipate that upcoming design work will involve visual comparisons, offer it once for consent:
+
+> "Some of what we're designing might be easier to evaluate if I can show it to you in a web browser — live component previews, layout comparisons, typography pairings, responsive breakpoints. I can push HTML previews as we iterate. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
+
+**This offer MUST be its own message.** Do not combine it with design questions, reference analysis, or any other content. Wait for the user's response before continuing. If they decline, proceed with code-only delivery.
+
+### Per-Question Decision
+
+Even after the user accepts, decide FOR EACH design step whether to use the browser or deliver code directly. The test: **would the user evaluate this better by seeing a live preview than reading code?**
+
+**Use the browser** when the content itself is visual:
+- Comparing layout alternatives (grid vs flex, sidebar vs top-nav)
+- Exploring color palettes and typography pairings side-by-side
+- Prototyping responsive breakpoints across viewport widths
+- Demonstrating animation and transition options
+- Showing component state variations (hover, active, disabled, loading)
+- Evaluating spacing, visual hierarchy, and spatial composition
+
+**Use the terminal** when the content is structural or conceptual:
+- Choosing between technical approaches (CSS Grid vs Flexbox tradeoffs)
+- Discussing architecture decisions (component decomposition, state management)
+- Reviewing accessibility requirements
+- Debating naming conventions or API surface
+
+A question *about* a visual topic is not automatically a visual question. "Should the nav be fixed or sticky?" is conceptual — use the terminal. "Which of these two nav layouts feels more balanced?" is visual — use the browser.
+
+### Integration
+
+```bash
+# Start the server (backgrounds automatically in Claude Code)
+scripts/start-server.sh --project-dir /path/to/project
+
+# Stop when done
+scripts/stop-server.sh $SCREEN_DIR
+```
+
+If the user agrees to the companion, read the detailed operational guide before proceeding:
+`visual-companion.md`
+
+That guide covers: server lifecycle, the write-preview-feedback loop, HTML content fragments vs full documents, CSS classes available in the frame template, browser event handling, and file naming conventions.
+
+---
+
 ## Validation: Reference Comparison (MANDATORY)
 
 **Before delivering, validate against your references.**
@@ -146,3 +194,5 @@ If amateur → iterate. If peer-level → proceed to exploratory QA.
 ### Exploratory QA (MANDATORY for web features)
 
 After visual validation passes, invoke `/dogfood` on the running app. Dogfood tests the app like a real user — navigating pages, filling forms, checking console errors — and produces a structured bug report with screenshots and repro evidence. Visual quality without functional quality is incomplete.
+
+**Cleanup:** If a Visual Companion server is running, stop it after validation completes: `scripts/stop-server.sh $SCREEN_DIR`

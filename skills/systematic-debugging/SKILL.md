@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: "Use when encountering any bug, scenario failure, or unexpected behavior. Value: 4-phase root-cause investigation before any fix attempt. Skip risk: guessing at fixes without root-cause analysis."
+description: "Use when encountering any bug, scenario failure, or unexpected behavior. Forces root-cause investigation before any fix — no random patches, no symptom masking."
 ---
 
 # Systematic Debugging
@@ -24,7 +24,7 @@ If you haven't completed Phase 1, you cannot propose fixes.
 ## When to Use
 
 Use for ANY technical issue:
-- Scenario failures
+- Test failures
 - Bugs in production
 - Unexpected behavior
 - Performance problems
@@ -61,7 +61,7 @@ You MUST complete each phase before proceeding to the next.
    - Can you trigger it reliably?
    - What are the exact steps?
    - Does it happen every time?
-   - If not reproducible → gather more data, don't guess
+   - If not reproducible -> gather more data, don't guess
 
 3. **Check Recent Changes**
    - What changed that could cause this?
@@ -71,7 +71,7 @@ You MUST complete each phase before proceeding to the next.
 
 4. **Gather Evidence in Multi-Component Systems**
 
-   **WHEN system has multiple components (CI → build → signing, API → service → database):**
+   **WHEN system has multiple components (CI -> build -> signing, API -> service -> database):**
 
    **BEFORE proposing fixes, add diagnostic instrumentation:**
    ```
@@ -105,7 +105,7 @@ You MUST complete each phase before proceeding to the next.
    codesign --sign "$IDENTITY" --verbose=4 "$APP"
    ```
 
-   **This reveals:** Which layer fails (secrets → workflow ✓, workflow → build ✗)
+   **This reveals:** Which layer fails (secrets -> workflow, workflow -> build)
 
 5. **Trace Data Flow**
 
@@ -118,16 +118,6 @@ You MUST complete each phase before proceeding to the next.
    - What called this with bad value?
    - Keep tracing up until you find the source
    - Fix at source, not at symptom
-
-6. **Capture Runtime Evidence (Web/Mobile)**
-
-   **WHEN debugging web or mobile UI:**
-
-   - `agent-browser console` — all console messages (errors, warnings, logs)
-   - `agent-browser errors` — page errors and unhandled exceptions
-   - `agent-browser -p ios snapshot` — iOS-specific state verification
-
-   Console errors are evidence, not noise. A feature that "works" with console errors is broken.
 
 ### Phase 2: Pattern Analysis
 
@@ -167,7 +157,7 @@ You MUST complete each phase before proceeding to the next.
    - Don't fix multiple things at once
 
 3. **Verify Before Continuing**
-   - Did it work? Yes → Phase 4
+   - Did it work? Yes -> Phase 4
    - Didn't work? Form NEW hypothesis
    - DON'T add more fixes on top
 
@@ -181,11 +171,12 @@ You MUST complete each phase before proceeding to the next.
 
 **Fix the root cause, not the symptom:**
 
-1. **Create Failing Scenario**
+1. **Create Failing Test Case**
    - Simplest possible reproduction
-   - Automated scenario validation if possible
-   - One-off verification script if no framework
+   - Automated test if possible
+   - One-off test script if no framework
    - MUST have before fixing
+   - Use the `ai-framework:scenario-driven-development` skill for writing proper failing tests
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -202,7 +193,7 @@ You MUST complete each phase before proceeding to the next.
    - STOP
    - Count: How many fixes have you tried?
    - If < 3: Return to Phase 1, re-analyze with new information
-   - **If ≥ 3: STOP and question the architecture (step 5 below)**
+   - **If >= 3: STOP and question the architecture (step 5 below)**
    - DON'T attempt Fix #4 without architectural discussion
 
 5. **If 3+ Fixes Failed: Question Architecture**
@@ -240,7 +231,7 @@ If you catch yourself thinking:
 
 **If 3+ fixes failed:** Question the architecture (see Phase 4.5)
 
-## Your Human Partner's Signals You're Doing It Wrong
+## your human partner's Signals You're Doing It Wrong
 
 **Watch for these redirections:**
 - "Is that not happening?" - You assumed without verifying
@@ -258,10 +249,10 @@ If you catch yourself thinking:
 | "Issue is simple, don't need process" | Simple issues have root causes too. Process is fast for simple bugs. |
 | "Emergency, no time for process" | Systematic debugging is FASTER than guess-and-check thrashing. |
 | "Just try this first, then investigate" | First fix sets the pattern. Do it right from the start. |
-| "I'll verify scenario after confirming fix works" | Unvalidated fixes don't stick. Scenario first proves it. |
+| "I'll write test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
 | "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
 | "Reference too long, I'll adapt the pattern" | Partial understanding guarantees bugs. Read it completely. |
-| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause. |
+| "I see the problem, let me fix it" | Seeing symptoms != understanding root cause. |
 | "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question pattern, don't fix again. |
 
 ## Quick Reference
@@ -271,7 +262,7 @@ If you catch yourself thinking:
 | **1. Root Cause** | Read errors, reproduce, check changes, gather evidence | Understand WHAT and WHY |
 | **2. Pattern** | Find working examples, compare | Identify differences |
 | **3. Hypothesis** | Form theory, test minimally | Confirmed or new hypothesis |
-| **4. Implementation** | Create test, fix, verify | Bug resolved, scenarios satisfied |
+| **4. Implementation** | Create test, fix, verify | Bug resolved, tests pass |
 
 ## When Process Reveals "No Root Cause"
 
@@ -291,6 +282,10 @@ These techniques are part of systematic debugging and available in this director
 - **`root-cause-tracing.md`** - Trace bugs backward through call stack to find original trigger
 - **`defense-in-depth.md`** - Add validation at multiple layers after finding root cause
 - **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
+
+**Related skills:**
+- **ai-framework:scenario-driven-development** - For creating failing test case (Phase 4, Step 1)
+- **ai-framework:verification-before-completion** - Verify fix worked before claiming success
 
 ## Real-World Impact
 

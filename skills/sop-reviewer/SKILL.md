@@ -1,6 +1,6 @@
 ---
 name: sop-reviewer
-description: "Use when validating completed implementation tasks against SDD compliance, behavioral satisfaction, and reward hacking detection. Invoked by reviewer teammates after TaskCompleted hook gates pass, or standalone for manual review."
+description: "Use when validating completed implementation tasks or performing manual review of SDD compliance."
 ---
 
 # SDD Reviewer
