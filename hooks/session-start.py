@@ -40,6 +40,7 @@ CRITICAL_GITIGNORE_RULES = [
     "/hooks/__pycache__/",
     "/.ralph/",
     "/.research/",
+    "/.brainstorm/",
 ]
 
 

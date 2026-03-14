@@ -13,3 +13,6 @@
 
 # Deep research artifacts (per-investigation)
 /.research/
+
+# Brainstorming session files (mockups, server state)
+/.brainstorm/
