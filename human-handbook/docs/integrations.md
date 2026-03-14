@@ -52,7 +52,7 @@ export AI_FRAMEWORK_SKIP_BROWSER_INSTALL=1
 
 ### Superpowers
 
-Skills profesionales: TDD, debugging sistemático, code review, worktrees. Mantenido por [obra](https://github.com/obra/superpowers).
+Skills profesionales complementarios: TDD, planificación estructurada, code review bidireccional, parallel agents, y más. Mantenido por [obra](https://github.com/obra/superpowers).
 
 ::: code-group
 ```bash [Instalación]
@@ -69,13 +69,17 @@ Skills profesionales: TDD, debugging sistemático, code review, worktrees. Mante
 ```
 :::
 
-::: details Skills incluidos
+::: details Skills incluidos (no nativos de ai-framework)
 - `test-driven-development` — TDD workflow completo
-- `systematic-debugging` — Debugging metódico
-- `verification-before-completion` — Verificación antes de entregar
 - `writing-plans`, `executing-plans` — Planificación estructurada
 - `requesting-code-review`, `receiving-code-review` — Code review bidireccional
+- `dispatching-parallel-agents` — Orquestación de agentes paralelos
+- `subagent-driven-development` — Desarrollo delegado a sub-agentes
 - `using-git-worktrees`, `finishing-a-development-branch` — Git avanzado
+- `writing-skills` — Creación de skills
+- `using-superpowers` — Meta-skill de uso del plugin
+
+Nota: `systematic-debugging`, `verification-before-completion` y `brainstorming` ya son nativos de ai-framework. Superpowers incluye sus propias versiones que pueden coexistir.
 
 Ver lista completa en el [repo](https://github.com/obra/superpowers#skills).
 :::

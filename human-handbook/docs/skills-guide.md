@@ -519,7 +519,7 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
 | Escenario | Skills |
 |-----------|--------|
-| **Feature nueva** | `/brainstorming` → plan mode → implementar → `/commit` → `/pull-request` |
+| **Feature nueva** | `/brainstorming` → plan mode → `/scenario-driven-development` → `/verification-before-completion` → `/commit` → `/pull-request` |
 | **Bug fix urgente** | `/worktree-create` → fix → `/commit` → `/pull-request` |
 | **Desarrollo autónomo** | `/ralph-orchestrator` (orquesta todo el pipeline) |
 | **Post-merge** | `/branch-cleanup` |

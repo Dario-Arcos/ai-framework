@@ -391,7 +391,7 @@ Ver detalles completos en [Skills](./skills-guide.md).
 
 ## Plugins complementarios {#plugins}
 
-El framework se integra con plugins externos como Superpowers (skills para SDD, debugging, code review) y Episodic Memory (búsqueda semántica de conversaciones pasadas).
+El framework se integra con plugins externos como Superpowers (skills para TDD, planificación estructurada, code review bidireccional, parallel agents) y Episodic Memory (búsqueda semántica de conversaciones pasadas).
 
 Ver instalación y detalles en [Integraciones](./integrations.md).
 
