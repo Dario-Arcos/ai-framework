@@ -12,6 +12,33 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [2026.2.1] - 2026-03-14
+
+### Añadido
+
+- **Hook agent-browser skill sync**: Sincronizar 4 skills de agent-browser (agent-browser, dogfood, electron, vercel-sandbox) a `~/.claude/skills/` — antes solo copiaba agent-browser (PR #51)
+- **Hook PGID-based orphan kill**: Registrar PGID de test subprocess en archivo para kill scoped del grupo huérfano exacto — reemplaza pkill indiscriminado que mataba procesos de sesiones paralelas (PR #51)
+- **Hook SDD temp cleanup**: Purgar archivos `sdd-*` en tempdir mayores a 24h en SessionStart para prevenir acumulación de inodes (PR #51)
+- **Context /dogfood gate**: Integrar /dogfood como QA exploratorio obligatorio en constraint 13 de CLAUDE.md ("claim web/mobile works") y en 5 skills (frontend-design, scenario-driven-development, verification-before-completion, sop-code-assist, sop-reviewer) (PR #51)
+- **Docs agent-browser skills**: Documentar tabla de skills agent-browser (dogfood, electron, vercel-sandbox) en skills-guide, integrations, y ai-first-workflow (PR #51)
+
+### Cambiado
+
+- **Hook agent-browser update**: Reescribir mecanismo de actualización — `npm install -g agent-browser@latest` incondicional con dedup 5min reemplaza cooldown 24h que silenciaba fallos. Stderr capturado en log (`2>&1`) en vez de silenciado (`2>/dev/null`) (PR #51)
+- **Hook constraint-reinforcement**: Reescribir texto de refuerzo — cubrir 7/11 constraints de CLAUDE.md (era 3/11), añadir formato literal `/skill-name`, añadir constraints de pre-training y scenarios+satisfaction (~65 tokens, bajo límite 400) (commit `93d1a7e`)
+- **Template CLAUDE.md**: Comprimir constraints (~38 tokens menos), fusionar línea haiku/sonnet en "opus only", añadir prefijo `/` a todas las 10 referencias de skills, integrar /dogfood en constraint 13 y workflow (PR #51, commit `93d1a7e`)
+- **Agents edge-case-detector y performance-engineer**: Eliminar restricción `tools: Read, Grep, Glob, Task` — permitir implementar fixes además de analizar (commit `c8d5d16`)
+
+### Arreglado
+
+- **Hook chrome-headless-shell orphans**: Añadir `pkill -P 1 -f chrome-headless-shell` en Phase 3 de cleanup — mata solo orphans reales (PPID=1), no chrome activo de sesiones paralelas (PR #51)
+- **Hook PGID stale file**: Limpiar archivo PGID después de test exitoso — prevenir SIGKILL a proceso equivocado por reciclaje de PID del OS (PR #51)
+- **Hook cross-platform process kill**: Reemplazar `os.killpg`/`SIGKILL` (POSIX-only) con `_kill_process_tree`/`_kill_pgid` — dispatch a `taskkill /T /F` en Windows, `killpg` en POSIX. Capturar `subprocess.TimeoutExpired` además de `OSError` (PR #51)
+- **Hook Windows shell paths**: Usar `.as_posix()` para paths embebidos en comandos bash — prevenir backslashes interpretados como escapes en Git Bash (PR #51)
+- **Docs README hooks table**: Corregir tabla — eliminar hook ghost (memory-check.py), añadir hooks faltantes (constraint-reinforcement, subagent-start), corregir descripción de MCP server (commit `c8d5d16`)
+
+---
+
 ## [2026.2.0] - 2026-03-11
 
 ### Añadido
