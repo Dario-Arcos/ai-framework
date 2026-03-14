@@ -362,7 +362,8 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                 try:
                     passed, output = run_gate("test", command, cwd)
                     write_state(cwd, passed,
-                                parse_test_summary(output, 0 if passed else 1))
+                                parse_test_summary(output, 0 if passed else 1),
+                                raw_output=output)
                     if not passed:
                         _gate_with_baseline("test", output, cwd, sid,
                                             task_subject=task_subject)
@@ -500,7 +501,8 @@ def main():
                 passed, output = run_gate("test", gate_cmd, cwd,
                                           timeout=gate_timeout)
                 write_state(cwd, passed,
-                            parse_test_summary(output, 0 if passed else 1))
+                            parse_test_summary(output, 0 if passed else 1),
+                            raw_output=output)
             finally:
                 release_runner_lock(lock_fd, cwd)
         else:
