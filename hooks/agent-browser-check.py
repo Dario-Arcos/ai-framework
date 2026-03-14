@@ -47,7 +47,8 @@ SESSION_EXTS = (".pid", ".sock", ".port", ".stream")
 
 def _build_sync_cmd():
     """Shell command to copy skills from npm package to ~/.claude/skills/."""
-    dest = str(SKILLS_DEST)
+    # .as_posix() ensures forward slashes on Windows (Git Bash compatible)
+    dest = SKILLS_DEST.as_posix()
     skills = " ".join(SKILLS_TO_SYNC)
     return (
         f'mkdir -p "{dest}";'
