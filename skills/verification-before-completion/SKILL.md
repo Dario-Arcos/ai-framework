@@ -241,6 +241,7 @@ The delegating agent is responsible for verifying the subagent's claims through 
 
 - **scenario-driven-development** — Ensures scenarios are defined; this skill ensures they're run before claiming done
 - **systematic-debugging** — Root cause analysis; this skill ensures fixes are verified after debugging
+- **dogfood** — Exploratory QA for web/UI features: invoke before delivery to find issues that pre-defined scenarios didn't cover
 
 ## Artifact Handoff
 
