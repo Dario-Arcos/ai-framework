@@ -34,24 +34,27 @@ class TestOutput(unittest.TestCase):
         self.assertIn("additionalContext", output["hookSpecificOutput"])
 
     def test_contains_activation_tokens(self):
-        """Reminder must contain verbatim CLAUDE.md phrases for associative activation."""
+        """Reminder must contain section pointers and key behavioral gates."""
         output = self._run_hook()
         ctx = output["hookSpecificOutput"]["additionalContext"]
         for token in [
             "CLAUDE.md",
             "MANDATORY",
+            "<constraints>",
+            "<identity>",
+            "<workflow>",
             "Skills precede ALL work",
-            "/brainstorming",
-            "plan mode",
-            "/scenario-driven-development",
-            "/verification-before-completion",
             "NEVER start without observable scenarios",
             "satisfaction criteria",
-            "reward hacking",
-            "opus only",
-            "/agent-browser",
+            "same rigor as turn one",
         ]:
             self.assertIn(token, ctx, f"Missing activation token: {token}")
+
+    def test_salience_wrapper(self):
+        """Reinforcement must use EXTREMELY_IMPORTANT salience wrapper."""
+        ctx = constraint_reinforcement.REINFORCEMENT
+        self.assertIn("<EXTREMELY_IMPORTANT>", ctx)
+        self.assertIn("</EXTREMELY_IMPORTANT>", ctx)
 
     def test_token_budget(self):
         """Reminder should stay compact — under 400 chars."""
