@@ -10,7 +10,7 @@ Cada tip es un patrón que un usuario experimentado no descubriría solo leyendo
 
 ## 1. Contexto fresco — el recurso más valioso <Badge type="danger" text="core" />
 
-Claude razona mejor con contexto limpio. Cada corrección, cada intento fallido, cada output largo contamina la ventana de 200K tokens. Estas tres técnicas explotan ese principio.
+Claude razona mejor con contexto limpio. Cada corrección, cada intento fallido, cada output largo contamina la ventana de contexto. Estas tres técnicas explotan ese principio.
 
 ### Tip 1: Plan mode sin plan mode
 
@@ -38,7 +38,7 @@ flowchart TD
     D -- No --> F["Ajustas dirección<br>contexto limpio"]
 ```
 
-1. **Contexto inicial 100% para planificar** — La ventana de 200K está fresca. Claude dedica toda su capacidad a explorar el codebase y diseñar el plan sin ruido de ejecuciones previas.
+1. **Contexto inicial 100% para planificar** — La ventana está fresca. Claude dedica toda su capacidad a explorar el codebase y diseñar el plan sin ruido de ejecuciones previas.
 2. **Ejecución con contexto dedicado** — La implementación puede arrancar con agentes delegados vía Task tool, cada uno con su propia ventana limpia.
 3. **Sin pasos manuales** — No necesitas ciclar `Shift+Tab` entre plan y bypass. El flujo es natural.
 
@@ -108,14 +108,23 @@ Enfoque esperado:
 
 ## 2. Velocidad — menos latencia, más iteraciones
 
-### Tip 4: Effort level — máximo razonamiento por defecto
+### Tip 4: Effort level — máximo razonamiento por defecto <Badge type="danger" text="critical" />
 
-`/model` → flechas `←` `→` para ajustar entre **low**, **medium** y **high**.
+::: danger CONFIGURA ESTO PRIMERO
+El effort level controla la profundidad de razonamiento del modelo. **Sin configurarlo, Opus usa medium por defecto** — estás dejando capacidad sobre la mesa.
 
-Mantén **high** como tu default. Más razonamiento = mejores decisiones, menos correcciones, menos ciclos desperdiciados. Solo baja cuando la velocidad importa más que la profundidad:
+```bash
+/effort high    # Recomendado: razonamiento profundo, excelente relación calidad/velocidad
+/effort max     # Máximo potencial del modelo (solo Opus) — más lento, mayor consumo
+```
 
-| Effort | Cuándo bajar |
+Para persistir entre sesiones, usa `/effort high` o `/effort max` — se guarda automáticamente en `effortLevel` de tu settings. También puedes forzarlo vía env var `CLAUDE_CODE_EFFORT_LEVEL` en tu `settings.local.json` (toma precedencia sobre todo).
+:::
+
+| Effort | Cuándo usar |
 |---|---|
+| **Max** | Arquitectura, debugging complejo, decisiones de diseño, tareas ambiguas |
+| **High** | Default recomendado — mejor relación profundidad/velocidad para desarrollo diario |
 | Medium | Iteraciones rápidas sobre algo que ya está claro |
 | Low | Tareas mecánicas: renombrar, formatear, fixes obvios |
 
@@ -249,7 +258,7 @@ Prefija con `&` para ejecutar en infraestructura cloud de Anthropic:
 
 ### Tip 12: `/ralph-orchestrator` — ejecución autónoma en paralelo
 
-En lugar de coordinar Agent Teams manualmente, usa `/ralph-orchestrator`. Una sola invocación orquesta todo: discovery → planning → task generation → ejecución con teammates, cada uno con su propia ventana de 200K tokens limpia.
+En lugar de coordinar Agent Teams manualmente, usa `/ralph-orchestrator`. Una sola invocación orquesta todo: discovery → planning → task generation → ejecución con teammates, cada uno con su propia ventana de contexto limpia.
 
 **Mejor para:**
 
@@ -288,5 +297,5 @@ En lugar de coordinar Agent Teams manualmente, usa `/ralph-orchestrator`. Una so
 ---
 
 ::: info Última actualización
-**Fecha**: 2026-02-17
+**Fecha**: 2026-03-14
 :::

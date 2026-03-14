@@ -163,7 +163,7 @@ Cuando un modelo modifica los criterios de éxito para que coincidan con su outp
 
 ### Sub-agents con contexto limpio
 
-Cuando una tarea es compleja, el framework la delega a sub-agents que arrancan con un context window limpio de 200k tokens. El agente principal recibe un resumen de 1-2k tokens. Esto previene la degradación de contexto que ocurre cuando una sola sesión acumula 50k+ tokens de historial.
+Cuando una tarea es compleja, el framework la delega a sub-agents que arrancan con un context window limpio. El agente principal recibe un resumen compacto. Esto previene la degradación de contexto que ocurre cuando una sola sesión acumula demasiado historial.
 
 ### Agents especializados <Badge type="info" text="6 agents" />
 

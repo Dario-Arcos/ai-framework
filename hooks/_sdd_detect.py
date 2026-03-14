@@ -81,12 +81,16 @@ def _write_json_atomic(path, data, prefix="sdd-"):
 # PROCESS GROUP EXECUTION — prevents orphan child processes
 # ─────────────────────────────────────────────────────────────────
 
-def run_in_process_group(command, cwd, timeout, env=None):
+def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
     """Run command with process group isolation for clean timeout killing.
 
     Uses start_new_session to create a new process group. On timeout,
     kills the entire group (shell + all children) — prevents orphan
     pytest/node processes that accumulate and throttle CPU.
+
+    If pgid_file is provided, writes the subprocess PGID (= proc.pid)
+    to that file. The caller (or next worker) can read it to kill an
+    orphaned test group if the worker dies before cleanup.
 
     Returns:
         (returncode: int, stdout: str, stderr: str, timed_out: bool)
@@ -97,6 +101,11 @@ def run_in_process_group(command, cwd, timeout, env=None):
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, cwd=cwd, env=env, start_new_session=True,
     )
+    if pgid_file:
+        try:
+            Path(pgid_file).write_text(str(proc.pid))
+        except OSError:
+            pass
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
         return proc.returncode, stdout, stderr, False
@@ -451,6 +460,33 @@ def release_runner_lock(fd, cwd):
             pid_path(cwd).unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def test_pgid_path(cwd):
+    """Path to test subprocess PGID file (project-scoped).
+
+    Stores the process group ID of the currently running test subprocess.
+    The next worker reads this before spawning a new test — if the old
+    group is still alive (orphan from a crashed worker), it kills it.
+    Prevents test subprocess accumulation that throttles CPU.
+    """
+    return _tmp(f"sdd-test-pgid-{project_hash(cwd)}")
+
+
+def kill_orphan_test_group(cwd):
+    """Kill orphaned test subprocess group from a previous worker.
+
+    Safe to call unconditionally: if the PGID is dead or recycled,
+    killpg returns ESRCH which is caught. Only kills processes in
+    the same process group — no collateral damage.
+    """
+    pgid_file = test_pgid_path(cwd)
+    try:
+        pgid = int(pgid_file.read_text().strip())
+        os.killpg(pgid, signal.SIGKILL)
+    except (FileNotFoundError, ValueError, ProcessLookupError,
+            PermissionError, OSError):
+        pass
 
 
 def rerun_marker_path(cwd):

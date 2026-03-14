@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     baseline_path, coverage_path, last_edit_path, pid_path,
     project_hash, rerun_marker_path, skill_invoked_path, state_path,
+    test_pgid_path,
 )
 
 HOOKS_DIR = Path(__file__).resolve().parent
@@ -59,6 +60,7 @@ def cleanup_all_state(cwd, sid=None):
         pid_path(cwd), pid_path(cwd, sid),
         coverage_path(cwd), coverage_path(cwd, sid),
         rerun_marker_path(cwd),
+        test_pgid_path(cwd),
     ]
     if sid:
         paths.extend([

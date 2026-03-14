@@ -21,10 +21,11 @@ from _sdd_detect import (
     acquire_runner_lock, adaptive_gate_timeout, baseline_path,
     clear_rerun_marker, detect_test_command, extract_session_id,
     has_exit_suppression, has_rerun_marker, is_exempt_from_tests,
-    is_source_file, is_test_file, is_test_running, parse_test_summary,
+    is_source_file, is_test_file, is_test_running,
+    kill_orphan_test_group, parse_test_summary,
     pid_path, read_coverage, read_state, record_file_edit,
-    release_runner_lock, run_in_process_group, write_baseline,
-    write_rerun_marker, write_skill_invoked, write_state,
+    release_runner_lock, run_in_process_group, test_pgid_path,
+    write_baseline, write_rerun_marker, write_skill_invoked, write_state,
 )
 
 
@@ -87,14 +88,16 @@ def _run_tests_worker(cwd, command, sid=None):
         return  # Another worker holds the lock
 
     try:
+        pgid_file = str(test_pgid_path(cwd))
         for _ in range(_MAX_RERUNS + 1):
             clear_rerun_marker(cwd)
+            kill_orphan_test_group(cwd)
 
             started_at = time.time()
             timeout = adaptive_gate_timeout(cwd, default=120, max_timeout=300)
             try:
                 rc, stdout, stderr, timed_out = run_in_process_group(
-                    command, cwd, timeout)
+                    command, cwd, timeout, pgid_file=pgid_file)
                 if timed_out:
                     write_state(cwd, False, f"tests timed out ({timeout}s)",
                                 started_at=started_at)

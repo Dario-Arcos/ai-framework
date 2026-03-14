@@ -433,7 +433,7 @@ Usa `agent-browser` y Context7 para navegación real, no training data.
 
 ### ralph-orchestrator <Badge type="tip" text="entry point" />
 
-**Entry point** para desarrollo autónomo. Orquesta el pipeline completo — de la idea al código revisado — usando Agent Teams con contexto fresco de 200K tokens por teammate.
+**Entry point** para desarrollo autónomo. Orquesta el pipeline completo — de la idea al código revisado — usando Agent Teams con contexto fresco por teammate.
 
 > **[Ver página dedicada →](./ralph-orchestrator.md)** — arquitectura, paso a paso, configuración, safety nets, modelo de costos.
 

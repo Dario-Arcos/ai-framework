@@ -1,20 +1,19 @@
-"""Tests for SDD orphan cleanup in session-start.py.
+"""Tests for SDD temp file cleanup in session-start.py.
 
 Scenarios:
 1. Stale PID file with dead process → removed by age
 2. Old PID file → removed by age (no SIGTERM — flock handles concurrency)
-3. pkill kills orphan SDD workers by command pattern
-4. pkill failure (no matches) → no crash
-5. Old non-PID sdd files (coverage, markers, state, cmd-cache, baseline) → removed
-6. Fresh sdd files (< max_age) → preserved
-7. Mixed stale and fresh → only stale removed
-8. Corrupt PID file (non-integer, empty) → removed without crash
-9. Permission-denied files → skipped without crash
-10. Empty temp dir → no-op
-11. Non-sdd files → untouched
-12. Directories named sdd-* → skipped
-13. File disappears during cleanup (race condition) → no crash
-14. main() calls cleanup_stale_sdd on startup
+3. No subprocess calls — workers self-terminate, not killed
+4. Old non-PID sdd files (coverage, markers, state, cmd-cache, baseline) → removed
+5. Fresh sdd files (< max_age) → preserved
+6. Mixed stale and fresh → only stale removed
+7. Corrupt PID file (non-integer, empty) → removed without crash
+8. Permission-denied files → skipped without crash
+9. Empty temp dir → no-op
+10. Non-sdd files → untouched
+11. Directories named sdd-* → skipped
+12. File disappears during cleanup (race condition) → no crash
+13. main() calls cleanup_stale_sdd on startup
 """
 import os
 import sys
@@ -72,23 +71,12 @@ class TestCleanupStaleSdd:
         session_start_mod.cleanup_stale_sdd(max_age=86400)
         assert not p.exists()
 
-    # ── Scenario 13: pkill kills orphan SDD workers by pattern ──
+    # ── Scenario 13: no pkill — workers self-terminate ──
 
-    def test_pkill_sdd_workers_on_cleanup(self):
-        """cleanup_stale_sdd calls pkill to kill orphan workers."""
-        with patch.object(session_start_mod.subprocess, "run") as mock_run:
-            session_start_mod.cleanup_stale_sdd(max_age=86400)
-        mock_run.assert_called_once()
-        cmd = mock_run.call_args[0][0]
-        assert cmd[0] == "pkill"
-        assert "sdd-auto-test.py --run-tests" in cmd[-1]
-
-    def test_pkill_failure_no_crash(self):
-        """pkill failing (no matching processes) doesn't crash."""
-        with patch.object(session_start_mod.subprocess, "run",
-                          side_effect=OSError("fail")):
-            session_start_mod.cleanup_stale_sdd(max_age=86400)
-            # No crash
+    def test_no_subprocess_calls(self):
+        """cleanup_stale_sdd does NOT kill processes — only purges files."""
+        assert not hasattr(session_start_mod, "subprocess"), \
+            "subprocess should not be imported — no process killing"
 
     # ── Scenario 4: Old non-PID sdd files removed ──
 

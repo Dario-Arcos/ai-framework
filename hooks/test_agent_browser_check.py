@@ -33,33 +33,8 @@ class TestIsInstalled(unittest.TestCase):
         mock_which.assert_called_once_with("agent-browser")
 
 
-class TestIsSkillPresent(unittest.TestCase):
-    """Test is_skill_present() with real filesystem fixtures."""
-
-    def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
-        self._orig_skill_file = agent_browser_check.SKILL_FILE
-        self.skill_file = Path(self.tmpdir) / "SKILL.md"
-        agent_browser_check.SKILL_FILE = self.skill_file
-
-    def tearDown(self):
-        agent_browser_check.SKILL_FILE = self._orig_skill_file
-        shutil.rmtree(self.tmpdir, ignore_errors=True)
-
-    def test_skill_exists_and_nonempty(self):
-        self.skill_file.write_text("# Agent Browser Skill", encoding="utf-8")
-        self.assertTrue(agent_browser_check.is_skill_present())
-
-    def test_skill_missing(self):
-        self.assertFalse(agent_browser_check.is_skill_present())
-
-    def test_skill_empty(self):
-        self.skill_file.write_text("", encoding="utf-8")
-        self.assertFalse(agent_browser_check.is_skill_present())
-
-
 class TestCooldown(unittest.TestCase):
-    """Test is_cooldown_active() with mocked COOLDOWN_FILE."""
+    """Test is_cooldown_active() for first-install retry prevention."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -76,7 +51,6 @@ class TestCooldown(unittest.TestCase):
 
     def test_cooldown_active(self):
         self.cooldown_file.touch()
-        # mtime is now, which is < 3600s ago
         self.assertTrue(agent_browser_check.is_cooldown_active())
 
     def test_cooldown_expired(self):
@@ -84,6 +58,50 @@ class TestCooldown(unittest.TestCase):
         expired_time = time.time() - 7200  # 2 hours ago
         os.utime(self.cooldown_file, (expired_time, expired_time))
         self.assertFalse(agent_browser_check.is_cooldown_active())
+
+
+class TestUpdateRanRecently(unittest.TestCase):
+    """Test _update_ran_recently() — anti-fork-storm dedup."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_log = agent_browser_check.UPDATE_LOG
+        self.log_file = Path(self.tmpdir) / "update.log"
+        agent_browser_check.UPDATE_LOG = self.log_file
+
+    def tearDown(self):
+        agent_browser_check.UPDATE_LOG = self._orig_log
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_log_file(self):
+        self.assertFalse(agent_browser_check._update_ran_recently())
+
+    def test_recent_log(self):
+        self.log_file.touch()
+        self.assertTrue(agent_browser_check._update_ran_recently())
+
+    def test_stale_log(self):
+        self.log_file.touch()
+        stale_time = time.time() - 600  # 10 min ago, beyond 5min dedup
+        os.utime(self.log_file, (stale_time, stale_time))
+        self.assertFalse(agent_browser_check._update_ran_recently())
+
+
+class TestBuildSyncCmd(unittest.TestCase):
+    """Test _build_sync_cmd() generates correct shell command."""
+
+    def test_contains_all_skills(self):
+        cmd = agent_browser_check._build_sync_cmd()
+        for skill in agent_browser_check.SKILLS_TO_SYNC:
+            self.assertIn(skill, cmd)
+
+    def test_contains_mkdir(self):
+        cmd = agent_browser_check._build_sync_cmd()
+        self.assertIn("mkdir -p", cmd)
+
+    def test_contains_npm_root(self):
+        cmd = agent_browser_check._build_sync_cmd()
+        self.assertIn("npm root -g", cmd)
 
 
 class TestRunBackground(unittest.TestCase):
@@ -104,6 +122,64 @@ class TestRunBackground(unittest.TestCase):
             self.assertIsNone(log_path)
 
 
+class TestUpdateAndSync(unittest.TestCase):
+    """Test update_and_sync() dispatches correct command."""
+
+    @patch("agent_browser_check.run_background", return_value=(True, "/tmp/update.log"))
+    def test_uses_update_cmd(self, mock_run):
+        ok, _ = agent_browser_check.update_and_sync()
+        self.assertTrue(ok)
+        cmd = mock_run.call_args[0][0]
+        self.assertIn("npm install -g agent-browser@latest", cmd)
+        for skill in agent_browser_check.SKILLS_TO_SYNC:
+            self.assertIn(skill, cmd)
+
+    @patch("agent_browser_check.run_background", return_value=(True, "/tmp/update.log"))
+    def test_stderr_not_silenced(self, mock_run):
+        """Regression: old hook used 2>/dev/null, hiding errors."""
+        cmd = mock_run.call_args[0][0] if mock_run.called else agent_browser_check.UPDATE_CMD
+        agent_browser_check.update_and_sync()
+        cmd = mock_run.call_args[0][0]
+        self.assertNotIn("2>/dev/null", cmd)
+        self.assertIn("2>&1", cmd)
+
+
+class TestInstallAndSync(unittest.TestCase):
+    """Test install_and_sync() dispatches correct command and sets cooldown."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_cooldown = agent_browser_check.COOLDOWN_FILE
+        agent_browser_check.COOLDOWN_FILE = Path(self.tmpdir) / "cooldown-ts"
+
+    def tearDown(self):
+        agent_browser_check.COOLDOWN_FILE = self._orig_cooldown
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch("agent_browser_check.run_background", return_value=(True, "/tmp/install.log"))
+    def test_touches_cooldown(self, mock_run):
+        agent_browser_check.install_and_sync()
+        self.assertTrue(agent_browser_check.COOLDOWN_FILE.exists())
+
+    @patch("agent_browser_check.run_background", return_value=(True, "/tmp/install.log"))
+    def test_uses_install_cmd(self, mock_run):
+        agent_browser_check.install_and_sync()
+        cmd = mock_run.call_args[0][0]
+        self.assertIn("agent-browser install", cmd)
+        for skill in agent_browser_check.SKILLS_TO_SYNC:
+            self.assertIn(skill, cmd)
+
+    @patch("agent_browser_check.run_background", return_value=(True, "/tmp/install.log"))
+    def test_skill_sync_decoupled_from_install(self, mock_run):
+        """Skill sync runs even if npm install fails (uses ; not &&)."""
+        agent_browser_check.install_and_sync()
+        cmd = mock_run.call_args[0][0]
+        # After "agent-browser install 2>&1", skill sync uses ";" not "&&"
+        install_end = cmd.index("agent-browser install 2>&1") + len("agent-browser install 2>&1")
+        after_install = cmd[install_end:]
+        self.assertTrue(after_install.startswith(";"))
+
+
 class TestCleanupOrphanDaemons(unittest.TestCase):
     """Test cleanup_orphan_daemons() with real filesystem temp dir."""
 
@@ -118,7 +194,6 @@ class TestCleanupOrphanDaemons(unittest.TestCase):
 
     def test_no_dir_noop(self):
         agent_browser_check.AGENT_BROWSER_DIR = Path(self.tmpdir) / "nonexistent"
-        # Should return without error
         agent_browser_check.cleanup_orphan_daemons()
 
     @patch("os.kill")
@@ -152,7 +227,6 @@ class TestCleanupOrphanDaemons(unittest.TestCase):
         agent_browser_check.cleanup_orphan_daemons()
 
         mock_kill.assert_called_once_with(99999, signal.SIGTERM)
-        # Files should still be cleaned up despite ProcessLookupError
         self.assertFalse(pid_file.exists())
         self.assertFalse(sock_file.exists())
 
@@ -160,13 +234,11 @@ class TestCleanupOrphanDaemons(unittest.TestCase):
     @patch("os.kill")
     def test_pkill_fallback_orphan_sockets(self, mock_kill, mock_run):
         base = Path(self.tmpdir)
-        # Socket without corresponding PID file = orphan
         sock_file = base / "orphan.sock"
         sock_file.touch()
 
         agent_browser_check.cleanup_orphan_daemons()
 
-        # No PID files, so os.kill should not be called
         mock_kill.assert_not_called()
         # Phase 2 (daemon pkill) + Phase 3 (chrome-headless-shell) = 2 calls
         self.assertEqual(mock_run.call_count, 2)
@@ -176,18 +248,19 @@ class TestCleanupOrphanDaemons(unittest.TestCase):
     @patch("agent_browser_check.subprocess.run")
     @patch("os.kill")
     def test_chrome_headless_shell_cleanup(self, mock_kill, mock_run):
-        """Phase 3: orphan chrome-headless-shell killed on SessionStart."""
+        """Phase 3: only orphan chrome (PPID=1) killed, not active ones."""
         agent_browser_check.cleanup_orphan_daemons()
 
-        # No PID/sockets → only Phase 3 fires
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
         self.assertEqual(cmd[0], "pkill")
+        self.assertIn("-P", cmd)
+        self.assertIn("1", cmd)
         self.assertIn("chrome-headless-shell", cmd[-1])
 
 
 class TestMain(unittest.TestCase):
-    """Test main() with all dependencies mocked."""
+    """Test main() — two paths: update (installed) or first-install (missing)."""
 
     def _run_main(self, patches):
         """Helper: apply patches, run main(), return parsed JSON output dict."""
@@ -195,12 +268,10 @@ class TestMain(unittest.TestCase):
             "agent_browser_check.consume_stdin": None,
             "agent_browser_check.cleanup_orphan_daemons": None,
             "agent_browser_check.is_installed": False,
-            "agent_browser_check.is_skill_present": False,
             "agent_browser_check.is_cooldown_active": False,
-            "agent_browser_check.is_update_due": False,
-            "agent_browser_check.sync_skill_background": (True, "/tmp/sync.log"),
-            "agent_browser_check.install_background": (True, "/tmp/install.log"),
-            "agent_browser_check.update_background": (True, "/tmp/update.log"),
+            "agent_browser_check._update_ran_recently": False,
+            "agent_browser_check.update_and_sync": (True, "/tmp/update.log"),
+            "agent_browser_check.install_and_sync": (True, "/tmp/install.log"),
         }
         defaults.update(patches)
 
@@ -228,83 +299,75 @@ class TestMain(unittest.TestCase):
         """Assert hook output is silent (no additionalContext to Claude)."""
         self.assertNotIn("hookSpecificOutput", output)
 
-    def test_installed_skill_present_ready_silent(self):
-        output = self._run_main({
-            "agent_browser_check.is_installed": True,
-            "agent_browser_check.is_skill_present": True,
-            "agent_browser_check.is_update_due": False,
-        })
-        self._assert_silent(output)
+    # --- Installed path: unconditional update ---
 
-    def test_installed_skill_present_update_due_silent(self):
+    def test_installed_update_fires(self):
         mock_update = MagicMock(return_value=(True, "/tmp/update.log"))
         output = self._run_main({
             "agent_browser_check.is_installed": True,
-            "agent_browser_check.is_skill_present": True,
-            "agent_browser_check.is_update_due": True,
-            "agent_browser_check.update_background": mock_update,
+            "agent_browser_check._update_ran_recently": False,
+            "agent_browser_check.update_and_sync": mock_update,
         })
         self._assert_silent(output)
         mock_update.assert_called_once()
 
-    def test_installed_no_skill_syncs_silent(self):
-        mock_sync = MagicMock(return_value=(True, "/tmp/sync.log"))
+    def test_installed_dedup_skips_fork(self):
+        mock_update = MagicMock(return_value=(True, "/tmp/update.log"))
         output = self._run_main({
             "agent_browser_check.is_installed": True,
-            "agent_browser_check.is_skill_present": False,
-            "agent_browser_check.is_cooldown_active": False,
-            "agent_browser_check.sync_skill_background": mock_sync,
+            "agent_browser_check._update_ran_recently": True,
+            "agent_browser_check.update_and_sync": mock_update,
         })
         self._assert_silent(output)
-        mock_sync.assert_called_once()
+        mock_update.assert_not_called()
 
-    def test_installed_no_skill_cooldown_silent(self):
-        mock_sync = MagicMock(return_value=(True, "/tmp/sync.log"))
+    def test_installed_always_silent(self):
+        """Update path never emits context to Claude — nothing actionable."""
         output = self._run_main({
             "agent_browser_check.is_installed": True,
-            "agent_browser_check.is_skill_present": False,
-            "agent_browser_check.is_cooldown_active": True,
-            "agent_browser_check.sync_skill_background": mock_sync,
+            "agent_browser_check._update_ran_recently": False,
         })
         self._assert_silent(output)
-        mock_sync.assert_not_called()
+
+    # --- Not installed path: first-install ---
 
     def test_not_installed_installs_silent(self):
         mock_install = MagicMock(return_value=(True, "/tmp/install.log"))
         output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": False,
-            "agent_browser_check.install_background": mock_install,
+            "agent_browser_check.install_and_sync": mock_install,
         })
-        # Successful background install = silent (transient)
         self._assert_silent(output)
         mock_install.assert_called_once()
 
-    def test_not_installed_cooldown_silent(self):
+    def test_not_installed_cooldown_skips(self):
         mock_install = MagicMock(return_value=(True, "/tmp/install.log"))
         output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": True,
-            "agent_browser_check.install_background": mock_install,
+            "agent_browser_check.install_and_sync": mock_install,
         })
         self._assert_silent(output)
         mock_install.assert_not_called()
 
     @patch.dict(os.environ, {"AI_FRAMEWORK_SKIP_BROWSER_INSTALL": "1"})
     def test_not_installed_skip_env_silent(self):
+        mock_install = MagicMock(return_value=(True, "/tmp/install.log"))
         output = self._run_main({
             "agent_browser_check.is_installed": False,
+            "agent_browser_check.install_and_sync": mock_install,
         })
         self._assert_silent(output)
+        mock_install.assert_not_called()
 
     def test_install_fails_emits_context(self):
         mock_install = MagicMock(return_value=(False, None))
         output = self._run_main({
             "agent_browser_check.is_installed": False,
             "agent_browser_check.is_cooldown_active": False,
-            "agent_browser_check.install_background": mock_install,
+            "agent_browser_check.install_and_sync": mock_install,
         })
-        # Only install failure emits to Claude — it's actionable
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("install failed", context)
         self.assertIn("npm install -g agent-browser", context)
