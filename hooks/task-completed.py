@@ -29,12 +29,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    adaptive_gate_timeout, await_test_completion, can_trust_state,
-    clear_baseline, clear_coverage, compute_uncovered, detect_test_command,
-    extract_session_id, has_exit_suppression, is_test_running,
-    kill_orphan_test_group, parse_test_summary, read_baseline,
-    read_coverage, read_skill_invoked, read_state, run_in_process_group,
-    skill_invoked_path, test_pgid_path,
+    acquire_runner_lock, adaptive_gate_timeout, await_test_completion,
+    can_trust_state, clear_baseline, clear_coverage, compute_uncovered,
+    detect_test_command, extract_session_id, has_exit_suppression,
+    is_test_running, kill_orphan_test_group, parse_test_summary,
+    read_baseline, read_coverage, read_skill_invoked, read_state,
+    release_runner_lock, run_in_process_group, skill_invoked_path,
+    test_pgid_path, write_state,
 )
 
 
@@ -344,10 +345,29 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
         elif resolved and not passed:
             _gate_with_baseline("test", output, cwd, sid, task_subject=task_subject)
         else:
-            # No trusted state — run fresh
-            passed, output = run_gate("test", command, cwd)
-            if not passed:
-                _gate_with_baseline("test", output, cwd, sid, task_subject=task_subject)
+            # No trusted state — run fresh (flock serializes with sdd-auto-test)
+            lock_fd = acquire_runner_lock(cwd)
+            if lock_fd is None:
+                # Another runner holds the lock — wait for its result
+                state = await_test_completion(cwd, timeout=60)
+                if state and state.get("passing"):
+                    pass  # cached passing — continue
+                elif state:
+                    _gate_with_baseline("test", state.get("raw_output", ""),
+                                        cwd, sid, task_subject=task_subject)
+                else:
+                    _fail_task("Test gate timeout",
+                               "Could not run or wait for tests")
+            else:
+                try:
+                    passed, output = run_gate("test", command, cwd)
+                    write_state(cwd, passed,
+                                parse_test_summary(output, 0 if passed else 1))
+                    if not passed:
+                        _gate_with_baseline("test", output, cwd, sid,
+                                            task_subject=task_subject)
+                finally:
+                    release_runner_lock(lock_fd, cwd)
 
     # Coverage gate: fail if source files lack tests
     state = read_coverage(cwd, sid=sid)
@@ -459,7 +479,33 @@ def main():
         # Adaptive timeout for test gate (history-based); 120s cap for others
         max_gate = adaptive_gate_timeout(cwd) if gate_name == "test" else 120
         gate_timeout = min(max_gate, int(remaining))
-        passed, output = run_gate(gate_name, gate_cmd, cwd, timeout=gate_timeout)
+
+        if gate_name == "test":
+            # flock serializes with sdd-auto-test
+            lock_fd = acquire_runner_lock(cwd)
+            if lock_fd is None:
+                state = await_test_completion(cwd, timeout=60)
+                if state and state.get("passing"):
+                    continue
+                elif state:
+                    _gate_with_baseline("test", state.get("raw_output", ""),
+                                        cwd, sid, ralph_dir=ralph_dir,
+                                        teammate_name=teammate_name,
+                                        task_subject=task_subject)
+                    continue
+                else:
+                    _fail_task("Test gate timeout",
+                               "Could not run or wait for tests")
+            try:
+                passed, output = run_gate("test", gate_cmd, cwd,
+                                          timeout=gate_timeout)
+                write_state(cwd, passed,
+                            parse_test_summary(output, 0 if passed else 1))
+            finally:
+                release_runner_lock(lock_fd, cwd)
+        else:
+            passed, output = run_gate(gate_name, gate_cmd, cwd,
+                                      timeout=gate_timeout)
 
         if not passed:
             _gate_with_baseline(gate_name, output, cwd, sid,
