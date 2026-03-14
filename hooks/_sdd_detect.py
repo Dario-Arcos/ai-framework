@@ -99,7 +99,7 @@ def _kill_process_tree(proc):
             )
         else:
             os.killpg(proc.pid, signal.SIGKILL)
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
         proc.kill()
 
 
@@ -113,7 +113,8 @@ def _kill_pgid(pgid):
             )
         else:
             os.killpg(pgid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError, OSError):
+    except (ProcessLookupError, PermissionError, OSError,
+            subprocess.TimeoutExpired):
         pass
 
 def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
@@ -143,6 +144,11 @@ def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
             pass
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
+        if pgid_file:
+            try:
+                Path(pgid_file).unlink(missing_ok=True)
+            except OSError:
+                pass
         return proc.returncode, stdout, stderr, False
     except subprocess.TimeoutExpired:
         _kill_process_tree(proc)
