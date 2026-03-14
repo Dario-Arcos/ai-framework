@@ -1177,5 +1177,196 @@ class TestCircuitBreakerFullFlow(unittest.TestCase):
         self.assertEqual(count, 4)
 
 
+# ─────────────────────────────────────────────────────────────────
+# TestRunnerLockNonRalph
+# ─────────────────────────────────────────────────────────────────
+
+class TestRunnerLockNonRalph(unittest.TestCase):
+    """Test flock serialization in _handle_non_ralph_completion().
+
+    Concurrent TaskCompleted hooks must not run pytest in parallel.
+    When the runner lock is busy, the hook waits for the other runner's
+    result via await_test_completion instead of spawning a second pytest.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "write_state")
+    @patch.object(task_completed, "release_runner_lock")
+    @patch.object(task_completed, "run_gate", return_value=(True, "5 passed"))
+    @patch.object(task_completed, "acquire_runner_lock", return_value=99)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_lock_acquired_runs_gate_and_writes_state(
+        self, _detect, _cache, mock_lock, mock_gate, mock_release, mock_write, _cov
+    ):
+        """Lock acquired → run_gate + write_state + release_runner_lock."""
+        task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        mock_lock.assert_called_once_with(self.tmpdir)
+        mock_gate.assert_called_once()
+        mock_write.assert_called_once()
+        mock_release.assert_called_once_with(99, self.tmpdir)
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "await_test_completion",
+                  return_value={"passing": True, "summary": "ok"})
+    @patch.object(task_completed, "acquire_runner_lock", return_value=None)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_lock_busy_waits_passing(self, _detect, _cache, _lock, mock_await, mock_gate, _cov):
+        """Lock busy → await_test_completion → passing → allow completion."""
+        task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        mock_await.assert_called_once_with(self.tmpdir, timeout=60)
+        mock_gate.assert_not_called()
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "await_test_completion",
+                  return_value={"passing": False, "raw_output": "FAIL test_x"})
+    @patch.object(task_completed, "acquire_runner_lock", return_value=None)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_lock_busy_failing_exits_2(self, _detect, _cache, _lock, _await, mock_gate, _cov):
+        """Lock busy → await → failing state → exit 2."""
+        with self.assertRaises(SystemExit) as ctx:
+            task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        self.assertEqual(ctx.exception.code, 2)
+        mock_gate.assert_not_called()
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "await_test_completion", return_value=None)
+    @patch.object(task_completed, "acquire_runner_lock", return_value=None)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_lock_busy_timeout_exits_2(self, _detect, _cache, _lock, _await, mock_gate, _cov):
+        """Lock busy → await → None (timeout) → exit 2."""
+        with self.assertRaises(SystemExit) as ctx:
+            task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        self.assertEqual(ctx.exception.code, 2)
+        mock_gate.assert_not_called()
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "write_state")
+    @patch.object(task_completed, "release_runner_lock")
+    @patch.object(task_completed, "run_gate", return_value=(False, "1 failed"))
+    @patch.object(task_completed, "acquire_runner_lock", return_value=99)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "detect_test_command", return_value="npm test")
+    def test_lock_acquired_failing_releases_before_exit(
+        self, _detect, _cache, _lock, _gate, mock_release, mock_write, _cov
+    ):
+        """Lock acquired → tests fail → finally releases lock → exit 2."""
+        with self.assertRaises(SystemExit) as ctx:
+            task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        self.assertEqual(ctx.exception.code, 2)
+        # Lock must be released even on failure (finally block)
+        mock_release.assert_called_once_with(99, self.tmpdir)
+        mock_write.assert_called_once()
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestRunnerLockRalph
+# ─────────────────────────────────────────────────────────────────
+
+class TestRunnerLockRalph(unittest.TestCase):
+    """Test flock serialization for test gate in ralph gate loop.
+
+    Same concurrency fix as non-ralph: the test gate in the ralph loop
+    must acquire the runner lock before running pytest.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir(parents=True)
+        (self.ralph_dir / "config.sh").write_text(
+            'GATE_TEST="npm test"\n'
+            'GATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n',
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_stdin(self, data):
+        return io.StringIO(json.dumps(data))
+
+    def _default_input(self, **overrides):
+        base = {
+            "cwd": self.tmpdir,
+            "task_subject": "Implement feature",
+            "teammate_name": "impl-task-01",
+        }
+        base.update(overrides)
+        return base
+
+    @patch.object(task_completed, "clear_baseline")
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "write_state")
+    @patch.object(task_completed, "release_runner_lock")
+    @patch.object(task_completed, "run_gate", return_value=(True, "5 passed"))
+    @patch.object(task_completed, "acquire_runner_lock", return_value=99)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "_has_source_edits", return_value=True)
+    @patch.object(task_completed, "read_skill_invoked", return_value=True)
+    def test_ralph_test_gate_acquires_lock(
+        self, _skill, _edits, _cache, mock_lock, mock_gate, mock_release,
+        mock_write, _cov, _baseline
+    ):
+        """Ralph test gate: lock acquired → run_gate + write_state + release."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        mock_lock.assert_called_once_with(self.tmpdir)
+        mock_gate.assert_called_once()
+        mock_write.assert_called_once()
+        mock_release.assert_called_once_with(99, self.tmpdir)
+
+    @patch.object(task_completed, "clear_baseline")
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "await_test_completion",
+                  return_value={"passing": True, "summary": "ok"})
+    @patch.object(task_completed, "acquire_runner_lock", return_value=None)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "_has_source_edits", return_value=True)
+    @patch.object(task_completed, "read_skill_invoked", return_value=True)
+    def test_ralph_test_gate_lock_busy_waits(
+        self, _skill, _edits, _cache, _lock, mock_await, mock_gate, _cov, _baseline
+    ):
+        """Ralph test gate: lock busy → await → passing → continue to next gate."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        mock_await.assert_called_once_with(self.tmpdir, timeout=60)
+        mock_gate.assert_not_called()
+
+    @patch.object(task_completed, "read_coverage", return_value=None)
+    @patch.object(task_completed, "run_gate")
+    @patch.object(task_completed, "await_test_completion", return_value=None)
+    @patch.object(task_completed, "acquire_runner_lock", return_value=None)
+    @patch.object(task_completed, "_try_cached_test_gate", return_value=(False, False, ""))
+    @patch.object(task_completed, "_has_source_edits", return_value=True)
+    @patch.object(task_completed, "read_skill_invoked", return_value=True)
+    def test_ralph_test_gate_lock_busy_timeout_exits_2(
+        self, _skill, _edits, _cache, _lock, _await, mock_gate, _cov
+    ):
+        """Ralph test gate: lock busy → await → timeout → exit 2."""
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 2)
+        mock_gate.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
