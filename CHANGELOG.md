@@ -12,6 +12,32 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [2026.3.0] - 2026-03-14
+
+### Añadido
+
+- **Visual Companion en brainstorming y frontend-design**: Servidor local con preview HTML, WebSocket live reload, y selección interactiva en browser — cada skill con scripts propios (aislamiento completo) (commit 80006db)
+- **Spec Review Loop en brainstorming**: Subagente reviewer valida specs con prompt dedicado antes de user review gate, max 5 iteraciones (commit 80006db)
+- **Plan Review Loop en sop-planning**: Subagente reviewer valida planes + sección File Structure antes de implementation plan (commit 80006db)
+- **Testing anti-patterns en scenario-driven-development**: Referencia a patrones de testing problemáticos (mocks, test-only production methods, test doubles incompletos) (commit 80006db)
+- **Condition-based waiting example en systematic-debugging**: Implementación TypeScript de `waitForEvent`, `waitForEventCount`, `waitForEventMatch` (commit 80006db)
+
+### Cambiado
+
+- **Reescribir brainstorming con Superpowers v5**: Observable Scenarios Bridge (brainstorming→SDD), hard gate pre-implementación, proceso con spec review loop y visual companion (commit 80006db)
+- **Reescribir systematic-debugging con Superpowers v5**: Dot diagrams en referencias, Phase 1 expandida, referencias actualizadas (commit 80006db)
+- **Estandarizar 15 descriptions de skills (CSO)**: Formato trigger + purpose, eliminar patterns Value/Skip risk de descriptions — info preservada en body (commit 80006db)
+- **Refactorizar constraint-reinforcement hook**: Pointer-based activation (35 tokens) reemplaza verbose repetition (65 tokens) con wrapper `<EXTREMELY_IMPORTANT>` — activación sobre repetición (commit 0e1410c)
+- **Actualizar identity en CLAUDE.md template**: "Combined rigor of a senior engineering team", resistencia a retracción por comfort (commit 0e1410c)
+- **Serializar test gate en TaskCompleted con flock**: Prevenir pytest concurrente entre sdd-auto-test y TaskCompleted hook, `write_state` con `raw_output` (PR #53)
+
+### Arreglado
+
+- **Stale references en human-handbook**: Skill count 24→23, Superpowers v5 skill list, atribución correcta SDD/debugging como nativos, workflow con SDD + verification (commit 4486075)
+- **Paths de visual-companion en skills**: Plugin-root paths (`skills/<name>/visual-companion.md`) consistentes con patrón upstream (commit 7e9631b)
+
+---
+
 ## [2026.2.1] - 2026-03-14
 
 ### Añadido
@@ -508,5 +534,5 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 ::: info Última actualización
-**Versión**: 2026.2.0 | **Fecha**: 2026-03-11
+**Versión**: 2026.3.0 | **Fecha**: 2026-03-14
 :::
