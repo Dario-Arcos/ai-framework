@@ -81,6 +81,15 @@ agent-browser screenshot result.png
 | Debug | `--headed`, `console`, `errors`, `trace` |
 :::
 
+Además del CLI, `agent-browser` incluye skills especializadas que se sincronizan automáticamente:
+
+| Skill | Uso |
+|-------|-----|
+| `agent-browser` | Workflow completo: navegación, snapshots, formularios, autenticación, sesiones |
+| `dogfood` | QA exploratorio: recorre la app como usuario real, genera reporte con screenshots y videos de repro |
+| `electron` | Automatización de apps Electron (VS Code, Slack, Discord, Figma) vía CDP |
+| `vercel-sandbox` | Browser automation dentro de microVMs efímeras de Vercel Sandbox |
+
 Se instala automáticamente. Ver [Integraciones](./integrations.md#agent-browser).
 
 ---

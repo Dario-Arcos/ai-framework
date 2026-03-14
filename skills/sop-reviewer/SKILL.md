@@ -97,6 +97,7 @@ Assess convergence per criterion — every acceptance criterion must be satisfie
 - UX completeness: user-facing behavior is coherent end-to-end
 - Real behavior: test code exercises actual implementation, not mocks or stubs
 - Runtime cleanliness (web/mobile): `agent-browser console` and `agent-browser errors` must show zero errors — console errors are behavioral defects, Critical not cosmetic
+- Exploratory QA (web/mobile): invoke /dogfood to find issues that pre-defined scenarios didn't anticipate — structured report with repro evidence
 - Performance: response times, render efficiency, query patterns. "Functionally correct but slow" does not satisfy
 
 **You MUST evaluate assertion quality per scenario** — read test source files:

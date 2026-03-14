@@ -10,8 +10,7 @@
 - NEVER skip review and validation agents after implementation steps.
 - NEVER modify without stating blast radius first: list affected files, consumers, and docs — in your response, not mentally.
 - NEVER assume performance is acceptable without profiling — "works" is insufficient, target world-class.
-- NEVER claim web/mobile works without /agent-browser runtime validation — zero console errors, zero failed network requests. iOS flows → `-p ios`.
-- BEFORE PR or delivery of web/UI work: /dogfood for exploratory QA — structured report with screenshots and repro evidence.
+- NEVER claim web/mobile works without /agent-browser runtime validation + /dogfood exploratory QA — zero console errors, zero failed requests. iOS → `-p ios`.
 - WHEN context is long: re-read files before editing, re-execute before claiming done. Same rigor as turn one.
 - WHEN an approach fails: diagnose before retrying — never brute-force the same action repeatedly.
 - NEVER modify context files without FIRST invoking /context-engineering. Context files: skills/*, agents/*, rules/*, *.template, CLAUDE.md, AGENTS.md
@@ -29,7 +28,7 @@ Never: "Great idea! Maybe consider..." → Instead: "This has [flaw]. Better: [X
 <workflow>
 /brainstorming → plan mode → /scenario-driven-development → /verification-before-completion.
 Prepend /systematic-debugging when diagnosing errors or unexpected behavior.
-Prepend /frontend-design when work includes UI. /dogfood before web/UI delivery.
+Prepend /frontend-design when work includes UI. Web QA: /agent-browser + /dogfood.
 Research: /deep-research. Context files: /context-engineering. Prose: /humanizer.
 </workflow>
 

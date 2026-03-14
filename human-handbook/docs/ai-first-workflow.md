@@ -383,7 +383,7 @@ Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface 
 
 ## Herramientas de soporte {#tools}
 
-Además del pipeline principal, el framework incluye herramientas para tareas específicas: `/project-init` para configurar reglas de proyecto, `/deep-research` para investigación multi-fuente, `agent-browser` para interacción web, y `/worktree-create` para trabajo paralelo.
+Además del pipeline principal, el framework incluye herramientas para tareas específicas: `/project-init` para configurar reglas de proyecto, `/deep-research` para investigación multi-fuente, `agent-browser` para interacción web, `/dogfood` para QA exploratorio de apps web, y `/worktree-create` para trabajo paralelo.
 
 Ver detalles completos en [Skills](./skills-guide.md).
 
@@ -412,6 +412,7 @@ Ver instalación y detalles en [Integraciones](./integrations.md).
 | Inicializar proyecto | `/project-init` |
 | Investigación profunda | `/deep-research "tema"` |
 | Interacción web | `agent-browser open URL` |
+| QA exploratorio | `"dogfood localhost:3000"` → reporte con repro evidence |
 
 ---
 
