@@ -81,12 +81,52 @@ def _write_json_atomic(path, data, prefix="sdd-"):
 # PROCESS GROUP EXECUTION — prevents orphan child processes
 # ─────────────────────────────────────────────────────────────────
 
-def run_in_process_group(command, cwd, timeout, env=None):
+_IS_WINDOWS = os.name == "nt"
+
+
+def _kill_process_tree(proc):
+    """Kill a subprocess and all its children, cross-platform.
+
+    POSIX: os.killpg sends SIGKILL to the entire process group.
+    Windows: taskkill /T /F kills the process tree by PID.
+    Fallback: proc.kill() if both fail.
+    """
+    try:
+        if _IS_WINDOWS:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True, timeout=5,
+            )
+        else:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except (OSError, subprocess.TimeoutExpired):
+        proc.kill()
+
+
+def _kill_pgid(pgid):
+    """Kill a process group by PGID, cross-platform. No-op on failure."""
+    try:
+        if _IS_WINDOWS:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pgid)],
+                capture_output=True, timeout=5,
+            )
+        else:
+            os.killpg(pgid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError,
+            subprocess.TimeoutExpired):
+        pass
+
+def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
     """Run command with process group isolation for clean timeout killing.
 
     Uses start_new_session to create a new process group. On timeout,
     kills the entire group (shell + all children) — prevents orphan
     pytest/node processes that accumulate and throttle CPU.
+
+    If pgid_file is provided, writes the subprocess PGID (= proc.pid)
+    to that file. The caller (or next worker) can read it to kill an
+    orphaned test group if the worker dies before cleanup.
 
     Returns:
         (returncode: int, stdout: str, stderr: str, timed_out: bool)
@@ -97,14 +137,21 @@ def run_in_process_group(command, cwd, timeout, env=None):
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, cwd=cwd, env=env, start_new_session=True,
     )
+    if pgid_file:
+        try:
+            Path(pgid_file).write_text(str(proc.pid))
+        except OSError:
+            pass
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
+        if pgid_file:
+            try:
+                Path(pgid_file).unlink(missing_ok=True)
+            except OSError:
+                pass
         return proc.returncode, stdout, stderr, False
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            proc.kill()
+        _kill_process_tree(proc)
         proc.wait()
         return -1, "", "", True
 
@@ -451,6 +498,32 @@ def release_runner_lock(fd, cwd):
             pid_path(cwd).unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def test_pgid_path(cwd):
+    """Path to test subprocess PGID file (project-scoped).
+
+    Stores the process group ID of the currently running test subprocess.
+    The next worker reads this before spawning a new test — if the old
+    group is still alive (orphan from a crashed worker), it kills it.
+    Prevents test subprocess accumulation that throttles CPU.
+    """
+    return _tmp(f"sdd-test-pgid-{project_hash(cwd)}")
+
+
+def kill_orphan_test_group(cwd):
+    """Kill orphaned test subprocess group from a previous worker.
+
+    Safe to call unconditionally: if the PGID is dead or recycled,
+    killpg returns ESRCH which is caught. Only kills processes in
+    the same process group — no collateral damage.
+    """
+    pgid_file = test_pgid_path(cwd)
+    try:
+        pgid = int(pgid_file.read_text().strip())
+        _kill_pgid(pgid)
+    except (FileNotFoundError, ValueError):
+        pass
 
 
 def rerun_marker_path(cwd):

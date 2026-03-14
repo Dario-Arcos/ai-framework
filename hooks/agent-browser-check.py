@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-"""SessionStart hook - Checks agent-browser CLI and syncs skill if missing.
+"""SessionStart hook — keeps agent-browser CLI and skills current.
 
-Ensures CLI is installed and skill is available at user level (~/.claude/skills/)
-by copying from the global npm package. Skill at user level is loaded
-automatically by Claude Code in all projects — no per-project copy needed.
+Two paths:
+- CLI installed → unconditional background update + skill sync (5min dedup)
+- CLI missing   → background first-install with 1h retry cooldown
 
-Also cleans up orphan agent-browser daemons from previous sessions.
-Daemons have no idle timeout and survive terminal close, accumulating
-until memory is exhausted. Cleanup here is safe because agent-browser
-auto-restarts its daemon on the next command (~200ms penalty, once).
+Also cleans up orphan daemons (browser, chrome) from previous sessions.
 
-Performance: happy path ~0.3ms (glob + stat calls, zero subprocesses).
-Daemon cleanup ~0.1ms normal (PID file I/O); ~19ms only if orphan sockets found.
-Sync/install only triggers on first-ever setup, with 1h cooldown on retries.
-Auto-update checks CLI + skill every 24h in a detached background process.
+Performance:
+- Dedup path (95% of sessions): 2 stat calls, ~0.5ms, zero subprocesses
+- Update path (every ~5min): stat calls + fork, ~5ms, work runs in background
+- Daemon cleanup: ~0.1ms normal; ~19ms only if orphan sockets found
 """
 import json
 import os
@@ -26,26 +23,45 @@ import time
 from pathlib import Path
 
 AGENT_BROWSER_DIR = Path.home() / ".agent-browser"
+TMPDIR = Path(tempfile.gettempdir())
 
 CLAUDE_HOME = Path(
     os.environ.get("CLAUDE_CONFIG_DIR", "").strip()
     or Path.home() / ".claude"
 )
-SKILL_DIR = CLAUDE_HOME / "skills" / "agent-browser"
-SKILL_FILE = SKILL_DIR / "SKILL.md"
-COOLDOWN_FILE = Path(tempfile.gettempdir()) / "agent-browser-sync-ts"
-SYNC_COOLDOWN_SECS = 3600
+SKILLS_DEST = CLAUDE_HOME / "skills"
+SKILLS_TO_SYNC = ("agent-browser", "dogfood", "electron", "vercel-sandbox")
 
-SKILL_COPY_CMD = (
-    'SKILL_SRC="$(npm root -g)/agent-browser/skills/agent-browser"'
-    ' && [ -d "$SKILL_SRC" ]'
-    f' && rm -rf "{SKILL_DIR}"'
-    f' && mkdir -p "{SKILL_DIR}"'
-    f' && cp -r "$SKILL_SRC/." "{SKILL_DIR}/"'
-)
+# First-install retry cooldown (1h) — prevents storms when npm registry is down
+COOLDOWN_FILE = TMPDIR / "agent-browser-install-ts"
+INSTALL_COOLDOWN_SECS = 3600
 
-UPDATE_CHECK_FILE = Path(tempfile.gettempdir()) / "agent-browser-update-ts"
-UPDATE_CHECK_SECS = 86400
+# Update dedup — log file mtime prevents redundant forks, NOT update skips.
+# If the background process fails, the log mtime still resets the 5min window,
+# so the next session after 5min retries automatically.
+UPDATE_LOG = TMPDIR / "agent-browser-update.log"
+UPDATE_DEDUP_SECS = 300
+
+SESSION_EXTS = (".pid", ".sock", ".port", ".stream")
+
+
+def _build_sync_cmd():
+    """Shell command to copy skills from npm package to ~/.claude/skills/."""
+    # .as_posix() ensures forward slashes on Windows (Git Bash compatible)
+    dest = SKILLS_DEST.as_posix()
+    skills = " ".join(SKILLS_TO_SYNC)
+    return (
+        f'mkdir -p "{dest}";'
+        f' SRC="$(npm root -g)/agent-browser/skills";'
+        f' for s in {skills}; do'
+        f'  [ -d "$SRC/$s" ] && rm -rf "{dest}/$s" && cp -r "$SRC/$s" "{dest}/$s";'
+        f" done"
+    )
+
+
+SYNC_CMD = _build_sync_cmd()
+UPDATE_CMD = f"npm install -g agent-browser@latest 2>&1; {SYNC_CMD}"
+INSTALL_CMD = f"npm install -g agent-browser@latest 2>&1 && agent-browser install 2>&1; {SYNC_CMD}"
 
 
 def is_installed():
@@ -53,36 +69,35 @@ def is_installed():
     return shutil.which("agent-browser") is not None
 
 
-def is_skill_present():
-    """Check if agent-browser skill exists at user level (~/.claude/skills/)."""
-    try:
-        return SKILL_FILE.exists() and SKILL_FILE.stat().st_size > 0
-    except OSError:
-        return False
-
-
 def is_cooldown_active():
-    """Prevent retry storms: skip if last attempt was < SYNC_COOLDOWN_SECS ago."""
+    """Prevent first-install retry storms: skip if last attempt was < 1h ago."""
     try:
         if COOLDOWN_FILE.exists():
-            return (time.time() - COOLDOWN_FILE.stat().st_mtime) < SYNC_COOLDOWN_SECS
+            return (time.time() - COOLDOWN_FILE.stat().st_mtime) < INSTALL_COOLDOWN_SECS
     except OSError:
         pass
     return False
 
 
-def touch_cooldown():
-    """Mark that a sync/install attempt just started."""
+def _update_ran_recently():
+    """Anti-fork-storm check. NOT an update skip mechanism.
+
+    Returns True if the update log was written in the last 5 minutes.
+    The log file is created by run_background() at fork time, so its mtime
+    naturally tracks when the last update was launched.
+    """
     try:
-        COOLDOWN_FILE.touch()
+        if UPDATE_LOG.exists():
+            return (time.time() - UPDATE_LOG.stat().st_mtime) < UPDATE_DEDUP_SECS
     except OSError:
         pass
+    return False
 
 
 def run_background(cmd, log_name):
     """Run a shell command in background. Returns (started, log_path)."""
     try:
-        log_file = Path(tempfile.gettempdir()) / log_name
+        log_file = TMPDIR / log_name
         with open(log_file, "w", encoding="utf-8") as log:
             subprocess.Popen(
                 ["bash", "-c", cmd],
@@ -96,48 +111,18 @@ def run_background(cmd, log_name):
         return False, None
 
 
-def touch_update_check():
-    """Mark that an update check just happened (or a fresh install/sync)."""
+def update_and_sync():
+    """Update CLI + sync all skills in background."""
+    return run_background(UPDATE_CMD, "agent-browser-update.log")
+
+
+def install_and_sync():
+    """First install: CLI + browser download + skill sync in background."""
     try:
-        UPDATE_CHECK_FILE.touch()
+        COOLDOWN_FILE.touch()
     except OSError:
         pass
-
-
-def sync_skill_background():
-    """Copy agent-browser skill from global npm package to ~/.claude/skills/."""
-    touch_cooldown()
-    touch_update_check()
-    return run_background(SKILL_COPY_CMD, "agent-browser-skill-sync.log")
-
-
-def is_update_due():
-    """Check if enough time has passed since the last auto-update check."""
-    try:
-        if UPDATE_CHECK_FILE.exists():
-            return (time.time() - UPDATE_CHECK_FILE.stat().st_mtime) >= UPDATE_CHECK_SECS
-    except OSError:
-        pass
-    return True
-
-
-def update_background():
-    """Auto-update CLI via npm and re-sync skill in background."""
-    touch_update_check()
-
-    cmd = f"npm update -g agent-browser 2>/dev/null && {SKILL_COPY_CMD}"
-    return run_background(cmd, "agent-browser-update.log")
-
-
-def install_background():
-    """Install CLI + browsers + skill in background."""
-    touch_cooldown()
-    touch_update_check()
-    cmd = f"npm install -g agent-browser && agent-browser install && {SKILL_COPY_CMD}"
-    return run_background(cmd, "agent-browser-install.log")
-
-
-SESSION_EXTS = (".pid", ".sock", ".port", ".stream")
+    return run_background(INSTALL_CMD, "agent-browser-install.log")
 
 
 def cleanup_orphan_daemons():
@@ -147,7 +132,7 @@ def cleanup_orphan_daemons():
     Phase 2 — pkill fallback: only if orphan .sock files remain after Phase 1
               (daemon that lost its PID file via crash/kill -9). ~19ms, rare.
     Phase 3 — chrome-headless-shell: kill orphan browser processes left when
-              daemons died without cleaning up children. ~19ms, rare.
+              daemons died without cleaning up children (PPID=1). ~19ms, rare.
 
     Safe to call unconditionally — agent-browser auto-restarts on next command.
     """
@@ -176,14 +161,13 @@ def cleanup_orphan_daemons():
             pass
 
     # Phase 3: kill orphan chrome-headless-shell processes.
-    # When a daemon crashes, its chrome children (started with
-    # start_new_session) survive indefinitely. Safe to kill on
-    # SessionStart — no active agent-browser usage at this point,
-    # and agent-browser spawns fresh ones on next command.
+    # When the daemon dies without cleanup, chrome children survive with PPID=1.
+    # -P 1 ensures only true orphans are killed — active chrome from
+    # parallel sessions (PPID=daemon) is untouched.
     if sys.platform in ("darwin", "linux"):
         try:
             subprocess.run(
-                ["pkill", "-TERM", "-f", "chrome-headless-shell"],
+                ["pkill", "-TERM", "-P", "1", "-f", "chrome-headless-shell"],
                 capture_output=True, timeout=5,
             )
         except (subprocess.TimeoutExpired, OSError):
@@ -208,29 +192,16 @@ def main():
         "AI_FRAMEWORK_SKIP_BROWSER_INSTALL", ""
     ).lower() in ("1", "true")
 
-    context = ""  # Silent by default — only actionable states emit to Claude
+    context = ""
 
     if is_installed():
-        if is_skill_present():
-            if is_update_due():
-                update_background()
-            # ready: silent — model can't act on this
-        elif is_cooldown_active():
-            pass  # syncing: transient, silent
-        else:
-            sync_skill_background()
-            # syncing: transient, silent
-
-    elif skip_install:
-        pass  # skipped: intentional via env var, silent
-
-    elif is_cooldown_active():
-        pass  # installing: transient, silent
-
-    else:
-        ok, _ = install_background()
-        if not ok:
-            context = "agent-browser install failed. Inform user: npm install -g agent-browser"
+        if not _update_ran_recently():
+            update_and_sync()
+    elif not skip_install:
+        if not is_cooldown_active():
+            ok, _ = install_and_sync()
+            if not ok:
+                context = "agent-browser install failed. Inform user: npm install -g agent-browser"
 
     if context:
         print(json.dumps({

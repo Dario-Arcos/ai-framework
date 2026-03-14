@@ -9,7 +9,6 @@ import filecmp
 import json
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
@@ -136,26 +135,14 @@ def sync_all_files(plugin_root, project_dir):
 
 
 def cleanup_stale_sdd(max_age=86400):
-    """Kill orphan SDD workers and purge stale temp files.
+    """Purge stale SDD temp files to prevent inode accumulation.
 
-    SDD workers are spawned with start_new_session=True and survive
-    session death. pkill by command pattern is safe (no PID recycling
-    risk) and idempotent — a fresh session has no legitimate reason
-    to keep workers from previous sessions alive.
-
-    Temp files older than max_age (default 24h) are purged to prevent
-    inode accumulation from test runs.
+    Tests and SDD hooks create temp files keyed by project hash.
+    Files older than max_age (default 24h) are removed. SDD workers
+    are NOT killed — they self-terminate within 20 min (timeout 300s
+    × 3 reruns max), and pkill cannot distinguish orphans from active
+    workers in parallel sessions.
     """
-    # Kill orphan SDD workers by command pattern (safe — no PID guessing)
-    if sys.platform in ("darwin", "linux"):
-        try:
-            subprocess.run(
-                ["pkill", "-TERM", "-f", "sdd-auto-test.py --run-tests"],
-                capture_output=True, timeout=5,
-            )
-        except (subprocess.TimeoutExpired, OSError):
-            pass
-
     tmpdir = Path(tempfile.gettempdir())
     now = time.time()
     for f in tmpdir.glob("sdd-*"):

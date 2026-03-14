@@ -385,6 +385,7 @@ See `references/validation-anti-patterns.md` for detailed coverage of:
 - **brainstorming** — The entry point: scenarios defined during brainstorming and crystallized in the approved plan file are the input for SCENARIO phase
 - **verification-before-completion** — The terminal gate: invoke after Quality Integration, before any completion claim
 - **systematic-debugging** — Root cause analysis; invoke when bugs are complex before SDD fix cycle
+- **dogfood** — Exploratory QA for web/UI features: after scenarios are satisfied, dogfood finds issues that pre-defined scenarios didn't anticipate
 
 ## Artifact Handoff
 

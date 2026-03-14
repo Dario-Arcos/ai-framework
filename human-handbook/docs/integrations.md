@@ -31,6 +31,15 @@ agent-browser click @e2
 agent-browser screenshot result.png
 ```
 
+Además del CLI, el paquete incluye skills especializadas que se sincronizan a `~/.claude/skills/` automáticamente:
+
+| Skill | Descripción |
+|-------|-------------|
+| `agent-browser` | Workflow completo de browser automation: navegación, snapshots, formularios, autenticación, sesiones, diffing |
+| `dogfood` | QA exploratorio sistemático — recorre la app como usuario real, documenta cada issue con screenshots y videos de repro |
+| `electron` | Automatización de apps Electron (VS Code, Slack, Discord, Figma) conectando vía Chrome DevTools Protocol |
+| `vercel-sandbox` | Ejecuta agent-browser + Chrome headless dentro de microVMs efímeras de Vercel Sandbox |
+
 Se instala automáticamente en la primera sesión. Para desactivar:
 
 ```bash

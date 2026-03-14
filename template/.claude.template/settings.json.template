@@ -1,15 +1,14 @@
 {
-  "cleanupPeriodDays": 30,
   "enabledMcpjsonServers": [],
   "disabledMcpjsonServers": [],
-  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
 
   "env": {
-    "CLAUDE_CODE_ENABLE_TASKS": "true",
     "MAX_MCP_OUTPUT_TOKENS": "50000",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
     "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": "100000",
-    "SLASH_COMMAND_TOOL_CHAR_BUDGET": "30000",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
 
@@ -73,7 +72,8 @@
       "Ejecuta /project-init al iniciar un proyecto o tras cambios importantes en dependencias",
       "Usa /commit y /pull-request para operaciones git — imponen quality gates automáticos",
       "Invoca /scenario-driven-development para cualquier feature, fix o cambio",
-      "Ejecuta /verification-before-completion antes de declarar cualquier tarea como terminada"
+      "Ejecuta /verification-before-completion antes de declarar cualquier tarea como terminada",
+      "Ajusta /effort high o /effort max para máximo razonamiento — el default (medium) deja capacidad sobre la mesa"
     ]
   }
 }

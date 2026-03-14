@@ -183,6 +183,7 @@ Validation checks:
 3. Verify zero page errors and zero failed network requests
 4. **IF** the task modified UI components: take screenshots of affected views for visual verification
 5. **IF** iOS flows apply: use platform-specific validation via the skill
+6. **IF** feature-complete milestone: invoke /dogfood for exploratory QA — finds issues scenarios didn't anticipate
 
 <mode_interactive>
 1. Present console/errors output and screenshots to user
@@ -192,8 +193,9 @@ Validation checks:
 
 <mode_autonomous>
 1. If console errors or network failures found: fix the root cause in code, re-validate until clean
-2. If unfixable after 2 attempts (external dependency, environment issue): document in blockers.md with evidence and emit BLOCKED signal
-3. Do NOT proceed to Commit with known runtime errors — either fix or block
+2. If /dogfood finds issues: fix Critical/High severity, document Medium/Low in guardrails.md
+3. If unfixable after 2 attempts (external dependency, environment issue): document in blockers.md with evidence and emit BLOCKED signal
+4. Do NOT proceed to Commit with known Critical runtime errors — either fix or block
 </mode_autonomous>
 
 **WHEN** the project has NO web/mobile UI: skip runtime_validation.

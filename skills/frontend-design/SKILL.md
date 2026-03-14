@@ -141,4 +141,8 @@ Before delivery, capture a screenshot of your work and compare side-by-side with
 
 > "Would a professional designer see this as peer-level to the reference, or clearly amateur?"
 
-If amateur → iterate. If peer-level → deliver.
+If amateur → iterate. If peer-level → proceed to exploratory QA.
+
+### Exploratory QA (MANDATORY for web features)
+
+After visual validation passes, invoke `/dogfood` on the running app. Dogfood tests the app like a real user — navigating pages, filling forms, checking console errors — and produces a structured bug report with screenshots and repro evidence. Visual quality without functional quality is incomplete.

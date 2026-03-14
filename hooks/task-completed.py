@@ -32,8 +32,9 @@ from _sdd_detect import (
     adaptive_gate_timeout, await_test_completion, can_trust_state,
     clear_baseline, clear_coverage, compute_uncovered, detect_test_command,
     extract_session_id, has_exit_suppression, is_test_running,
-    parse_test_summary, read_baseline, read_coverage, read_skill_invoked,
-    read_state, run_in_process_group, skill_invoked_path,
+    kill_orphan_test_group, parse_test_summary, read_baseline,
+    read_coverage, read_skill_invoked, read_state, run_in_process_group,
+    skill_invoked_path, test_pgid_path,
 )
 
 
@@ -186,9 +187,10 @@ def run_gate(name, command, cwd, timeout=None):
     if timeout is None:
         timeout = adaptive_gate_timeout(cwd)
 
+    kill_orphan_test_group(cwd)
     try:
         rc, stdout, stderr, timed_out = run_in_process_group(
-            command, cwd, timeout)
+            command, cwd, timeout, pgid_file=str(test_pgid_path(cwd)))
         if timed_out:
             return False, f"Gate '{name}' timed out after {timeout}s"
         output = (stdout + stderr).strip()
