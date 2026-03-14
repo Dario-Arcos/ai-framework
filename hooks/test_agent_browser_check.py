@@ -168,10 +168,22 @@ class TestCleanupOrphanDaemons(unittest.TestCase):
 
         # No PID files, so os.kill should not be called
         mock_kill.assert_not_called()
-        # pkill fallback should fire because orphan .sock remains
+        # Phase 2 (daemon pkill) + Phase 3 (chrome-headless-shell) = 2 calls
+        self.assertEqual(mock_run.call_count, 2)
+        self.assertIn("agent-browser", mock_run.call_args_list[0][0][0][-1])
+        self.assertIn("chrome-headless-shell", mock_run.call_args_list[1][0][0][-1])
+
+    @patch("agent_browser_check.subprocess.run")
+    @patch("os.kill")
+    def test_chrome_headless_shell_cleanup(self, mock_kill, mock_run):
+        """Phase 3: orphan chrome-headless-shell killed on SessionStart."""
+        agent_browser_check.cleanup_orphan_daemons()
+
+        # No PID/sockets → only Phase 3 fires
         mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        self.assertEqual(call_args[0][0][0], "pkill")
+        cmd = mock_run.call_args[0][0]
+        self.assertEqual(cmd[0], "pkill")
+        self.assertIn("chrome-headless-shell", cmd[-1])
 
 
 class TestMain(unittest.TestCase):

@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""AI Framework auto-installer - Templates sync on SessionStart"""
+"""AI Framework auto-installer - Templates sync on SessionStart.
+
+Also cleans up orphan SDD test workers and stale temp files from
+previous sessions. Workers are detached (start_new_session=True)
+and survive terminal close — cleanup here prevents accumulation.
+"""
 import filecmp
 import json
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 
@@ -127,6 +135,39 @@ def sync_all_files(plugin_root, project_dir):
             )
 
 
+def cleanup_stale_sdd(max_age=86400):
+    """Kill orphan SDD workers and purge stale temp files.
+
+    SDD workers are spawned with start_new_session=True and survive
+    session death. pkill by command pattern is safe (no PID recycling
+    risk) and idempotent — a fresh session has no legitimate reason
+    to keep workers from previous sessions alive.
+
+    Temp files older than max_age (default 24h) are purged to prevent
+    inode accumulation from test runs.
+    """
+    # Kill orphan SDD workers by command pattern (safe — no PID guessing)
+    if sys.platform in ("darwin", "linux"):
+        try:
+            subprocess.run(
+                ["pkill", "-TERM", "-f", "sdd-auto-test.py --run-tests"],
+                capture_output=True, timeout=5,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            pass
+
+    tmpdir = Path(tempfile.gettempdir())
+    now = time.time()
+    for f in tmpdir.glob("sdd-*"):
+        if f.is_dir():
+            continue
+        try:
+            if now - os.stat(f).st_mtime > max_age:
+                f.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
@@ -154,6 +195,7 @@ def output_hook_response(context_msg=""):
 def main():
     """Entry point."""
     consume_stdin()
+    cleanup_stale_sdd()
 
     try:
         project_dir = find_project_dir()

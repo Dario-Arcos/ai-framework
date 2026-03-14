@@ -141,11 +141,13 @@ SESSION_EXTS = (".pid", ".sock", ".port", ".stream")
 
 
 def cleanup_orphan_daemons():
-    """Kill agent-browser daemons left by previous sessions.
+    """Kill agent-browser daemons and their orphan children.
 
     Phase 1 — PID files: read PID, SIGTERM, remove session files. ~0.1ms.
     Phase 2 — pkill fallback: only if orphan .sock files remain after Phase 1
               (daemon that lost its PID file via crash/kill -9). ~19ms, rare.
+    Phase 3 — chrome-headless-shell: kill orphan browser processes left when
+              daemons died without cleaning up children. ~19ms, rare.
 
     Safe to call unconditionally — agent-browser auto-restarts on next command.
     """
@@ -168,6 +170,20 @@ def cleanup_orphan_daemons():
         try:
             subprocess.run(
                 ["pkill", "-TERM", "-f", f"agent-browser-{sys.platform}"],
+                capture_output=True, timeout=5,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            pass
+
+    # Phase 3: kill orphan chrome-headless-shell processes.
+    # When a daemon crashes, its chrome children (started with
+    # start_new_session) survive indefinitely. Safe to kill on
+    # SessionStart — no active agent-browser usage at this point,
+    # and agent-browser spawns fresh ones on next command.
+    if sys.platform in ("darwin", "linux"):
+        try:
+            subprocess.run(
+                ["pkill", "-TERM", "-f", "chrome-headless-shell"],
                 capture_output=True, timeout=5,
             )
         except (subprocess.TimeoutExpired, OSError):
