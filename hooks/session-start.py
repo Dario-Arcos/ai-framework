@@ -41,6 +41,7 @@ CRITICAL_GITIGNORE_RULES = [
     "/.ralph/",
     "/.research/",
     "/.brainstorm/",
+    "/.visual-companion/",
 ]
 
 

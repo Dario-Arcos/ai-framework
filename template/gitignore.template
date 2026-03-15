@@ -16,3 +16,6 @@
 
 # Brainstorming session files (mockups, server state)
 /.brainstorm/
+
+# Visual companion session files (frontend-design mockups)
+/.visual-companion/
