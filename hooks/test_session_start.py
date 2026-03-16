@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -124,6 +125,73 @@ class TestEnsureGitignoreRules(unittest.TestCase):
         # Missing rules added
         for rule in session_start.CRITICAL_GITIGNORE_RULES:
             self.assertIn(rule, content)
+
+
+class TestSyncTemplateGitignoreOnce(unittest.TestCase):
+    """Test one-time sync of template gitignore rules on template change."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.plugin_root = Path(self.tmpdir) / "plugin"
+        self.project_dir = Path(self.tmpdir) / "project"
+        self.plugin_root.mkdir()
+        self.project_dir.mkdir()
+        self.template_dir = self.plugin_root / "template"
+        self.template_dir.mkdir()
+        (self.project_dir / ".claude").mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_template_changed_adds_missing_rules(self):
+        """Scenario 1: plugin updates template with new rule → existing project gets it."""
+        template = self.template_dir / "gitignore.template"
+        template.write_text("/.claude/*\n/.visual-companion/\n", encoding="utf-8")
+        project_gi = self.project_dir / ".gitignore"
+        project_gi.write_text("/.claude/*\nnode_modules/\n", encoding="utf-8")
+
+        session_start.sync_template_gitignore_once(self.plugin_root, self.project_dir)
+
+        content = project_gi.read_text(encoding="utf-8")
+        self.assertIn("/.visual-companion/", content)
+        self.assertIn("node_modules/", content)  # preserved
+
+    def test_template_unchanged_no_modification(self):
+        """Scenario 2: template hash matches → .gitignore untouched."""
+        template = self.template_dir / "gitignore.template"
+        template.write_text("/.claude/*\n", encoding="utf-8")
+        project_gi = self.project_dir / ".gitignore"
+        project_gi.write_text("/.claude/*\n", encoding="utf-8")
+
+        # First call stores hash
+        session_start.sync_template_gitignore_once(self.plugin_root, self.project_dir)
+        mtime_before = project_gi.stat().st_mtime
+
+        # Second call — same template, should not touch .gitignore
+        time.sleep(0.01)
+        session_start.sync_template_gitignore_once(self.plugin_root, self.project_dir)
+        mtime_after = project_gi.stat().st_mtime
+
+        self.assertEqual(mtime_before, mtime_after)
+
+    def test_no_gitignore_skips(self):
+        """Scenario 3: no .gitignore exists → skip (ensure_gitignore_rules handles creation)."""
+        template = self.template_dir / "gitignore.template"
+        template.write_text("/.claude/*\n", encoding="utf-8")
+
+        session_start.sync_template_gitignore_once(self.plugin_root, self.project_dir)
+
+        self.assertFalse((self.project_dir / ".gitignore").exists())
+
+    def test_no_template_skips(self):
+        """Scenario 4: no template file → skip."""
+        project_gi = self.project_dir / ".gitignore"
+        project_gi.write_text("node_modules/\n", encoding="utf-8")
+
+        session_start.sync_template_gitignore_once(self.plugin_root, self.project_dir)
+
+        content = project_gi.read_text(encoding="utf-8")
+        self.assertEqual(content, "node_modules/\n")
 
 
 class TestMain(unittest.TestCase):

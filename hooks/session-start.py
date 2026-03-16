@@ -6,6 +6,7 @@ previous sessions. Workers are detached (start_new_session=True)
 and survive terminal close — cleanup here prevents accumulation.
 """
 import filecmp
+import hashlib
 import json
 import os
 import shutil
@@ -98,6 +99,51 @@ def ensure_gitignore_rules(plugin_root, project_dir):
             with open(project_gitignore, "w", encoding="utf-8") as f:
                 f.write(content)
 
+    except (OSError, IOError):
+        pass
+
+
+def sync_template_gitignore_once(plugin_root, project_dir):
+    """Add missing template gitignore rules once when the template changes."""
+    template_gitignore = plugin_root / "template" / "gitignore.template"
+    project_gitignore = project_dir / ".gitignore"
+
+    if not template_gitignore.exists() or not project_gitignore.exists():
+        return
+
+    current_hash = hashlib.md5(template_gitignore.read_bytes()).hexdigest()
+    hash_file = project_dir / ".claude" / ".gitignore-template-hash"
+
+    try:
+        stored_hash = hash_file.read_text(encoding="utf-8").strip()
+    except (OSError, IOError):
+        stored_hash = ""
+
+    if current_hash == stored_hash:
+        return
+
+    try:
+        template_content = template_gitignore.read_text(encoding="utf-8")
+        project_content = project_gitignore.read_text(encoding="utf-8")
+
+        project_rules = active_gitignore_rules(project_content)
+        missing = list(dict.fromkeys(
+            line.strip() for line in template_content.splitlines()
+            if line.strip() and not line.strip().startswith("#")
+            and line.strip() not in project_rules
+        ))
+
+        if missing:
+            if project_content and not project_content.endswith("\n"):
+                project_content += "\n"
+            project_content += "\n# AI Framework template rules (one-time sync)\n"
+            for rule in missing:
+                project_content += rule + "\n"
+            with open(project_gitignore, "w", encoding="utf-8") as f:
+                f.write(project_content)
+
+        hash_file.parent.mkdir(parents=True, exist_ok=True)
+        hash_file.write_text(current_hash, encoding="utf-8")
     except (OSError, IOError):
         pass
 
@@ -200,6 +246,7 @@ def main():
             sys.exit(1)
 
         ensure_gitignore_rules(plugin_root, project_dir)
+        sync_template_gitignore_once(plugin_root, project_dir)
         sync_all_files(plugin_root, project_dir)
 
         output_hook_response()
