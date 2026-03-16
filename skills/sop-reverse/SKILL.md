@@ -45,7 +45,7 @@ Two complementary capabilities in one skill:
 - **search_mode** (optional, default: `reverse`): Determines the skill's primary objective
   - `reverse`: Classic reverse engineering — investigate a specific existing artifact
   - `referent`: Referent discovery — search for world-class implementations of a concept, analyze their patterns, and catalog lessons for new design
-- **output_dir** (optional, default: .ralph/specs/{name}-{timestamp}): Directory for investigation output
+- **output_dir** (optional, default: docs/specs/{name}-{timestamp}): Directory for investigation output
 - **focus_areas** (optional, default: none - investigates all aspects if not specified): Specific aspects to prioritize (e.g., "auth flow", "data model")
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Confirm with user, ask clarifying questions

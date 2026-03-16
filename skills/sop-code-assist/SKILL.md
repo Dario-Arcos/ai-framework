@@ -12,7 +12,7 @@ Scenario-driven implementation of code tasks. Balances automation with user coll
 - **task_description** (required): Task to implement - file path, text, or URL
 - **mode** (optional, default: `interactive`): `interactive` or `autonomous`
 - **repo_root** (optional, default: cwd): Repository root path
-- **documentation_dir** (optional, default: `.ralph/specs/{goal}/implementation/{task_name}`)
+- **documentation_dir** (optional, default: `docs/specs/{goal}/implementation/{task_name}`)
 - **task_name** (optional, auto-generated): Short descriptive name
 
 **Constraints for parameter acquisition:**

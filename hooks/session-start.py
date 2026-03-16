@@ -31,17 +31,15 @@ ALLOWED_TEMPLATE_PATHS = [
     ".claude.template/statusline.sh",
 ]
 
-# /.claude/* ignores internals while !/.claude/rules/ tracks project memory
+# Only framework internals that break if tracked. User-decidable rules
+# (/.ralph/, /.research/, etc.) live in gitignore.template only — never
+# re-enforced, so users can remove them without session-start re-adding.
 CRITICAL_GITIGNORE_RULES = [
     "/.claude/*",
     "!/.claude/rules/",
     "/CLAUDE.md",
     "/hooks/*.db",
     "/hooks/__pycache__/",
-    "/.ralph/",
-    "/.research/",
-    "/.brainstorm/",
-    "/.visual-companion/",
 ]
 
 

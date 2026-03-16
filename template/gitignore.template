@@ -19,3 +19,6 @@
 
 # Visual companion session files (frontend-design mockups)
 /.visual-companion/
+
+# Specs and planning artifacts (remove to track in git)
+/docs/specs/

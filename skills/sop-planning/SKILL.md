@@ -28,7 +28,7 @@ Transforms rough ideas into detailed, implementation-ready designs through struc
 ## Parameters
 
 - **rough_idea** (required): Initial concept to develop. Accepts text, file path, or URL.
-- **project_dir** (optional, default: .ralph/specs/{goal}): Directory for planning artifacts
+- **project_dir** (optional, default: docs/specs/{goal}): Directory for planning artifacts
 - **discovery_path** (optional, default: none - if not provided, starts fresh planning): Path to existing discovery.md to continue from
 - **mode** (optional, default: `interactive`): Execution mode
   - `interactive`: Ask user questions, wait for confirmations
@@ -503,7 +503,7 @@ All artifacts MUST be:
 ```text
 User: I want to build a caching layer for our API to reduce database load
 
-Claude: [Creates project structure in .ralph/specs/api-caching-layer/]
+Claude: [Creates project structure in docs/specs/api-caching-layer/]
         [Asks: "Would you prefer to start with requirements clarification or research?"]
 
 User: Requirements first
