@@ -1,10 +1,12 @@
-#!/bin/bash
-# Statusline renderer for Claude Code — Python embedded via heredoc
-# Flow: settings.json → .claude/statusline.sh → python3 -c (JSON stdin → ANSI stdout)
-input=$(cat)
-P=python3; command -v "$P" >/dev/null 2>&1 || P=python
-printf '%s' "$input" | "$P" -c "$(cat <<'PYEOF'
-import json, math, subprocess, sys
+#!/usr/bin/env python3
+"""Statusline renderer for Claude Code — reads JSON from stdin, writes ANSI to stdout.
+
+Flow: settings.json → .claude/statusline.cmd → python3 statusline.py
+"""
+import json
+import math
+import subprocess
+import sys
 
 
 def get_git_info():
@@ -128,5 +130,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-PYEOF
-)"

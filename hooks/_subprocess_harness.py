@@ -1,6 +1,6 @@
 """Subprocess test harness — invokes hooks as Claude Code Plugin does.
 
-Chain: bash _run.sh HOOK.py < stdin_json
+Chain: _run.cmd HOOK.py < stdin_json (polyglot: bash on Unix, cmd on Windows)
 Reuses _sdd_detect for state paths — no reimplementation.
 """
 import json
@@ -19,17 +19,19 @@ from _sdd_detect import (
 )
 
 HOOKS_DIR = Path(__file__).resolve().parent
-RUN_SH = HOOKS_DIR / "_run.sh"
+RUN_CMD = HOOKS_DIR / "_run.cmd"
 
 
 def invoke_hook(hook_name, stdin_data=None, env=None, timeout=10):
-    """Invoke hook as real subprocess: bash _run.sh HOOK.py < stdin_json.
+    """Invoke hook as real subprocess via polyglot _run.cmd.
 
     Auto-sets CLAUDE_PROJECT_DIR from stdin_data["cwd"] if present.
     Returns (returncode, stdout_str, stderr_str, elapsed_ms).
     """
-    hook_path = HOOKS_DIR / hook_name
-    cmd = ["bash", str(RUN_SH), str(hook_path)]
+    if os.name == "nt":
+        cmd = ["cmd", "/c", f'"{RUN_CMD}"', hook_name]
+    else:
+        cmd = ["bash", str(RUN_CMD), hook_name]
     stdin_bytes = json.dumps(stdin_data or {}).encode()
 
     run_env = dict(os.environ)

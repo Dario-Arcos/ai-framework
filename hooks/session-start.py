@@ -28,7 +28,8 @@ def find_project_dir():
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
     ".claude.template/settings.json.template",
-    ".claude.template/statusline.sh",
+    ".claude.template/statusline.cmd",
+    ".claude.template/statusline.py",
 ]
 
 # Only framework internals that break if tracked. User-decidable rules

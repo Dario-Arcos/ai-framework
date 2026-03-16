@@ -70,7 +70,8 @@ your-project/
 ├── CLAUDE.md                  # Constitutional instructions (gitignored)
 └── .claude/
     ├── settings.json          # Framework defaults (synced)
-    └── statusline.sh          # Native statusline (model, context %, git, LOC)
+    ├── statusline.cmd          # Cross-platform statusline launcher (polyglot)
+    └── statusline.py           # Statusline renderer (model, context %, git, LOC)
 ```
 
 After running `/project-init`, project-specific rules are generated:

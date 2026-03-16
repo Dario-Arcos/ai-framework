@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real hook validation — compliance + performance via subprocess invocation.
 
-Tests the actual invocation chain: bash → _run.sh → python → hook.
+Tests the actual invocation chain: _run.cmd (polyglot) → python → hook.
 27 tests across 4 categories:
   1. Contract + hooks.json (7)
   2. Compliance gaps (10)
@@ -21,7 +21,7 @@ from importlib import import_module
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _subprocess_harness import HOOKS_DIR, RUN_SH, cleanup_all_state, invoke_hook
+from _subprocess_harness import HOOKS_DIR, RUN_CMD, cleanup_all_state, invoke_hook
 from _sdd_detect import (
     extract_session_id, is_source_file, is_test_file,
     record_file_edit, write_baseline, write_state,
@@ -70,12 +70,16 @@ class TestContract(unittest.TestCase):
         """Every script referenced in hooks.json exists on disk."""
         plugin_root = str(HOOKS_DIR.parent)
         for event, _, hook in self.entries:
-            parts = hook["command"].replace(
+            expanded = hook["command"].replace(
                 "${CLAUDE_PLUGIN_ROOT}", plugin_root
-            ).split()
-            scripts = [p for p in parts if p.endswith((".py", ".sh")) and "/" in p]
-            for s in scripts:
-                self.assertTrue(Path(s).exists(), f"{event}: missing {s}")
+            ).replace('"', '')
+            parts = expanded.split()
+            for p in parts:
+                if not p.endswith((".py", ".sh", ".cmd")):
+                    continue
+                # Full path (contains /) or script name resolved via hooks dir
+                path = Path(p) if "/" in p else HOOKS_DIR / p
+                self.assertTrue(path.exists(), f"{event}: missing {path}")
 
     def test_hooks_json_matchers_valid_regex(self):
         """All matchers compile as valid regex."""
@@ -131,12 +135,13 @@ class TestContract(unittest.TestCase):
         self.assertIn("additionalContext", data["hookSpecificOutput"])
 
     def test_missing_script_graceful(self):
-        """_run.sh with nonexistent script exits 0 (guard works)."""
+        """_run.cmd with nonexistent script exits 0 (guard works)."""
         import subprocess as sp
-        r = sp.run(
-            ["bash", str(RUN_SH), "/nonexistent/hook.py"],
-            capture_output=True, timeout=5,
-        )
+        if os.name == "nt":
+            cmd = ["cmd", "/c", f'"{RUN_CMD}"', "nonexistent-hook.py"]
+        else:
+            cmd = ["bash", str(RUN_CMD), "nonexistent-hook.py"]
+        r = sp.run(cmd, capture_output=True, timeout=5)
         self.assertEqual(r.returncode, 0)
 
 

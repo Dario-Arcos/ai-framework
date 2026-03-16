@@ -1,27 +1,21 @@
 #!/usr/bin/env python3
-"""Tests for statusline — Python renderer embedded in statusline.sh via heredoc."""
+"""Tests for statusline — Python renderer in statusline.py."""
+import importlib.util
 import io
 import json
-import re
 import sys
-import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Extract Python code from the heredoc in statusline.sh
-_sh_path = (
+# Import statusline.py directly from template
+_py_path = (
     Path(__file__).resolve().parent.parent
-    / "template" / ".claude.template" / "statusline.sh"
+    / "template" / ".claude.template" / "statusline.py"
 )
-_sh_content = _sh_path.read_text()
-_match = re.search(r"<<'PYEOF'\n(.*?)^PYEOF", _sh_content, re.DOTALL | re.MULTILINE)
-assert _match, f"Could not extract PYEOF heredoc from {_sh_path}"
-_python_code = _match.group(1)
-
-# Load into a module without executing main() (__name__ != "__main__")
-statusline = types.ModuleType("statusline")
-exec(compile(_python_code, "statusline.sh:PYEOF", "exec"), statusline.__dict__)
+_spec = importlib.util.spec_from_file_location("statusline", _py_path)
+statusline = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(statusline)
 
 
 class TestFormatDuration(unittest.TestCase):
@@ -235,30 +229,42 @@ class TestMainOutput(unittest.TestCase):
         self.assertIn("<1m", output)
 
 
-class TestShellIntegration(unittest.TestCase):
-    """Test the .sh wrapper end-to-end via subprocess."""
+class TestCrossPlatformIntegration(unittest.TestCase):
+    """Test cross-platform statusline files are in sync."""
 
-    def test_template_and_plugin_sh_are_identical(self):
-        """Both .sh copies must be in sync."""
-        plugin_sh = (
-            Path(__file__).resolve().parent.parent / ".claude" / "statusline.sh"
+    def test_template_and_plugin_py_are_identical(self):
+        """Both .py copies must be in sync."""
+        plugin_py = (
+            Path(__file__).resolve().parent.parent / ".claude" / "statusline.py"
         )
         self.assertEqual(
-            _sh_path.read_text(),
-            plugin_sh.read_text(),
-            "template and .claude/ statusline.sh are out of sync",
+            _py_path.read_text(),
+            plugin_py.read_text(),
+            "template and .claude/ statusline.py are out of sync",
         )
 
-    def test_heredoc_extraction_has_valid_python(self):
-        """The extracted Python code must compile without errors."""
-        compile(_python_code, "statusline.sh:PYEOF", "exec")
+    def test_template_and_plugin_cmd_are_identical(self):
+        """Both .cmd copies must be in sync."""
+        template_cmd = _py_path.parent / "statusline.cmd"
+        plugin_cmd = (
+            Path(__file__).resolve().parent.parent / ".claude" / "statusline.cmd"
+        )
+        self.assertEqual(
+            template_cmd.read_text(),
+            plugin_cmd.read_text(),
+            "template and .claude/ statusline.cmd are out of sync",
+        )
 
-    def test_no_separate_py_file_in_template(self):
-        """statusline.py must NOT exist as a separate template file."""
-        py_path = _sh_path.parent / "statusline.py"
+    def test_statusline_py_compiles(self):
+        """statusline.py must compile without errors."""
+        compile(_py_path.read_text(), "statusline.py", "exec")
+
+    def test_no_stale_sh_in_template(self):
+        """statusline.sh must NOT exist (replaced by .cmd + .py)."""
+        sh_path = _py_path.parent / "statusline.sh"
         self.assertFalse(
-            py_path.exists(),
-            f"Stale statusline.py found at {py_path} — all Python lives in .sh heredoc",
+            sh_path.exists(),
+            f"Stale statusline.sh found at {sh_path} — replaced by .cmd + .py",
         )
 
 

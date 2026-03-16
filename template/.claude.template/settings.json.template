@@ -64,7 +64,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": ".claude/statusline.sh",
+    "command": ".claude/statusline.cmd",
     "padding": 0
   },
   "spinnerTipsOverride": {

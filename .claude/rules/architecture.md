@@ -12,7 +12,7 @@ hooks/            # Lifecycle automation (Python + Shell, triggered by hooks.jso
 template/         # Distributed to target projects on install (.claude/, CLAUDE.md, .gitignore)
 human-handbook/   # VitePress documentation site (not runtime code)
 scripts/          # Build utilities (sync-versions.cjs)
-.claude/          # Runtime config (settings.json, statusline.sh)
+.claude/          # Runtime config (settings.json, statusline.cmd + statusline.py)
 .claude-plugin/   # Plugin manifest (plugin.json)
 ```
 
