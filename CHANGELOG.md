@@ -12,6 +12,21 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [2026.3.1] - 2026-03-16
+
+### Cambiado
+
+- **Hooks cross-platform Windows**: Reemplazar `_run.sh` (bash-only) con polyglot `_run.cmd` (CMD+bash) — hooks, statusline y notificaciones ahora funcionan en Windows sin requerir bash. Patrón superpowers: una ruta con comillas + nombre de script (commit `1271d13`)
+- **Statusline standalone**: Extraer Python de heredoc en `statusline.sh` a `statusline.py` standalone + wrapper `statusline.cmd` — misma funcionalidad, cross-platform (commit `1271d13`)
+- **SOP defaults desacoplados de `.ralph/`**: Rutas por defecto en 5 SOPs cambian `.ralph/specs/` → `docs/specs/`. Reglas gitignore user-decidable (`/.ralph/`, `/.research/`) ya no se re-inyectan en session-start — viven solo en gitignore.template (commit `eeb442e`)
+- **Template gitignore**: Añadir `/.brainstorm/`, `/.visual-companion/`, y `/docs/specs/` a gitignore.template (commits `294dcc8`, `6e3a202`)
+
+### Arreglado
+
+- **Scripts ESM compat**: Renombrar `server.js` → `server.cjs` en brainstorming y frontend-design — `"type": "module"` en package.json causaba error al cargar scripts CommonJS (commits `45bad57`, `6e3a202`)
+
+---
+
 ## [2026.3.0] - 2026-03-14
 
 ### Añadido
