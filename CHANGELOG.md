@@ -10,6 +10,22 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ## [No Publicado]
 
+### Cambiado
+
+- **Hook coverage gate — diff-coverage del runner reemplaza basename pairing**: `compute_uncovered` ahora prefiere evidencia positiva de cobertura (líneas ejecutadas según el reporte del test runner) sobre ausencia de evidencia (heurística de archivos sibling). Detección runtime stack-agnóstica desde `package.json`/`pyproject.toml`/`go.mod`/`Cargo.toml` — vitest, jest, c8, pytest-cov, go-cover, cargo-llvm-cov soportados sin configuración por proyecto. Alineado con [diff-cover](https://github.com/Bachmann1234/diff_cover) y SWE-bench. Cierra el vector de reward hacking donde un test file vacío satisfacía el gate.
+- **Hook subagent-start — skill index dinámico**: la lista de skills inyectada a sub-agentes se deriva del filesystem en cada invocación en lugar de estar hardcoded. Skills añadidas o removidas se reflejan inmediatamente. Skills con `SKILL.md` vacío se excluyen.
+
+### Arreglado
+
+- **Hook task-completed — false positives en proyectos sin basename pairing**: `compute_uncovered` consultaba solo los archivos editados en la sesión actual, ignorando tests que ya existían en disco. Proyectos con convenciones módulo-level (`apps/web/__tests__/modules/personas.test.ts` cubriendo `apps/web/app/personas/**/*`) recibían bloqueos espurios. Ahora `compute_uncovered` consulta `has_test_on_disk` como segundo paso, y prefiere el reporte de cobertura del runner cuando está disponible.
+- **Hook subagent-start — drift de skills en sub-agentes**: sub-agentes general-purpose veían un catálogo de skills hardcoded de 14 entradas mientras el directorio `skills/` contenía 23, ocultando skills nuevas y listando algunas removidas.
+
+### Añadido
+
+- **`detect_coverage_command(cwd)`**: detección runtime del comando de cobertura del proyecto desde manifest. Returns `(cmd, format, path)` o `None`. Soporta lcov (universal) y go-cover (Go nativo).
+- **`parse_lcov(path)` y `parse_go_cover(path)`**: parsers stdlib-only de los formatos de cobertura más universales. Tolerantes a registros malformados.
+- **Mensajes diagnósticos en coverage gate**: cuando un archivo se reporta como no cubierto, el mensaje indica qué método de detección se usó (lcov report en `<path>` vs basename heurístico fallback) y sugiere resoluciones específicas. Trunca a 10 archivos con indicador "and N more".
+
 ---
 
 ## [2026.3.1] - 2026-03-16
