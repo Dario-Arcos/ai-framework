@@ -122,3 +122,8 @@ human-handbook/.vitepress/cache/
 
 # AI Framework runtime files (auto-added)
 /hooks/__pycache__/
+
+# AI Framework template rules (one-time sync)
+/.brainstorm/
+/.visual-companion/
+/docs/specs/
