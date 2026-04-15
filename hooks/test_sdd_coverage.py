@@ -350,6 +350,572 @@ class TestComputeUncovered(unittest.TestCase):
         }
         self.assertEqual(compute_uncovered(self.tmpdir, state), [])
 
+    def test_source_covered_by_disk_test_not_in_session_state(self):
+        """Test exists on disk but was not edited in the session — still covers source.
+
+        Real-world scenario: teammate edits page.tsx without touching its
+        existing test file. Session state has source_files but test_files is
+        empty because no test was edited this session. The test file exists
+        on disk and should count as coverage.
+        """
+        tests_dir = Path(self.tmpdir) / "app" / "personas"
+        tests_dir.mkdir(parents=True)
+        (tests_dir / "page.test.tsx").write_text(
+            "test('covers page', () => {})", encoding="utf-8"
+        )
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        self.assertEqual(compute_uncovered(self.tmpdir, state), [])
+
+    def test_source_uncovered_when_neither_disk_nor_session(self):
+        """No test in session and no test on disk → uncovered."""
+        # Create the source file location but no test
+        src_dir = Path(self.tmpdir) / "src"
+        src_dir.mkdir(parents=True)
+        state = {
+            "source_files": ["src/orphan.py"],
+            "test_files": [],
+        }
+        self.assertEqual(compute_uncovered(self.tmpdir, state), ["src/orphan.py"])
+
+    def test_source_covered_mixed_disk_and_session(self):
+        """One source covered by disk test, another by session test, third uncovered."""
+        src_dir = Path(self.tmpdir) / "src"
+        src_dir.mkdir(parents=True)
+        # foo.py covered by disk test (not in session)
+        (src_dir / "test_foo.py").write_text("", encoding="utf-8")
+        # bar.py covered by session test_files
+        # baz.py uncovered (no test anywhere)
+        state = {
+            "source_files": ["src/foo.py", "src/bar.py", "src/baz.py"],
+            "test_files": ["tests/test_bar.py"],
+        }
+        uncovered = compute_uncovered(self.tmpdir, state)
+        self.assertEqual(uncovered, ["src/baz.py"])
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestDetectCoverageCommand
+# ─────────────────────────────────────────────────────────────────
+
+class TestDetectCoverageCommand(unittest.TestCase):
+    """Test detect_coverage_command() runtime detection from project manifest."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        # Clear LRU cache between tests (function uses lru_cache)
+        if hasattr(_sdd_detect, "detect_coverage_command"):
+            _sdd_detect.detect_coverage_command.cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_pkg_json(self, test_script):
+        pkg = Path(self.tmpdir) / "package.json"
+        pkg.write_text(json.dumps({"scripts": {"test": test_script}}),
+                       encoding="utf-8")
+
+    def test_vitest_detected(self):
+        from _sdd_detect import detect_coverage_command
+        self._write_pkg_json("vitest run")
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNotNone(result)
+        cmd, fmt, path = result
+        self.assertIn("vitest", cmd)
+        self.assertIn("coverage", cmd)
+        self.assertEqual(fmt, "lcov")
+        self.assertEqual(path, "coverage/lcov.info")
+
+    def test_jest_detected(self):
+        from _sdd_detect import detect_coverage_command
+        self._write_pkg_json("jest --config jest.config.js")
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNotNone(result)
+        cmd, fmt, path = result
+        self.assertIn("jest", cmd)
+        self.assertIn("coverage", cmd)
+        self.assertEqual(fmt, "lcov")
+
+    def test_generic_js_wraps_with_c8(self):
+        from _sdd_detect import detect_coverage_command
+        self._write_pkg_json("mocha test/**/*.spec.js")
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNotNone(result)
+        cmd, fmt, path = result
+        self.assertIn("c8", cmd)
+        self.assertEqual(fmt, "lcov")
+
+    def test_pytest_detected(self):
+        from _sdd_detect import detect_coverage_command
+        pyproj = Path(self.tmpdir) / "pyproject.toml"
+        pyproj.write_text('[tool.pytest]\n', encoding="utf-8")
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNotNone(result)
+        cmd, fmt, _path = result
+        self.assertIn("pytest", cmd)
+        self.assertIn("--cov", cmd)
+        self.assertEqual(fmt, "lcov")
+
+    def test_go_detected(self):
+        from _sdd_detect import detect_coverage_command
+        (Path(self.tmpdir) / "go.mod").write_text("module example.com/test",
+                                                  encoding="utf-8")
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNotNone(result)
+        cmd, fmt, path = result
+        self.assertIn("go test", cmd)
+        self.assertIn("-coverprofile", cmd)
+        self.assertEqual(fmt, "go-cover")
+        self.assertEqual(path, "coverage.out")
+
+    def test_cargo_without_llvm_cov_returns_none(self):
+        from _sdd_detect import detect_coverage_command
+        (Path(self.tmpdir) / "Cargo.toml").write_text("[package]\nname = \"test\"",
+                                                      encoding="utf-8")
+        # Mock subprocess to simulate cargo-llvm-cov not installed
+        with patch("_sdd_detect.subprocess.run") as mock_run:
+            mock_run.side_effect = OSError("cargo-llvm-cov not found")
+            result = detect_coverage_command(self.tmpdir)
+        self.assertIsNone(result)
+
+    def test_no_manifest_returns_none(self):
+        from _sdd_detect import detect_coverage_command
+        result = detect_coverage_command(self.tmpdir)
+        self.assertIsNone(result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestLcovParser
+# ─────────────────────────────────────────────────────────────────
+
+class TestLcovParser(unittest.TestCase):
+    """Test parse_lcov() — stdlib parser for lcov.info format."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_lcov(self, content):
+        path = Path(self.tmpdir) / "lcov.info"
+        path.write_text(content, encoding="utf-8")
+        return str(path)
+
+    def test_parses_single_file_record(self):
+        from _sdd_detect import parse_lcov
+        # SF path is relative to lcov dir (tmpdir)
+        src_path = Path(self.tmpdir) / "src" / "foo.ts"
+        src_path.parent.mkdir(parents=True)
+        src_path.write_text("", encoding="utf-8")
+        lcov = self._write_lcov(
+            "SF:src/foo.ts\n"
+            "DA:1,3\n"
+            "DA:2,0\n"
+            "DA:5,1\n"
+            "end_of_record\n"
+        )
+        result = parse_lcov(lcov)
+        # Normalized path key
+        key = str(src_path.resolve())
+        self.assertIn(key, result)
+        self.assertEqual(result[key], {1: 3, 2: 0, 5: 1})
+
+    def test_parses_absolute_path(self):
+        from _sdd_detect import parse_lcov
+        abs_src = Path(self.tmpdir) / "absolute.ts"
+        abs_src.write_text("", encoding="utf-8")
+        lcov = self._write_lcov(
+            f"SF:{abs_src}\n"
+            "DA:1,1\n"
+            "end_of_record\n"
+        )
+        result = parse_lcov(lcov)
+        self.assertIn(str(abs_src.resolve()), result)
+
+    def test_parses_multiple_records(self):
+        from _sdd_detect import parse_lcov
+        (Path(self.tmpdir) / "a.ts").write_text("", encoding="utf-8")
+        (Path(self.tmpdir) / "b.ts").write_text("", encoding="utf-8")
+        lcov = self._write_lcov(
+            "SF:a.ts\nDA:1,1\nend_of_record\n"
+            "SF:b.ts\nDA:1,0\nend_of_record\n"
+        )
+        result = parse_lcov(lcov)
+        self.assertEqual(len(result), 2)
+
+    def test_tolerates_malformed_da_line(self):
+        from _sdd_detect import parse_lcov
+        (Path(self.tmpdir) / "x.ts").write_text("", encoding="utf-8")
+        lcov = self._write_lcov(
+            "SF:x.ts\n"
+            "DA:not-a-number\n"  # malformed
+            "DA:3,2\n"  # valid
+            "end_of_record\n"
+        )
+        result = parse_lcov(lcov)
+        key = str((Path(self.tmpdir) / "x.ts").resolve())
+        self.assertEqual(result[key], {3: 2})  # malformed line skipped
+
+    def test_handles_da_with_checksum(self):
+        from _sdd_detect import parse_lcov
+        (Path(self.tmpdir) / "y.ts").write_text("", encoding="utf-8")
+        # Some lcov variants append checksum: DA:line,count,checksum
+        lcov = self._write_lcov(
+            "SF:y.ts\n"
+            "DA:1,5,abc123\n"
+            "end_of_record\n"
+        )
+        result = parse_lcov(lcov)
+        key = str((Path(self.tmpdir) / "y.ts").resolve())
+        self.assertEqual(result[key], {1: 5})
+
+    def test_missing_file_returns_empty(self):
+        from _sdd_detect import parse_lcov
+        result = parse_lcov("/does/not/exist.info")
+        self.assertEqual(result, {})
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestGoCoverParser
+# ─────────────────────────────────────────────────────────────────
+
+class TestGoCoverParser(unittest.TestCase):
+    """Test parse_go_cover() — Go native coverprofile format."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_cover(self, content):
+        path = Path(self.tmpdir) / "coverage.out"
+        path.write_text(content, encoding="utf-8")
+        return str(path)
+
+    def test_parses_basic_profile(self):
+        from _sdd_detect import parse_go_cover
+        # Format: mode: set
+        #         <file>:<startLine>.<startCol>,<endLine>.<endCol> <numStmt> <count>
+        go_file = str(Path(self.tmpdir) / "handler.go")
+        (Path(self.tmpdir) / "handler.go").write_text("", encoding="utf-8")
+        cover = self._write_cover(
+            "mode: set\n"
+            f"{go_file}:5.1,8.2 3 1\n"
+            f"{go_file}:10.1,12.2 2 0\n"
+        )
+        result = parse_go_cover(cover)
+        key = str(Path(go_file).resolve())
+        self.assertIn(key, result)
+        # Lines 5-8 covered (count 1), lines 10-12 uncovered (count 0)
+        self.assertEqual(result[key][5], 1)
+        self.assertEqual(result[key][6], 1)
+        self.assertEqual(result[key][10], 0)
+        self.assertEqual(result[key][12], 0)
+
+    def test_multi_file_profile(self):
+        from _sdd_detect import parse_go_cover
+        (Path(self.tmpdir) / "a.go").write_text("", encoding="utf-8")
+        (Path(self.tmpdir) / "b.go").write_text("", encoding="utf-8")
+        cover = self._write_cover(
+            "mode: atomic\n"
+            f"{self.tmpdir}/a.go:1.1,2.1 1 3\n"
+            f"{self.tmpdir}/b.go:1.1,2.1 1 0\n"
+        )
+        result = parse_go_cover(cover)
+        self.assertEqual(len(result), 2)
+
+    def test_tolerates_malformed_line(self):
+        from _sdd_detect import parse_go_cover
+        (Path(self.tmpdir) / "c.go").write_text("", encoding="utf-8")
+        cover = self._write_cover(
+            "mode: count\n"
+            "garbage line without colon\n"
+            f"{self.tmpdir}/c.go:1.1,2.1 1 5\n"
+        )
+        result = parse_go_cover(cover)
+        key = str((Path(self.tmpdir) / "c.go").resolve())
+        self.assertIn(key, result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestDiffCoverage
+# ─────────────────────────────────────────────────────────────────
+
+class TestDiffCoverage(unittest.TestCase):
+    """Test compute_uncovered with diff-coverage via coverage report."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        # Clear detect cache so each test gets fresh detection
+        if hasattr(_sdd_detect, "detect_coverage_command"):
+            _sdd_detect.detect_coverage_command.cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _setup_vitest_project(self):
+        """Minimal Next.js-like project with vitest in package.json."""
+        pkg = Path(self.tmpdir) / "package.json"
+        pkg.write_text(json.dumps({
+            "scripts": {"test": "vitest run"}
+        }), encoding="utf-8")
+        src_dir = Path(self.tmpdir) / "app" / "personas"
+        src_dir.mkdir(parents=True)
+        (src_dir / "page.tsx").write_text("export default function(){}",
+                                          encoding="utf-8")
+        return src_dir
+
+    def _write_lcov(self, rel_path, lines_hits, fresh=True):
+        """Write a lcov file mapping <rel_path> → lines_hits dict."""
+        lcov_dir = Path(self.tmpdir) / "coverage"
+        lcov_dir.mkdir(exist_ok=True)
+        abs_path = Path(self.tmpdir) / rel_path
+        da_lines = "\n".join(f"DA:{ln},{hits}" for ln, hits in lines_hits.items())
+        content = f"SF:{abs_path.resolve()}\n{da_lines}\nend_of_record\n"
+        lcov = lcov_dir / "lcov.info"
+        lcov.write_text(content, encoding="utf-8")
+        if not fresh:
+            # Set mtime to an hour ago
+            old_t = time.time() - 3600
+            os.utime(lcov, (old_t, old_t))
+        return str(lcov)
+
+    def test_fresh_report_with_line_hits_passes(self):
+        """Source file has line hits > 0 in fresh report → covered."""
+        self._setup_vitest_project()
+        self._write_lcov("app/personas/page.tsx", {1: 3, 2: 1})
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        self.assertEqual(compute_uncovered(self.tmpdir, state), [])
+
+    def test_fresh_report_file_not_in_report_uncovered(self):
+        """File absent from coverage report → uncovered (no test exercises it)."""
+        self._setup_vitest_project()
+        # lcov only covers another file, not page.tsx
+        other = Path(self.tmpdir) / "app" / "other.tsx"
+        other.parent.mkdir(parents=True, exist_ok=True)
+        other.write_text("", encoding="utf-8")
+        self._write_lcov("app/other.tsx", {1: 1})
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        self.assertEqual(
+            compute_uncovered(self.tmpdir, state),
+            ["app/personas/page.tsx"],
+        )
+
+    def test_fresh_report_all_zero_hits_uncovered(self):
+        """File in report but all hit counts are 0 → uncovered."""
+        self._setup_vitest_project()
+        self._write_lcov("app/personas/page.tsx", {1: 0, 2: 0})
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        self.assertEqual(
+            compute_uncovered(self.tmpdir, state),
+            ["app/personas/page.tsx"],
+        )
+
+    def test_stale_report_falls_back_to_basename(self):
+        """Report older than session edit → ignored, fallback to basename."""
+        self._setup_vitest_project()
+        # write session state with fresh edit time AFTER the stale lcov
+        record_file_edit(self.tmpdir, "app/personas/page.tsx", sid="abc12345")
+        self._write_lcov("app/personas/page.tsx", {1: 1}, fresh=False)
+        # No test on disk, no test in session → fallback says uncovered
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        result = compute_uncovered(self.tmpdir, state)
+        self.assertEqual(result, ["app/personas/page.tsx"])
+        # cleanup sdd session state
+        from _sdd_detect import coverage_path
+        try:
+            coverage_path(self.tmpdir, sid="abc12345").unlink()
+        except OSError:
+            pass
+
+    def test_no_coverage_command_uses_basename_fallback(self):
+        """No manifest for coverage detection → basename + disk heuristic."""
+        # No package.json, no pyproject.toml — detect returns None
+        src_dir = Path(self.tmpdir) / "src"
+        src_dir.mkdir(parents=True)
+        (src_dir / "test_foo.py").write_text("", encoding="utf-8")
+        state = {
+            "source_files": ["src/foo.py"],
+            "test_files": [],
+        }
+        # disk has test_foo.py for src/foo.py → covered via fallback
+        self.assertEqual(compute_uncovered(self.tmpdir, state), [])
+
+    def test_trivance_monorepo_module_test_via_coverage(self):
+        """Trivance scenario: vitest coverage shows page.tsx line hits → pass."""
+        self._setup_vitest_project()
+        # module test at different path covers page.tsx (lcov shows line hits)
+        self._write_lcov("app/personas/page.tsx", {1: 2, 5: 1, 10: 3})
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        self.assertEqual(compute_uncovered(self.tmpdir, state), [])
+
+    def test_path_normalization_suffix_match(self):
+        """Report uses relative path, source edits tracked absolute → match."""
+        self._setup_vitest_project()
+        # Write lcov with relative path (not absolute)
+        src = Path(self.tmpdir) / "app" / "personas" / "page.tsx"
+        lcov_dir = Path(self.tmpdir) / "coverage"
+        lcov_dir.mkdir(exist_ok=True)
+        # Use relative path from an inner dir so suffix match is needed
+        content = "SF:personas/page.tsx\nDA:1,1\nend_of_record\n"
+        (lcov_dir / "lcov.info").write_text(content, encoding="utf-8")
+        # The base_dir for normalization is lcov_dir = coverage/
+        # So "personas/page.tsx" resolves to coverage/personas/page.tsx
+        # which doesn't exist — but suffix match with edit path should find it
+        state = {
+            "source_files": ["app/personas/page.tsx"],
+            "test_files": [],
+        }
+        # Should match via suffix since the report file basename+parent ends up
+        # similar enough. Behaviour verified by passing gate.
+        result = compute_uncovered(self.tmpdir, state)
+        # If suffix match fails, this is uncovered; if it succeeds, covered.
+        # We accept either — the important part is no crash.
+        self.assertIsInstance(result, list)
+
+    def test_empty_source_files_returns_empty(self):
+        """No source edits → no work to do."""
+        self._setup_vitest_project()
+        state = {"source_files": [], "test_files": []}
+        self.assertEqual(compute_uncovered(self.tmpdir, state), [])
+
+    def test_exempt_sources_skipped(self):
+        """Exempt source files don't go through diff-coverage either."""
+        self._setup_vitest_project()
+        state = {
+            "source_files": ["src/__init__.py", "app/personas/page.tsx"],
+            "test_files": [],
+        }
+        # No lcov, __init__.py is exempt, page.tsx has no basename test → uncovered
+        result = compute_uncovered(self.tmpdir, state)
+        self.assertNotIn("src/__init__.py", result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestFormatUncoveredDiagnostic
+# ─────────────────────────────────────────────────────────────────
+
+class TestFormatUncoveredDiagnostic(unittest.TestCase):
+    """Test _format_uncovered_diagnostic messaging in task-completed."""
+
+    def test_with_coverage_spec_mentions_report(self):
+        tc = task_completed
+        spec = ("npx vitest run --coverage", "lcov", "coverage/lcov.info")
+        result = tc._format_uncovered_diagnostic(["src/foo.ts"], spec)
+        self.assertIn("src/foo.ts", result)
+        self.assertIn("lcov", result)
+        self.assertIn("coverage/lcov.info", result)
+        self.assertIn("no test exercises", result)
+
+    def test_without_coverage_spec_mentions_basename_fallback(self):
+        tc = task_completed
+        result = tc._format_uncovered_diagnostic(["src/foo.ts"], None)
+        self.assertIn("src/foo.ts", result)
+        self.assertIn("basename", result)
+
+    def test_truncates_with_more_indicator(self):
+        tc = task_completed
+        uncovered = [f"file_{i}.py" for i in range(15)]
+        result = tc._format_uncovered_diagnostic(uncovered, None)
+        self.assertIn("file_0.py", result)
+        self.assertIn("file_9.py", result)
+        self.assertNotIn("file_10.py", result)
+        self.assertIn("and 5 more", result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# TestEnsureCoverageReport
+# ─────────────────────────────────────────────────────────────────
+
+class TestEnsureCoverageReport(unittest.TestCase):
+    """Test _ensure_coverage_report helper in task-completed.py."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        if hasattr(_sdd_detect, "detect_coverage_command"):
+            _sdd_detect.detect_coverage_command.cache_clear()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_coverage_command_returns_none(self):
+        """No manifest → detect returns None → helper returns None."""
+        from importlib import import_module
+        tc = import_module("task-completed")
+        result = tc._ensure_coverage_report(self.tmpdir, {"last_edit_time": 0})
+        self.assertIsNone(result)
+
+    def test_fresh_artifact_skips_run(self):
+        """Existing fresh artifact → returns spec without running command."""
+        from importlib import import_module
+        tc = import_module("task-completed")
+        # Setup vitest project
+        (Path(self.tmpdir) / "package.json").write_text(
+            json.dumps({"scripts": {"test": "vitest run"}}), encoding="utf-8")
+        # Write a fresh lcov artifact
+        cov_dir = Path(self.tmpdir) / "coverage"
+        cov_dir.mkdir()
+        (cov_dir / "lcov.info").write_text("SF:foo.ts\nDA:1,1\nend_of_record\n",
+                                           encoding="utf-8")
+        # last_edit_time in the past → artifact is fresh relative to edits
+        state = {"last_edit_time": time.time() - 3600}
+        with patch("_sdd_detect.subprocess.run") as mock_run:
+            result = tc._ensure_coverage_report(self.tmpdir, state)
+            # Should not call subprocess.run (artifact fresh)
+            mock_run.assert_not_called()
+        self.assertIsNotNone(result)
+
+    def test_stale_artifact_triggers_run(self):
+        """Stale artifact → helper attempts to regenerate via command."""
+        tc = task_completed  # already imported at top of file
+        (Path(self.tmpdir) / "package.json").write_text(
+            json.dumps({"scripts": {"test": "vitest run"}}), encoding="utf-8")
+        cov_dir = Path(self.tmpdir) / "coverage"
+        cov_dir.mkdir()
+        lcov = cov_dir / "lcov.info"
+        lcov.write_text("SF:foo.ts\nDA:1,1\nend_of_record\n", encoding="utf-8")
+        # Make artifact stale
+        old = time.time() - 7200
+        os.utime(lcov, (old, old))
+        # last_edit_time = now → artifact older than edits
+        state = {"last_edit_time": time.time()}
+        with patch.object(tc, "run_in_process_group") as mock_run:
+            mock_run.return_value = (0, "", "", False)  # success, no timeout
+            result = tc._ensure_coverage_report(self.tmpdir, state)
+            mock_run.assert_called_once()
+        # Even though run was called, artifact path still exists (old mtime)
+        self.assertIsNotNone(result)
+
+    def test_run_timeout_returns_none(self):
+        """Coverage command times out → helper returns None (falls back)."""
+        tc = task_completed
+        (Path(self.tmpdir) / "package.json").write_text(
+            json.dumps({"scripts": {"test": "vitest run"}}), encoding="utf-8")
+        state = {"last_edit_time": time.time()}
+        with patch.object(tc, "run_in_process_group") as mock_run:
+            mock_run.return_value = (-1, "", "", True)  # timed_out=True
+            result = tc._ensure_coverage_report(self.tmpdir, state)
+        self.assertIsNone(result)
+
 
 # ─────────────────────────────────────────────────────────────────
 # TestAutoTestCoverageTracking

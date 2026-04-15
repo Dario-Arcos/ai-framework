@@ -31,10 +31,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     acquire_runner_lock, adaptive_gate_timeout, await_test_completion,
     can_trust_state, clear_baseline, clear_coverage, compute_uncovered,
-    detect_test_command, extract_session_id, has_exit_suppression,
-    is_test_running, kill_orphan_test_group, parse_test_summary,
-    read_baseline, read_coverage, read_skill_invoked, read_state,
-    release_runner_lock, run_in_process_group, skill_invoked_path,
+    detect_coverage_command, detect_test_command, extract_session_id,
+    has_exit_suppression, is_test_running, kill_orphan_test_group,
+    parse_test_summary, read_baseline, read_coverage, read_skill_invoked,
+    read_state, release_runner_lock, run_in_process_group, skill_invoked_path,
     test_pgid_path, write_state,
 )
 
@@ -252,6 +252,93 @@ def _fail_task(header, body, footer="Fix the issue before completing this task."
     sys.exit(2)
 
 
+def _format_uncovered_diagnostic(uncovered, coverage_spec):
+    """Format uncovered list with diagnostic context per file.
+
+    Tells the teammate which detection method was used (coverage report
+    vs basename fallback), so they know where to add tests. Truncates to
+    10 files with "and N more" indicator.
+    """
+    lines = []
+    shown = uncovered[:10]
+    for sf in shown:
+        lines.append(f"  - {sf}")
+        if coverage_spec:
+            _cmd, fmt, path = coverage_spec
+            lines.append(
+                f"      Not covered by {fmt} report at {path} "
+                f"(no test exercises these lines)"
+            )
+        else:
+            lines.append(
+                f"      No test found via basename heuristic "
+                f"(enable coverage in your test runner for richer detection)"
+            )
+    extra = len(uncovered) - len(shown)
+    if extra > 0:
+        lines.append(f"  ... and {extra} more uncovered file(s)")
+    return "\n".join(lines)
+
+
+_UNCOVERED_RESOLUTION = (
+    "Resolution options:\n"
+    "  1. Write tests that exercise the edited lines — co-located, module-level, "
+    "integration, or E2E tests all count as long as the coverage report shows line hits.\n"
+    "  2. If the edit is pure refactor (behaviour-preserving), ensure the existing "
+    "suite still covers the new implementation — re-run with --coverage to confirm."
+)
+
+
+def _ensure_coverage_report(cwd, state, max_wait_seconds=120):
+    """Detect coverage spec and ensure a fresh report exists.
+
+    If detect_coverage_command returns a spec and the artifact is absent or
+    stale (older than session edits), run the coverage-enabled test command
+    to produce a fresh report. The spec is returned so compute_uncovered
+    can use diff-coverage; caller can also pass None if detection fails.
+
+    Returns coverage spec tuple or None. Never raises; on any failure the
+    caller falls back to basename heuristic.
+    """
+    try:
+        spec = detect_coverage_command(cwd)
+    except Exception:
+        return None
+    if spec is None:
+        return None
+    cmd, _fmt, rel_path = spec
+    report_path = Path(cwd) / rel_path
+    # Check if artifact exists and is fresh vs session edits
+    needs_run = True
+    if report_path.is_file():
+        try:
+            report_mtime = report_path.stat().st_mtime
+            last_edit = state.get("last_edit_time", 0)
+            if report_mtime >= last_edit - 5:  # 5s clock-skew grace
+                needs_run = False
+        except OSError:
+            pass
+
+    if not needs_run:
+        return spec
+
+    # Run the coverage command to generate a fresh artifact
+    try:
+        kill_orphan_test_group(cwd)
+        rc, stdout, stderr, timed_out = run_in_process_group(
+            cmd, cwd, max_wait_seconds,
+            pgid_file=str(test_pgid_path(cwd)),
+        )
+        if timed_out:
+            return None
+        if not report_path.is_file():
+            # Coverage ran but didn't produce the expected artifact
+            return None
+    except OSError:
+        return None
+    return spec
+
+
 def _try_cached_test_gate(cwd, sid, max_age=30):
     """Try to resolve test gate from auto-test state with trust validation.
 
@@ -370,16 +457,17 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                 finally:
                     release_runner_lock(lock_fd, cwd)
 
-    # Coverage gate: fail if source files lack tests
+    # Coverage gate: diff-coverage via runner report, fallback to basename
     state = read_coverage(cwd, sid=sid)
     if state:
-        uncovered = compute_uncovered(cwd, state)
+        coverage_spec = _ensure_coverage_report(cwd, state)
+        uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec)
         if uncovered:
-            file_list = "\n".join(f"  - {f}" for f in uncovered[:10])
+            diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
             _fail_task(
                 f"Untested source files for: {task_subject}",
-                f"New source files without tests:\n{file_list}",
-                "Write tests for new source files before completing. "
+                f"Source files without detected coverage:\n{diag}\n\n"
+                f"{_UNCOVERED_RESOLUTION}",
                 "Omitting tests = reward hacking by omission.",
             )
         clear_coverage(cwd, sid)
@@ -553,14 +641,15 @@ def main():
     # All gates passed — check coverage before accepting
     cov_state = read_coverage(cwd, sid=sid)
     if cov_state:
-        uncovered = compute_uncovered(cwd, cov_state)
+        coverage_spec = _ensure_coverage_report(cwd, cov_state)
+        uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec)
         if uncovered:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-            file_list = "\n".join(f"  - {f}" for f in uncovered[:10])
+            diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
             _fail_task(
                 f"Untested source files for: {task_subject}",
-                f"New source files without tests:\n{file_list}",
-                f"Write tests for new source files before completing. "
+                f"Source files without detected coverage:\n{diag}\n\n"
+                f"{_UNCOVERED_RESOLUTION}",
                 f"Omitting tests = reward hacking by omission. "
                 f"(consecutive failures: {count})",
             )

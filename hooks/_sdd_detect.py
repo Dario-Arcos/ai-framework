@@ -333,6 +333,87 @@ def _detect_test_command_uncached(cwd_path, config_path, pkg_path):
     return None
 
 
+@functools.lru_cache(maxsize=4)
+def detect_coverage_command(cwd):
+    """Derive a coverage-enabled test command from project manifest.
+
+    Returns (cmd_str, report_format, report_path) or None.
+    report_format ∈ {"lcov", "go-cover"}.
+
+    Stack-agnostic runtime detection. Framework families form a finite set —
+    no per-project config required. Caller uses the returned command to run
+    tests with coverage enabled; the report is then parsed from report_path.
+    """
+    cwd_path = Path(cwd)
+    pkg = cwd_path / "package.json"
+    pyproject = cwd_path / "pyproject.toml"
+    gomod = cwd_path / "go.mod"
+    cargo = cwd_path / "Cargo.toml"
+
+    if pkg.exists():
+        try:
+            data = json.loads(pkg.read_text(encoding="utf-8"))
+            test_script = data.get("scripts", {}).get("test", "")
+            if test_script and "no test specified" not in test_script:
+                if "vitest" in test_script:
+                    return (
+                        "npx vitest run --coverage --coverage.reporter=lcov",
+                        "lcov",
+                        "coverage/lcov.info",
+                    )
+                if "jest" in test_script:
+                    return (
+                        "npx jest --coverage --coverageReporters=lcov",
+                        "lcov",
+                        "coverage/lcov.info",
+                    )
+                # Generic: wrap arbitrary JS test runner with c8
+                return (
+                    f"npx c8 --reporter=lcov -- {test_script}",
+                    "lcov",
+                    "coverage/lcov.info",
+                )
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    if pyproject.exists():
+        try:
+            content = pyproject.read_text(encoding="utf-8")
+            if "pytest" in content:
+                return (
+                    "pytest --cov=. --cov-report=lcov:coverage.lcov",
+                    "lcov",
+                    "coverage.lcov",
+                )
+        except OSError:
+            pass
+
+    if gomod.exists():
+        return (
+            "go test -coverprofile=coverage.out ./...",
+            "go-cover",
+            "coverage.out",
+        )
+
+    if cargo.exists():
+        # cargo-llvm-cov is optional; detect availability before recommending
+        try:
+            probe = subprocess.run(
+                ["cargo", "llvm-cov", "--version"],
+                capture_output=True, text=True, timeout=3,
+            )
+            if probe.returncode == 0:
+                return (
+                    "cargo llvm-cov --lcov --output-path coverage.lcov",
+                    "lcov",
+                    "coverage.lcov",
+                )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+    return None
+
+
 def parse_test_summary(output, returncode):
     """Extract human-readable summary from test runner output.
 
@@ -825,6 +906,94 @@ def clear_coverage(cwd, sid=None):
         pass
 
 
+def parse_lcov(lcov_path):
+    """Parse lcov.info file → {abs_path: {line_no: hit_count}}.
+
+    lcov format (simplified):
+      SF:<relative-or-absolute-path>
+      DA:<line_number>,<hit_count>[,<optional_checksum>]
+      ...
+      end_of_record
+
+    Tolerant: malformed DA lines are skipped; path normalization resolves
+    relative paths against the lcov file's parent directory. Returns
+    empty dict on missing file or IO errors.
+    """
+    result = {}
+    try:
+        content = Path(lcov_path).read_text(encoding="utf-8", errors="replace")
+    except (OSError, FileNotFoundError):
+        return result
+
+    base_dir = Path(lcov_path).parent
+    current_file = None
+    current_lines = {}
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if line.startswith("SF:"):
+            current_file = line[3:].strip()
+            current_lines = {}
+        elif line.startswith("DA:") and current_file:
+            try:
+                parts = line[3:].split(",")
+                line_no = int(parts[0])
+                hits = int(parts[1])
+                current_lines[line_no] = hits
+            except (ValueError, IndexError):
+                continue
+        elif line == "end_of_record" and current_file:
+            p = Path(current_file)
+            if not p.is_absolute():
+                p = (base_dir / p).resolve()
+            else:
+                p = p.resolve()
+            result[str(p)] = current_lines
+            current_file = None
+            current_lines = {}
+    return result
+
+
+def parse_go_cover(cover_path):
+    """Parse Go coverprofile file → {abs_path: {line_no: hit_count}}.
+
+    Go cover format:
+      mode: set|count|atomic
+      <file>:<startLine>.<startCol>,<endLine>.<endCol> <numStmt> <count>
+
+    Each range expands to all lines in [startLine, endLine]. Tolerant
+    of malformed lines. Returns empty dict on missing file.
+    """
+    result = {}
+    try:
+        content = Path(cover_path).read_text(encoding="utf-8", errors="replace")
+    except (OSError, FileNotFoundError):
+        return result
+
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("mode:"):
+            continue
+        try:
+            # Split from the right — count is always last, numStmt second-to-last
+            file_part, rest = line.split(":", 1)
+            spec, num_stmt, count = rest.rsplit(" ", 2)
+            # spec is "startLine.startCol,endLine.endCol"
+            start_spec, end_spec = spec.split(",", 1)
+            start_line = int(start_spec.split(".", 1)[0])
+            end_line = int(end_spec.split(".", 1)[0])
+            hits = int(count)
+        except (ValueError, IndexError):
+            continue
+        p = Path(file_part).resolve()
+        key = str(p)
+        if key not in result:
+            result[key] = {}
+        for ln in range(start_line, end_line + 1):
+            prev = result[key].get(ln, 0)
+            result[key][ln] = prev + hits
+    return result
+
+
 def find_test_for_source(source_path, test_files):
     """Convention match: find a test file for a source file by basename.
 
@@ -938,20 +1107,200 @@ def has_test_on_disk(source_path, cwd):
     return any(c.exists() for c in candidates)
 
 
-def compute_uncovered(cwd, state):
-    """Return source files without corresponding tests.
+def _session_max_edit_time(cwd):
+    """Max last_edit_time across all session coverage states for cwd.
 
-    Exempt files excluded. Only non-exempt source files that have
-    no matching test file are returned.
+    Used to check coverage report freshness: if the report predates any
+    edit in this session, it's stale and should be ignored.
     """
-    source_files = state.get("source_files", [])
-    test_files = state.get("test_files", [])
+    hash_ = project_hash(cwd)
+    max_t = 0.0
+    try:
+        for p in Path(tempfile.gettempdir()).glob(f"sdd-coverage-{hash_}*.json"):
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                t = float(data.get("last_edit_time", 0))
+                if t > max_t:
+                    max_t = t
+            except (OSError, json.JSONDecodeError, ValueError):
+                pass
+    except OSError:
+        pass
+    return max_t if max_t > 0 else None
+
+
+def _match_path_in_report(report, target_abs, basename):
+    """Three-tier path matching against coverage report keys.
+
+    1. Exact realpath match
+    2. Suffix-unique match (for monorepo path skew)
+    3. Basename-unique match (last resort)
+
+    Returns the hits dict for the matched path, or None.
+    """
+    # Tier 1: exact
+    if target_abs in report:
+        return report[target_abs]
+
+    # Tier 2: suffix match (unique only)
+    target_parts = Path(target_abs).parts
+    matches = []
+    for path_key in report:
+        key_parts = Path(path_key).parts
+        if len(key_parts) > len(target_parts):
+            continue
+        if len(key_parts) > 0 and key_parts == target_parts[-len(key_parts):]:
+            matches.append(path_key)
+    if len(matches) == 1:
+        return report[matches[0]]
+
+    # Tier 3: basename match (unique only)
+    matches = [k for k in report if Path(k).name == basename]
+    if len(matches) == 1:
+        return report[matches[0]]
+
+    return None
+
+
+def _git_changed_lines(cwd):
+    """Parse `git diff HEAD` output → {abs_path: set(line_numbers)}.
+
+    Returns None if git is unavailable or the repo has no HEAD (new repo).
+    Used to restrict coverage check to lines actually edited in this change.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "HEAD", "--unified=0", "--no-color"],
+            capture_output=True, text=True, timeout=5, cwd=cwd,
+        )
+        if result.returncode != 0:
+            return None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    changed = {}
+    current_file = None
+    for line in result.stdout.splitlines():
+        if line.startswith("+++ b/"):
+            rel = line[6:]
+            current_file = str((Path(cwd) / rel).resolve())
+            if current_file not in changed:
+                changed[current_file] = set()
+        elif line.startswith("@@") and current_file:
+            m = re.search(r"\+(\d+)(?:,(\d+))?", line)
+            if m:
+                start = int(m.group(1))
+                count = int(m.group(2) or "1")
+                for i in range(start, start + count):
+                    changed[current_file].add(i)
+    return changed
+
+
+def _load_coverage_report(cwd, coverage_spec=None):
+    """Load the project's coverage report if available and fresh.
+
+    Returns {abs_path: {line_no: hit_count}} dict, or None if unavailable
+    or stale. Stale = older than any session edit in this project.
+    """
+    if coverage_spec is None:
+        coverage_spec = detect_coverage_command(cwd)
+    if coverage_spec is None:
+        return None
+    _cmd, fmt, rel_path = coverage_spec
+    full_path = Path(cwd) / rel_path
+    if not full_path.is_file():
+        return None
+
+    try:
+        report_mtime = full_path.stat().st_mtime
+    except OSError:
+        return None
+
+    edit_time = _session_max_edit_time(cwd)
+    if edit_time is not None and report_mtime < edit_time - 5:
+        # 5s clock-skew grace window
+        return None
+
+    if fmt == "lcov":
+        return parse_lcov(str(full_path))
+    if fmt == "go-cover":
+        return parse_go_cover(str(full_path))
+    return None
+
+
+def _diff_coverage_uncovered(cwd, source_files, report):
+    """Flag source files not exercised by the coverage report.
+
+    Per file:
+      - If git diff is available: uncovered = any edited line has 0 hits.
+      - Else: uncovered = no line has any hit (file-level check).
+    """
+    cwd_path = Path(cwd).resolve()
+    changed_lines = _git_changed_lines(cwd) or {}
+    uncovered = []
+
+    for sf in source_files:
+        p = Path(sf)
+        if not p.is_absolute():
+            p = (cwd_path / p).resolve()
+        else:
+            p = p.resolve()
+        file_key = str(p)
+
+        hits = _match_path_in_report(report, file_key, p.name)
+        if hits is None:
+            # Not in report → test suite didn't touch this file
+            uncovered.append(sf)
+            continue
+
+        file_changed = changed_lines.get(file_key)
+        if file_changed:
+            # Line-level: any edited line with 0 hits → uncovered
+            if any(hits.get(ln, 0) == 0 for ln in file_changed):
+                uncovered.append(sf)
+        else:
+            # File-level fallback: need at least one executed line
+            if not any(count > 0 for count in hits.values()):
+                uncovered.append(sf)
+
+    return uncovered
+
+
+def _basename_uncovered(cwd, source_files, test_files):
+    """Legacy basename + disk heuristic. Fallback when no coverage report."""
     uncovered = []
     for sf in source_files:
-        if is_exempt_from_tests(sf):
+        if find_test_for_source(sf, test_files):
             continue
-        if is_test_file(sf):
+        if has_test_on_disk(sf, cwd):
             continue
-        if not find_test_for_source(sf, test_files):
-            uncovered.append(sf)
+        uncovered.append(sf)
     return uncovered
+
+
+def compute_uncovered(cwd, state, coverage_spec=None):
+    """Return source files without corresponding tests.
+
+    Strategy (first applicable wins):
+      1. Coverage report (diff-coverage) — if detected and fresh, use line/file
+         hit data from the test runner's own report. Stack-agnostic and
+         anti-reward-hacking (line must actually execute, not just "a test
+         file exists").
+      2. Basename + disk heuristic — fallback when no coverage report is
+         available. Checks session test_files + convention-matched files
+         on disk.
+
+    Exempt files and test files misclassified as source are always excluded.
+    """
+    source_files = [
+        sf for sf in state.get("source_files", [])
+        if not is_exempt_from_tests(sf) and not is_test_file(sf)
+    ]
+    if not source_files:
+        return []
+
+    report = _load_coverage_report(cwd, coverage_spec)
+    if report is not None:
+        return _diff_coverage_uncovered(cwd, source_files, report)
+
+    return _basename_uncovered(cwd, source_files, state.get("test_files", []))

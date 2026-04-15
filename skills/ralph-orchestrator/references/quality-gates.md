@@ -115,12 +115,41 @@ GATE_TEST="npm test --prefix packages/server && npm test --prefix packages/web"
 
 ---
 
-## Custom Gates
+## How Coverage Is Verified
+
+The coverage gate uses **diff-coverage** based on the test runner's own coverage report — the same approach used by SWE-bench, [diff-cover](https://github.com/Bachmann1234/diff_cover), and other state-of-the-art systems.
+
+**Detection** (zero per-project config required):
+
+| Manifest | Runner | Coverage command | Report format |
+|---|---|---|---|
+| `package.json` with `vitest` in scripts.test | Vitest | `npx vitest run --coverage --coverage.reporter=lcov` | lcov |
+| `package.json` with `jest` in scripts.test | Jest | `npx jest --coverage --coverageReporters=lcov` | lcov |
+| `package.json` with other JS test runner | c8 wrapper | `npx c8 --reporter=lcov -- <script>` | lcov |
+| `pyproject.toml` containing `pytest` | pytest-cov | `pytest --cov=. --cov-report=lcov:coverage.lcov` | lcov |
+| `go.mod` | Go native | `go test -coverprofile=coverage.out ./...` | go-cover |
+| `Cargo.toml` (with `cargo-llvm-cov` installed) | cargo-llvm-cov | `cargo llvm-cov --lcov --output-path coverage.lcov` | lcov |
+
+**Decision flow** (`compute_uncovered`):
+
+1. If the project's coverage report (`coverage/lcov.info`, `coverage.out`, etc.) exists and is fresh (newer than the session's edits with 5s grace), parse it and use **line-level** coverage when `git diff` is available, **file-level** otherwise.
+2. If no coverage report exists or it's stale, the hook tries to regenerate it by running the detected coverage command (subject to the gate budget).
+3. If detection fails entirely (no recognized manifest), fall back to the legacy basename + filesystem heuristic — projects with `foo.ts` and `foo.test.ts` siblings still pass.
+
+**Why this is anti-reward-hacking**: an empty `foo.test.ts` satisfies the basename heuristic but produces no line hits in the coverage report. The diff-coverage gate sees zero hits and flags the file as uncovered. Module-level tests, integration tests, and E2E tests are honored natively because every test that exercises a line shows up as a hit, regardless of where the test file lives.
+
+**Project-level customization without config**: there is none, by design. If a file genuinely shouldn't have tests (framework shell, generated code), exclude it via the runner's own coverage configuration (`coverage.exclude` in vitest, `omit` in pytest-cov, etc.) — the report will not contain it, and the gate will not flag it.
+
+---
+
+## Custom Quality Gates
 
 **Constraints:**
-- You MUST modify `hooks/task-completed.py` to add custom gates because the hook only reads gate names listed in `CONFIG_KEYS`
-- You MUST add the corresponding gate command to `.ralph/config.sh` because the hook sources this file for gate commands
-- You MUST NOT assume that adding a new `GATE_*` variable to `config.sh` alone will activate it — the hook's `CONFIG_KEYS` list and gate execution logic must also be updated
+- You MUST modify `hooks/task-completed.py` to add NEW gate types (e.g., `GATE_SECURITY`) because the hook only reads gate names listed in `CONFIG_KEYS`
+- You MUST add the corresponding gate command to `.ralph/config.sh`
+- You MUST NOT assume that adding a new `GATE_*` variable to `config.sh` alone will activate it
+
+This applies only to entirely new gate categories. Coverage detection is automatic (see above) and requires no plugin modification.
 
 **Example** (requires both hook and config changes):
 

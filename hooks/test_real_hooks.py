@@ -456,6 +456,41 @@ class TestPerformance(unittest.TestCase):
         })
         self.assertLess(ms, 500, f"TaskCompleted cached: {ms:.1f}ms")
 
+    def test_perf_compute_uncovered_diff_coverage(self):
+        """compute_uncovered with lcov report covering 20 source files < 200ms."""
+        import _sdd_detect
+        # Setup vitest-like project
+        Path(self.tmpdir, "package.json").write_text(
+            '{"scripts":{"test":"vitest run"}}'
+        )
+        # Generate 20 source files in a 5-level deep monorepo path
+        sources = []
+        for i in range(20):
+            src = Path(self.tmpdir) / "apps" / "web" / "src" / f"mod_{i}" / f"file_{i}.ts"
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("export const x = 1;\n", encoding="utf-8")
+            sources.append(str(src.relative_to(self.tmpdir)))
+        # Build lcov report covering half the files
+        cov_dir = Path(self.tmpdir) / "coverage"
+        cov_dir.mkdir()
+        lcov_lines = []
+        for i in range(10):
+            abs_path = (Path(self.tmpdir) / sources[i]).resolve()
+            lcov_lines.append(f"SF:{abs_path}\nDA:1,3\nend_of_record")
+        (cov_dir / "lcov.info").write_text("\n".join(lcov_lines), encoding="utf-8")
+
+        state = {"source_files": sources, "test_files": []}
+        # Clear lru_cache to measure cold path
+        _sdd_detect.detect_coverage_command.cache_clear()
+        # Measure
+        runs = []
+        for _ in range(5):
+            t0 = time.perf_counter()
+            _sdd_detect.compute_uncovered(self.tmpdir, state)
+            runs.append((time.perf_counter() - t0) * 1000)
+        median = sorted(runs)[len(runs) // 2]
+        self.assertLess(median, 200, f"compute_uncovered diff-coverage: {median:.1f}ms")
+
 
 if __name__ == "__main__":
     unittest.main()
