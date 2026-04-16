@@ -208,7 +208,7 @@ def extract_session_id(input_data):
     return hashlib.md5(sid.encode()).hexdigest()[:8]
 
 
-_TEST_CMD_CACHE_TTL = 3600  # 1 hour
+from _sdd_config import TEST_CMD_CACHE_TTL as _TEST_CMD_CACHE_TTL  # noqa: E402
 
 
 def detect_test_command(cwd):
@@ -517,8 +517,10 @@ def is_test_running(cwd, sid=None):
         return False
 
 
-_ACQUIRE_LOCK_MAX_ATTEMPTS = 3
-_ACQUIRE_LOCK_BACKOFF_SECONDS = 0.1
+from _sdd_config import (  # noqa: E402
+    ACQUIRE_LOCK_MAX_ATTEMPTS as _ACQUIRE_LOCK_MAX_ATTEMPTS,
+    ACQUIRE_LOCK_BACKOFF_SECONDS as _ACQUIRE_LOCK_BACKOFF_SECONDS,
+)
 
 
 def acquire_runner_lock(cwd):

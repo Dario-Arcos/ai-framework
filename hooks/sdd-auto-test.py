@@ -69,7 +69,7 @@ def run_tests_background(cwd, command, sid=None):
         pass
 
 
-_MAX_RERUNS = 3  # Safety valve: prevent infinite rerun loops
+from _sdd_config import MAX_RERUNS as _MAX_RERUNS  # noqa: E402
 
 
 def _run_tests_worker(cwd, command, sid=None):

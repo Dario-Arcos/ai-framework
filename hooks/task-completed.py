@@ -290,7 +290,7 @@ _UNCOVERED_RESOLUTION = (
 )
 
 
-_NEGATIVE_CACHE_TTL = 300  # 5 minutes — coverage failure short-circuit
+from _sdd_config import NEGATIVE_CACHE_TTL as _NEGATIVE_CACHE_TTL  # noqa: E402
 
 
 def _negative_cache_path(cwd):
@@ -600,8 +600,9 @@ def main():
         ("e2e", config["GATE_E2E"]),
     ]
 
-    # Budget: 270s total (hooks.json timeout=300s minus 30s margin)
-    gate_budget = 270
+    # Budget from _sdd_config.GATE_BUDGET_SECONDS (hooks.json timeout=300s minus 30s margin)
+    from _sdd_config import GATE_BUDGET_SECONDS
+    gate_budget = GATE_BUDGET_SECONDS
     gate_start = time.monotonic()
 
     for gate_name, gate_cmd in gates:

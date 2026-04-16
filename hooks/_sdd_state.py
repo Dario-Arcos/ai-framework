@@ -268,8 +268,10 @@ def is_test_running(cwd, sid=None):
         return False
 
 
-_ACQUIRE_LOCK_MAX_ATTEMPTS = 3
-_ACQUIRE_LOCK_BACKOFF_SECONDS = 0.1
+from _sdd_config import (  # noqa: E402
+    ACQUIRE_LOCK_MAX_ATTEMPTS as _ACQUIRE_LOCK_MAX_ATTEMPTS,
+    ACQUIRE_LOCK_BACKOFF_SECONDS as _ACQUIRE_LOCK_BACKOFF_SECONDS,
+)
 
 
 def acquire_runner_lock(cwd):
