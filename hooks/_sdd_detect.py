@@ -130,7 +130,7 @@ def _detect_test_command_uncached(cwd_path, config_path, pkg_path):
                 if (cwd_path / "yarn.lock").exists():
                     return "yarn test"
                 return "npm test"
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
 
     # Priority 3: pyproject.toml — verify pytest infrastructure
@@ -140,7 +140,7 @@ def _detect_test_command_uncached(cwd_path, config_path, pkg_path):
             content = pyproject.read_text(encoding="utf-8")
             if "pytest" in content or (cwd_path / "tests").is_dir() or (cwd_path / "test").is_dir():
                 return "pytest"
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             pass
 
     # Priority 4: setup.py — verify test directory exists
@@ -161,7 +161,7 @@ def _detect_test_command_uncached(cwd_path, config_path, pkg_path):
             content = makefile.read_text(encoding="utf-8")
             if re.search(r"^test\s*:", content, re.MULTILINE):
                 return "make test"
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             pass
 
     return None
@@ -207,7 +207,7 @@ def detect_coverage_command(cwd):
                     "lcov",
                     "coverage/lcov.info",
                 )
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
 
     if pyproject.exists():
@@ -219,7 +219,7 @@ def detect_coverage_command(cwd):
                     "lcov",
                     "coverage.lcov",
                 )
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             pass
 
     if gomod.exists():

@@ -349,11 +349,17 @@ def _ensure_coverage_report(cwd, state, max_wait_seconds=120):
     """
     try:
         spec = detect_coverage_command(cwd)
-    except (OSError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+    except (
+        OSError,
+        json.JSONDecodeError,
+        subprocess.TimeoutExpired,
+        UnicodeDecodeError,
+    ) as exc:
         # Narrow to recoverable errors; SystemExit/KeyboardInterrupt propagate.
-        # FileNotFoundError is a subclass of OSError. Logging path available via
-        # telemetry in Phase 5; silent fallback preserved here to avoid stderr
-        # spam in hot path.
+        # FileNotFoundError is a subclass of OSError. UnicodeDecodeError covers
+        # non-UTF8 manifest files (package.json, pyproject.toml) which would
+        # otherwise escape into the hook caller (Codex Phase 0 finding #2).
+        # Logging path available via telemetry in Phase 5.
         _ = exc  # name retained for future structured logging
         return None
     if spec is None:

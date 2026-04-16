@@ -94,52 +94,64 @@ def is_exempt_from_tests(path):
 # ─────────────────────────────────────────────────────────────────
 
 def record_file_edit(cwd, file_path, sid=None):
-    """Atomic append: add file to source_files or test_files set.
+    """Atomic append with exclusion: add file to source/test files set.
 
-    Crash-safe: read under LOCK_SH, mutate in memory, write via tmpfile+rename
-    (os.replace is atomic). Partial JSON on crash is impossible. ~1ms.
+    Crash-safe AND serialized against concurrent writers:
+      - Uses a SEPARATE lockfile (*.lock, never unlinked) for LOCK_EX
+        exclusion. Prevents the lost-update race that would silently drop
+        a recorded edit (closed Codex finding: false-green TaskCompleted).
+      - Mutates in memory, writes via tmpfile+rename (_write_json_atomic).
+        Partial JSON on crash remains impossible.
+      - Reads the data file inside the exclusion lock, ensuring no writer
+        can interleave between read and write.
 
-    Concurrent-writer race is bounded: two simultaneous record_file_edit calls
-    may see the same initial state and last-writer-wins on the rename, losing
-    one update. Bounded impact because next Edit on the lost file recovers
-    state — record_file_edit fires on every Edit/Write via PostToolUse.
+    All filesystem operations are wrapped in try/except OSError so
+    permission or disk errors degrade silently rather than aborting
+    the Edit hook chain.
     """
     cp = coverage_path(cwd, sid)
-    cp.touch(exist_ok=True)
+    lockfile = Path(str(cp) + ".lock")
     try:
-        # Read under shared lock (coexists with readers)
-        data = {}
-        try:
-            with open(cp, "r", encoding="utf-8") as f:
-                if fcntl:
-                    fcntl.flock(f, fcntl.LOCK_SH)
-                raw = f.read()
+        cp.touch(exist_ok=True)
+        lockfile.touch(exist_ok=True)
+    except OSError:
+        return
+
+    try:
+        with open(lockfile, "a+", encoding="utf-8") as lf:
+            if fcntl:
+                fcntl.flock(lf, fcntl.LOCK_EX)
+            # Read current state under exclusion (no writer can interleave)
+            data = {}
+            try:
+                raw = cp.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                raw = ""
             if raw.strip():
                 try:
                     data = json.loads(raw)
                 except json.JSONDecodeError:
                     data = {}
-        except OSError:
-            data = {}
 
-        source_files = set(data.get("source_files", []))
-        test_files = set(data.get("test_files", []))
+            source_files = set(data.get("source_files", []))
+            test_files = set(data.get("test_files", []))
 
-        if is_test_file(file_path):
-            test_files.add(file_path)
-        else:
-            source_files.add(file_path)
+            if is_test_file(file_path):
+                test_files.add(file_path)
+            else:
+                source_files.add(file_path)
 
-        data["source_files"] = sorted(source_files)
-        data["test_files"] = sorted(test_files)
-        data["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        # Record edit time unconditionally — sub-agents without a sid
-        # also need stale-report detection; missing it lets stale
-        # coverage reports pass freshness checks vacuously.
-        data["last_edit_time"] = time.time()
+            data["source_files"] = sorted(source_files)
+            data["test_files"] = sorted(test_files)
+            data["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            # Record edit time unconditionally — sub-agents without a sid
+            # also need stale-report detection; missing it lets stale
+            # coverage reports pass freshness checks vacuously.
+            data["last_edit_time"] = time.time()
 
-        # Atomic write: tmpfile + os.replace (crash-safe, no partial JSON)
-        _write_json_atomic(cp, data, prefix="sdd-cov-")
+            # Atomic write: tmpfile + os.replace (crash-safe, no partial JSON)
+            _write_json_atomic(cp, data, prefix="sdd-cov-")
+            # Lock released on `with` exit
     except OSError:
         pass
 

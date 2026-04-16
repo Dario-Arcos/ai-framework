@@ -450,6 +450,39 @@ class TestPerformance(unittest.TestCase):
         ms = self._median_ms("constraint-reinforcement.py", {})
         self.assertLess(ms, 50, f"Constraint reinforcement: {ms:.1f}ms")
 
+    # ─────────────────────────────────────────────────────────────
+    # CATASTROPHIC REGRESSION GUARDS — hard bounds, not xfail-absorbed
+    # 10x soft-threshold. These fail the suite on major regressions even
+    # when the flaky tests above go XFAIL. Closes Codex Phase 0 finding #4.
+    # ─────────────────────────────────────────────────────────────
+
+    def test_perf_postToolUse_catastrophic(self):
+        """Hard bound: PostToolUse must not exceed 10x soft budget (800ms)."""
+        ms = self._median_ms("sdd-auto-test.py", {
+            "tool_name": "Edit",
+            "tool_input": {"file_path": f"{self.tmpdir}/README.md"},
+            "cwd": self.tmpdir,
+        })
+        self.assertLess(ms, 800, f"PostToolUse catastrophic regression: {ms:.1f}ms")
+
+    def test_perf_preToolUse_catastrophic(self):
+        """Hard bound: PreToolUse must not exceed 10x soft budget (800ms)."""
+        ms = self._median_ms("sdd-test-guard.py", {
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": f"{self.tmpdir}/app.py",
+                "old_string": "x = 1",
+                "new_string": "x = 2",
+            },
+            "cwd": self.tmpdir,
+        })
+        self.assertLess(ms, 800, f"PreToolUse catastrophic regression: {ms:.1f}ms")
+
+    def test_perf_constraint_reinforcement_catastrophic(self):
+        """Hard bound: constraint-reinforcement must not exceed 10x (500ms)."""
+        ms = self._median_ms("constraint-reinforcement.py", {})
+        self.assertLess(ms, 500, f"Constraint reinforcement catastrophic: {ms:.1f}ms")
+
     def test_perf_taskCompleted_cached(self):
         """task-completed non-ralph cached pass < 500ms."""
         Path(self.tmpdir, "pyproject.toml").write_text("[tool.pytest]\n")
