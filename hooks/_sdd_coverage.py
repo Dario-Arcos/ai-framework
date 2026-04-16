@@ -70,9 +70,17 @@ EXEMPT_RE = re.compile(
 
 @functools.lru_cache(maxsize=32)
 def _compiled_test_pattern(cwd):
-    """Compile project-specific test-file regex. Cached per cwd."""
+    """Compile project-specific test-file regex. Cached per cwd.
+
+    Individual patterns already validated in get_test_file_patterns. The
+    join here can still fail for pathological combinations; in that case
+    fall back to the default compiled regex so hooks stay functional.
+    """
     patterns = get_test_file_patterns(cwd)
-    return re.compile("|".join(patterns))
+    try:
+        return re.compile("|".join(patterns))
+    except re.error:
+        return TEST_FILE_RE
 
 
 def is_source_file(path, cwd=None):

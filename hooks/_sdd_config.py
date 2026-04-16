@@ -145,6 +145,10 @@ def get_source_extensions(cwd=None) -> frozenset:
     Override via `.claude/config.json`:
         {"SOURCE_EXTENSIONS": [".py", ".jl"]}
 
+    Validation: must be list/tuple of strings starting with ".". A bare
+    string or any other type falls back to defaults (not treated as char
+    iterable — silent disable would be worse than ignoring the override).
+
     When cwd is None (back-compat for callers without project context),
     returns defaults.
     """
@@ -153,10 +157,16 @@ def get_source_extensions(cwd=None) -> frozenset:
     override = _load_project_config(cwd).get("SOURCE_EXTENSIONS")
     if override is None:
         return DEFAULT_SOURCE_EXTENSIONS
-    try:
-        return frozenset(override)
-    except TypeError:
+    # Require list/tuple to avoid accidental char-iteration from bare string
+    if not isinstance(override, (list, tuple)):
         return DEFAULT_SOURCE_EXTENSIONS
+    valid = frozenset(
+        ext for ext in override
+        if isinstance(ext, str) and ext.startswith(".") and len(ext) > 1
+    )
+    if not valid:
+        return DEFAULT_SOURCE_EXTENSIONS
+    return valid
 
 
 def get_test_file_patterns(cwd=None) -> tuple:
@@ -164,6 +174,10 @@ def get_test_file_patterns(cwd=None) -> tuple:
 
     Override via `.claude/config.json`:
         {"TEST_FILE_PATTERNS": ["(^|/)test_", "\\.spec\\."]}
+
+    Validation: must be list/tuple of non-empty strings AND each pattern
+    must compile. A malformed entry (e.g., "[" or non-string) falls back
+    to defaults. Prevents re.error / TypeError from crashing hooks.
 
     When cwd is None, returns defaults.
     """
@@ -174,7 +188,19 @@ def get_test_file_patterns(cwd=None) -> tuple:
         return DEFAULT_TEST_FILE_PATTERNS
     if not isinstance(override, (list, tuple)):
         return DEFAULT_TEST_FILE_PATTERNS
-    return tuple(override)
+    import re as _re
+    valid = []
+    for p in override:
+        if not isinstance(p, str) or not p:
+            continue
+        try:
+            _re.compile(p)  # reject malformed regex
+        except _re.error:
+            continue
+        valid.append(p)
+    if not valid:
+        return DEFAULT_TEST_FILE_PATTERNS
+    return tuple(valid)
 
 
 def get_coverage_report_path(cwd, default_path: str) -> str:
@@ -192,5 +218,27 @@ def get_coverage_report_path(cwd, default_path: str) -> str:
 
 
 def _clear_project_config_cache() -> None:
-    """Test helper: reset the per-cwd config cache."""
+    """Reset ALL per-cwd caches that depend on project config.
+
+    Clears:
+      1. Config dict cache (_project_config_cache)
+      2. Compiled test regex cache (_sdd_coverage._compiled_test_pattern.cache_clear())
+      3. Coverage command detection cache (_sdd_detect.detect_coverage_command.cache_clear())
+
+    Without clearing #2 and #3, callers of is_test_file and
+    detect_coverage_command would return stale values after config reload
+    (Codex Phase 1 finding: downstream caches survived config invalidation).
+
+    Lazy imports avoid circular dependencies at module load time.
+    """
     _project_config_cache.clear()
+    try:
+        from _sdd_coverage import _compiled_test_pattern
+        _compiled_test_pattern.cache_clear()
+    except (ImportError, AttributeError):
+        pass
+    try:
+        from _sdd_detect import detect_coverage_command
+        detect_coverage_command.cache_clear()
+    except (ImportError, AttributeError):
+        pass

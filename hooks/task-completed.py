@@ -599,18 +599,16 @@ def main():
                 "args='task_description=\"...\" mode=\"autonomous\"') first.",
             )
 
-    # Load config and run all configured gates
+    # Load config and run all configured gates.
+    # Ralph mode is explicit configuration: if user wrote GATE_TEST="" in
+    # .ralph/config.sh, that means "skip the test gate" — do not override
+    # with auto-detection. Non-Ralph mode (_handle_non_ralph_completion)
+    # uses detect_test_command directly because no .ralph/config.sh exists.
+    # This preserves backward-compat for users who explicitly disable gates.
     config = load_config(config_path)
 
-    # Stack-agnostic fallback: if GATE_TEST is unset (empty), derive from
-    # detected manifest (pytest for Python, npm test for Node, etc.). Keeps
-    # Ralph mode functional for non-Node stacks without user intervention.
-    gate_test_cmd = config["GATE_TEST"]
-    if not gate_test_cmd:
-        gate_test_cmd = detect_test_command(cwd) or ""
-
     gates = [
-        ("test", gate_test_cmd),
+        ("test", config["GATE_TEST"]),
         ("typecheck", config["GATE_TYPECHECK"]),
         ("lint", config["GATE_LINT"]),
         ("build", config["GATE_BUILD"]),
