@@ -882,8 +882,10 @@ def record_file_edit(cwd, file_path, sid=None):
             data["source_files"] = sorted(source_files)
             data["test_files"] = sorted(test_files)
             data["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            if sid:
-                data["last_edit_time"] = time.time()
+            # Record edit time unconditionally — sub-agents without a sid
+            # also need stale-report detection; missing it lets stale
+            # coverage reports pass freshness checks vacuously.
+            data["last_edit_time"] = time.time()
 
             f.seek(0)
             f.truncate()
@@ -1107,12 +1109,29 @@ def has_test_on_disk(source_path, cwd):
     return any(c.exists() for c in candidates)
 
 
-def _session_max_edit_time(cwd):
-    """Max last_edit_time across all session coverage states for cwd.
+def _session_max_edit_time(cwd, sid=None):
+    """Max last_edit_time for this session's coverage state.
 
-    Used to check coverage report freshness: if the report predates any
-    edit in this session, it's stale and should be ignored.
+    Session-scoped: when sid is provided, reads only sdd-coverage-{hash}-{sid}.json,
+    avoiding cross-contamination from parallel teammates whose edit timestamps
+    are unrelated to this gate's freshness check.
+
+    When sid is None (legacy/non-teammate), falls back to the project-wide glob
+    to preserve old behavior for solo runs.
     """
+    if sid:
+        # Use shared lock to avoid reading partial JSON from a concurrent
+        # record_file_edit() that holds LOCK_EX and is truncating/rewriting.
+        data = _read_json_with_ttl(coverage_path(cwd, sid), max_age_seconds=-1,
+                                   use_flock=True)
+        if data is None:
+            return None
+        try:
+            t = float(data.get("last_edit_time", 0))
+            return t if t > 0 else None
+        except (ValueError, TypeError):
+            return None
+    # Legacy path: no sid → project-wide glob
     hash_ = project_hash(cwd)
     max_t = 0.0
     try:
@@ -1129,7 +1148,22 @@ def _session_max_edit_time(cwd):
     return max_t if max_t > 0 else None
 
 
-def _match_path_in_report(report, target_abs, basename):
+def _build_basename_index(report):
+    """Build {basename: [keys]} from a coverage report. O(N) once.
+
+    Used by _match_path_in_report to convert tier-2/tier-3 lookups from
+    O(N) walks per source file into O(1) candidate set + O(k) suffix check
+    over typically small k. At monorepo scale (10k+ entries) this turns
+    seconds of matching into milliseconds.
+    """
+    index = {}
+    for key in report:
+        bn = Path(key).name
+        index.setdefault(bn, []).append(key)
+    return index
+
+
+def _match_path_in_report(report, target_abs, basename, basename_index=None):
     """Three-tier path matching against coverage report keys.
 
     1. Exact realpath match
@@ -1137,15 +1171,23 @@ def _match_path_in_report(report, target_abs, basename):
     3. Basename-unique match (last resort)
 
     Returns the hits dict for the matched path, or None.
+
+    basename_index ({basename: [keys]}) is optional but recommended — it
+    constrains tier-2/tier-3 walks to candidates sharing the source file's
+    basename instead of scanning every report entry.
     """
     # Tier 1: exact
     if target_abs in report:
         return report[target_abs]
 
+    # Constrain candidate set via basename index when available
+    candidates = (basename_index.get(basename, [])
+                  if basename_index is not None else list(report))
+
     # Tier 2: suffix match (unique only)
     target_parts = Path(target_abs).parts
     matches = []
-    for path_key in report:
+    for path_key in candidates:
         key_parts = Path(path_key).parts
         if len(key_parts) > len(target_parts):
             continue
@@ -1154,10 +1196,14 @@ def _match_path_in_report(report, target_abs, basename):
     if len(matches) == 1:
         return report[matches[0]]
 
-    # Tier 3: basename match (unique only)
-    matches = [k for k in report if Path(k).name == basename]
-    if len(matches) == 1:
-        return report[matches[0]]
+    # Tier 3: basename match (unique only) — already bounded by candidates
+    if basename_index is not None:
+        if len(candidates) == 1:
+            return report[candidates[0]]
+    else:
+        bn_matches = [k for k in report if Path(k).name == basename]
+        if len(bn_matches) == 1:
+            return report[bn_matches[0]]
 
     return None
 
@@ -1196,11 +1242,14 @@ def _git_changed_lines(cwd):
     return changed
 
 
-def _load_coverage_report(cwd, coverage_spec=None):
+def _load_coverage_report(cwd, coverage_spec=None, sid=None):
     """Load the project's coverage report if available and fresh.
 
     Returns {abs_path: {line_no: hit_count}} dict, or None if unavailable
     or stale. Stale = older than any session edit in this project.
+
+    When sid is provided, freshness check is scoped to this session only
+    (avoids cross-contamination from parallel teammates).
     """
     if coverage_spec is None:
         coverage_spec = detect_coverage_command(cwd)
@@ -1216,7 +1265,7 @@ def _load_coverage_report(cwd, coverage_spec=None):
     except OSError:
         return None
 
-    edit_time = _session_max_edit_time(cwd)
+    edit_time = _session_max_edit_time(cwd, sid=sid)
     if edit_time is not None and report_mtime < edit_time - 5:
         # 5s clock-skew grace window
         return None
@@ -1237,6 +1286,7 @@ def _diff_coverage_uncovered(cwd, source_files, report):
     """
     cwd_path = Path(cwd).resolve()
     changed_lines = _git_changed_lines(cwd) or {}
+    bn_index = _build_basename_index(report)
     uncovered = []
 
     for sf in source_files:
@@ -1247,7 +1297,7 @@ def _diff_coverage_uncovered(cwd, source_files, report):
             p = p.resolve()
         file_key = str(p)
 
-        hits = _match_path_in_report(report, file_key, p.name)
+        hits = _match_path_in_report(report, file_key, p.name, bn_index)
         if hits is None:
             # Not in report → test suite didn't touch this file
             uncovered.append(sf)
@@ -1278,7 +1328,7 @@ def _basename_uncovered(cwd, source_files, test_files):
     return uncovered
 
 
-def compute_uncovered(cwd, state, coverage_spec=None):
+def compute_uncovered(cwd, state, coverage_spec=None, sid=None):
     """Return source files without corresponding tests.
 
     Strategy (first applicable wins):
@@ -1291,6 +1341,7 @@ def compute_uncovered(cwd, state, coverage_spec=None):
          on disk.
 
     Exempt files and test files misclassified as source are always excluded.
+    When sid is provided, the coverage report freshness check is session-scoped.
     """
     source_files = [
         sf for sf in state.get("source_files", [])
@@ -1299,7 +1350,7 @@ def compute_uncovered(cwd, state, coverage_spec=None):
     if not source_files:
         return []
 
-    report = _load_coverage_report(cwd, coverage_spec)
+    report = _load_coverage_report(cwd, coverage_spec, sid=sid)
     if report is not None:
         return _diff_coverage_uncovered(cwd, source_files, report)
 

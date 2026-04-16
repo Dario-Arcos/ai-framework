@@ -24,6 +24,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -33,9 +34,9 @@ from _sdd_detect import (
     can_trust_state, clear_baseline, clear_coverage, compute_uncovered,
     detect_coverage_command, detect_test_command, extract_session_id,
     has_exit_suppression, is_test_running, kill_orphan_test_group,
-    parse_test_summary, read_baseline, read_coverage, read_skill_invoked,
-    read_state, release_runner_lock, run_in_process_group, skill_invoked_path,
-    test_pgid_path, write_state,
+    parse_test_summary, project_hash, read_baseline, read_coverage,
+    read_skill_invoked, read_state, release_runner_lock, run_in_process_group,
+    skill_invoked_path, test_pgid_path, write_state,
 )
 
 
@@ -289,13 +290,59 @@ _UNCOVERED_RESOLUTION = (
 )
 
 
+_NEGATIVE_CACHE_TTL = 300  # 5 minutes — coverage failure short-circuit
+
+
+def _negative_cache_path(cwd):
+    """Sentinel file path for failed coverage attempts."""
+    return Path(tempfile.gettempdir()) / f"sdd-coverage-fail-{project_hash(cwd)}.ts"
+
+
+def _negative_cache_active(cwd):
+    """Return True if a recent coverage failure should block retries."""
+    p = _negative_cache_path(cwd)
+    if not p.is_file():
+        return False
+    try:
+        if time.time() - p.stat().st_mtime > _NEGATIVE_CACHE_TTL:
+            p.unlink(missing_ok=True)
+            return False
+        return True
+    except OSError:
+        return False
+
+
+def _negative_cache_set(cwd, reason):
+    """Mark coverage as failing — short-circuits next call for 5 min."""
+    try:
+        _negative_cache_path(cwd).write_text(reason)
+    except OSError:
+        pass
+
+
+def _report_fresh(report_path, state):
+    """Coverage artifact is fresh when it post-dates the latest session edit."""
+    if not report_path.is_file():
+        return False
+    try:
+        report_mtime = report_path.stat().st_mtime
+    except OSError:
+        return False
+    last_edit = state.get("last_edit_time", 0)
+    return report_mtime >= last_edit - 5  # 5s clock-skew grace
+
+
 def _ensure_coverage_report(cwd, state, max_wait_seconds=120):
     """Detect coverage spec and ensure a fresh report exists.
 
-    If detect_coverage_command returns a spec and the artifact is absent or
-    stale (older than session edits), run the coverage-enabled test command
-    to produce a fresh report. The spec is returned so compute_uncovered
-    can use diff-coverage; caller can also pass None if detection fails.
+    Lock discipline: acquires runner_lock before spawning the coverage
+    subprocess. If sdd-auto-test holds the lock, waits for completion;
+    if the report becomes fresh during that wait, no respawn needed.
+    Without the lock, kill_orphan_test_group would terminate auto-test's
+    own subprocess via PGID file collision.
+
+    Negative cache: a previous timeout/failure in the last 5 minutes
+    short-circuits to None, avoiding wasted N×120s budget across teammates.
 
     Returns coverage spec tuple or None. Never raises; on any failure the
     caller falls back to basename heuristic.
@@ -306,36 +353,47 @@ def _ensure_coverage_report(cwd, state, max_wait_seconds=120):
         return None
     if spec is None:
         return None
+
     cmd, _fmt, rel_path = spec
     report_path = Path(cwd) / rel_path
-    # Check if artifact exists and is fresh vs session edits
-    needs_run = True
-    if report_path.is_file():
-        try:
-            report_mtime = report_path.stat().st_mtime
-            last_edit = state.get("last_edit_time", 0)
-            if report_mtime >= last_edit - 5:  # 5s clock-skew grace
-                needs_run = False
-        except OSError:
-            pass
-
-    if not needs_run:
+    # Check freshness BEFORE negative cache: a fresh report (e.g. from
+    # auto-test finishing) must not be suppressed by a stale sentinel
+    # from a previous timeout.
+    if _report_fresh(report_path, state):
         return spec
+    if _negative_cache_active(cwd):
+        return None
 
-    # Run the coverage command to generate a fresh artifact
+    # Stale or missing report — coordinate with sdd-auto-test via flock
+    lock_fd = acquire_runner_lock(cwd)
+    if lock_fd is None:
+        # Auto-test is running. Wait for it; its report may satisfy us.
+        wait_budget = min(60, max(5, max_wait_seconds // 2))
+        await_test_completion(cwd, timeout=wait_budget)
+        if _report_fresh(report_path, state):
+            return spec
+        # Still stale → reattempt acquire one more time
+        lock_fd = acquire_runner_lock(cwd)
+        if lock_fd is None:
+            return None  # Persistent contention — let basename fallback handle
+
     try:
         kill_orphan_test_group(cwd)
-        rc, stdout, stderr, timed_out = run_in_process_group(
+        rc, _stdout, _stderr, timed_out = run_in_process_group(
             cmd, cwd, max_wait_seconds,
             pgid_file=str(test_pgid_path(cwd)),
         )
         if timed_out:
+            _negative_cache_set(cwd, "timeout")
             return None
         if not report_path.is_file():
-            # Coverage ran but didn't produce the expected artifact
+            _negative_cache_set(cwd, "no_artifact")
             return None
     except OSError:
+        _negative_cache_set(cwd, "spawn_failure")
         return None
+    finally:
+        release_runner_lock(lock_fd, cwd)
     return spec
 
 
@@ -461,7 +519,7 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     state = read_coverage(cwd, sid=sid)
     if state:
         coverage_spec = _ensure_coverage_report(cwd, state)
-        uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec)
+        uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec, sid=sid)
         if uncovered:
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
             _fail_task(
@@ -641,8 +699,12 @@ def main():
     # All gates passed — check coverage before accepting
     cov_state = read_coverage(cwd, sid=sid)
     if cov_state:
-        coverage_spec = _ensure_coverage_report(cwd, cov_state)
-        uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec)
+        # Bound coverage regen to remaining gate budget (never exceed hook timeout)
+        remaining_budget = max(15, int(gate_budget - (time.monotonic() - gate_start)))
+        coverage_spec = _ensure_coverage_report(
+            cwd, cov_state, max_wait_seconds=min(120, remaining_budget)
+        )
+        uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec, sid=sid)
         if uncovered:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
