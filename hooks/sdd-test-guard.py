@@ -138,7 +138,7 @@ def main():
 
     # ─── SDD ORDERING GUARD ──────────────────────────────────────
     # Source file without test files in session → block (scenarios-first)
-    if is_source_file(file_path) and not is_exempt_from_tests(file_path) and not is_test_file(file_path):
+    if is_source_file(file_path, cwd=cwd) and not is_exempt_from_tests(file_path) and not is_test_file(file_path, cwd=cwd):
         # Test exists on disk → editing already-tested code → allow
         if not has_test_on_disk(file_path, cwd):
             # No test on disk → check session coverage state
@@ -156,7 +156,7 @@ def main():
                 sys.exit(2)
 
     # Fast path: not a test file → allow (~1ms)
-    if not is_test_file(file_path):
+    if not is_test_file(file_path, cwd=cwd):
         sys.exit(0)
 
     # Read test state

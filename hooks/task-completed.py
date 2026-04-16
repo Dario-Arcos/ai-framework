@@ -56,7 +56,12 @@ CONFIG_KEYS = [
 ]
 
 CONFIG_DEFAULTS = {
-    "GATE_TEST": "npm test",
+    # GATE_TEST empty = stack-agnostic fallback. When the user does not
+    # define GATE_TEST in .ralph/config.sh, task-completed.py substitutes
+    # detect_test_command(cwd) which handles pytest/npm/go/cargo/etc.
+    # Node-centric "npm test" default was a stack-agnosticism violation
+    # (Phase 1 refactor).
+    "GATE_TEST": "",
     "GATE_TYPECHECK": "npm run typecheck",
     "GATE_LINT": "npm run lint",
     "GATE_BUILD": "npm run build",
@@ -597,8 +602,15 @@ def main():
     # Load config and run all configured gates
     config = load_config(config_path)
 
+    # Stack-agnostic fallback: if GATE_TEST is unset (empty), derive from
+    # detected manifest (pytest for Python, npm test for Node, etc.). Keeps
+    # Ralph mode functional for non-Node stacks without user intervention.
+    gate_test_cmd = config["GATE_TEST"]
+    if not gate_test_cmd:
+        gate_test_cmd = detect_test_command(cwd) or ""
+
     gates = [
-        ("test", config["GATE_TEST"]),
+        ("test", gate_test_cmd),
         ("typecheck", config["GATE_TYPECHECK"]),
         ("lint", config["GATE_LINT"]),
         ("build", config["GATE_BUILD"]),

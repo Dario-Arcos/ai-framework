@@ -69,3 +69,128 @@ ADAPTIVE_GATE_MAX_TIMEOUT = 300
 HOOK_TIMEOUT_PRE_TOOL_USE = 5
 HOOK_TIMEOUT_POST_TOOL_USE = 10
 HOOK_TIMEOUT_TASK_COMPLETED = 300
+
+
+# ─────────────────────────────────────────────────────────────────
+# TIER 2 — STACK PATTERNS (config-driven via .claude/config.json)
+#
+# Defaults match current hardcoded behavior (zero behavior change).
+# Override per-project by writing .claude/config.json with any of:
+#   {
+#     "SOURCE_EXTENSIONS": [".py", ".jl", ".ex"],
+#     "TEST_FILE_PATTERNS": ["(^|/)test_", "\\.spec\\.", "_test\\."],
+#     "COVERAGE_REPORT_PATH": "custom/path/to/lcov.info"
+#   }
+#
+# Stack-agnostic principle: the plugin knows about language families
+# through detection (detect_test_command, detect_coverage_command) and
+# classification (is_source_file, is_test_file). Users with uncommon
+# stacks (Julia, Elixir, Ruby unusual layouts) can extend without
+# modifying plugin code.
+# ─────────────────────────────────────────────────────────────────
+import json
+from pathlib import Path
+
+DEFAULT_SOURCE_EXTENSIONS = frozenset({
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
+    ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
+    ".vue", ".svelte",          # frontend frameworks
+    ".mts", ".cts", ".mjs",     # ES module variants
+    ".graphql", ".gql",         # schemas with logic
+    ".prisma",                  # ORM schemas
+    ".proto",                   # protobuf
+    ".sql",                     # database
+    ".sh", ".bash",             # shell scripts
+})
+
+DEFAULT_TEST_FILE_PATTERNS = (
+    r"(?:test|spec|__tests__)[/\\]",
+    r"\.(?:test|spec)\.",
+    r"_tests?\.",
+    r"test_",
+)
+
+# Per-cwd config cache (keyed by resolved absolute path).
+# Invalidation: short process lifetime; edits to .claude/config.json after
+# hook start are not picked up until next hook invocation. Acceptable.
+_project_config_cache: dict[str, dict] = {}
+
+
+def _load_project_config(cwd) -> dict:
+    """Load .claude/config.json for tier 2 overrides. Cached per cwd.
+
+    Silent on malformed JSON, missing file, permission errors, or invalid
+    UTF-8. Returns empty dict in all error cases; callers should treat
+    missing keys as "use default".
+    """
+    cwd_str = str(Path(cwd).resolve())
+    if cwd_str in _project_config_cache:
+        return _project_config_cache[cwd_str]
+    config: dict = {}
+    path = Path(cwd) / ".claude" / "config.json"
+    if path.exists():
+        try:
+            config = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(config, dict):
+                config = {}
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            config = {}
+    _project_config_cache[cwd_str] = config
+    return config
+
+
+def get_source_extensions(cwd=None) -> frozenset:
+    """Project source file extensions.
+
+    Override via `.claude/config.json`:
+        {"SOURCE_EXTENSIONS": [".py", ".jl"]}
+
+    When cwd is None (back-compat for callers without project context),
+    returns defaults.
+    """
+    if cwd is None:
+        return DEFAULT_SOURCE_EXTENSIONS
+    override = _load_project_config(cwd).get("SOURCE_EXTENSIONS")
+    if override is None:
+        return DEFAULT_SOURCE_EXTENSIONS
+    try:
+        return frozenset(override)
+    except TypeError:
+        return DEFAULT_SOURCE_EXTENSIONS
+
+
+def get_test_file_patterns(cwd=None) -> tuple:
+    """Project test file regex patterns (joined with | in consumer).
+
+    Override via `.claude/config.json`:
+        {"TEST_FILE_PATTERNS": ["(^|/)test_", "\\.spec\\."]}
+
+    When cwd is None, returns defaults.
+    """
+    if cwd is None:
+        return DEFAULT_TEST_FILE_PATTERNS
+    override = _load_project_config(cwd).get("TEST_FILE_PATTERNS")
+    if override is None:
+        return DEFAULT_TEST_FILE_PATTERNS
+    if not isinstance(override, (list, tuple)):
+        return DEFAULT_TEST_FILE_PATTERNS
+    return tuple(override)
+
+
+def get_coverage_report_path(cwd, default_path: str) -> str:
+    """Coverage report path. Override via `.claude/config.json`:
+        {"COVERAGE_REPORT_PATH": "custom/path/to/lcov.info"}
+
+    When override absent or invalid, returns default_path (framework-derived).
+    """
+    if cwd is None:
+        return default_path
+    override = _load_project_config(cwd).get("COVERAGE_REPORT_PATH")
+    if override is None or not isinstance(override, str) or not override.strip():
+        return default_path
+    return override
+
+
+def _clear_project_config_cache() -> None:
+    """Test helper: reset the per-cwd config cache."""
+    _project_config_cache.clear()

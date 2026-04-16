@@ -176,12 +176,12 @@ def main():
         sys.exit(0)
 
     # Test file tracking: record for coverage, don't launch tests
-    if is_test_file(file_path):
+    if is_test_file(file_path, cwd=cwd):
         record_file_edit(cwd, file_path, sid)
         sys.exit(0)
 
     # Guard: only source files
-    if not is_source_file(file_path):
+    if not is_source_file(file_path, cwd=cwd):
         sys.exit(0)
 
     # Guard: exempt files tracked but don't trigger tests or nudge

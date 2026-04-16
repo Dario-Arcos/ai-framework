@@ -1,0 +1,43 @@
+# Ralph orchestrator config — sourced by task-completed.py for gate commands
+#
+# This file is OPTIONAL. The plugin works without it via stack-agnostic
+# detection (detect_test_command, detect_coverage_command). Define entries
+# below only to override detection for your project.
+#
+# Location: .ralph/config.sh (project root, not tracked by git)
+
+# ─── Tier 1 — GATE COMMANDS (Ralph mode) ─────────────────────────────
+# When empty, task-completed.py falls back to auto-detection. Define
+# explicitly when your project has a custom test invocation.
+
+# Test gate — empty means auto-detect (pytest, npm test, go test, cargo test…)
+GATE_TEST=""
+
+# Typecheck gate — runs in parallel to tests. Empty = skipped.
+GATE_TYPECHECK=""
+
+# Lint gate — style/unused-import checks. Empty = skipped.
+GATE_LINT=""
+
+# Build gate — compile/bundle. Empty = skipped.
+GATE_BUILD=""
+
+# Integration tests — multi-service. Empty = skipped.
+GATE_INTEGRATION=""
+
+# End-to-end tests — full browser/API flow. Empty = skipped.
+GATE_E2E=""
+
+# Coverage gate — runs coverage tool and parses report. Auto-detection
+# handles pytest-cov, vitest-coverage, go test -coverprofile, cargo-llvm-cov.
+# Override only if your project's coverage command differs.
+GATE_COVERAGE=""
+
+# Minimum coverage percentage (0 = skip coverage gate).
+MIN_TEST_COVERAGE=0
+
+# ─── Tier 2 — STACK PATTERNS (prefer .claude/config.json) ────────────
+# Tier 2 is better expressed as structured JSON in .claude/config.json;
+# see template/.claude.template/config.json.template for examples. This
+# .ralph/config.sh exists for shell-scripted projects that prefer one
+# source of truth.

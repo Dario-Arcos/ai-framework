@@ -1,7 +1,13 @@
 """SDD file classification, coverage state, parsers, diff-coverage engine.
 
 Extracted from _sdd_detect.py — pure refactor, zero behavior change.
+
+Stack-agnostic: is_source_file and is_test_file accept optional cwd; when
+provided, patterns come from .claude/config.json (Tier 2 override). When
+cwd is None (back-compat for tests + callers without project context),
+defaults from _sdd_config apply.
 """
+import functools
 try:
     import fcntl
 except ImportError:
@@ -22,27 +28,27 @@ from _sdd_state import (
     project_hash,
     coverage_path,
 )
+from _sdd_config import (
+    DEFAULT_SOURCE_EXTENSIONS,
+    DEFAULT_TEST_FILE_PATTERNS,
+    get_source_extensions,
+    get_test_file_patterns,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
 # FILE CLASSIFICATION — centralized source/test/exempt detection
 # ─────────────────────────────────────────────────────────────────
 
-SOURCE_EXTENSIONS = frozenset({
-    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
-    ".java", ".kt", ".rb", ".swift", ".c", ".cpp", ".cs",
-    ".vue", ".svelte",          # frontend frameworks
-    ".mts", ".cts", ".mjs",    # ES module variants
-    ".graphql", ".gql",         # schemas with logic
-    ".prisma",                  # ORM schemas
-    ".proto",                   # protobuf
-    ".sql",                     # database
-    ".sh", ".bash",             # shell scripts
-})
+# Legacy name kept for backward-compat (external tests reference it directly).
+# Canonical source of truth: _sdd_config.DEFAULT_SOURCE_EXTENSIONS
+SOURCE_EXTENSIONS = DEFAULT_SOURCE_EXTENSIONS
 
 # Compound extensions that look like source but are generated artifacts
 GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
 
+# Legacy compiled regex from defaults (used when cwd is None).
+# Canonical patterns live in _sdd_config.DEFAULT_TEST_FILE_PATTERNS.
 TEST_FILE_RE = re.compile(
     r"(?:test|spec|__tests__)[/\\]|"
     r"\.(?:test|spec)\.|"
@@ -62,20 +68,40 @@ EXEMPT_RE = re.compile(
 )
 
 
-def is_source_file(path):
-    """Check if path is a source file worth triggering tests for."""
+@functools.lru_cache(maxsize=32)
+def _compiled_test_pattern(cwd):
+    """Compile project-specific test-file regex. Cached per cwd."""
+    patterns = get_test_file_patterns(cwd)
+    return re.compile("|".join(patterns))
+
+
+def is_source_file(path, cwd=None):
+    """Check if path is a source file worth triggering tests for.
+
+    When cwd provided, extensions come from .claude/config.json
+    SOURCE_EXTENSIONS override (tier 2 stack-agnostic config). When cwd
+    is None (legacy callers), uses DEFAULT_SOURCE_EXTENSIONS.
+    """
     if not path:
         return False
     if GENERATED_COMPOUND_RE.search(path):
         return False
-    return Path(path).suffix in SOURCE_EXTENSIONS
+    extensions = get_source_extensions(cwd) if cwd else SOURCE_EXTENSIONS
+    return Path(path).suffix in extensions
 
 
-def is_test_file(path):
-    """Check if path matches common test file patterns."""
+def is_test_file(path, cwd=None):
+    """Check if path matches common test file patterns.
+
+    When cwd provided, patterns come from .claude/config.json
+    TEST_FILE_PATTERNS override (tier 2). When cwd is None, uses
+    DEFAULT_TEST_FILE_PATTERNS via TEST_FILE_RE.
+    """
     if not path:
         return False
-    return bool(TEST_FILE_RE.search(path))
+    if cwd is None:
+        return bool(TEST_FILE_RE.search(path))
+    return bool(_compiled_test_pattern(cwd).search(path))
 
 
 def is_exempt_from_tests(path):
@@ -136,7 +162,7 @@ def record_file_edit(cwd, file_path, sid=None):
             source_files = set(data.get("source_files", []))
             test_files = set(data.get("test_files", []))
 
-            if is_test_file(file_path):
+            if is_test_file(file_path, cwd=cwd):
                 test_files.add(file_path)
             else:
                 source_files.add(file_path)
@@ -571,7 +597,7 @@ def compute_uncovered(cwd, state, coverage_spec=None, sid=None):
     """
     source_files = [
         sf for sf in state.get("source_files", [])
-        if not is_exempt_from_tests(sf) and not is_test_file(sf)
+        if not is_exempt_from_tests(sf) and not is_test_file(sf, cwd=cwd)
     ]
     if not source_files:
         return []

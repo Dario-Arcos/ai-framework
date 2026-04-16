@@ -1,0 +1,16 @@
+{
+  "_comment": "Optional Tier 2 config for stack-agnostic hooks. Defaults match Python/Node/Go/Rust/Java/Ruby/Swift/C++/Kotlin. Uncomment entries below only if your stack is non-mainstream or your project uses non-default paths. The plugin works correctly for most projects WITHOUT this file.",
+  "_SOURCE_EXTENSIONS_comment": "Extensions of files the coverage gate tracks as source. Union (not replace) with defaults recommended. Example: adding Julia support.",
+  "_SOURCE_EXTENSIONS_example": [".py", ".js", ".ts", ".jl"],
+  "_TEST_FILE_PATTERNS_comment": "Regex patterns matching test file paths. First match wins; joined with `|`. Example: Ruby projects use _spec.rb suffix; PHP uses Test.php.",
+  "_TEST_FILE_PATTERNS_example": [
+    "(?:test|spec|__tests__)[/\\\\]",
+    "\\.(?:test|spec)\\.",
+    "_tests?\\.",
+    "test_",
+    "_spec\\.rb$",
+    "Test\\.php$"
+  ],
+  "_COVERAGE_REPORT_PATH_comment": "Override the auto-detected coverage report path. Useful when your test runner writes coverage to a non-default location (e.g. pytest --cov-report=json:custom.json).",
+  "_COVERAGE_REPORT_PATH_example": "coverage/lcov.info"
+}

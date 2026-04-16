@@ -27,7 +27,10 @@ import subprocess
 import time
 from pathlib import Path
 
-from _sdd_config import TEST_CMD_CACHE_TTL as _TEST_CMD_CACHE_TTL
+from _sdd_config import (
+    TEST_CMD_CACHE_TTL as _TEST_CMD_CACHE_TTL,
+    get_coverage_report_path,
+)
 
 # Explicit re-export of private helpers (star import skips underscore-prefix).
 # Consumers: teammate-idle.py, test_sdd_detect.py, test_real_hooks.py.
@@ -175,8 +178,11 @@ def detect_coverage_command(cwd):
     report_format ∈ {"lcov", "go-cover"}.
 
     Stack-agnostic runtime detection. Framework families form a finite set —
-    no per-project config required. Caller uses the returned command to run
-    tests with coverage enabled; the report is then parsed from report_path.
+    detection covers 90% of projects without config. Users with custom
+    coverage output paths can override via .claude/config.json:
+        {"COVERAGE_REPORT_PATH": "custom/path/to/lcov.info"}
+    The COVERAGE_REPORT_PATH override replaces the auto-detected path
+    component of the returned tuple so the plugin looks in the right place.
     """
     cwd_path = Path(cwd)
     pkg = cwd_path / "package.json"
@@ -193,19 +199,19 @@ def detect_coverage_command(cwd):
                     return (
                         "npx vitest run --coverage --coverage.reporter=lcov",
                         "lcov",
-                        "coverage/lcov.info",
+                        get_coverage_report_path(cwd, "coverage/lcov.info"),
                     )
                 if "jest" in test_script:
                     return (
                         "npx jest --coverage --coverageReporters=lcov",
                         "lcov",
-                        "coverage/lcov.info",
+                        get_coverage_report_path(cwd, "coverage/lcov.info"),
                     )
                 # Generic: wrap arbitrary JS test runner with c8
                 return (
                     f"npx c8 --reporter=lcov -- {test_script}",
                     "lcov",
-                    "coverage/lcov.info",
+                    get_coverage_report_path(cwd, "coverage/lcov.info"),
                 )
         except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
@@ -217,7 +223,7 @@ def detect_coverage_command(cwd):
                 return (
                     "pytest --cov=. --cov-report=lcov:coverage.lcov",
                     "lcov",
-                    "coverage.lcov",
+                    get_coverage_report_path(cwd, "coverage.lcov"),
                 )
         except (OSError, UnicodeDecodeError):
             pass
@@ -226,7 +232,7 @@ def detect_coverage_command(cwd):
         return (
             "go test -coverprofile=coverage.out ./...",
             "go-cover",
-            "coverage.out",
+            get_coverage_report_path(cwd, "coverage.out"),
         )
 
     if cargo.exists():
@@ -240,7 +246,7 @@ def detect_coverage_command(cwd):
                 return (
                     "cargo llvm-cov --lcov --output-path coverage.lcov",
                     "lcov",
-                    "coverage.lcov",
+                    get_coverage_report_path(cwd, "coverage.lcov"),
                 )
         except (OSError, subprocess.TimeoutExpired):
             pass
