@@ -268,15 +268,21 @@ def is_test_running(cwd, sid=None):
         return False
 
 
+_ACQUIRE_LOCK_MAX_ATTEMPTS = 3
+_ACQUIRE_LOCK_BACKOFF_SECONDS = 0.1
+
+
 def acquire_runner_lock(cwd):
     """Acquire exclusive runner lock via flock on PID file.
 
     Returns file descriptor on success (caller must hold open), None if
-    another worker holds the lock. On platforms without fcntl, returns -1
-    (sentinel — lock not enforced, PID-only fallback).
+    another worker holds the lock after bounded retry. On platforms without
+    fcntl, returns -1 (sentinel — lock not enforced, PID-only fallback).
 
-    OS auto-releases the lock on process exit, including crashes — no stale
-    locks possible.
+    Retry: 3 attempts with 100ms backoff between. Bounded max-wait ~200ms.
+    Handles transient contention between concurrent teammates without false
+    fail, while preserving fast-fail semantics for genuinely held locks
+    (LOCK_NB, not LOCK). OS auto-releases on process exit (including crash).
     """
     pf = pid_path(cwd)
     if not fcntl:
@@ -286,21 +292,24 @@ def acquire_runner_lock(cwd):
         except OSError:
             pass
         return -1
-    fd = -1
-    try:
-        fd = os.open(str(pf), os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        os.ftruncate(fd, 0)
-        os.lseek(fd, 0, os.SEEK_SET)
-        os.write(fd, str(os.getpid()).encode())
-        return fd
-    except (BlockingIOError, OSError):
-        if fd >= 0:
-            try:
-                os.close(fd)
-            except OSError:
-                pass
-        return None
+    for attempt in range(_ACQUIRE_LOCK_MAX_ATTEMPTS):
+        fd = -1
+        try:
+            fd = os.open(str(pf), os.O_CREAT | os.O_RDWR, 0o644)
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            os.ftruncate(fd, 0)
+            os.lseek(fd, 0, os.SEEK_SET)
+            os.write(fd, str(os.getpid()).encode())
+            return fd
+        except (BlockingIOError, OSError):
+            if fd >= 0:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+            if attempt < _ACQUIRE_LOCK_MAX_ATTEMPTS - 1:
+                time.sleep(_ACQUIRE_LOCK_BACKOFF_SECONDS)
+    return None
 
 
 def release_runner_lock(fd, cwd):
