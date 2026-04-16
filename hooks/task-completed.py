@@ -349,7 +349,12 @@ def _ensure_coverage_report(cwd, state, max_wait_seconds=120):
     """
     try:
         spec = detect_coverage_command(cwd)
-    except Exception:
+    except (OSError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+        # Narrow to recoverable errors; SystemExit/KeyboardInterrupt propagate.
+        # FileNotFoundError is a subclass of OSError. Logging path available via
+        # telemetry in Phase 5; silent fallback preserved here to avoid stderr
+        # spam in hot path.
+        _ = exc  # name retained for future structured logging
         return None
     if spec is None:
         return None
