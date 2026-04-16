@@ -556,8 +556,8 @@ class TestAwaitTestCompletion(unittest.TestCase):
         import shutil
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    @patch("_sdd_detect.time.sleep")
-    @patch("_sdd_detect.is_test_running")
+    @patch("_sdd_state.time.sleep")
+    @patch("_sdd_state.is_test_running")
     def test_polls_until_worker_finishes(self, mock_running, mock_sleep):
         """Worker running 3 polls then stops → returns read_state()."""
         mock_running.side_effect = [True, True, True, False]
@@ -567,9 +567,9 @@ class TestAwaitTestCompletion(unittest.TestCase):
         self.assertTrue(result["passing"])
         self.assertEqual(mock_sleep.call_count, 3)
 
-    @patch("_sdd_detect.time.monotonic")
-    @patch("_sdd_detect.time.sleep")
-    @patch("_sdd_detect.is_test_running", return_value=True)
+    @patch("_sdd_state.time.monotonic")
+    @patch("_sdd_state.time.sleep")
+    @patch("_sdd_state.is_test_running", return_value=True)
     def test_timeout_returns_none(self, mock_running, mock_sleep, mock_mono):
         """Worker never finishes → returns None after timeout."""
         # monotonic: start=0, then always past deadline
