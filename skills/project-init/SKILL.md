@@ -32,13 +32,14 @@ Each file answers ONE question. Zero overlap between files. Zero overlap with CL
 
 ### Phase 2: Auto-Analysis
 
-Execute all 5 analysis layers. Read [references/analysis-layers.md](references/analysis-layers.md) for extraction patterns and heuristics.
+Execute all 6 analysis layers. Read [references/analysis-layers.md](references/analysis-layers.md) for extraction patterns and heuristics.
 
 **Layer 1: Manifests** → runtime, framework, dependencies, scripts, project type, description
 **Layer 2: Configs** → compiler, formatter, test framework, CI/CD, Docker
 **Layer 3: Structure** → layers, entry points, boundaries, file distribution
 **Layer 4: Patterns** → naming, error handling, imports, paradigms, testing
 **Layer 5: Sampling** → 5-8 key files for style confirmation and domain signals
+**Layer 6: Stack-agnostic hooks config** → `.claude/config.json` (only when non-default SOURCE_EXTENSIONS / TEST_FILE_PATTERNS / COVERAGE_REPORT_PATH detected)
 
 Synthesize layer outputs into rule files. Read [references/rule-templates.md](references/rule-templates.md) for output templates and field guidance.
 
@@ -57,9 +58,15 @@ Before writing, validate generated rules against context-engineering principles:
 1. **Diff report** (if rules existed before):
    - Show what changed per file (added/removed/modified lines)
    - Highlight significant changes ("Added Redis as cache layer", "Testing framework changed to Vitest")
-2. **User review**: Present generated rules for approval before writing
-3. **Write** to `.claude/rules/`
-4. **Summary**: Files generated, line counts, key findings
+2. **User review**: Present generated rules AND Layer 6 hooks config (if any) for approval before writing
+3. **Write** to `.claude/rules/` AND, when Layer 6 detected non-default stack patterns, write `.claude/config.json`
+4. **Summary**: Files generated, line counts, key findings. When `.claude/config.json` is written, print the stack-tracking confirmation:
+   ```
+   📝 Stack-agnostic hooks config: .claude/config.json
+      Source extensions: <list>
+      Test patterns: <list or "default">
+      Coverage path: <path or "auto-detect">
+   ```
 
 ## Modes
 

@@ -101,6 +101,71 @@ Extract:
 - **API type**: REST / GraphQL / gRPC / WebSocket / CLI (from routes, schemas, commands)
 - **Domain concepts**: key business entities, terminology used in variable/type names → project.md
 
+## Layer 6: Stack-Agnostic Hooks Config → `.claude/config.json`
+
+**Purpose**: make the plugin's coverage gate, test detection, and file
+classification aware of the project's actual stack without requiring the
+user to read code. Invisible auto-detection = visible configuration.
+
+Derive each key from Layer 1 + Layer 2 findings:
+
+### `SOURCE_EXTENSIONS`
+
+Emit only when NON-default extensions were detected. Defaults cover Python,
+TypeScript, JavaScript, Go, Rust, Java, Kotlin, Ruby, Swift, C, C++, C#,
+Vue, Svelte, GraphQL, SQL, shell. Extend with:
+
+| Manifest / signal | Add extensions |
+|---|---|
+| `Project.toml` + Julia `.jl` files | `.jl` |
+| `mix.exs` + Elixir `.ex`/`.exs` files | `.ex`, `.exs` |
+| `pubspec.yaml` + Dart `.dart` files | `.dart` |
+| `*.zig` files present | `.zig` |
+| `*.nim` files + `.nimble` manifest | `.nim` |
+
+Output format: full list (merge with defaults, don't replace).
+
+### `TEST_FILE_PATTERNS`
+
+Emit when the detected test framework uses a pattern NOT covered by the
+default regex (`(?:test|spec|__tests__)[/\\]`, `\.(?:test|spec)\.`,
+`_tests?\.`, `test_`). Heuristics:
+
+| Framework signal | Additional pattern |
+|---|---|
+| Ruby `spec/` directory or `_spec.rb` files | `_spec\.rb$` |
+| PHPUnit (`*Test.php` convention) | `Test\.php$` |
+| Elixir ExUnit (`*_test.exs`) | `_test\.exs$` |
+| Mix test (`test/` with `*_test.exs`) | (default covers `test/`) |
+| Pytest with `tests_*` prefix (non-standard) | `tests_` |
+
+### `COVERAGE_REPORT_PATH`
+
+Emit only when the detected framework writes to a NON-default path. Check
+for explicit configuration in pyproject.toml / vitest.config.ts / etc.
+Examples:
+
+- `pyproject.toml` with `[tool.pytest.ini_options] --cov-report=xml:build/coverage.xml` → `"build/coverage.xml"`
+- `vitest.config.ts` with `coverage.outputDir = "reports/coverage"` → `"reports/coverage/lcov.info"`
+
+### Visibility / output
+
+After writing `.claude/config.json`, print to user:
+```
+📝 Stack-agnostic hooks config written: .claude/config.json
+   Source extensions tracked: .py, .jl
+   Test patterns: default + _spec.rb
+   Coverage report: reports/coverage/lcov.info
+```
+
+Rationale: without this visibility, Tier 2 config is invisible. Users with
+non-mainstream stacks (Julia, Elixir, Ruby unusual layouts) would see the
+plugin silently ignore their files, undermining trust.
+
+Do NOT write `.claude/config.json` when detection only produces defaults
+(zero signal in the file). The presence of `.claude/config.json` implies
+non-default overrides; redundant content is noise.
+
 ---
 
-*Version: 1.1.0 | Updated: 2026-02-16*
+*Version: 1.2.0 | Updated: 2026-04-16*
