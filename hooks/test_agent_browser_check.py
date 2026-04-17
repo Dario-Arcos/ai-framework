@@ -374,5 +374,136 @@ class TestMain(unittest.TestCase):
         mock_install.assert_called_once()
 
 
+class TestConsumeStdin(unittest.TestCase):
+    """Test consume_stdin() — required by hook protocol, must not crash."""
+
+    def test_consumes_stdin_normally(self):
+        """Normal stdin is consumed without raising."""
+        with patch("sys.stdin", io.StringIO("hook input")):
+            agent_browser_check.consume_stdin()
+
+    def test_stdin_none_no_crash(self):
+        """sys.stdin=None must be handled gracefully."""
+        with patch("sys.stdin", None):
+            agent_browser_check.consume_stdin()
+
+    def test_stdin_oserror_swallowed(self):
+        """OSError reading stdin must not propagate."""
+        fake_stdin = MagicMock()
+        fake_stdin.read.side_effect = OSError("closed")
+        with patch("sys.stdin", fake_stdin):
+            agent_browser_check.consume_stdin()
+
+    def test_stdin_valueerror_swallowed(self):
+        """ValueError (closed file) must not propagate."""
+        fake_stdin = MagicMock()
+        fake_stdin.read.side_effect = ValueError("I/O on closed file")
+        with patch("sys.stdin", fake_stdin):
+            agent_browser_check.consume_stdin()
+
+
+class TestCleanupOrphanEdgeCases(unittest.TestCase):
+    """Edge cases in cleanup_orphan_daemons() — malformed state files."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_dir = agent_browser_check.AGENT_BROWSER_DIR
+        agent_browser_check.AGENT_BROWSER_DIR = Path(self.tmpdir)
+
+    def tearDown(self):
+        agent_browser_check.AGENT_BROWSER_DIR = self._orig_dir
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch("os.kill")
+    def test_non_numeric_pid_content(self, mock_kill):
+        """PID file with non-numeric content → ValueError swallowed, files cleaned."""
+        pid_file = Path(self.tmpdir) / "corrupt.pid"
+        pid_file.write_text("not-a-number\n", encoding="utf-8")
+        sock_file = Path(self.tmpdir) / "corrupt.sock"
+        sock_file.touch()
+
+        agent_browser_check.cleanup_orphan_daemons()
+
+        mock_kill.assert_not_called()
+        self.assertFalse(pid_file.exists())
+        self.assertFalse(sock_file.exists())
+
+    @patch("os.kill", side_effect=PermissionError("op not permitted"))
+    def test_permission_error_on_kill(self, mock_kill):
+        """PermissionError on os.kill → swallowed, state files still cleaned."""
+        pid_file = Path(self.tmpdir) / "root.pid"
+        pid_file.write_text("1", encoding="utf-8")
+        sock_file = Path(self.tmpdir) / "root.sock"
+        sock_file.touch()
+
+        agent_browser_check.cleanup_orphan_daemons()
+
+        self.assertFalse(pid_file.exists())
+        self.assertFalse(sock_file.exists())
+
+    @patch("agent_browser_check.subprocess.run",
+           side_effect=__import__("subprocess").TimeoutExpired("pkill", 5))
+    @patch("os.kill")
+    def test_pkill_timeout_swallowed(self, mock_kill, mock_run):
+        """subprocess.TimeoutExpired on pkill must not propagate."""
+        sock_file = Path(self.tmpdir) / "orphan.sock"
+        sock_file.touch()
+        agent_browser_check.cleanup_orphan_daemons()  # must not raise
+
+    @patch("agent_browser_check.subprocess.run", side_effect=OSError("no pkill"))
+    @patch("os.kill")
+    def test_pkill_oserror_swallowed(self, mock_kill, mock_run):
+        """OSError on pkill (not found, denied) must not propagate."""
+        sock_file = Path(self.tmpdir) / "orphan.sock"
+        sock_file.touch()
+        agent_browser_check.cleanup_orphan_daemons()  # must not raise
+
+
+class TestStatOSErrors(unittest.TestCase):
+    """Cooldown/dedup files: OSError on stat must not crash."""
+
+    def test_cooldown_stat_oserror(self):
+        """OSError from COOLDOWN_FILE.stat() → returns False (safe default)."""
+        fake_path = MagicMock()
+        fake_path.exists.return_value = True
+        fake_path.stat.side_effect = OSError("eacces")
+        orig = agent_browser_check.COOLDOWN_FILE
+        try:
+            agent_browser_check.COOLDOWN_FILE = fake_path
+            self.assertFalse(agent_browser_check.is_cooldown_active())
+        finally:
+            agent_browser_check.COOLDOWN_FILE = orig
+
+    def test_update_log_stat_oserror(self):
+        """OSError from UPDATE_LOG.stat() → returns False (safe default)."""
+        fake_path = MagicMock()
+        fake_path.exists.return_value = True
+        fake_path.stat.side_effect = OSError("eacces")
+        orig = agent_browser_check.UPDATE_LOG
+        try:
+            agent_browser_check.UPDATE_LOG = fake_path
+            self.assertFalse(agent_browser_check._update_ran_recently())
+        finally:
+            agent_browser_check.UPDATE_LOG = orig
+
+
+class TestInstallCooldownOSError(unittest.TestCase):
+    """install_and_sync: OSError touching cooldown file must not block install."""
+
+    @patch("agent_browser_check.run_background",
+           return_value=(True, "/tmp/install.log"))
+    def test_touch_oserror_still_runs_install(self, mock_run):
+        fake_path = MagicMock()
+        fake_path.touch.side_effect = OSError("read-only fs")
+        orig = agent_browser_check.COOLDOWN_FILE
+        try:
+            agent_browser_check.COOLDOWN_FILE = fake_path
+            ok, _ = agent_browser_check.install_and_sync()
+            self.assertTrue(ok)
+            mock_run.assert_called_once()
+        finally:
+            agent_browser_check.COOLDOWN_FILE = orig
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -283,5 +283,190 @@ class TestMain(unittest.TestCase):
         self.assertIn("Simulated failure", output["hookSpecificOutput"]["additionalContext"])
 
 
+class TestCleanupStaleSdd(unittest.TestCase):
+    """cleanup_stale_sdd must age-based purge; never touch live files or dirs."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_gettempdir = tempfile.gettempdir
+        # Redirect the function's internal tempdir lookup to our sandbox.
+        # cleanup_stale_sdd calls Path(tempfile.gettempdir()) — patch module-level.
+        self._patcher = patch.object(session_start.tempfile, "gettempdir",
+                                      return_value=self.tmpdir)
+        self._patcher.start()
+
+    def tearDown(self):
+        self._patcher.stop()
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_old_files_unlinked(self):
+        """Files older than max_age are removed."""
+        old = Path(self.tmpdir) / "sdd-test-old.json"
+        old.write_text("old", encoding="utf-8")
+        stale = time.time() - 172800  # 48h ago
+        os.utime(old, (stale, stale))
+
+        session_start.cleanup_stale_sdd(max_age=86400)
+
+        self.assertFalse(old.exists(), "Stale file should be unlinked")
+
+    def test_fresh_files_preserved(self):
+        """Files within max_age are kept."""
+        fresh = Path(self.tmpdir) / "sdd-test-fresh.json"
+        fresh.write_text("fresh", encoding="utf-8")
+
+        session_start.cleanup_stale_sdd(max_age=86400)
+
+        self.assertTrue(fresh.exists(), "Fresh file must be preserved")
+
+    def test_directories_skipped(self):
+        """Directories matching sdd-* glob must not be removed."""
+        d = Path(self.tmpdir) / "sdd-something-dir"
+        d.mkdir()
+        stale = time.time() - 172800
+        os.utime(d, (stale, stale))
+
+        session_start.cleanup_stale_sdd(max_age=86400)
+
+        self.assertTrue(d.exists(), "Directories must be skipped")
+
+    def test_non_sdd_files_untouched(self):
+        """Files not matching sdd-* glob are ignored entirely."""
+        other = Path(self.tmpdir) / "unrelated-old.tmp"
+        other.write_text("old", encoding="utf-8")
+        stale = time.time() - 172800
+        os.utime(other, (stale, stale))
+
+        session_start.cleanup_stale_sdd(max_age=86400)
+
+        self.assertTrue(other.exists(),
+            "Only sdd-* files are purged; others are left alone")
+
+    def test_oserror_on_stat_swallowed(self):
+        """OSError from stat() must not propagate (per-file try/except)."""
+        Path(self.tmpdir, "sdd-x").write_text("x", encoding="utf-8")
+        # Patch os.stat at module level to raise
+        with patch.object(session_start.os, "stat", side_effect=OSError("eio")):
+            session_start.cleanup_stale_sdd(max_age=86400)  # must not raise
+
+
+class TestSyncAllFiles(unittest.TestCase):
+    """sync_all_files copies whitelisted templates, skips identical, tolerates errors."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.plugin_root = Path(self.tmpdir) / "plugin"
+        self.project_dir = Path(self.tmpdir) / "project"
+        self.plugin_root.mkdir()
+        self.project_dir.mkdir()
+        self.template_dir = self.plugin_root / "template"
+        self.template_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _make_whitelisted_templates(self):
+        """Create minimal content for the whitelisted template paths."""
+        for rel in session_start.ALLOWED_TEMPLATE_PATHS:
+            src = self.template_dir / rel
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text(f"// content of {rel}\n", encoding="utf-8")
+
+    def test_copies_all_whitelisted(self):
+        self._make_whitelisted_templates()
+
+        session_start.sync_all_files(self.plugin_root, self.project_dir)
+
+        for rel in session_start.ALLOWED_TEMPLATE_PATHS:
+            expected = self.project_dir / session_start.remove_template_suffix(rel)
+            self.assertTrue(expected.exists(), f"Missing: {expected}")
+
+    def test_missing_source_is_skipped(self):
+        """A whitelisted path that doesn't exist in template/ is simply skipped."""
+        # Create only one template file; others missing
+        only = session_start.ALLOWED_TEMPLATE_PATHS[0]
+        src = self.template_dir / only
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_text("x", encoding="utf-8")
+
+        session_start.sync_all_files(self.plugin_root, self.project_dir)
+
+        copied = self.project_dir / session_start.remove_template_suffix(only)
+        self.assertTrue(copied.exists())
+        # Others not created
+        for rel in session_start.ALLOWED_TEMPLATE_PATHS[1:]:
+            missing = self.project_dir / session_start.remove_template_suffix(rel)
+            self.assertFalse(missing.exists())
+
+    def test_identical_file_not_recopied(self):
+        """filecmp.cmp equal → skip copy (preserve mtime)."""
+        self._make_whitelisted_templates()
+        session_start.sync_all_files(self.plugin_root, self.project_dir)
+
+        dst = self.project_dir / session_start.remove_template_suffix(
+            session_start.ALLOWED_TEMPLATE_PATHS[0]
+        )
+        mtime_before = dst.stat().st_mtime
+
+        time.sleep(0.01)
+        session_start.sync_all_files(self.plugin_root, self.project_dir)
+
+        self.assertEqual(mtime_before, dst.stat().st_mtime,
+            "Identical file must not be re-copied")
+
+    def test_copy_error_writes_warning(self):
+        """OSError during copy writes to stderr but does not abort the loop."""
+        self._make_whitelisted_templates()
+        stderr_capture = io.StringIO()
+        with patch.object(session_start.shutil, "copy2",
+                          side_effect=OSError("disk full")), \
+             patch("sys.stderr", stderr_capture):
+            session_start.sync_all_files(self.plugin_root, self.project_dir)
+        self.assertIn("WARNING: Failed to sync template",
+                      stderr_capture.getvalue())
+
+
+class TestOutputHookResponse(unittest.TestCase):
+    """output_hook_response emits valid JSON — with or without context."""
+
+    def test_empty_emits_empty_object(self):
+        stdout_capture = io.StringIO()
+        with patch("sys.stdout", stdout_capture):
+            session_start.output_hook_response("")
+        self.assertEqual(stdout_capture.getvalue().strip(), "{}")
+
+    def test_context_wraps_in_additionalContext(self):
+        stdout_capture = io.StringIO()
+        with patch("sys.stdout", stdout_capture):
+            session_start.output_hook_response("hello world")
+        payload = json.loads(stdout_capture.getvalue())
+        self.assertEqual(
+            payload["hookSpecificOutput"]["hookEventName"], "SessionStart"
+        )
+        self.assertEqual(
+            payload["hookSpecificOutput"]["additionalContext"], "hello world"
+        )
+
+
+class TestConsumeStdinSessionStart(unittest.TestCase):
+    """consume_stdin must not crash on any stdin state."""
+
+    def test_normal_stdin(self):
+        with patch("sys.stdin", io.StringIO("{}")):
+            session_start.consume_stdin()
+
+    def test_ioerror_swallowed(self):
+        fake = MagicMock()
+        fake.read.side_effect = IOError("broken pipe")
+        with patch("sys.stdin", fake):
+            session_start.consume_stdin()
+
+    def test_oserror_swallowed(self):
+        fake = MagicMock()
+        fake.read.side_effect = OSError("closed")
+        with patch("sys.stdin", fake):
+            session_start.consume_stdin()
+
+
 if __name__ == "__main__":
     unittest.main()

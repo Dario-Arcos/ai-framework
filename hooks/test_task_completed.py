@@ -1368,5 +1368,99 @@ class TestRunnerLockRalph(unittest.TestCase):
         mock_gate.assert_not_called()
 
 
+class TestEnsureCoverageReportErrorPaths(unittest.TestCase):
+    """_ensure_coverage_report — exercise the narrow-except recovery tuple.
+
+    The function wraps detect_coverage_command in a narrow except so that
+    recoverable manifest errors do NOT bubble into the hook caller (which
+    would kill the whole TaskCompleted lifecycle). Phase 0 Codex finding
+    #2 added UnicodeDecodeError to this tuple; these tests lock it in.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="tc-cov-err-")
+        # Neutralise negative cache reads/writes across tests (per-cwd sentinel).
+        self._nc_patches = [
+            patch.object(task_completed, "_negative_cache_active",
+                         return_value=False),
+            patch.object(task_completed, "_negative_cache_set",
+                         lambda *_a, **_kw: None),
+        ]
+        for p in self._nc_patches:
+            p.start()
+
+    def tearDown(self):
+        for p in self._nc_patches:
+            p.stop()
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch.object(task_completed, "detect_coverage_command", return_value=None)
+    def test_no_coverage_tool_returns_none(self, _mock):
+        self.assertIsNone(
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+        )
+
+    @patch.object(task_completed, "detect_coverage_command",
+                  side_effect=OSError("fs error"))
+    def test_oserror_returns_none(self, _mock):
+        self.assertIsNone(
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+        )
+
+    @patch.object(task_completed, "detect_coverage_command",
+                  side_effect=json.JSONDecodeError("bad", "x", 0))
+    def test_json_decode_error_returns_none(self, _mock):
+        self.assertIsNone(
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+        )
+
+    @patch.object(task_completed, "detect_coverage_command",
+                  side_effect=subprocess.TimeoutExpired("npm", 5))
+    def test_timeout_expired_returns_none(self, _mock):
+        self.assertIsNone(
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+        )
+
+    @patch.object(task_completed, "detect_coverage_command",
+                  side_effect=UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad"))
+    def test_unicode_decode_error_returns_none(self, _mock):
+        """Codex Phase 0 #2 regression guard — non-UTF8 manifests must not escape."""
+        self.assertIsNone(
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+        )
+
+    @patch.object(task_completed, "detect_coverage_command",
+                  side_effect=RuntimeError("programming error"))
+    def test_unexpected_exception_propagates(self, _mock):
+        """The except tuple is narrow on purpose — unknown errors must NOT be swallowed."""
+        with self.assertRaises(RuntimeError):
+            task_completed._ensure_coverage_report(self.tmpdir, {})
+
+    @patch.object(task_completed, "_report_fresh", return_value=True)
+    @patch.object(task_completed, "detect_coverage_command",
+                  return_value=("npm test -- --coverage", "lcov",
+                                "coverage/lcov.info"))
+    def test_fresh_report_returns_spec_without_running(self, _mock_detect,
+                                                       _mock_fresh):
+        """Fresh-report short-circuit: no subprocess spawned, spec returned."""
+        with patch.object(task_completed, "acquire_runner_lock") as lock:
+            spec = task_completed._ensure_coverage_report(self.tmpdir, {})
+            lock.assert_not_called()
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec[1], "lcov")
+
+    @patch.object(task_completed, "_report_fresh", return_value=False)
+    @patch.object(task_completed, "_negative_cache_active", return_value=True)
+    @patch.object(task_completed, "detect_coverage_command",
+                  return_value=("npm test -- --coverage", "lcov",
+                                "coverage/lcov.info"))
+    def test_negative_cache_short_circuits(self, _m1, _m2, _m3):
+        """Prior timeout within TTL → skip subprocess, return None."""
+        with patch.object(task_completed, "acquire_runner_lock") as lock:
+            result = task_completed._ensure_coverage_report(self.tmpdir, {})
+            lock.assert_not_called()
+        self.assertIsNone(result)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -257,5 +257,133 @@ class TestAbortWarning(unittest.TestCase):
         self.assertTrue(len(stderr_output) > 0, "stderr must not be empty")
 
 
+class TestLoadMaxFailuresErrors(unittest.TestCase):
+    """Error paths in load_max_failures() — must always return a usable int."""
+
+    def test_subprocess_oserror_returns_default(self):
+        """subprocess.run raising OSError returns the default (3)."""
+        with patch("subprocess.run", side_effect=OSError("exec failed")):
+            self.assertEqual(teammate_idle.load_max_failures("/any.sh"), 3)
+
+    def test_subprocess_valueerror_returns_default(self):
+        """Exotic ValueError path (defensive) — default returned."""
+        with patch("subprocess.run", side_effect=ValueError("bad args")):
+            self.assertEqual(teammate_idle.load_max_failures("/any.sh"), 3)
+
+    def test_zero_is_valid_integer(self):
+        """MAX_CONSECUTIVE_FAILURES=0 returns 0 (caller decides semantics)."""
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            config = tmp / "config.sh"
+            config.write_text("MAX_CONSECUTIVE_FAILURES=0\n", encoding="utf-8")
+            self.assertEqual(teammate_idle.load_max_failures(str(config)), 0)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+class TestReadFailuresErrors(unittest.TestCase):
+    """Error / edge paths in read_failures()."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_missing_updated_at_returns_empty(self):
+        """Legacy format (no _updated_at) → treated as stale (safe)."""
+        (self.ralph_dir / "failures.json").write_text(
+            json.dumps({"worker-1": 7}), encoding="utf-8",
+        )
+        self.assertEqual(teammate_idle.read_failures(self.ralph_dir), {})
+
+    def test_empty_updated_at_returns_empty(self):
+        """_updated_at empty string → treated as stale."""
+        (self.ralph_dir / "failures.json").write_text(
+            json.dumps({"worker-1": 7, "_updated_at": ""}), encoding="utf-8",
+        )
+        self.assertEqual(teammate_idle.read_failures(self.ralph_dir), {})
+
+    def test_unparseable_updated_at_returns_empty(self):
+        """_updated_at with garbage timestamp → stale."""
+        (self.ralph_dir / "failures.json").write_text(
+            json.dumps({"worker-1": 7, "_updated_at": "not-a-date"}),
+            encoding="utf-8",
+        )
+        self.assertEqual(teammate_idle.read_failures(self.ralph_dir), {})
+
+    def test_oserror_on_open_returns_empty(self):
+        """OSError when opening file → empty dict (no crash)."""
+        # Create the file so the .exists() check passes, then make open fail.
+        (self.ralph_dir / "failures.json").write_text("{}", encoding="utf-8")
+        with patch("builtins.open", side_effect=OSError("eacces")):
+            self.assertEqual(teammate_idle.read_failures(self.ralph_dir), {})
+
+
+class TestMainBoundary(unittest.TestCase):
+    """Circuit-breaker boundary conditions + input edge cases."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        (self.ralph_dir / "config.sh").write_text("", encoding="utf-8")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _run_with_failures(self, count, teammate="worker-1"):
+        import time as _t
+        fresh_ts = _t.strftime("%Y-%m-%dT%H:%M:%SZ", _t.gmtime())
+        (self.ralph_dir / "failures.json").write_text(
+            json.dumps({teammate: count, "_updated_at": fresh_ts}),
+            encoding="utf-8",
+        )
+        stdin_data = json.dumps({"cwd": self.tmpdir, "teammate_name": teammate})
+        stderr = io.StringIO()
+        with patch("sys.stdin", io.StringIO(stdin_data)), \
+             patch("sys.stderr", stderr), \
+             self.assertRaises(SystemExit) as cm:
+            teammate_idle.main()
+        return cm.exception.code, stderr.getvalue()
+
+    def test_exactly_max_triggers_circuit(self):
+        """failures == max → circuit breaker fires (>= semantics)."""
+        code, stderr = self._run_with_failures(3)
+        self.assertEqual(code, 0)
+        self.assertIn("Circuit breaker", stderr)
+
+    def test_one_below_max_does_not_trigger(self):
+        """failures == max-1 → idle normally, no warning."""
+        code, stderr = self._run_with_failures(2)
+        self.assertEqual(code, 0)
+        self.assertNotIn("Circuit breaker", stderr)
+
+    def test_missing_teammate_name_defaults_unknown(self):
+        """Input without teammate_name uses 'unknown' — still exits 0."""
+        stdin_data = json.dumps({"cwd": self.tmpdir})
+        with patch("sys.stdin", io.StringIO(stdin_data)), \
+             patch("sys.stderr", io.StringIO()), \
+             self.assertRaises(SystemExit) as cm:
+            teammate_idle.main()
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_cwd_env_overrides_input(self):
+        """CLAUDE_PROJECT_DIR env wins over input.cwd (matches task-completed semantics)."""
+        other_dir = tempfile.mkdtemp()
+        try:
+            # input.cwd has .ralph/config.sh; env points to empty dir (no ralph)
+            stdin_data = json.dumps({"cwd": self.tmpdir, "teammate_name": "w"})
+            with patch("sys.stdin", io.StringIO(stdin_data)), \
+                 patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": other_dir}), \
+                 self.assertRaises(SystemExit) as cm:
+                teammate_idle.main()
+            self.assertEqual(cm.exception.code, 0)
+        finally:
+            shutil.rmtree(other_dir, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -238,5 +238,62 @@ class TestPluginRootResolution(unittest.TestCase):
         self.assertIsNone(result)
 
 
+class TestBuildSkillIndexErrors(unittest.TestCase):
+    """Edge cases / error paths in build_skill_index()."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.skills_dir = Path(self.tmpdir) / "skills"
+        self.skills_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_oserror_on_iterdir_returns_empty(self):
+        """OSError on iterdir → empty string (no crash)."""
+        fake = unittest.mock.MagicMock()
+        fake.iterdir.side_effect = OSError("eacces")
+        self.assertEqual(subagent_start.build_skill_index(fake), "")
+
+    def test_files_at_top_level_excluded(self):
+        """File (not dir) in skills_dir is ignored — skill dirs only."""
+        (self.skills_dir / "loose-file.md").write_text("x", encoding="utf-8")
+        skill_dir = self.skills_dir / "real-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("content", encoding="utf-8")
+
+        index = subagent_start.build_skill_index(self.skills_dir)
+
+        self.assertIn("real-skill", index)
+        self.assertNotIn("loose-file", index)
+
+    def test_skill_md_as_directory_excluded(self):
+        """If SKILL.md is a directory, the skill is not listed (is_file() check)."""
+        broken = self.skills_dir / "broken-skill"
+        broken.mkdir()
+        (broken / "SKILL.md").mkdir()  # SKILL.md is a directory
+        (self.skills_dir / "good").mkdir()
+        (self.skills_dir / "good" / "SKILL.md").write_text("ok", encoding="utf-8")
+
+        index = subagent_start.build_skill_index(self.skills_dir)
+
+        self.assertIn("good", index)
+        self.assertNotIn("broken-skill", index)
+
+
+class TestFindSkillsDirEdgeCases(unittest.TestCase):
+    """find_skills_dir() edge cases around env var handling."""
+
+    def test_empty_env_var_falls_back_to_file_parent(self):
+        """CLAUDE_PLUGIN_ROOT="" must not be treated as a valid candidate."""
+        with unittest.mock.patch.dict(
+            "os.environ", {"CLAUDE_PLUGIN_ROOT": ""}, clear=False,
+        ):
+            result = subagent_start.find_skills_dir()
+        # Real plugin layout has skills/ as sibling of hooks/
+        self.assertIsNotNone(result)
+        self.assertTrue(result.is_dir())
+
+
 if __name__ == "__main__":
     unittest.main()
