@@ -31,10 +31,12 @@ description: "Use when building features requiring planning and autonomous execu
 2. **Step 0**: Choose planning mode (Interactive/Autonomous)
 3. **Step 1**: Validate prerequisites
 4. **Step 2**: Referent Discovery (`sop-reverse referent`)
-5. **Step 3-4**: Planning (`sop-planning`) + Task generation (`sop-task-generator`)
-6. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
-7. **Step 6**: Configure execution (quality gates)
-8. **Step 7**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
+5. **Step 3**: Planning (`sop-planning`)
+6. **Step 3.5**: Scenarios Authorship (`scenario-driven-development`) — write-once acceptance contract
+7. **Step 4**: Task generation (`sop-task-generator`)
+8. **Step 5**: Generate AGENTS.md (bootstrap teammate context)
+9. **Step 6**: Configure execution (quality gates)
+10. **Step 7**: Execute via Agent Teams (plan mode pre-flight → spawn teammates)
 
 ---
 
@@ -61,7 +63,8 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 7) |
 | Any `*.code-task.md` with `Status: PENDING` | execution (Step 7) |
 | `implementation/plan.md` without task files | task-generator (Step 4) |
-| `design/detailed-design.md` | planning-complete (Step 4) |
+| `design/detailed-design.md` without `.claude/scenarios/{goal}.scenarios.md` | scenarios-authorship (Step 3.5) |
+| `design/detailed-design.md` + `.claude/scenarios/{goal}.scenarios.md` committed | planning-complete (Step 4) |
 | `referents/catalog.md` | referent-complete (Step 3) |
 | Nothing | NEW |
 
@@ -97,10 +100,11 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 ### Step 1: Validate Prerequisites
 
 - [ ] `.ralph/specs/{goal}/referents/catalog.md` exists — If missing: Execute `sop-reverse` in referent mode (Step 2)
-- [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning`
-- [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator`
+- [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning` (Step 3)
+- [ ] `.claude/scenarios/{goal}.scenarios.md` exists in `git HEAD` — If missing: Execute `scenario-driven-development` (Step 3.5). The scenarios contract must be committed to the parent branch BEFORE task generation so teammates inherit a frozen acceptance holdout.
+- [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator` (Step 4)
 
-**You MUST NOT** skip referent discovery, skip planning, or proceed with missing prerequisites.
+**You MUST NOT** skip referent discovery, skip planning, skip scenarios authorship, or proceed with missing prerequisites. Scenarios authorship is non-optional: autonomous Ralph without a committed `.claude/scenarios/*` disables the anti-reward-hacking gate (`.claude/scenarios/` missing = backward-compat mode, which is legitimate only for pre-Phase-3 projects).
 
 ### Step 2: Referent Discovery
 
@@ -118,13 +122,47 @@ Output: `.ralph/specs/{goal}/referents/` catalog — Continue to Step 3.
 
 sop-planning reads `extracted-patterns.md` from `referents/` when `discovery_path` points within it.
 
-Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 4.
+Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 3.5.
+
+### Step 3.5: Scenarios Authorship
+
+**Purpose**: author the write-once acceptance contract that every teammate will satisfy. Without this step, autonomous execution has no external holdout — the implementer and the validator collapse into the same agent.
+
+Invoke `scenario-driven-development` from the parent branch with the `detailed-design.md` as the source of intent. The skill owns its own argument contract — see its SKILL.md for the current invocation shape. Produce exactly one `.claude/scenarios/{goal}.scenarios.md` file containing the observable behaviors the design implies.
+
+Then commit to the parent branch:
+
+```
+git add .claude/scenarios/{goal}.scenarios.md
+git commit -m "scenarios({goal}): acceptance contract"
+```
+
+Output:
+- `.claude/scenarios/{goal}.scenarios.md` committed to `git HEAD`, containing one or more `## SCEN-NNN: <title>` blocks with `Given / When / Then / Evidence` per `_sdd_scenarios` parser spec.
+- Baseline hash locked via `git log --diff-filter=A` — any subsequent edit requires a `sop-reviewer` amend marker at `.claude/scenarios/.amends/{goal}-{HEAD_SHA}.marker`.
+
+**You MUST NOT** author scenarios inside a teammate worktree (the implementer must never author its own acceptance contract — that defeats the holdout). Scenarios live on the parent branch before worktree creation; each teammate inherits them via branch checkout.
+
+> Known gap — not closed by this step alone. `hooks/sdd-test-guard.py` permits first-write of untracked scenario files; a teammate could in principle author a fresh `.claude/scenarios/*.scenarios.md` locally inside its worktree and satisfy the completion gate without parent-branch authorship. Mechanical enforcement (reject first-write unless baseline exists OR writer is on the parent branch) is tracked as Phase 8 roadmap. Until then, Step 3.5 is a procedural guarantee: follow it and the holdout holds; skip it and the holdout degrades to advisory.
+
+**You MUST commit** before Step 4 so the baseline hash is locked before teammates enter the loop.
+
+**Migration branch — legacy specs**: if `.ralph/specs/{goal}/implementation/plan.md` and `.code-task.md` files already exist in the repo BEFORE this step runs (i.e., a spec authored before Step 3.5 was introduced), authoring scenarios retroactively leaves task files without scenario traceability. In that case:
+1. Author scenarios normally (this step).
+2. Re-run Step 4 to regenerate `.code-task.md` files from the current `plan.md` + the new `.claude/scenarios/{goal}.scenarios.md`. Accept the loss of any per-task execution history on the regenerated files.
+3. If regeneration would destroy in-flight work (teammates already executing), pause the Agent Team, regenerate, then resume. Do NOT keep stale task files — they bypass the contract.
+
+Do NOT add a permanent "skip scenarios" flag for legacy specs; that reopens the reward-hacking loophole this step closes.
+
+Continue to Step 4.
 
 ### Step 4: Task Generation
 
 ```
 /sop-task-generator input=".ralph/specs/{goal}/implementation/plan.md" mode={PLANNING_MODE}
 ```
+
+When `.claude/scenarios/{goal}.scenarios.md` exists, pass it as context so generated `.code-task.md` files reference the SCEN IDs they satisfy (via acceptance criteria prose — no dedicated metadata field exists yet; follow-up roadmap). Teammates read scenarios at execution time via `sop-code-assist`; traceability is best-effort prose until the task-file schema gains a first-class scenario-link field.
 
 Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
 
@@ -388,5 +426,6 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 |-------|------|---------|
 | `sop-reverse` | 2 | Referent discovery |
 | `sop-planning` | 3 | Research, design |
-| `sop-task-generator` | 4 | Task files |
-| `sop-code-assist` | Teammates | SDD implementation |
+| `scenario-driven-development` | 3.5 | Write-once `.claude/scenarios/*` acceptance contract |
+| `sop-task-generator` | 4 | Task files (cite `SCEN-NNN` IDs) |
+| `sop-code-assist` | Teammates | SDD implementation (reads scenarios; never authors) |
