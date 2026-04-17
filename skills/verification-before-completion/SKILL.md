@@ -251,3 +251,15 @@ The delegating agent is responsible for verifying the subagent's claims through 
 | Quality Integration results (code-reviewer + code-simplifier + edge-case-detector + performance-engineer) | Satisfaction report: `[N/M] scenarios satisfied` |
 
 **← From:** scenario-driven-development produces satisfaction evidence after SCENARIO→SATISFY→REFACTOR + Quality Integration.
+
+## Scenario Artifact Contract
+
+`.claude/scenarios/` is the canonical source of acceptance criteria when scenario artifacts exist. Do not substitute memory, task summaries, or test names for that contract.
+
+Verification requirements when scenarios exist:
+- Iterate every file in `.claude/scenarios/*.scenarios.md`
+- Read every `SCEN-###` block in those files
+- Confirm observable satisfaction through execution evidence for each scenario
+- Report the validated scenario set, not a partial subset chosen for convenience
+
+If a scenario exists and you did not verify it, you are not done.

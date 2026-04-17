@@ -400,3 +400,36 @@ Before writing or modifying scenarios, review the testing anti-patterns to avoid
 
 **← From:** brainstorming produces the holdout scenarios, crystallized in the approved plan file.
 **→ Next:** verification-before-completion runs the 6-step evidence gate.
+
+## Scenarios Artifact
+
+Canonical path: `.claude/scenarios/*.scenarios.md`
+
+Minimal shape (SPEC §3.3 summary):
+
+```markdown
+---
+name: login-validation
+created_by: orchestrator
+created_at: 2026-04-16T10:00:00Z
+task_id: TIP-003      # optional, ralph-only
+---
+
+## SCEN-001: successful login
+**Given**: unregistered anonymous user
+**When**: POST /login with valid email + password
+**Then**: response 200 with session token, redirect to /dashboard
+**Evidence**: HTTP response body, cookies set
+```
+
+Operational rules:
+- Scenario artifacts are write-once after the first commit. Treat the committed file as the holdout contract.
+- Legitimate edits require the amend-marker protocol documented in `sop-reviewer`: `.claude/scenarios/.amends/{name}-{HEAD_SHA}.marker`.
+- Marker contents are ignored. Presence + filename are the attestation; a new commit invalidates prior markers by design.
+
+Tier-2 stack config lives in `.claude/config.json`:
+- `SOURCE_EXTENSIONS`
+- `TEST_FILE_PATTERNS`
+- `COVERAGE_REPORT_PATH`
+
+Use Tier 2 only to teach the hooks what counts as source/tests/coverage for the current stack. It does not weaken the scenario contract.

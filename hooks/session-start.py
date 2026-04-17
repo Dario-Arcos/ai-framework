@@ -40,6 +40,7 @@ ALLOWED_TEMPLATE_PATHS = [
 CRITICAL_GITIGNORE_RULES = [
     "/.claude/*",
     "!/.claude/rules/",
+    "!/.claude/scenarios/",  # NEW: scenarios must be tracked
     "/CLAUDE.md",
     "/hooks/*.db",
     "/hooks/__pycache__/",
@@ -87,14 +88,17 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         content = migrate_claude_gitignore(content)
 
         active = active_gitignore_rules(content)
-        missing = [r for r in CRITICAL_GITIGNORE_RULES if r not in active]
-
-        if missing:
-            if content and not content.endswith("\n"):
-                content += "\n"
-            content += "\n# AI Framework runtime files (auto-added)\n"
-            for rule in missing:
-                content += rule + "\n"
+        appended = False
+        for rule in CRITICAL_GITIGNORE_RULES:
+            if rule in active:
+                continue
+            if not appended:
+                if content and not content.endswith("\n"):
+                    content += "\n"
+                content += "\n# AI Framework runtime files (auto-added)\n"
+                appended = True
+            content += rule + "\n"
+            active.add(rule)
 
         if content != original:
             with open(project_gitignore, "w", encoding="utf-8") as f:

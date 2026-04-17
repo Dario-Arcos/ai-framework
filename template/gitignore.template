@@ -22,3 +22,6 @@
 
 # Specs and planning artifacts (remove to track in git)
 /docs/specs/
+!/.claude/scenarios/
+/.claude/metrics.jsonl
+/.claude/metrics.jsonl.*

@@ -101,6 +101,20 @@ class TestEnsureGitignoreRules(unittest.TestCase):
         for rule in session_start.CRITICAL_GITIGNORE_RULES:
             self.assertIn(rule, content)
 
+    def test_existing_rule_not_duplicated_when_other_rules_missing(self):
+        project_gi = self.project_dir / ".gitignore"
+        project_gi.write_text(
+            "node_modules/\n!/.claude/scenarios/\n",
+            encoding="utf-8",
+        )
+
+        session_start.ensure_gitignore_rules(self.plugin_root, self.project_dir)
+
+        content = project_gi.read_text(encoding="utf-8")
+        self.assertEqual(content.count("!/.claude/scenarios/\n"), 1)
+        for rule in session_start.CRITICAL_GITIGNORE_RULES:
+            self.assertIn(rule, content)
+
     def test_all_rules_present_no_change(self):
         all_rules = "\n".join(session_start.CRITICAL_GITIGNORE_RULES) + "\n"
         project_gi = self.project_dir / ".gitignore"

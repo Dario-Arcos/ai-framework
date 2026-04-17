@@ -294,3 +294,7 @@ Secondary (in `{documentation_dir}/`):
 - scenario-driven-development skill - Full SDD workflow (Step 4a)
 - verification-before-completion skill - Completion verification (Step 5)
 - systematic-debugging skill - Root cause investigation (Step 2 bug fixes, Step 4a failure escalation)
+
+## Scenario Artifact Note
+
+Before implementation, check whether `.claude/scenarios/` contains a relevant scenario file. If one exists, treat it as the observable contract for the work and implement against that committed artifact rather than inventing a new local interpretation. If no relevant scenario exists and the task changes behavior, ask the user whether to generate one via `scenario-driven-development` before writing production code.

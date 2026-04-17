@@ -29,7 +29,7 @@ This reference defines quality gates for ralph-orchestrator execution. Gates app
 |------|---------|-----------------|
 | `GATE_COVERAGE` | Coverage enforcement | `npx vitest run --coverage`, `pytest --cov` |
 
-GATE_COVERAGE is evaluated AFTER the 6 standard gates pass. Requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh. When coverage falls below threshold, exit 2 rejects the task.
+GATE_COVERAGE is evaluated AFTER the 6 standard gates pass. Requires `MIN_TEST_COVERAGE > 0` and a non-empty `GATE_COVERAGE` command in config.sh. In non-scenario projects it can still reject the task; when committed scenarios exist, coverage is demoted to an informational signal so the scenario contract remains the primary acceptance decision.
 
 ---
 
@@ -88,6 +88,14 @@ If any gate fails, the `task-completed.py` hook returns exit 2 with failure outp
 4. Refactor while satisfied
 
 Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Tasks classified as `not-applicable` skip the SDD cycle in sop-code-assist (Step 4a) but all quality gates run unconditionally — behavioral gates on non-code changes catch unexpected side effects and align with correctness over comfort.
+
+### Scenario Gate Priority
+
+When `.claude/scenarios/` exists, committed scenario artifacts are the primary quality contract. Automated gates still run, but the orchestration model is scenarios first:
+
+- Scenario integrity and verification are blocking.
+- Coverage is an informational signal when scenarios exist, not the authority on task correctness.
+- A task that satisfies all committed scenarios but has thin coverage still needs follow-up, but the scenario contract remains the main acceptance decision.
 
 ---
 
@@ -249,6 +257,8 @@ If teammates repeatedly fail the same gate:
 - `[SDD:SCENARIO]` — invalid scenarios, missing verification, or scenario/test-integrity guards. Example: `[SDD:SCENARIO] Scenario verification not invoked for: payment task`
 - `[SDD:POLICY]` — missing required SDD skill invocation or protected review writes. Example: `[SDD:POLICY] SDD skill not invoked for: reviewer task`
 
+Compact taxonomy: `[SDD:GATE|COVERAGE|SCENARIO|POLICY]`
+
 ### `metrics.jsonl` format
 
 Every line is one JSON object in `.claude/metrics.jsonl`.
@@ -276,6 +286,14 @@ jq -s '
 ### Rollback / disable
 
 Deleting `.claude/metrics.jsonl` is safe. The next telemetry write recreates it automatically, and rotation will recreate the numbered files as needed.
+
+### Scenario rollback ladder
+
+Escalate from narrowest to broadest rollback:
+
+1. Delete one scenario file in `.claude/scenarios/` to remove a single contract.
+2. Delete the entire `.claude/scenarios/` directory to return the project to backward-compatible pre-scenario behavior.
+3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`. Documented as the broadest bypass shape, but current hook support must exist before relying on it in production.
 
 ### Circuit Breaker Tripped
 

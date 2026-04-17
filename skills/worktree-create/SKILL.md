@@ -85,3 +85,7 @@ Log to `.claude/logs/YYYY-MM-DD/worktree_operations.jsonl`:
 ```
 
 **IMPORTANTE**: No solicitar confirmación. Ejecutar secuencialmente. Si falla paso crítico, detener con error claro.
+
+## Scenario Baseline Prerequisite
+
+Before creating a worktree, committed scenarios on the parent branch must already be in the desired state. Rationale: state isolation is per-cwd, but `.claude/scenarios/` is inherited from branch content. Editing scenarios mid-flight while child worktrees are active creates contract drift between worktrees and invalidates review assumptions.

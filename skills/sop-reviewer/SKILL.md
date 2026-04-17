@@ -274,3 +274,18 @@ Task 01: PASS, SDD compliant, 3/3 satisfied
 ## References
 
 - [review-protocol.md](references/review-protocol.md) — Detailed checklists and patterns catalog
+
+## Scenario Amend Marker Protocol
+
+When reviewing a proposed scenario edit, you may authorize it only if the edit is legitimate and explicitly reviewed. The attestation mechanism is a marker file:
+
+- Path: `.claude/scenarios/.amends/{name}-{HEAD_SHA}.marker`
+- `{name}` is the scenario basename before `.scenarios.md`
+- `{HEAD_SHA}` must match a prefix of the current `HEAD` commit SHA at review time
+- Marker file contents are unused; only the filename and presence matter
+
+Rules:
+- Create the marker only after validating that the scenario change preserves or improves the observable contract rather than weakening it to fit the implementation.
+- Markers are intentionally commit-scoped. Any new commit invalidates prior markers because the stored SHA prefix no longer matches `HEAD`.
+- This invalidation is by design: scenario edits require re-review whenever the implementation moves.
+- If the scenario file changes again after review, the old marker is no longer sufficient. Re-run review and write a fresh marker for the new `HEAD`.

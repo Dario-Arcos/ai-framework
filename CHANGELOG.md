@@ -10,6 +10,38 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ## [No Publicado]
 
+## [2026.4.0] - 2026-04-16
+
+### Añadido
+
+- Scenario-driven development gate (Phase 3): `.claude/scenarios/` write-once artifacts enforced via PreToolUse guards + task-completed gate.
+- Scenario parser/validator module (`hooks/_sdd_scenarios.py`) with amend marker protocol.
+- Stack-agnostic Tier-2 config (`.claude/config.json`) for `SOURCE_EXTENSIONS`, `TEST_FILE_PATTERNS`, `COVERAGE_REPORT_PATH`.
+- `project-init` Layer 6 auto-generates `.claude/config.json` from detected manifest.
+- PASS_TO_PASS validation recording (Phase 4.1): every completion records the `SCEN` IDs validated this session.
+- Scenario quality validator (Phase 4.2): soft warnings for single-anchor scenarios, identical When/Then, missing Evidence.
+- Tautological test detection (Phase 4.3): blocks `assert True`, `expect(true).toBe(true)`, empty test bodies on Edit/Write.
+- Critical-paths signaling (Phase 4.4): `.claude/critical-paths.md` triggers non-blocking warnings on sensitive file edits.
+- Git-history recovery protection (Phase 4.5): baseline anchors on the file's first add commit, not `HEAD` — defeats `git checkout HEAD~N` attacks.
+- Telemetry (Phase 5): `.claude/metrics.jsonl` with rotation, `[SDD:CATEGORY]` failure prefixes, structured logging helper.
+
+### Cambiado
+
+- `sdd-test-guard.py` PreToolUse matcher extended: `Edit|Write|MultiEdit|NotebookEdit|TaskUpdate|Bash`.
+- `task-completed.py` scenarios-first gate runs BEFORE the existing gate loop. Coverage is demoted to an informational signal when scenarios pass.
+- `_sdd_state.py` runner lock uses a stable lockfile separate from the PID file (closes the TOCTOU split-brain found in the Phase 2 Codex review).
+- `_sdd_detect.py` reduced to facade (`1357 → 294 LOC`, `-79%`).
+
+### Arreglado
+
+- Phase 0 hardening: `record_file_edit` atomic via separate lockfile; narrow except tuples; `UnicodeDecodeError` handling across file readers.
+- Phase 1 hardening: config validation against bare strings and malformed regex; cascade cache invalidation across `lru_cache`s.
+- Phase 3 hardening: symlink/hardlink bypass of write-once guard closed; quoted filename bypass closed; `ln` added to Bash scenario write regex; `clear_coverage` called before `_fail_task` to avoid stale state.
+
+### Security
+
+- Pragmatic threat model documented (SPEC §3.5). Known out-of-scope bypasses (arbitrary Python scripts, direct skill-state writes) are now explicit in module docstrings.
+
 ### Cambiado
 
 - **Hook coverage gate — diff-coverage del runner reemplaza basename pairing**: `compute_uncovered` ahora prefiere evidencia positiva de cobertura (líneas ejecutadas según el reporte del test runner) sobre ausencia de evidencia (heurística de archivos sibling). Detección runtime stack-agnóstica desde `package.json`/`pyproject.toml`/`go.mod`/`Cargo.toml` — vitest, jest, c8, pytest-cov, go-cover, cargo-llvm-cov soportados sin configuración por proyecto. Alineado con [diff-cover](https://github.com/Bachmann1234/diff_cover) y SWE-bench. Cierra el vector de reward hacking donde un test file vacío satisfacía el gate.
