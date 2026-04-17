@@ -171,5 +171,45 @@ class TestScen001(unittest.TestCase):
         )
 
 
+@unittest.skipUnless(_IMPORT_OK, f"sdd-test-guard import failed: {_IMPORT_ERR}")
+class TestScen001SymlinkHardening(unittest.TestCase):
+    """Codex Phase 3 H1 — symlinked scenario files silently bypass the
+    write-once contract (edits land on the target, baseline hash
+    unchanged). The guard must reject Edit/Write when the scenario path
+    is a symlink.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="scen001-sym-")
+        self.rel = ".claude/scenarios/login.scenarios.md"
+        _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_symlink_scenario_file_rejected(self):
+        """Replacing a scenario file with a symlink must be denied."""
+        scen = Path(self.tmpdir) / self.rel
+        scen.unlink()
+        target = Path(self.tmpdir) / "fake.md"
+        target.write_text("content", encoding="utf-8")
+        scen.symlink_to(target)
+
+        exit_code, _stdout, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(scen),
+                "old_string": "a",
+                "new_string": "b",
+            },
+            "session_id": "sess-sym",
+        })
+        self.assertEqual(exit_code, 2,
+            f"Symlinked scenario edit must be denied; stderr={stderr!r}")
+        self.assertIn("symlink", stderr.lower(),
+            f"stderr must mention symlink; got: {stderr!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

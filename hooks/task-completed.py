@@ -581,6 +581,10 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     if state:
         coverage_spec = _ensure_coverage_report(cwd, state)
         uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec, sid=sid)
+        # Clear coverage BEFORE any _fail_task — otherwise sys.exit(2)
+        # skips the cleanup and the next hook invocation re-reads stale
+        # state (Codex Phase 3 M2).
+        clear_coverage(cwd, sid)
         if uncovered:
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
             if scenarios_gated:
@@ -597,7 +601,6 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                     f"{_UNCOVERED_RESOLUTION}",
                     "Omitting tests = reward hacking by omission.",
                 )
-        clear_coverage(cwd, sid)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -789,6 +792,9 @@ def main():
             cwd, cov_state, max_wait_seconds=min(120, remaining_budget)
         )
         uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec, sid=sid)
+        # Clear coverage BEFORE any _fail_task (Codex Phase 3 M2) — sys.exit(2)
+        # skips downstream cleanup and stale state would be re-read next run.
+        clear_coverage(cwd, sid)
         if uncovered:
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
             if scenarios_gated:
@@ -807,7 +813,6 @@ def main():
                     f"Omitting tests = reward hacking by omission. "
                     f"(consecutive failures: {count})",
                 )
-        clear_coverage(cwd, sid)
 
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
 

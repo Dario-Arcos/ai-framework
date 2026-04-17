@@ -131,5 +131,53 @@ class TestScen002(unittest.TestCase):
                 )
 
 
+class TestScen002Hardening(unittest.TestCase):
+    """Codex Phase 3 findings H1/H2/M1 — closed bypasses.
+
+    H1 + M1 — symlink/hardlink via `ln` must be blocked.
+    H2 — quoted filename (`sed -i "..."`, `cp ... "...scenarios/..."`)
+    must NOT bypass the write-verb regex.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="scen002-hard-")
+        _seed_scenario_file(self.tmpdir)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_ln_blocked(self):
+        """Hardlink/symlink into scenarios dir is blocked (Codex H1 root #2)."""
+        variants = [
+            "ln existing.md .claude/scenarios/login.scenarios.md",
+            "ln -s /tmp/fake.md .claude/scenarios/login.scenarios.md",
+            "ln -sf /tmp/fake.md .claude/scenarios/login.scenarios.md",
+        ]
+        for cmd in variants:
+            with self.subTest(command=cmd):
+                code, stderr = _invoke_guard(self.tmpdir, cmd)
+                self.assertEqual(code, 2,
+                    f"`ln` command must be denied (cmd={cmd!r}, stderr={stderr!r})")
+
+    def test_quoted_filename_still_blocked(self):
+        """Codex H2 — stripping quoted literals before the path check would
+        silently allow `sed -i "..." "scenarios/x.scenarios.md"`. The
+        write-verb regex must run against the ORIGINAL command.
+        """
+        variants = [
+            'sed -i "s/foo/bar/" ".claude/scenarios/login.scenarios.md"',
+            "sed -i 's/foo/bar/' '.claude/scenarios/login.scenarios.md'",
+            'cp /tmp/other ".claude/scenarios/login.scenarios.md"',
+            'echo "payload" > ".claude/scenarios/login.scenarios.md"',
+            'cat "/tmp/source" > ".claude/scenarios/login.scenarios.md"',
+        ]
+        for cmd in variants:
+            with self.subTest(command=cmd):
+                code, stderr = _invoke_guard(self.tmpdir, cmd)
+                self.assertEqual(code, 2,
+                    f"Quoted scenario path must not bypass guard "
+                    f"(cmd={cmd!r}, stderr={stderr!r})")
+
+
 if __name__ == "__main__":
     unittest.main()

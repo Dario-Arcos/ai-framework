@@ -67,14 +67,25 @@ PRECISE_ASSERTION_RE = re.compile(
 # Bash write to .claude/scenarios/ — regex matches the write verbs that
 # would bypass the Edit/Write write-once guard. Read-only commands
 # (cat, diff, grep, head, tail, less, more, file) are NOT matched.
+#
+# Known bypasses (out of scope for this pragmatic threat model — SPEC 3.5):
+#   * arbitrary scripts: `python -c "..."`, `perl -i`, custom binaries
+#     — not heuristically detectable without sandboxing.
+#   * already-committed file tampering via git plumbing (git hash-object
+#     + git update-index --cacheinfo) — requires explicit multi-step intent.
+#   * model writing the skill-invoked state file directly — same class as
+#     the amend-marker: raises cost, not a security boundary.
+# These are acknowledged; hardening requires the Strong threat model
+# (external scenario store + sandboxed validator — SPEC 3.5 roadmap).
 _BASH_SCENARIO_WRITE_RE = re.compile(
     r"(?:"
-    r"sed\s+-i"                       # in-place sed
+    r"sed\s+-i"                       # in-place sed (handles -ibackup too)
     r"|cat\s+[^|]*>"                  # cat > or cat << > (heredoc)
     r"|\btee\b"                       # tee (with or without -a)
     r"|\bcp\b"                        # copy into scenarios
     r"|\bmv\b"                        # move into scenarios
     r"|\brm\b"                        # delete scenario file
+    r"|\bln\b"                        # hardlink/symlink into scenarios
     r"|echo\s+[^|]*>"                 # echo > / >>
     r"|printf\s+[^|]*>"               # printf >
     r"|dd\s+[^|]*of="                 # dd of=
@@ -102,13 +113,16 @@ def _strip_quoted(command):
 
 
 def _bash_writes_scenarios(command):
-    """True iff the Bash command writes into .claude/scenarios/."""
+    """True iff the Bash command writes into .claude/scenarios/.
+
+    Deliberately does NOT strip quoted literals: a path quoted as
+    `"`.claude/scenarios/x`"` is still a legitimate write target.
+    Quote-stripping applies only to git-commit detection, where the
+    concern is avoiding false positives from `echo "git commit"`.
+    """
     if not command or SCENARIO_DIR not in command:
         return False
-    stripped = _strip_quoted(command)
-    if SCENARIO_DIR not in stripped:
-        return False
-    return bool(_BASH_SCENARIO_WRITE_RE.search(stripped))
+    return bool(_BASH_SCENARIO_WRITE_RE.search(command))
 
 
 def _bash_is_git_commit(command):
@@ -130,19 +144,34 @@ def _rel_scenario_path(file_path, cwd):
     """Return file_path relative to cwd if it lies under scenarios dir.
 
     None if the path is not a scenario file or not under cwd.
+
+    Normalises by resolving the PARENT directory only (canonicalises
+    platform quirks like macOS /var → /private/var), then appends the
+    filename verbatim. This preserves symlink-at-target detection: a
+    symlinked scenario file is still recognised as "under scenarios/"
+    so the caller's `is_symlink()` guard can fire. Fully resolving
+    would instead follow the symlink out of the scenarios tree and
+    silently skip the guard.
     """
     if not file_path:
         return None
     try:
-        p = Path(file_path).resolve(strict=False)
-        base = Path(cwd).resolve(strict=False)
-        rel = p.relative_to(base)
-    except (OSError, ValueError):
+        p = Path(file_path)
+        if not p.is_absolute():
+            p = Path(cwd) / p
+        resolved_parent = p.parent.resolve(strict=False)
+        p_abs = resolved_parent / p.name
+        base_abs = Path(cwd).resolve(strict=False)
+    except OSError:
+        return None
+    try:
+        rel = p_abs.relative_to(base_abs)
+    except ValueError:
         return None
     parts = rel.parts
     if len(parts) < 3 or parts[0] != ".claude" or parts[1] != "scenarios":
         return None
-    if not p.name.endswith(SCENARIO_FILE_SUFFIX):
+    if not p_abs.name.endswith(SCENARIO_FILE_SUFFIX):
         return None
     return str(rel)
 
@@ -225,12 +254,26 @@ def main():
     #   (a) leave content unchanged (baseline hash matches), or
     #   (b) be accompanied by a valid amend marker (sop-reviewer + HEAD SHA).
     # Untracked files (no baseline) are permitted — first-write is allowed.
+    #
+    # Symlinks in the scenarios tree are rejected outright: a symlinked
+    # scenario file would have the edit land on the symlink target,
+    # leaving the committed baseline hash untouched — a silent bypass of
+    # the write-once contract. Enforcing "regular file only" closes this.
     if tool_name in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
         rel = _rel_scenario_path(file_path, cwd)
         if rel is not None:
+            abs_path = (Path(cwd) / rel)
+            if abs_path.is_symlink():
+                _fail(
+                    f"scenario symlink rejected at {rel}\n\n"
+                    f"Symlinked scenario files silently bypass the write-once "
+                    f"contract (edits land on the target, leaving the tracked "
+                    f"baseline hash unchanged).\n"
+                    f"Replace the symlink with a regular file and re-commit."
+                )
             baseline = scenario_baseline_hash(cwd, rel)
             if baseline is not None:
-                current = current_file_hash(file_path)
+                current = current_file_hash(abs_path)
                 if current is not None and current != baseline:
                     if not check_amend_marker(cwd, rel, sid=sid):
                         _fail(
