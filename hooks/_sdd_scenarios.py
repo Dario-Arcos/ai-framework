@@ -147,11 +147,64 @@ _CONCRETE_RE = re.compile(
     r"|(?<![.!?]\s)(?<!^)\b[A-Z][a-z]{2,}"  # proper noun mid-sentence
 )
 
+_CONCRETE_ANCHOR_RES = (
+    re.compile(r"\b\d+(?:\.\d+)?\b"),
+    re.compile(r'"[^"]+"|\'[^\']+\'|`[^`]+`'),
+    re.compile(r"(?<![.!?]\s)(?<!^)\b[A-Z][a-z]{2,}\b"),
+    re.compile(
+        r"(?:/[A-Za-z0-9._-]+)+"
+        r"|\b[a-z_][A-Za-z0-9_]*_[A-Za-z0-9_]+\b"
+        r"|\b[a-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\b"
+        r"|\b[a-z]+[A-Z][A-Za-z0-9]*\b"
+    ),
+)
+
+
+def _concrete_anchors(text):
+    """Return normalized concrete anchors found in free-form scenario text."""
+    anchors = set()
+    for pattern in _CONCRETE_ANCHOR_RES:
+        for match in pattern.finditer(text or ""):
+            anchor = match.group(0).strip("\"'`").strip().lower()
+            if anchor:
+                anchors.add(anchor)
+    return anchors
+
+
+def validate_scenario_quality(scenarios):
+    """Validate soft scenario quality signals beyond structural shape checks.
+
+    Returns (warnings, errors). Warnings are informational only; callers
+    decide whether/how to surface them. Errors are reserved for quality
+    violations that should block validation, but must not duplicate the
+    core empty-When / empty-Then checks already enforced elsewhere.
+    """
+    warnings = []
+    errors = []
+
+    for scen in scenarios:
+        sid = scen["id"]
+        when = scen.get("when", "").strip()
+        then = scen.get("then", "").strip()
+        evidence = scen.get("evidence", "").strip()
+
+        anchors = _concrete_anchors(f"{when} {then}")
+        if when and then and len(anchors) == 1:
+            warnings.append(f"{sid}: no concrete values detected (vague scenario)")
+
+        if when and then and when == then:
+            warnings.append(f"{sid}: When and Then identical")
+
+        if not evidence:
+            warnings.append(f"{sid}: Evidence field missing")
+
+    return warnings, errors
+
 
 def validate_scenario_file(path):
     """Validate a scenario file against the structural contract.
 
-    Returns (valid, errors). Empty errors list iff valid.
+    Returns (valid, errors, warnings). Empty errors list iff valid.
 
     Rules (per SPEC 3.3):
       * YAML frontmatter present with a non-empty `name` field
@@ -160,13 +213,16 @@ def validate_scenario_file(path):
       * SCEN IDs match `^SCEN-\\d{3}$`
       * When/Then contain at least one concrete value (number, literal,
         proper noun) — rejects vague hand-wavy phrasing
+      * Soft quality warnings are returned separately and do not affect
+        validity unless promoted to errors by the caller in a future phase
     """
     try:
         content = Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
-        return False, [f"unreadable: {exc}"]
+        return False, [f"unreadable: {exc}"], []
 
     errors = []
+    warnings = []
 
     fm = _parse_frontmatter(content)
     if fm is None:
@@ -197,7 +253,11 @@ def validate_scenario_file(path):
                 f"proper nouns) — scenarios must be observable"
             )
 
-    return (not errors), errors
+    quality_warnings, quality_errors = validate_scenario_quality(scenarios)
+    errors.extend(quality_errors)
+    warnings.extend(quality_warnings)
+
+    return (not errors), errors, warnings
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -227,14 +287,28 @@ def _run_git(cwd, *args):
 
 
 def scenario_baseline_hash(cwd, rel_path):
-    """SHA256 of the file as committed at HEAD (the write-once baseline).
+    """SHA256 of the file at its first add commit (the write-once baseline).
 
     Returns None when:
       * git subprocess fails / times out
-      * The file is untracked (never committed at HEAD)
+      * The file was never committed
       * cwd is not a git working tree
     """
-    result = _run_git(cwd, "show", f"HEAD:{rel_path}")
+    result = _run_git(
+        cwd, "log", "--diff-filter=A", "--format=%H", "--", rel_path
+    )
+    if result is None or result.returncode != 0:
+        return None
+
+    commits = [
+        line.strip()
+        for line in result.stdout.decode("utf-8", errors="replace").splitlines()
+        if line.strip()
+    ]
+    if not commits:
+        return None
+
+    result = _run_git(cwd, "show", f"{commits[-1]}:{rel_path}")
     if result is None or result.returncode != 0:
         return None
     return hashlib.sha256(result.stdout).hexdigest()

@@ -514,7 +514,7 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
         return False
 
     for sf in files:
-        valid, errors = validate_scenario_file(sf)
+        valid, errors, _warnings = validate_scenario_file(sf)
         if not valid:
             _fail_task(
                 f"Scenario file invalid for: {task_subject}",

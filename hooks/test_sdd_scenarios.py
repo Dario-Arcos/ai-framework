@@ -79,6 +79,28 @@ def _git_init_with_commit(cwd, rel_path, content):
     return result.stdout.strip()
 
 
+def _git_init_repo(cwd):
+    """Initialize a git repo with local identity config."""
+    subprocess.run(["git", "-C", str(cwd), "init", "-q"], check=True)
+    subprocess.run(
+        ["git", "-C", str(cwd), "config", "user.email", "t@t.com"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(cwd), "config", "user.name", "tester"],
+        check=True,
+    )
+
+
+def _git_commit_all(cwd, message):
+    """Stage all changes and create a commit."""
+    subprocess.run(["git", "-C", str(cwd), "add", "-A"], check=True)
+    subprocess.run(
+        ["git", "-C", str(cwd), "commit", "-q", "-m", message],
+        check=True,
+    )
+
+
 # ─────────────────────────────────────────────────────────────────
 # scenario_dir / scenario_files
 # ─────────────────────────────────────────────────────────────────
@@ -190,15 +212,16 @@ class TestValidate(unittest.TestCase):
 
     def test_valid_file_passes(self):
         p = self._write(_VALID_FILE)
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertTrue(valid, f"unexpected errors: {errors}")
         self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
 
     def test_missing_frontmatter_fails(self):
         p = self._write(
             "## SCEN-001: x\n**When**: POST /api\n**Then**: 200 OK\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, _warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(any("frontmatter" in e for e in errors))
 
@@ -207,15 +230,16 @@ class TestValidate(unittest.TestCase):
             "---\ncreated_by: x\n---\n\n"
             "## SCEN-001: x\n**When**: POST /api\n**Then**: 200 OK\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, _warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(any("name" in e for e in errors))
 
     def test_no_scen_blocks_fails(self):
         p = self._write("---\nname: x\n---\n\nJust prose, no blocks.\n")
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertIn("no parseable scenarios", errors)
+        self.assertEqual(warnings, [])
 
     def test_invalid_scen_id_fails(self):
         """Our regex only matches SCEN-NNN headers, so SCEN-0001 (4-digit) is
@@ -225,12 +249,13 @@ class TestValidate(unittest.TestCase):
             "## SCEN-0001: four-digit\n"
             "**When**: POST /api\n**Then**: 200 OK\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(
             any("no parseable scenarios" in e for e in errors),
             f"errors: {errors}",
         )
+        self.assertEqual(warnings, [])
 
     def test_empty_when_fails(self):
         p = self._write(
@@ -239,9 +264,10 @@ class TestValidate(unittest.TestCase):
             "**Given**: user\n"
             "**Then**: 200 OK returned\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(any("empty **When**" in e for e in errors))
+        self.assertEqual(warnings, ["SCEN-001: Evidence field missing"])
 
     def test_empty_then_fails(self):
         p = self._write(
@@ -249,9 +275,10 @@ class TestValidate(unittest.TestCase):
             "## SCEN-001: x\n"
             "**When**: POST /api with body\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(any("empty **Then**" in e for e in errors))
+        self.assertEqual(warnings, ["SCEN-001: Evidence field missing"])
 
     def test_vague_phrasing_rejected(self):
         """Hand-wavy scenarios without concrete anchors must fail."""
@@ -261,12 +288,13 @@ class TestValidate(unittest.TestCase):
             "**When**: user does something\n"
             "**Then**: system reacts appropriately\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(
             any("concrete values" in e for e in errors),
             f"errors: {errors}",
         )
+        self.assertEqual(warnings, ["SCEN-001: Evidence field missing"])
 
     def test_duplicate_scen_ids_flagged(self):
         p = self._write(
@@ -274,14 +302,130 @@ class TestValidate(unittest.TestCase):
             "## SCEN-001: first\n**When**: POST /api\n**Then**: 200 OK\n\n"
             "## SCEN-001: duplicate\n**When**: GET /api\n**Then**: 200 OK\n"
         )
-        valid, errors = S.validate_scenario_file(p)
+        valid, errors, warnings = S.validate_scenario_file(p)
         self.assertFalse(valid)
         self.assertTrue(any("duplicate" in e.lower() for e in errors))
+        self.assertEqual(
+            warnings,
+            [
+                "SCEN-001: Evidence field missing",
+                "SCEN-001: Evidence field missing",
+            ],
+        )
 
     def test_unreadable_path_returns_error(self):
-        valid, errors = S.validate_scenario_file("/no/such/path")
+        valid, errors, warnings = S.validate_scenario_file("/no/such/path")
         self.assertFalse(valid)
         self.assertTrue(any("unreadable" in e for e in errors))
+        self.assertEqual(warnings, [])
+
+
+class TestQualityValidator(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-quality-")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write(self, content):
+        return _write_scenario(self.tmpdir, "quality", content)
+
+    def test_single_concrete_anchor_warns_as_soft_scenario(self):
+        scenarios = [{
+            "id": "SCEN-001",
+            "title": "soft",
+            "given": "",
+            "when": "user enters code 7",
+            "then": "response accepted",
+            "evidence": "audit log",
+        }]
+        warnings, errors = S.validate_scenario_quality(scenarios)
+        self.assertEqual(errors, [])
+        self.assertIn(
+            "SCEN-001: no concrete values detected (vague scenario)", warnings
+        )
+
+    def test_two_or_more_anchors_avoid_vague_warning(self):
+        scenarios = [{
+            "id": "SCEN-001",
+            "title": "concrete",
+            "given": "",
+            "when": "POST /api/orders",
+            "then": "response 201",
+            "evidence": "HTTP response body",
+        }]
+        warnings, errors = S.validate_scenario_quality(scenarios)
+        self.assertEqual(errors, [])
+        self.assertNotIn(
+            "SCEN-001: no concrete values detected (vague scenario)", warnings
+        )
+
+    def test_identical_when_then_warns(self):
+        scenarios = [{
+            "id": "SCEN-001",
+            "title": "mirrored",
+            "given": "",
+            "when": "POST /api returns 200",
+            "then": "POST /api returns 200",
+            "evidence": "server log",
+        }]
+        warnings, errors = S.validate_scenario_quality(scenarios)
+        self.assertEqual(errors, [])
+        self.assertIn("SCEN-001: When and Then identical", warnings)
+
+    def test_missing_evidence_warns(self):
+        scenarios = [{
+            "id": "SCEN-001",
+            "title": "missing evidence",
+            "given": "",
+            "when": "POST /api/orders",
+            "then": 'response 201 with body "created"',
+            "evidence": "",
+        }]
+        warnings, errors = S.validate_scenario_quality(scenarios)
+        self.assertEqual(errors, [])
+        self.assertIn("SCEN-001: Evidence field missing", warnings)
+
+    def test_quality_errors_propagate_into_validate_scenario_file(self):
+        p = self._write(_VALID_FILE)
+        with patch.object(
+            S,
+            "validate_scenario_quality",
+            return_value=(["SCEN-001: warning"], ["quality error"]),
+        ):
+            valid, errors, warnings = S.validate_scenario_file(p)
+        self.assertFalse(valid)
+        self.assertIn("quality error", errors)
+        self.assertIn("SCEN-001: warning", warnings)
+
+    def test_quality_warnings_appear_in_third_tuple_element(self):
+        p = self._write(
+            "---\nname: quality\n---\n\n"
+            "## SCEN-001: soft\n"
+            "**When**: user enters code 7\n"
+            "**Then**: response accepted\n"
+            "**Evidence**: audit log\n"
+        )
+        valid, errors, warnings = S.validate_scenario_file(p)
+        self.assertTrue(valid, f"unexpected errors: {errors}")
+        self.assertEqual(errors, [])
+        self.assertIn(
+            "SCEN-001: no concrete values detected (vague scenario)", warnings
+        )
+
+    def test_structural_errors_still_dominate_even_with_quality_warnings(self):
+        p = self._write(
+            "## SCEN-001: soft\n"
+            "**When**: user enters code 7\n"
+            "**Then**: response accepted\n"
+            "**Evidence**: audit log\n"
+        )
+        valid, errors, warnings = S.validate_scenario_file(p)
+        self.assertFalse(valid)
+        self.assertIn("missing YAML frontmatter", errors)
+        self.assertIn(
+            "SCEN-001: no concrete values detected (vague scenario)", warnings
+        )
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -328,6 +472,64 @@ class TestHashing(unittest.TestCase):
             self.assertIsNone(
                 S.scenario_baseline_hash(self.tmpdir, ".claude/scenarios/x.scenarios.md")
             )
+
+
+class TestBaselineHashFirstCommit(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-baseline-")
+        self.rel = ".claude/scenarios/x.scenarios.md"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_modified_file_uses_first_add_commit_as_baseline(self):
+        initial = _VALID_FILE
+        updated = _VALID_FILE.replace("response 200", "response 204", 1)
+        _git_init_with_commit(self.tmpdir, self.rel, initial)
+        (Path(self.tmpdir) / self.rel).write_text(updated, encoding="utf-8")
+        _git_commit_all(self.tmpdir, "update")
+
+        self.assertEqual(
+            S.scenario_baseline_hash(self.tmpdir, self.rel),
+            S.hashlib.sha256(initial.encode("utf-8")).hexdigest(),
+        )
+
+    def test_deleted_then_readded_file_uses_earliest_add_commit(self):
+        initial = _VALID_FILE
+        readded = _VALID_FILE.replace("/dashboard", "/welcome")
+        _git_init_with_commit(self.tmpdir, self.rel, initial)
+        (Path(self.tmpdir) / self.rel).unlink()
+        _git_commit_all(self.tmpdir, "delete")
+        (Path(self.tmpdir) / self.rel).write_text(readded, encoding="utf-8")
+        _git_commit_all(self.tmpdir, "readd")
+
+        self.assertEqual(
+            S.scenario_baseline_hash(self.tmpdir, self.rel),
+            S.hashlib.sha256(initial.encode("utf-8")).hexdigest(),
+        )
+
+    def test_untracked_file_in_repo_returns_none(self):
+        _git_init_repo(self.tmpdir)
+        subprocess.run(
+            ["git", "-C", str(self.tmpdir), "commit", "--allow-empty", "-q", "-m", "init"],
+            check=True,
+        )
+        path = Path(self.tmpdir) / self.rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_VALID_FILE, encoding="utf-8")
+
+        self.assertIsNone(S.scenario_baseline_hash(self.tmpdir, self.rel))
+
+    def test_baseline_hash_git_failures_return_none(self):
+        for error in (
+            S.subprocess.TimeoutExpired("git", 5),
+            OSError("git missing"),
+        ):
+            with self.subTest(error=type(error).__name__):
+                with patch.object(S.subprocess, "run", side_effect=error):
+                    self.assertIsNone(
+                        S.scenario_baseline_hash(self.tmpdir, self.rel)
+                    )
 
 
 # ─────────────────────────────────────────────────────────────────

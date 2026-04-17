@@ -222,13 +222,14 @@ class TestScen008(unittest.TestCase):
         function, so the contract must hold before we wire it up.
         """
         p = _write_scenario(self.tmpdir, "empty", _VACUOUS_FRONTMATTER_ONLY)
-        valid, errors = _sdd_scenarios.validate_scenario_file(p)
+        valid, errors, warnings = _sdd_scenarios.validate_scenario_file(p)
 
         self.assertFalse(valid, "Frontmatter-only file must be invalid")
         self.assertIn(
             "no parseable scenarios", errors,
             f"Expected canonical error string; got {errors!r}",
         )
+        self.assertEqual(warnings, [])
 
 
 if __name__ == "__main__":
