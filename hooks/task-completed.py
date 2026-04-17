@@ -38,6 +38,7 @@ from _sdd_detect import (
     read_skill_invoked, read_state, release_runner_lock, run_in_process_group,
     skill_invoked_path, test_pgid_path, write_state,
 )
+from _sdd_scenarios import scenario_files, validate_scenario_file
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -495,8 +496,49 @@ def _check_baseline(cwd, sid, current_output):
     return current_summary == baseline_summary
 
 
+def _enforce_scenario_gate(cwd, task_subject, sid):
+    """Scenarios-first quality gate (Phase 3).
+
+    Runs BEFORE the existing test/coverage gates. If scenarios exist:
+      1. Every scenario file must validate (shape + concreteness contract).
+         Invalid files → _fail_task with structured error.
+      2. verification-before-completion skill must have been invoked this
+         session. Missing invocation → _fail_task instructing the skill.
+
+    Returns True iff scenarios exist AND passed all checks. False means
+    no scenarios to gate on — downstream logic runs unmodified for
+    backward-compat (SCEN-005).
+    """
+    files = scenario_files(cwd)
+    if not files:
+        return False
+
+    for sf in files:
+        valid, errors = validate_scenario_file(sf)
+        if not valid:
+            _fail_task(
+                f"Scenario file invalid for: {task_subject}",
+                f"{sf}: {'; '.join(errors)}",
+                "Fix the scenario file (or invoke sop-reviewer to amend) "
+                "before completion.",
+            )
+
+    if not read_skill_invoked(cwd, "verification-before-completion", sid=sid):
+        _fail_task(
+            f"Scenario verification not invoked for: {task_subject}",
+            "Scenarios exist but verification-before-completion was not called "
+            "this session.\n"
+            "Invoke: Skill(skill=\"verification-before-completion\") before "
+            "completing the task.",
+        )
+
+    return True
+
+
 def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     """Test gate for projects without ralph. Reuses auto-test state when trusted."""
+    scenarios_gated = _enforce_scenario_gate(cwd, task_subject, sid)
+
     command = detect_test_command(cwd)
     if command:
         # Fast path: reuse recent auto-test state
@@ -531,19 +573,30 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                 finally:
                     release_runner_lock(lock_fd, cwd)
 
-    # Coverage gate: diff-coverage via runner report, fallback to basename
+    # Coverage gate: diff-coverage via runner report, fallback to basename.
+    # When scenarios gated this task and passed, coverage is demoted to an
+    # informational signal (Phase 3): scenarios are the primary quality
+    # contract, coverage is second-class diagnostic.
     state = read_coverage(cwd, sid=sid)
     if state:
         coverage_spec = _ensure_coverage_report(cwd, state)
         uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec, sid=sid)
         if uncovered:
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
-            _fail_task(
-                f"Untested source files for: {task_subject}",
-                f"Source files without detected coverage:\n{diag}\n\n"
-                f"{_UNCOVERED_RESOLUTION}",
-                "Omitting tests = reward hacking by omission.",
-            )
+            if scenarios_gated:
+                print(
+                    f"Coverage signal for: {task_subject}\n"
+                    f"{len(uncovered)} file(s) without detected coverage "
+                    f"(informational — scenarios passed):\n{diag}",
+                    file=sys.stderr,
+                )
+            else:
+                _fail_task(
+                    f"Untested source files for: {task_subject}",
+                    f"Source files without detected coverage:\n{diag}\n\n"
+                    f"{_UNCOVERED_RESOLUTION}",
+                    "Omitting tests = reward hacking by omission.",
+                )
         clear_coverage(cwd, sid)
 
 
@@ -579,6 +632,12 @@ def main():
     if not _has_source_edits(cwd, sid):
         clear_coverage(cwd, sid)
         sys.exit(0)
+
+    # Scenarios-first gate (Phase 3): runs BEFORE the existing gate loop.
+    # Blocks completion on invalid scenarios or missing verification skill
+    # invocation. Returns True iff scenarios exist and passed — that flag
+    # demotes coverage to signal below.
+    scenarios_gated = _enforce_scenario_gate(cwd, task_subject, sid)
 
     # SDD Skill enforcement: teammate must invoke the correct skill
     # rev-* teammates → sop-reviewer, all others → sop-code-assist
@@ -718,7 +777,10 @@ def main():
                 f"Increase test coverage before completing this task. (consecutive failures: {count})",
             )
 
-    # All gates passed — check coverage before accepting
+    # All gates passed — check coverage before accepting.
+    # Coverage demotion (Phase 3): when scenarios gated this task and
+    # passed, coverage becomes informational. Scenarios are the primary
+    # gate; coverage is diagnostic second-class.
     cov_state = read_coverage(cwd, sid=sid)
     if cov_state:
         # Bound coverage regen to remaining gate budget (never exceed hook timeout)
@@ -728,15 +790,23 @@ def main():
         )
         uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec, sid=sid)
         if uncovered:
-            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
             diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
-            _fail_task(
-                f"Untested source files for: {task_subject}",
-                f"Source files without detected coverage:\n{diag}\n\n"
-                f"{_UNCOVERED_RESOLUTION}",
-                f"Omitting tests = reward hacking by omission. "
-                f"(consecutive failures: {count})",
-            )
+            if scenarios_gated:
+                print(
+                    f"Coverage signal for: {task_subject}\n"
+                    f"{len(uncovered)} file(s) without detected coverage "
+                    f"(informational — scenarios passed):\n{diag}",
+                    file=sys.stderr,
+                )
+            else:
+                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+                _fail_task(
+                    f"Untested source files for: {task_subject}",
+                    f"Source files without detected coverage:\n{diag}\n\n"
+                    f"{_UNCOVERED_RESOLUTION}",
+                    f"Omitting tests = reward hacking by omission. "
+                    f"(consecutive failures: {count})",
+                )
         clear_coverage(cwd, sid)
 
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
