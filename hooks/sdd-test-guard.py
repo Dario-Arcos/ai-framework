@@ -26,6 +26,11 @@ from _sdd_detect import (
     extract_session_id, is_exempt_from_tests, is_source_file, is_test_file,
     read_coverage, read_skill_invoked, read_state, has_test_on_disk,
 )
+from _sdd_scenarios import (
+    SCENARIO_DIR, SCENARIO_FILE_SUFFIX,
+    check_amend_marker, current_file_hash, has_pending_scenarios,
+    scenario_baseline_hash, scenario_files,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -53,6 +58,99 @@ PRECISE_ASSERTION_RE = re.compile(
     r"assertEqual\(|assertNotEqual\(|"  # Python unittest
     r"\.to\.equal\(|\.to\.eql\("    # Chai
 )
+
+
+# ─────────────────────────────────────────────────────────────────
+# SCENARIO GUARD PATTERNS (Phase 3)
+# ─────────────────────────────────────────────────────────────────
+
+# Bash write to .claude/scenarios/ — regex matches the write verbs that
+# would bypass the Edit/Write write-once guard. Read-only commands
+# (cat, diff, grep, head, tail, less, more, file) are NOT matched.
+_BASH_SCENARIO_WRITE_RE = re.compile(
+    r"(?:"
+    r"sed\s+-i"                       # in-place sed
+    r"|cat\s+[^|]*>"                  # cat > or cat << > (heredoc)
+    r"|\btee\b"                       # tee (with or without -a)
+    r"|\bcp\b"                        # copy into scenarios
+    r"|\bmv\b"                        # move into scenarios
+    r"|\brm\b"                        # delete scenario file
+    r"|echo\s+[^|]*>"                 # echo > / >>
+    r"|printf\s+[^|]*>"               # printf >
+    r"|dd\s+[^|]*of="                 # dd of=
+    r"|>\s*[^&|;]*\.claude/scenarios/"  # any redirect that lands here
+    r")"
+)
+
+# git commit detection — word-boundary anchored so lookalikes
+# (`git commit-wrapper`, `my-git commit`) are excluded.
+_BASH_GIT_COMMIT_RE = re.compile(r"(?<![\w-])git\s+commit(?![\w-])")
+
+# Quoted-literal stripper: we do not want `echo "git commit"` to trip
+# the guard when inspecting a Bash command string.
+_QUOTED_LITERAL_RE = re.compile(r"'[^']*'|\"[^\"]*\"")
+
+
+def _strip_quoted(command):
+    """Return command with single/double quoted literals replaced by spaces.
+
+    Keeps offsets stable enough for regex scans without losing comment tails.
+    Does not attempt to track shell escaping perfectly — good enough for
+    heuristic detection of `git commit` vs. `echo "git commit"`.
+    """
+    return _QUOTED_LITERAL_RE.sub(lambda m: " " * len(m.group(0)), command)
+
+
+def _bash_writes_scenarios(command):
+    """True iff the Bash command writes into .claude/scenarios/."""
+    if not command or SCENARIO_DIR not in command:
+        return False
+    stripped = _strip_quoted(command)
+    if SCENARIO_DIR not in stripped:
+        return False
+    return bool(_BASH_SCENARIO_WRITE_RE.search(stripped))
+
+
+def _bash_is_git_commit(command):
+    """True iff the Bash command invokes `git commit` (variants included).
+
+    Matches: `git commit`, `git commit -m`, `git commit --amend`, etc.
+    Excludes: `git commit-wrapper`, `my-git commit`, shell comments,
+    quoted `"git commit"` literals.
+    """
+    if not command:
+        return False
+    stripped = _strip_quoted(command)
+    # Drop shell comments (# to end of line)
+    stripped = re.sub(r"(?<!\\)#[^\n]*", "", stripped)
+    return bool(_BASH_GIT_COMMIT_RE.search(stripped))
+
+
+def _rel_scenario_path(file_path, cwd):
+    """Return file_path relative to cwd if it lies under scenarios dir.
+
+    None if the path is not a scenario file or not under cwd.
+    """
+    if not file_path:
+        return None
+    try:
+        p = Path(file_path).resolve(strict=False)
+        base = Path(cwd).resolve(strict=False)
+        rel = p.relative_to(base)
+    except (OSError, ValueError):
+        return None
+    parts = rel.parts
+    if len(parts) < 3 or parts[0] != ".claude" or parts[1] != "scenarios":
+        return None
+    if not p.name.endswith(SCENARIO_FILE_SUFFIX):
+        return None
+    return str(rel)
+
+
+def _fail(message):
+    """Emit a structured guard denial and exit 2."""
+    print(f"SDD Guard: {message}", file=sys.stderr)
+    sys.exit(2)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -121,6 +219,75 @@ def main():
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
     sid = extract_session_id(input_data)
+
+    # ─── SCENARIO WRITE-ONCE GUARD (Phase 3) ──────────────────────
+    # Edit/Write/MultiEdit/NotebookEdit on a scenario file must either:
+    #   (a) leave content unchanged (baseline hash matches), or
+    #   (b) be accompanied by a valid amend marker (sop-reviewer + HEAD SHA).
+    # Untracked files (no baseline) are permitted — first-write is allowed.
+    if tool_name in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
+        rel = _rel_scenario_path(file_path, cwd)
+        if rel is not None:
+            baseline = scenario_baseline_hash(cwd, rel)
+            if baseline is not None:
+                current = current_file_hash(file_path)
+                if current is not None and current != baseline:
+                    if not check_amend_marker(cwd, rel, sid=sid):
+                        _fail(
+                            f"scenario write-once violation on {rel}\n\n"
+                            f"The scenario file has changed from its git baseline.\n"
+                            f"To amend a scenario, invoke sop-reviewer and create\n"
+                            f"an amend marker:\n"
+                            f"  .claude/scenarios/.amends/<name>-<HEAD_SHA>.marker\n"
+                            f"Or revert the file to match baseline."
+                        )
+
+    # ─── BASH SCENARIO MODIFICATION GUARD (Phase 3) ───────────────
+    # Bash commands that write to .claude/scenarios/ bypass Edit/Write
+    # hooks — we block them via regex on the command string. Read-only
+    # commands (cat, diff, etc.) are not matched.
+    if tool_name == "Bash":
+        command = tool_input.get("command", "")
+        if _bash_writes_scenarios(command):
+            _fail(
+                "Bash command modifies scenario files\n\n"
+                "Direct Bash writes to .claude/scenarios/ bypass the write-once\n"
+                "guard. Use Edit/Write (which honor the amend-marker protocol)\n"
+                "or invoke sop-reviewer to author a legitimate amend."
+            )
+
+    # ─── COMPLETION-WITHOUT-VERIFICATION GUARD (Phase 3) ──────────
+    # Mirrors the task-completed scenario gate at PreToolUse time so
+    # the model cannot "mark complete" without invoking verification.
+    if tool_name == "TaskUpdate":
+        if tool_input.get("status") == "completed":
+            if has_pending_scenarios(cwd, sid=sid):
+                _fail(
+                    "TaskUpdate(completed) blocked — scenarios require verification\n\n"
+                    "Scenarios exist in .claude/scenarios/ but\n"
+                    "verification-before-completion was not invoked this session.\n"
+                    "Invoke: Skill(skill='verification-before-completion')"
+                )
+
+    if tool_name == "Bash":
+        command = tool_input.get("command", "")
+        if _bash_is_git_commit(command) and "--no-verify" not in command:
+            if has_pending_scenarios(cwd, sid=sid):
+                _fail(
+                    "git commit blocked — scenarios require verification\n\n"
+                    "Scenarios exist in .claude/scenarios/ but\n"
+                    "verification-before-completion was not invoked this session.\n"
+                    "Invoke: Skill(skill='verification-before-completion')\n"
+                    "To bypass (telemetry-logged): add --no-verify to the commit."
+                )
+        elif _bash_is_git_commit(command) and "--no-verify" in command:
+            if has_pending_scenarios(cwd, sid=sid):
+                # Allow but log the bypass to stderr (telemetry signal)
+                print(
+                    "SDD Guard: git commit --no-verify bypass logged "
+                    "(scenarios present, verification skipped)",
+                    file=sys.stderr,
+                )
 
     # ─── REVIEW FILE GUARD ────────────────────────────────────────
     # Deny Write to .ralph/reviews/ without sop-reviewer skill
