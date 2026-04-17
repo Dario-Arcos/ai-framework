@@ -866,9 +866,9 @@ class TestWriteToolGuardIntegration(unittest.TestCase):
         test_file = Path(self.tmpdir) / "tests" / "test_app.py"
         test_file.parent.mkdir(parents=True, exist_ok=True)
         test_file.write_text(
-            "def test_a(): assert True\n"
-            "def test_b(): assert True\n"
-            "def test_c(): assert True\n",
+            "def test_a(): assert status_code == 200\n"
+            "def test_b(): assert payload == {'ok': True}\n"
+            "def test_c(): assert retries == 3\n",
             encoding="utf-8",
         )
         _sdd_detect.write_state(self.tmpdir, False, "1 failed")
@@ -878,7 +878,7 @@ class TestWriteToolGuardIntegration(unittest.TestCase):
             "tool_name": "Write",
             "tool_input": {
                 "file_path": str(test_file),
-                "content": "def test_a(): assert True\n",
+                "content": "def test_a(): assert status_code == 200\n",
             },
         })
         self.assertEqual(exit_code, 2)
@@ -894,7 +894,7 @@ class TestWriteToolGuardIntegration(unittest.TestCase):
             "tool_name": "Write",
             "tool_input": {
                 "file_path": str(new_file),
-                "content": "def test_new(): assert True\n",
+                "content": "def test_new(): assert result == 42\n",
             },
         })
         self.assertEqual(exit_code, 0)

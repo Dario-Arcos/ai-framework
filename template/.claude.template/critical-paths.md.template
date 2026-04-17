@@ -1,0 +1,9 @@
+# Critical paths — changes here should have human review
+
+auth/**
+payments/**
+migrations/**
+*.sql
+.github/workflows/**
+.env*
+secrets/**

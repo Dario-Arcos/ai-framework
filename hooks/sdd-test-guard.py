@@ -19,6 +19,7 @@ import json
 import os
 import re
 import sys
+from fnmatch import fnmatch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -58,6 +59,31 @@ PRECISE_ASSERTION_RE = re.compile(
     r"assertEqual\(|assertNotEqual\(|"  # Python unittest
     r"\.to\.equal\(|\.to\.eql\("    # Chai
 )
+
+CRITICAL_PATHS_FILE = ".claude/critical-paths.md"
+
+_TRIPLE_QUOTED_RE = re.compile(
+    r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'',
+)
+
+_TAUTOLOGICAL_PATTERNS = [
+    ("assert True", re.compile(r"\bassert\s+True\b")),
+    ("assert 1 == 1", re.compile(r"\bassert\s+1\s*==\s*1\b")),
+    ("expect(true).toBe(true)", re.compile(r"expect\(true\)\.toBe\(true\)")),
+    (
+        "empty test function",
+        re.compile(
+            r"^\s*def\s+test_\w+\([^)]*\):\s*\n\s*pass\s*$",
+            re.MULTILINE,
+        ),
+    ),
+    (
+        "empty arrow test",
+        re.compile(
+            r"it\([\'\"][^\'\"]+[\'\"]\s*,\s*(?:async\s+)?\(\s*\)\s*=>\s*\{\s*\}\s*\)"
+        ),
+    ),
+]
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -232,6 +258,65 @@ def analyze_edit(tool_name, tool_input):
     return 0, 0, "", ""
 
 
+def _extract_new_text(tool_name, tool_input):
+    """Extract the newly introduced text from an Edit/Write payload."""
+    if tool_name == "Edit":
+        return tool_input.get("new_string", "")
+    if tool_name == "Write":
+        return tool_input.get("content", "")
+    return ""
+
+
+def _strip_docstrings(text):
+    """Remove triple-quoted strings before tautology scanning."""
+    return _TRIPLE_QUOTED_RE.sub("", text or "")
+
+
+def _find_tautological_test_addition(new_text):
+    """Return the matched tautology category, or None."""
+    if not new_text:
+        return None
+    stripped = _strip_docstrings(new_text)
+    for category, pattern in _TAUTOLOGICAL_PATTERNS:
+        if pattern.search(stripped):
+            return category
+    return None
+
+
+def _is_tautological_test_addition(new_text):
+    """Check if the new text introduces a trivially-true test."""
+    return _find_tautological_test_addition(new_text) is not None
+
+
+def _load_critical_paths(cwd):
+    """Read critical path patterns from .claude/critical-paths.md."""
+    path = Path(cwd) / CRITICAL_PATHS_FILE
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return []
+    return [
+        line.strip()
+        for line in lines
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+
+def _matches_critical_path(file_rel, patterns):
+    """True if file_rel matches any configured critical-path glob."""
+    rel_path = Path(file_rel)
+    for pattern in patterns:
+        if fnmatch(file_rel, pattern) or rel_path.match(pattern):
+            return True
+        if pattern.endswith("/**"):
+            prefix = pattern[:-3].rstrip("/")
+            if file_rel == prefix or file_rel.startswith(prefix + "/"):
+                return True
+    return False
+
+
 # ─────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────
@@ -332,6 +417,25 @@ def main():
                     file=sys.stderr,
                 )
 
+    if tool_name in ("Edit", "Write", "MultiEdit"):
+        patterns = _load_critical_paths(cwd)
+        if patterns:
+            try:
+                resolved_cwd = Path(cwd).resolve(strict=False)
+                fp = Path(file_path)
+                if not fp.is_absolute():
+                    fp = resolved_cwd / fp
+                rel_fp = fp.resolve(strict=False).relative_to(resolved_cwd).as_posix()
+            except (ValueError, OSError):
+                rel_fp = None
+            if rel_fp and _matches_critical_path(rel_fp, patterns):
+                print(
+                    f"SDD Guard: critical path touched — {rel_fp}\n"
+                    f"Matches a pattern in {CRITICAL_PATHS_FILE}. Consider "
+                    f"human review before marking complete.",
+                    file=sys.stderr,
+                )
+
     # ─── REVIEW FILE GUARD ────────────────────────────────────────
     # Deny Write to .ralph/reviews/ without sop-reviewer skill
     if tool_name == "Write" and ".ralph/reviews/" in file_path:
@@ -368,6 +472,19 @@ def main():
     # Fast path: not a test file → allow (~1ms)
     if not is_test_file(file_path, cwd=cwd):
         sys.exit(0)
+
+    if tool_name in ("Edit", "Write"):
+        category = _find_tautological_test_addition(
+            _extract_new_text(tool_name, tool_input)
+        )
+        if category:
+            print(
+                f"SDD Guard: tautological test detected ({category})\n\n"
+                f"Test edits must assert meaningful behavior, not a trivially "
+                f"true placeholder.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
     # Read test state
     state = read_state(cwd)

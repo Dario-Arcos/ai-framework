@@ -28,6 +28,7 @@ def find_project_dir():
 
 ALLOWED_TEMPLATE_PATHS = [
     "CLAUDE.md.template",
+    ".claude.template/critical-paths.md.template",
     ".claude.template/settings.json.template",
     ".claude.template/statusline.cmd",
     ".claude.template/statusline.py",

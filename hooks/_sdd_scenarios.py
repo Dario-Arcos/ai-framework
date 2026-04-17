@@ -25,12 +25,14 @@ Enforcement happens in two places (hooks/sdd-test-guard.py and
 hooks/task-completed.py); this module provides the pure primitives those
 hooks consume.
 """
+import json
 import hashlib
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
-from _sdd_state import read_skill_invoked
+from _sdd_state import _write_json_atomic, project_hash, read_skill_invoked
 
 
 SCENARIO_DIR = ".claude/scenarios"
@@ -64,6 +66,47 @@ def scenario_files(cwd):
         p for p in d.glob("*" + SCENARIO_FILE_SUFFIX)
         if p.is_file()
     )
+
+
+def _validated_scenarios_path(cwd, sid):
+    """Session-scoped temp file used to record the validated scenario set."""
+    if not sid:
+        return None
+    return (
+        Path(tempfile.gettempdir())
+        / f"sdd-scen-validated-{project_hash(cwd)}-{sid}.json"
+    )
+
+
+def record_validated_scenarios(cwd, sid, scenario_ids):
+    """Persist the scenario IDs validated for this project/session."""
+    path = _validated_scenarios_path(cwd, sid)
+    if path is None:
+        return
+    ids = sorted({sid_ for sid_ in (scenario_ids or []) if sid_})
+    _write_json_atomic(
+        path,
+        {"scenario_ids": ids},
+        prefix="sdd-scen-validated-",
+    )
+
+
+def read_validated_scenarios(cwd, sid):
+    """Return the recorded validated scenario set for this session, or None."""
+    path = _validated_scenarios_path(cwd, sid)
+    if path is None:
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return None
+
+    scenario_ids = data.get("scenario_ids")
+    if not isinstance(scenario_ids, list):
+        return None
+    if not all(isinstance(item, str) for item in scenario_ids):
+        return None
+    return set(scenario_ids)
 
 
 # ─────────────────────────────────────────────────────────────────

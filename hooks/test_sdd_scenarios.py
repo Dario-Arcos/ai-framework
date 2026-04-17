@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for _sdd_scenarios.py — scenario parser, validator, amend protocol."""
+import json
 import os
 import shutil
 import subprocess
@@ -194,6 +195,49 @@ class TestParseScenarios(unittest.TestCase):
         self.assertEqual(scenarios[0]["when"].strip(), "first-when")
         self.assertNotIn("second-when", scenarios[0]["when"])
         self.assertEqual(scenarios[1]["when"].strip(), "second-when")
+
+
+class TestValidatedScenarioState(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-state-")
+        self.sid1 = "sid-a"
+        self.sid2 = "sid-b"
+
+    def tearDown(self):
+        for sid in (self.sid1, self.sid2):
+            path = S._validated_scenarios_path(self.tmpdir, sid)
+            if path is not None:
+                path.unlink(missing_ok=True)
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_record_and_read_round_trip(self):
+        S.record_validated_scenarios(
+            self.tmpdir, self.sid1, {"SCEN-002", "SCEN-001", "SCEN-002"}
+        )
+        self.assertEqual(
+            S.read_validated_scenarios(self.tmpdir, self.sid1),
+            {"SCEN-001", "SCEN-002"},
+        )
+
+    def test_missing_file_returns_none(self):
+        self.assertIsNone(S.read_validated_scenarios(self.tmpdir, self.sid1))
+
+    def test_corrupt_json_returns_none(self):
+        path = S._validated_scenarios_path(self.tmpdir, self.sid1)
+        path.write_text("{not json", encoding="utf-8")
+        self.assertIsNone(S.read_validated_scenarios(self.tmpdir, self.sid1))
+
+    def test_sids_are_isolated(self):
+        S.record_validated_scenarios(self.tmpdir, self.sid1, {"SCEN-001"})
+        S.record_validated_scenarios(self.tmpdir, self.sid2, {"SCEN-002"})
+        self.assertEqual(
+            S.read_validated_scenarios(self.tmpdir, self.sid1),
+            {"SCEN-001"},
+        )
+        self.assertEqual(
+            S.read_validated_scenarios(self.tmpdir, self.sid2),
+            {"SCEN-002"},
+        )
 
 
 # ─────────────────────────────────────────────────────────────────

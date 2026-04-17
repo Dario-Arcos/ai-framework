@@ -18,6 +18,9 @@ is_test_file = sdd_test_guard.is_test_file
 count_assertions = sdd_test_guard.count_assertions
 count_precise = sdd_test_guard.count_precise
 analyze_edit = sdd_test_guard.analyze_edit
+is_tautological_test_addition = sdd_test_guard._is_tautological_test_addition
+load_critical_paths = sdd_test_guard._load_critical_paths
+matches_critical_path = sdd_test_guard._matches_critical_path
 main = sdd_test_guard.main
 
 
@@ -378,6 +381,179 @@ class TestPrecisionDenyInMain(unittest.TestCase):
         })
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout, "")
+
+
+class TestTautologicalTests(unittest.TestCase):
+    def _run_main(self, input_data):
+        stdin_mock = io.StringIO(json.dumps(input_data))
+        stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
+        exit_code = 0
+        with patch("sys.stdin", stdin_mock), \
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
+            try:
+                main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
+
+    def test_assert_true_addition_denied(self):
+        self.assertTrue(is_tautological_test_addition("assert True"))
+
+    def test_assert_one_equals_one_addition_denied(self):
+        self.assertTrue(is_tautological_test_addition("assert 1 == 1"))
+
+    def test_expect_true_to_be_true_addition_denied(self):
+        self.assertTrue(is_tautological_test_addition("expect(true).toBe(true)"))
+
+    def test_empty_test_function_addition_denied(self):
+        self.assertTrue(
+            is_tautological_test_addition("def test_placeholder():\n    pass")
+        )
+
+    def test_empty_arrow_test_addition_denied(self):
+        self.assertTrue(
+            is_tautological_test_addition("it('x', () => {})")
+        )
+
+    def test_pattern_inside_docstring_allowed(self):
+        self.assertFalse(
+            is_tautological_test_addition(
+                '"""Example only:\nassert True\nexpect(true).toBe(true)\n"""'
+            )
+        )
+
+    def test_removal_of_tautological_test_allowed(self):
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "test_foo.py",
+                "old_string": "assert True",
+                "new_string": "assert result == 42",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+        self.assertNotIn("tautological", stderr)
+
+    def test_non_test_file_with_tautology_allowed(self):
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": "/tmp/project",
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/main.py",
+                "old_string": "pass",
+                "new_string": "assert True",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+
+
+class TestCriticalPathSignals(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        critical = Path(self.tmpdir) / ".claude" / "critical-paths.md"
+        critical.parent.mkdir(parents=True, exist_ok=True)
+        critical.write_text(
+            "# Critical paths\n\n"
+            "auth/**\n"
+            "payments/**\n"
+            "migrations/**\n"
+            "*.sql\n"
+            ".github/workflows/**\n"
+            ".env*\n"
+            "secrets/**\n",
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _run_main(self, input_data):
+        stdin_mock = io.StringIO(json.dumps(input_data))
+        stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
+        exit_code = 0
+        with patch("sys.stdin", stdin_mock), \
+             patch("sys.stdout", stdout_capture), \
+             patch("sys.stderr", stderr_capture):
+            try:
+                main()
+            except SystemExit as e:
+                exit_code = e.code if e.code is not None else 0
+        return exit_code, stdout_capture.getvalue(), stderr_capture.getvalue()
+
+    def test_matching_path_emits_warning(self):
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": ".github/workflows/ci.yml",
+                "old_string": "",
+                "new_string": "name: ci",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+        self.assertIn(".github/workflows/ci.yml", stderr)
+        self.assertIn("critical path", stderr.lower())
+
+    def test_warning_is_non_blocking_unless_another_guard_triggers(self):
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "auth/test_guard.py",
+                "old_string": "assert value == 1",
+                "new_string": "assert True",
+            },
+        })
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout, "")
+        self.assertIn("critical path", stderr.lower())
+        self.assertIn("tautological test detected", stderr)
+
+    def test_no_critical_paths_file_means_no_warning(self):
+        shutil.rmtree(Path(self.tmpdir) / ".claude", ignore_errors=True)
+        exit_code, stdout, stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": ".github/workflows/ci.yml",
+                "old_string": "",
+                "new_string": "name: ci",
+            },
+        })
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout, "")
+        self.assertNotIn("critical path", stderr.lower())
+
+    def test_multiple_patterns_each_match(self):
+        patterns = load_critical_paths(self.tmpdir)
+        self.assertTrue(matches_critical_path("auth/service.py", patterns))
+        self.assertTrue(matches_critical_path("payments/checkout.ts", patterns))
+        self.assertTrue(matches_critical_path("migrations/001_init.sql", patterns))
+        self.assertTrue(matches_critical_path(".github/workflows/ci.yml", patterns))
+        self.assertTrue(matches_critical_path(".env.local", patterns))
+        self.assertTrue(matches_critical_path("secrets/token.txt", patterns))
+
+    def test_comments_and_blank_lines_ignored(self):
+        patterns = load_critical_paths(self.tmpdir)
+        self.assertEqual(
+            patterns,
+            [
+                "auth/**",
+                "payments/**",
+                "migrations/**",
+                "*.sql",
+                ".github/workflows/**",
+                ".env*",
+                "secrets/**",
+            ],
+        )
 
     @patch.object(sdd_test_guard, "read_state", return_value={"passing": False, "summary": "1 failed"})
     def test_loose_to_exact_allowed(self, _mock):

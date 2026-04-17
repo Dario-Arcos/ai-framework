@@ -38,7 +38,12 @@ from _sdd_detect import (
     read_skill_invoked, read_state, release_runner_lock, run_in_process_group,
     skill_invoked_path, test_pgid_path, write_state,
 )
-from _sdd_scenarios import scenario_files, validate_scenario_file
+from _sdd_scenarios import (
+    parse_scenarios,
+    record_validated_scenarios,
+    scenario_files,
+    validate_scenario_file,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -496,6 +501,14 @@ def _check_baseline(cwd, sid, current_output):
     return current_summary == baseline_summary
 
 
+def _format_validated_scenario_ids(scenario_ids, limit=20):
+    """Render a compact SCEN id list for stderr success signaling."""
+    if len(scenario_ids) <= limit:
+        return "[" + ", ".join(scenario_ids) + "]"
+    shown = ", ".join(scenario_ids[:limit])
+    return f"[{shown}, ... (+{len(scenario_ids) - limit} more)]"
+
+
 def _enforce_scenario_gate(cwd, task_subject, sid):
     """Scenarios-first quality gate (Phase 3).
 
@@ -513,6 +526,8 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
     if not files:
         return False
 
+    scenario_ids = set()
+
     for sf in files:
         valid, errors, _warnings = validate_scenario_file(sf)
         if not valid:
@@ -522,6 +537,17 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
                 "Fix the scenario file (or invoke sop-reviewer to amend) "
                 "before completion.",
             )
+        try:
+            content = Path(sf).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            _fail_task(
+                f"Scenario file unreadable for: {task_subject}",
+                f"{sf}: {exc}",
+                "Fix the scenario file before completion.",
+            )
+        for scenario in parse_scenarios(content):
+            if scenario.get("id"):
+                scenario_ids.add(scenario["id"])
 
     if not read_skill_invoked(cwd, "verification-before-completion", sid=sid):
         _fail_task(
@@ -531,6 +557,14 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
             "Invoke: Skill(skill=\"verification-before-completion\") before "
             "completing the task.",
         )
+
+    validated_ids = sorted(scenario_ids)
+    record_validated_scenarios(cwd, sid, validated_ids)
+    print(
+        "Scenario IDs validated: "
+        f"{_format_validated_scenario_ids(validated_ids)}",
+        file=sys.stderr,
+    )
 
     return True
 
