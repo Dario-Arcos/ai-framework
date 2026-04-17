@@ -139,15 +139,19 @@ class TestPhase7Bypass(unittest.TestCase):
         updated = _VALID_SCENARIO + "\n## SCEN-002: drift\n**When**: x\n**Then**: y\n"
         scenario_path.write_text(updated, encoding="utf-8")
 
-        rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", {
-            "cwd": self.tmpdir,
-            "tool_name": "Edit",
-            "tool_input": {
-                "file_path": str(scenario_path),
-                "old_string": _VALID_SCENARIO,
-                "new_string": updated,
+        rc, _stdout, stderr, _elapsed_ms = invoke_hook(
+            "sdd-test-guard.py",
+            {
+                "cwd": self.tmpdir,
+                "tool_name": "Edit",
+                "tool_input": {
+                    "file_path": str(scenario_path),
+                    "old_string": _VALID_SCENARIO,
+                    "new_string": updated,
+                },
             },
-        })
+            env={"_SDD_DISABLE_SCENARIOS": ""},
+        )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:SCENARIO]"), stderr)
 
@@ -177,7 +181,11 @@ class TestPhase7Bypass(unittest.TestCase):
             },
         }
 
-        rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", payload)
+        rc, _stdout, stderr, _elapsed_ms = invoke_hook(
+            "sdd-test-guard.py",
+            payload,
+            env={"_SDD_DISABLE_SCENARIOS": ""},
+        )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:SCENARIO]"), stderr)
 
@@ -198,7 +206,11 @@ class TestPhase7Bypass(unittest.TestCase):
             "tool_input": {"status": "completed", "taskId": "T-1"},
         }
 
-        rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", payload)
+        rc, _stdout, stderr, _elapsed_ms = invoke_hook(
+            "sdd-test-guard.py",
+            payload,
+            env={"_SDD_DISABLE_SCENARIOS": ""},
+        )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:POLICY]"), stderr)
 
@@ -219,7 +231,11 @@ class TestPhase7Bypass(unittest.TestCase):
             "tool_input": {"command": 'git commit -m "x"'},
         }
 
-        rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", payload)
+        rc, _stdout, stderr, _elapsed_ms = invoke_hook(
+            "sdd-test-guard.py",
+            payload,
+            env={"_SDD_DISABLE_SCENARIOS": ""},
+        )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:POLICY]"), stderr)
 
@@ -243,7 +259,11 @@ class TestPhase7Bypass(unittest.TestCase):
             },
         }
 
-        rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", payload)
+        rc, _stdout, stderr, _elapsed_ms = invoke_hook(
+            "sdd-test-guard.py",
+            payload,
+            env={"_SDD_DISABLE_SCENARIOS": ""},
+        )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:GATE]"), stderr)
 
