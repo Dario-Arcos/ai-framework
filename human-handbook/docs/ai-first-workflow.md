@@ -368,22 +368,24 @@ Sin pipeline. Claude aplica SDD automáticamente (define scenario → satisface 
 
 ### Hotfix <Badge type="danger" text="urgente" /> — Worktree aislado
 
-```bash
-/worktree-create "hotfix-race-condition" main     # [!code focus]
+El flujo de worktrees ahora se ejecuta con las tools nativas de Claude Code (`EnterWorktree` / `ExitWorktree` / `Agent({isolation: "worktree"})`). Los skills `worktree-create` y `worktree-cleanup` fueron eliminados en este release. Ver [Claude Code tools](https://code.claude.com/docs/en/tools.md).
 
-# En la nueva ventana:
+```text
+EnterWorktree hotfix-race-condition main    # sesión aislada sobre rama main
+
+# En la nueva sesión:
 "Fix: race condition en checkout"
 /commit "fix: race condition in checkout process"
 /pull-request main
 
-/worktree-cleanup hotfix-race-condition           # [!code focus]
+ExitWorktree                                # vuelve al directorio original
 ```
 
 ---
 
 ## Herramientas de soporte {#tools}
 
-Además del pipeline principal, el framework incluye herramientas para tareas específicas: `/project-init` para configurar reglas de proyecto, `/deep-research` para investigación multi-fuente, `agent-browser` para interacción web, `/dogfood` para QA exploratorio de apps web, y `/worktree-create` para trabajo paralelo.
+Además del pipeline principal, el framework incluye herramientas para tareas específicas: `/project-init` para configurar reglas de proyecto, `/deep-research` para investigación multi-fuente, `agent-browser` para interacción web, `/dogfood` para QA exploratorio de apps web, y las tools nativas de Claude Code (`EnterWorktree` / `ExitWorktree`) para trabajo paralelo en worktrees.
 
 Ver detalles completos en [Skills](./skills-guide.md).
 
@@ -408,7 +410,7 @@ Ver instalación y detalles en [Integraciones](./integrations.md).
 | Commit | `/commit "tipo: descripción"` |
 | Pull request | `/pull-request main` |
 | Limpiar branch | `/branch-cleanup` |
-| Worktree paralelo | `/worktree-create "nombre" base` |
+| Worktree paralelo | `EnterWorktree` (native tool) |
 | Inicializar proyecto | `/project-init` |
 | Investigación profunda | `/deep-research "tema"` |
 | Interacción web | `agent-browser open URL` |

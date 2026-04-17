@@ -68,3 +68,7 @@ Because the file now differs from its committed baseline. Revert it, or invoke `
 ### Can I skip scenarios for a prototype?
 
 Yes. If you do not create `.claude/scenarios/`, the plugin remains backward-compatible and the scenarios-first gates do not apply.
+
+### How do I use worktrees for parallel teammate work?
+
+Use Claude Code's native worktree tooling (`EnterWorktree`, `ExitWorktree`, or `Agent({isolation: "worktree"})`). The `worktree-create` and `worktree-cleanup` skills were removed in this release in favour of the native tools documented at `code.claude.com/docs/en/tools.md`. Before entering a worktree, commit your `.claude/scenarios/` to the parent branch so every worktree inherits the contract.

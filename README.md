@@ -102,7 +102,7 @@ Rules are committed to the repo (shared with team). `CLAUDE.md` and `settings.js
 | **Development** | `scenario-driven-development`, `brainstorming`, `frontend-design`, `systematic-debugging`, `verification-before-completion` |
 | **SOP Pipeline** | `sop-discovery`, `sop-reverse`, `sop-planning`, `sop-task-generator`, `sop-code-assist`, `sop-reviewer` |
 | **Orchestration** | `ralph-orchestrator` |
-| **Git/GitHub** | `commit`, `pull-request`, `branch-cleanup`, `worktree-create`, `worktree-cleanup`, `changelog` |
+| **Git/GitHub** | `commit`, `pull-request`, `branch-cleanup`, `changelog` (worktree workflows now use native `EnterWorktree` / `ExitWorktree` / `Agent({isolation: "worktree"})` — see [Claude Code tools](https://code.claude.com/docs/en/tools.md)) |
 | **Context** | `context-engineering`, `deep-research`, `project-init` |
 | **Utilities** | `skill-creator`, `humanizer` |
 

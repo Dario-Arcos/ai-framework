@@ -37,8 +37,7 @@ Claude detecta el contexto y carga el skill apropiado. También puedes forzarlo:
 | `commit` | Commits semánticos con agrupación automática por tipo | Listo para commitear |
 | `changelog` | Actualiza CHANGELOG desde diff real | Documentar cambios |
 | `branch-cleanup` | Limpieza post-merge | Después de mergear PR |
-| `worktree-create` | Worktree aislado en sibling dir | Necesitas workstream paralelo |
-| `worktree-cleanup` | Eliminar worktrees con validación | Terminar con worktrees |
+| _(migrado a nativo)_ | Worktrees: usar `EnterWorktree` / `ExitWorktree` / `Agent({isolation: "worktree"})` — [Claude Code tools](https://code.claude.com/docs/en/tools.md) | Workstream paralelo o limpieza de worktrees |
 | `project-init` | Genera rules de proyecto (stack, architecture, conventions) | Proyecto nuevo o stack cambiado |
 | `deep-research` | Investigación multi-fuente con verificación y confidence ratings | Investigación compleja |
 
@@ -342,39 +341,22 @@ GitHub elimina la branch remota al mergear. Este skill limpia la local.
 
 ---
 
-## worktree-create
+## Worktrees (nativo)
 
-Crea worktree en directorio sibling con rama nueva.
+::: warning Skills eliminados
+Los antiguos `worktree-create` y `worktree-cleanup` fueron removidos en este release. El flujo de worktrees ahora se ejecuta con las herramientas nativas de Claude Code.
+:::
 
-```bash
-/worktree-create "implementar autenticacion OAuth" main
-# Crea: ../worktree-implementar-autenticacion-oauth
-```
+Usa las tools nativas:
+
+- `EnterWorktree` — crea o entra en un worktree aislado ([tools.md](https://code.claude.com/docs/en/tools.md)).
+- `ExitWorktree` — cierra la sesión y vuelve al directorio original.
+- `Agent({isolation: "worktree"})` — despacha un sub-agente dentro de un worktree temporal.
 
 ::: tip Branch vs Worktree
 **Branch:** Desarrollo lineal, una feature a la vez.
 **Worktree:** Múltiples features en paralelo, cada una en directorio aislado.
 :::
-
-::: warning Después de crear
-El IDE se abre automáticamente, pero debes iniciar nueva sesión Claude en esa ventana. Si no, Claude sigue trabajando en el directorio anterior.
-:::
-
----
-
-## worktree-cleanup
-
-Elimina worktrees con validación de ownership.
-
-```bash
-/worktree-cleanup              # Discovery: lista disponibles
-/worktree-cleanup worktree-1   # Eliminar específico
-```
-
-**Restricciones:**
-- Solo elimina worktrees que te pertenecen
-- No toca branches protegidas (main, develop, staging)
-- Requiere working tree limpio
 
 ---
 
@@ -520,7 +502,7 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 | Escenario | Skills |
 |-----------|--------|
 | **Feature nueva** | `/brainstorming` → plan mode → `/scenario-driven-development` → `/verification-before-completion` → `/commit` → `/pull-request` |
-| **Bug fix urgente** | `/worktree-create` → fix → `/commit` → `/pull-request` |
+| **Bug fix urgente** | `EnterWorktree` → fix → `/commit` → `/pull-request` (native Claude Code worktree tooling) |
 | **Desarrollo autónomo** | `/ralph-orchestrator` (orquesta todo el pipeline) |
 | **Post-merge** | `/branch-cleanup` |
 

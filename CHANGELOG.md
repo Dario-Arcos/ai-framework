@@ -20,6 +20,12 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 - `docs/migration-to-scenarios.md` y `skills/ralph-orchestrator/references/quality-gates.md`: se elimina el descargo "no cableado" y se documentan las tres superficies de configuración del bypass.
 - `hooks/hooks.json` `PreToolUse.matcher`: removido `MultiEdit` (herramienta legacy ausente en la referencia oficial actual de Claude Code). Matcher final: `Edit|Write|NotebookEdit|TaskUpdate|Bash`.
 - `skills/ralph-orchestrator/references/quality-gates.md`: añadida tabla de citas a la documentación oficial Claude Code (Phase 7 C7) — 16 claims verificadas vía `claude-code-guide` sub-agent.
+- Flujo de worktrees migrado a herramientas nativas de Claude Code (`EnterWorktree`, `ExitWorktree`, `Agent({isolation: "worktree"})`). README, `human-handbook/docs/skills-guide.md`, `human-handbook/docs/ai-first-workflow.md` actualizados.
+
+### Eliminado
+
+- `skills/worktree-create/` — reemplazado por la tool nativa `EnterWorktree` (ver `code.claude.com/docs/en/tools.md`).
+- `skills/worktree-cleanup/` — reemplazado por `ExitWorktree` + flujo nativo de worktree cleanup.
 
 ## [2026.4.0] - 2026-04-16
 
