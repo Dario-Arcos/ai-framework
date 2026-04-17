@@ -677,7 +677,7 @@ class TestSourceOrderingGuard(unittest.TestCase):
         ]
         event = events[-1]
         self.assertEqual(event["event"], "guard_triggered")
-        self.assertEqual(event["category"], "SCENARIO")
+        self.assertEqual(event["category"], "POLICY")
         self.assertEqual(event["tool_name"], "Edit")
         self.assertEqual(event["file_path"], "src/feature.py")
 

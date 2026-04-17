@@ -404,25 +404,27 @@ def main():
     if tool_name == "TaskUpdate":
         if tool_input.get("status") == "completed":
             if has_pending_scenarios(cwd, sid=sid):
-                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
                 _fail(
                     "TaskUpdate(completed) blocked — scenarios require verification\n\n"
                     "Scenarios exist in .claude/scenarios/ but\n"
                     "verification-before-completion was not invoked this session.\n"
-                    "Invoke: Skill(skill='verification-before-completion')"
+                    "Invoke: Skill(skill='verification-before-completion')",
+                    category="POLICY",
                 )
 
     if tool_name == "Bash":
         command = tool_input.get("command", "")
         if _bash_is_git_commit(command) and "--no-verify" not in command:
             if has_pending_scenarios(cwd, sid=sid):
-                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
                 _fail(
                     "git commit blocked — scenarios require verification\n\n"
                     "Scenarios exist in .claude/scenarios/ but\n"
                     "verification-before-completion was not invoked this session.\n"
                     "Invoke: Skill(skill='verification-before-completion')\n"
-                    "To bypass (telemetry-logged): add --no-verify to the commit."
+                    "To bypass (telemetry-logged): add --no-verify to the commit.",
+                    category="POLICY",
                 )
         elif _bash_is_git_commit(command) and "--no-verify" in command:
             if has_pending_scenarios(cwd, sid=sid):
@@ -475,13 +477,14 @@ def main():
             cov = read_coverage(cwd, sid=sid)
             if cov and cov.get("source_files") and len(cov.get("test_files", [])) == 0:
                 source_count = len(cov.get("source_files", []))
-                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
                 _fail(
                     f"write test scenarios before implementation\n\n"
                     f"Source files edited: {source_count}, test files: 0\n"
                     f"No test file found on disk for: {Path(file_path).name}\n"
                     f"SDD ordering: define scenarios \u2192 write failing tests \u2192 implement.\n"
                     f"Write test files first.",
+                    category="POLICY",
                 )
 
     # Fast path: not a test file → allow (~1ms)
@@ -489,15 +492,16 @@ def main():
         sys.exit(0)
 
     if tool_name in ("Edit", "Write"):
-        category = _find_tautological_test_addition(
+        taut_kind = _find_tautological_test_addition(
             _extract_new_text(tool_name, tool_input)
         )
-        if category:
-            _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+        if taut_kind:
+            _record_guard_trigger(cwd, "GATE", tool_name, file_path)
             _fail(
-                f"tautological test detected ({category})\n\n"
+                f"tautological test detected ({taut_kind})\n\n"
                 f"Test edits must assert meaningful behavior, not a trivially "
                 f"true placeholder.",
+                category="GATE",
             )
 
     # Read test state
@@ -516,7 +520,7 @@ def main():
 
     if new_count < old_count:
         # DENY: reward hacking detected
-        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+        _record_guard_trigger(cwd, "GATE", tool_name, file_path)
         _fail(
             f"reward hacking detected \u2014 "
             f"assertions reduced ({old_count}\u2192{new_count})\n\n"
@@ -524,13 +528,14 @@ def main():
             f"{old_count - new_count} assertion(s).\n"
             f"Fix implementation code, not tests.\n"
             f"Weakening a test to match a bug = reward hacking.",
+            category="GATE",
         )
 
     # Assertions same or increased → check precision didn't drop
     old_precise = count_precise(old_text)
     new_precise = count_precise(new_text)
     if old_precise > 0 and new_precise < old_precise:
-        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+        _record_guard_trigger(cwd, "GATE", tool_name, file_path)
         _fail(
             f"reward hacking detected \u2014 "
             f"precision reduced ({old_precise}\u2192{new_precise} precise assertions)\n\n"
@@ -538,6 +543,7 @@ def main():
             f"with existence checks.\n"
             f"Fix implementation code, not test precision.\n"
             f"Replacing precise assertions with loose ones = reward hacking.",
+            category="GATE",
         )
 
     # Assertions and precision OK → allow
