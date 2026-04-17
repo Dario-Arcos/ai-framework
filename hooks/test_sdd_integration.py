@@ -84,11 +84,100 @@ def _cleanup_state(cwd):
     tmp = tempfile.gettempdir()
     for pattern in [os.path.join(tmp, f"sdd-test-state-{h}.json"),
                     os.path.join(tmp, f"sdd-test-run-{h}.pid"),
+                    os.path.join(tmp, f"sdd-runner-{h}.lock"),
                     os.path.join(tmp, f"sdd-test-lock-{h}")]:
         try:
             os.unlink(pattern)
         except FileNotFoundError:
             pass
+
+
+def _lock_concurrency_worker(cwd, hold_s, result_file, worker_id,
+                             retry_deadline_s):
+    """Persistent worker for TestLockConcurrency — spawn-safe (module-level).
+
+    Keeps retrying acquire_runner_lock until success or deadline. Holds the
+    lock for `hold_s` seconds, then releases. Writes CSV row to result_file.
+
+    Row format: `worker_id,STATUS,t_acquired,t_release_start,t_release_end`
+    where timestamps are time.monotonic() floats (shared clock domain within
+    a single machine, not across reboots — fine for test invariant checks).
+    """
+    import sys as _sys
+    import time as _time
+    from pathlib import Path as _Path
+
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+    import _sdd_state  # noqa: E402
+
+    deadline = _time.monotonic() + retry_deadline_s
+    fd = None
+    while _time.monotonic() < deadline and fd is None:
+        fd = _sdd_state.acquire_runner_lock(cwd)
+        if fd is None:
+            _time.sleep(0.02)
+    if fd is None:
+        with open(result_file, "a") as f:
+            f.write(f"{worker_id},FAILED,0,0,0\n")
+        return
+    t_acq = _time.monotonic()
+    _time.sleep(hold_s)
+    t_rel_start = _time.monotonic()
+    _sdd_state.release_runner_lock(fd, cwd)
+    t_rel_end = _time.monotonic()
+    with open(result_file, "a") as f:
+        f.write(f"{worker_id},OK,{t_acq},{t_rel_start},{t_rel_end}\n")
+
+
+def _lock_concurrency_prober(cwd, result_file, samples):
+    """Probe worker for TestLockConcurrency — spawn-safe (module-level)."""
+    import sys as _sys
+    import time as _time
+    from pathlib import Path as _Path
+
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+    import _sdd_state  # noqa: E402
+
+    results = []
+    for _ in range(samples):
+        results.append(_sdd_state.is_test_running(cwd))
+        _time.sleep(0.005)
+    with open(result_file, "a") as f:
+        f.write(",".join("T" if r else "F" for r in results) + "\n")
+
+
+def _lock_concurrency_worker_cycling(cwd, state_file, cycles, hold_s, idle_s):
+    """Cycling worker: repeatedly acquire/hold/release, publishing state.
+
+    Writes 'held' to state_file while holding the lock, 'idle' otherwise.
+    The main test process probes at a faster cadence and verifies that
+    probe results never claim "no runner" while this worker is 'held'.
+    """
+    import sys as _sys
+    import time as _time
+    from pathlib import Path as _Path
+
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+    import _sdd_state  # noqa: E402
+
+    for _ in range(cycles):
+        fd = None
+        deadline = _time.monotonic() + 1.0
+        while fd is None and _time.monotonic() < deadline:
+            fd = _sdd_state.acquire_runner_lock(cwd)
+            if fd is None:
+                _time.sleep(0.005)
+        if fd is None:
+            return
+        try:
+            with open(state_file, "w") as f:
+                f.write("held")
+            _time.sleep(hold_s)
+            with open(state_file, "w") as f:
+                f.write("idle")
+        finally:
+            _sdd_state.release_runner_lock(fd, cwd)
+        _time.sleep(idle_s)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1712,6 +1801,223 @@ class TestCoverageGapEndToEnd(unittest.TestCase):
             "session_id": raw_sid,
         })
         self.assertEqual(exit_code, 0)
+
+
+# ─────────────────────────────────────────────────────────────────
+# REAL CONCURRENCY — multiprocessing, not mocked serial execution
+# Closes Phase 0 Codex deferred finding #3: is_test_running vs
+# acquire_runner_lock split-brain TOCTOU. Requires the stable
+# runner_lock_path architecture to pass.
+# ─────────────────────────────────────────────────────────────────
+
+class TestLockConcurrency(unittest.TestCase):
+    """Verify the runner lock serializes real concurrent processes.
+
+    These tests fork/spawn actual OS processes, not threads. They exercise
+    the same flock code paths the production hooks use under rapid Agent
+    Teams load.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-int-lock-")
+        _cleanup_state(self.tmpdir)
+        self.result_file = Path(tempfile.gettempdir()) / (
+            f"sdd-int-lock-results-{os.getpid()}-{int(time.time() * 1000)}.csv"
+        )
+        self.result_file.write_text("")
+
+    def tearDown(self):
+        _cleanup_state(self.tmpdir)
+        try:
+            self.result_file.unlink()
+        except FileNotFoundError:
+            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _parse_rows(self):
+        text = self.result_file.read_text().strip()
+        if not text:
+            return []
+        rows = []
+        for line in text.split("\n"):
+            parts = line.split(",")
+            if len(parts) != 5:
+                continue
+            rows.append({
+                "id": parts[0],
+                "status": parts[1],
+                "t_acq": float(parts[2]),
+                "t_rel_start": float(parts[3]),
+                "t_rel_end": float(parts[4]),
+            })
+        return rows
+
+    def test_concurrent_workers_no_interval_overlap(self):
+        """N processes compete → critical sections do NOT overlap in time.
+
+        Split-brain would produce overlapping [t_acq, t_rel_end] intervals.
+        Correct serialization yields strictly non-overlapping intervals.
+        """
+        import multiprocessing as mp
+        N = 3
+        HOLD_S = 0.05
+        ctx = mp.get_context("spawn")
+        procs = []
+        for i in range(N):
+            p = ctx.Process(target=_lock_concurrency_worker,
+                            args=(self.tmpdir, HOLD_S, str(self.result_file),
+                                  f"w{i}", 10.0))
+            procs.append(p)
+            p.start()
+        for p in procs:
+            p.join(timeout=20)
+            self.assertFalse(p.is_alive(), f"Worker {p.pid} hung")
+            self.assertEqual(p.exitcode, 0, f"Worker {p.pid} crashed")
+
+        rows = self._parse_rows()
+        ok = [r for r in rows if r["status"] == "OK"]
+        self.assertEqual(len(ok), N,
+            f"All workers must acquire eventually; got {len(ok)}/{N}: {rows}")
+
+        ok.sort(key=lambda r: r["t_acq"])
+        for a, b in zip(ok, ok[1:]):
+            self.assertLessEqual(a["t_rel_end"], b["t_acq"] + 1e-3,
+                f"Split-brain: worker {a['id']} (ended {a['t_rel_end']}) "
+                f"overlapped with {b['id']} (started {b['t_acq']})")
+
+    def test_lockfile_inode_stable_across_probe_acquire_cycles(self):
+        """Runner lockfile inode must NEVER change during probe/acquire races.
+
+        Regression guard for the split-brain TOCTOU: old design unlinked
+        the lock target (pid_path) during is_test_running probes, allowing
+        a fresh inode under a concurrent acquire — two workers each held
+        LOCK_EX on different inodes sharing one path.
+        """
+        lockpath = _sdd_detect.runner_lock_path(self.tmpdir)
+
+        fd = _sdd_detect.acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(fd, "Initial acquire must succeed")
+        inode_initial = lockpath.stat().st_ino
+        _sdd_detect.release_runner_lock(fd, self.tmpdir)
+
+        inodes_seen = {inode_initial}
+        for _ in range(50):
+            _sdd_detect.is_test_running(self.tmpdir)
+            if lockpath.exists():
+                inodes_seen.add(lockpath.stat().st_ino)
+            fd2 = _sdd_detect.acquire_runner_lock(self.tmpdir)
+            self.assertIsNotNone(fd2,
+                "Re-acquire must not fail after release (lockfile stable)")
+            inodes_seen.add(lockpath.stat().st_ino)
+            _sdd_detect.release_runner_lock(fd2, self.tmpdir)
+            inodes_seen.add(lockpath.stat().st_ino)
+
+        self.assertEqual(len(inodes_seen), 1,
+            f"Lockfile inode changed across probe/acquire cycles: "
+            f"{inodes_seen}")
+
+    def test_probe_never_creates_lockfile(self):
+        """is_test_running must NOT create the lockfile as a side effect.
+
+        A fresh project with no worker history → lockfile does not exist →
+        probe returns False → lockfile still does not exist. Creating it
+        would amount to an implicit acquire, which violates read-only
+        probe semantics.
+        """
+        lockpath = _sdd_detect.runner_lock_path(self.tmpdir)
+        self.assertFalse(lockpath.exists(), "Pre-condition: no lockfile")
+        self.assertFalse(_sdd_detect.is_test_running(self.tmpdir))
+        self.assertFalse(lockpath.exists(),
+            "Probe must not create the lockfile")
+
+    def test_probe_reports_true_while_held_false_after_release(self):
+        """Structural contract for probe semantics across release boundary.
+
+        While main process holds LOCK_EX on the lockfile, all probes from
+        another OS process must report True. Once released, probes must
+        report False. This confirms the probe's flock observation is
+        correct — but it does NOT by itself stress-test concurrent probe+
+        acquire races (see test_lockfile_inode_stable_* and
+        test_concurrent_workers_no_interval_overlap for that guard).
+        """
+        import multiprocessing as mp
+
+        fd = _sdd_detect.acquire_runner_lock(self.tmpdir)
+        self.assertIsNotNone(fd)
+        try:
+            ctx = mp.get_context("spawn")
+            prober = ctx.Process(
+                target=_lock_concurrency_prober,
+                args=(self.tmpdir, str(self.result_file), 30),
+            )
+            prober.start()
+            prober.join(timeout=10)
+            self.assertFalse(prober.is_alive())
+            self.assertEqual(prober.exitcode, 0)
+        finally:
+            _sdd_detect.release_runner_lock(fd, self.tmpdir)
+
+        line = self.result_file.read_text().strip()
+        samples = line.split(",")
+        false_count = sum(1 for s in samples if s == "F")
+        self.assertEqual(false_count, 0,
+            f"All probes during held lock must report True; "
+            f"got {false_count} False out of {len(samples)}: {line}")
+
+        # After release: probes must observe no-runner
+        self.assertFalse(_sdd_detect.is_test_running(self.tmpdir),
+            "Probe must report False once lock is released")
+
+    def test_probe_vs_acquire_race_never_false_while_held(self):
+        """Stress: another process holds+releases repeatedly; probe from main
+        must NEVER observe False while that process is inside its held window.
+
+        This guards against a regression where the probe's unlock/cleanup
+        sequence could leave a stale state visible to subsequent probes.
+        """
+        import multiprocessing as mp
+
+        # Worker: 20 cycles of acquire → hold 20ms → release → wait 5ms.
+        # Main runs probes at 2ms cadence; each probe is asked to classify
+        # the worker as holding or not. The worker signals its held/unheld
+        # state via a second file so we can correlate probe results.
+        ctx = mp.get_context("spawn")
+        state_file = Path(tempfile.gettempdir()) / (
+            f"sdd-probe-race-state-{os.getpid()}-{int(time.time() * 1000)}"
+        )
+        state_file.write_text("idle")
+        try:
+            worker = ctx.Process(
+                target=_lock_concurrency_worker_cycling,
+                args=(self.tmpdir, str(state_file), 20, 0.02, 0.005),
+            )
+            worker.start()
+
+            mismatches = 0
+            samples = 0
+            deadline = time.monotonic() + 2.5
+            while worker.is_alive() and time.monotonic() < deadline:
+                try:
+                    claimed = state_file.read_text()
+                except OSError:
+                    claimed = ""
+                observed = _sdd_detect.is_test_running(self.tmpdir)
+                if claimed == "held" and not observed:
+                    mismatches += 1
+                samples += 1
+                time.sleep(0.002)
+            worker.join(timeout=5)
+            self.assertFalse(worker.is_alive(), "Cycling worker hung")
+            self.assertEqual(worker.exitcode, 0)
+            self.assertGreater(samples, 50, "Not enough probe samples collected")
+            self.assertEqual(mismatches, 0,
+                f"Probe reported False while worker claimed held: "
+                f"{mismatches}/{samples} mismatches")
+        finally:
+            try:
+                state_file.unlink()
+            except FileNotFoundError:
+                pass
 
 
 if __name__ == "__main__":

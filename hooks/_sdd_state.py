@@ -216,56 +216,105 @@ def state_path(cwd, sid=None):
 
 
 def pid_path(cwd, sid=None):
-    """Path to PID file for debounce. Session-scoped when sid provided."""
+    """Path to PID file (informational only). Session-scoped when sid provided.
+
+    NOTE: On Unix, this file is NOT used for locking — see runner_lock_path().
+    It is written by acquire_runner_lock() for diagnostics and backward-compat
+    with external monitoring, and cleaned up opportunistically by is_test_running
+    when the lockfile probe shows no active worker.
+    """
     suffix = f"-{sid}" if sid else ""
     return _tmp(f"sdd-test-run-{project_hash(cwd)}{suffix}.pid")
+
+
+def runner_lock_path(cwd):
+    """Path to the stable runner lockfile (project-scoped, never unlinked).
+
+    Architectural invariant: this file's inode is stable for the project's
+    lifetime. Created on first acquire, never deleted — not on release, not
+    on probe, not on cleanup. This eliminates the split-brain TOCTOU that
+    would occur if the lock target were also the identity file (the old
+    pid_path design): is_test_running used to unlink between its unlock and
+    the path-based unlink, during which window acquire_runner_lock could
+    open the SAME path and receive a fresh inode, leading two workers to
+    each hold LOCK_EX on different inodes sharing one path.
+
+    See also: pid_path() (informational PID storage, cleaned by probe).
+    """
+    return _tmp(f"sdd-runner-{project_hash(cwd)}.lock")
 
 
 def is_test_running(cwd, sid=None):
     """Check if a test worker is running for this project.
 
-    Uses flock probe when available (project-scoped, immune to PID recycling
-    and stale files). Falls back to PID check for session-scoped queries or
-    platforms without fcntl.
+    Uses flock probe on the stable runner lockfile when available (sid=None,
+    fcntl present). Immune to PID recycling and stable under concurrent
+    acquire/probe races — lockfile inode never changes.
+
+    Falls back to PID check for session-scoped queries (sid set) or
+    platforms without fcntl (Windows).
     """
-    pf = pid_path(cwd, sid)
-    if not pf.exists():
-        return False
-    # flock probe: reliable for project-scoped lock (sid=None)
-    if fcntl and sid is None:
-        fd = -1
+    # Session-scoped or Windows fallback: PID-based check
+    if sid is not None or not fcntl:
+        pf = pid_path(cwd, sid)
+        if not pf.exists():
+            return False
         try:
-            fd = os.open(str(pf), os.O_RDONLY)
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                return True  # Lock held by active worker
-            # Lock acquired = no worker running, clean stale file
-            fcntl.flock(fd, fcntl.LOCK_UN)
+            pid = int(pf.read_text().strip())
+            os.kill(pid, 0)  # signal 0 = check existence
+            return True
+        except (FileNotFoundError, ValueError, OSError):
             try:
                 pf.unlink(missing_ok=True)
             except OSError:
                 pass
             return False
-        except (FileNotFoundError, OSError):
-            return False
-        finally:
-            if fd >= 0:
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
-    # Fallback: PID check (session-scoped or no fcntl)
+
+    # Project-scoped Unix: probe the stable lockfile
+    lf = runner_lock_path(cwd)
+    pf = pid_path(cwd)
+    if not lf.exists():
+        # No lockfile → no worker has ever acquired on this project.
+        # Clean any stale PID file from prior sessions / pre-fix layout.
+        # Note: a separate launcher (e.g., sdd-auto-test parent-write) may
+        # have written pid_path microseconds before a child creates the
+        # lockfile; in that narrow window this unlink is advisory and does
+        # not affect correctness — the authoritative check is flock on
+        # lockfile, not pid_path. Worst case: duplicate-spawn attempt that
+        # immediately bails on acquire_runner_lock contention.
+        if pf.exists():
+            try:
+                pf.unlink(missing_ok=True)
+            except OSError:
+                pass
+        return False
+
+    fd = -1
     try:
-        pid = int(pf.read_text().strip())
-        os.kill(pid, 0)  # signal 0 = check existence
-        return True
-    except (FileNotFoundError, ValueError, OSError):
+        fd = os.open(str(lf), os.O_RDONLY)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True  # Lock held by active worker
+        # We hold the lockfile lock — safe to clean stale PID file.
+        # Any concurrent acquire_runner_lock is unable to hold EX on this
+        # same inode while we own it, so its PID-write branch is
+        # unreachable until we unlock. Unlink before unlock closes the
+        # window against any legitimate new PID write.
         try:
             pf.unlink(missing_ok=True)
         except OSError:
             pass
+        fcntl.flock(fd, fcntl.LOCK_UN)
         return False
+    except (FileNotFoundError, OSError):
+        return False
+    finally:
+        if fd >= 0:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
 
 
 from _sdd_config import (  # noqa: E402
@@ -275,33 +324,39 @@ from _sdd_config import (  # noqa: E402
 
 
 def acquire_runner_lock(cwd):
-    """Acquire exclusive runner lock via flock on PID file.
+    """Acquire exclusive runner lock via flock on the stable lockfile.
 
     Returns file descriptor on success (caller must hold open), None if
     another worker holds the lock after bounded retry. On platforms without
     fcntl, returns -1 (sentinel — lock not enforced, PID-only fallback).
 
-    Retry: 3 attempts with 100ms backoff between. Bounded max-wait ~200ms.
-    Handles transient contention between concurrent teammates without false
-    fail, while preserving fast-fail semantics for genuinely held locks
-    (LOCK_NB, not LOCK). OS auto-releases on process exit (including crash).
+    Retry: bounded attempts with small backoff. Handles transient contention
+    between concurrent teammates without false fail, while preserving
+    fast-fail semantics for genuinely held locks (LOCK_NB, not LOCK). OS
+    auto-releases flock on process exit (including crash).
+
+    Locking target is runner_lock_path(cwd), whose inode is stable for the
+    project's lifetime. The PID is additionally written to pid_path(cwd) as
+    informational state (not used for locking on Unix).
     """
-    pf = pid_path(cwd)
     if not fcntl:
         # Windows: fall back to PID-only (existing behavior)
         try:
-            pf.write_text(str(os.getpid()))
+            pid_path(cwd).write_text(str(os.getpid()))
         except OSError:
             pass
         return -1
+    lf = runner_lock_path(cwd)
     for attempt in range(_ACQUIRE_LOCK_MAX_ATTEMPTS):
         fd = -1
         try:
-            fd = os.open(str(pf), os.O_CREAT | os.O_RDWR, 0o644)
+            fd = os.open(str(lf), os.O_CREAT | os.O_RDWR, 0o644)
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            os.ftruncate(fd, 0)
-            os.lseek(fd, 0, os.SEEK_SET)
-            os.write(fd, str(os.getpid()).encode())
+            # Lock acquired. Write informational PID to pid_path.
+            try:
+                pid_path(cwd).write_text(str(os.getpid()))
+            except OSError:
+                pass  # PID file is advisory; ignore write failure
             return fd
         except (BlockingIOError, OSError):
             if fd >= 0:
@@ -320,9 +375,9 @@ def release_runner_lock(fd, cwd):
     Handles all states: locked fd (normal), sentinel fd=-1 (Windows),
     and None (lock not acquired).
 
-    Unix: PID file is NOT unlinked — avoids inode race between unlock and
-    unlink where a new worker could lock the about-to-be-deleted inode.
-    Stale PID files are cleaned up by is_test_running() flock probe.
+    Unix: LOCK_UN + close. Lockfile is NEVER unlinked (stable inode
+    invariant). PID file is left for the probe to clean — probe runs
+    while holding the lockfile lock, so cleanup races are impossible.
 
     Windows (no fcntl): PID file IS unlinked because there is no flock
     probe to clean it up later.
@@ -336,7 +391,7 @@ def release_runner_lock(fd, cwd):
         except OSError:
             pass
     else:
-        # Windows sentinel: must unlink (no flock probe to clean stale files)
+        # Windows sentinel: must unlink PID file (no flock probe to clean)
         try:
             pid_path(cwd).unlink(missing_ok=True)
         except OSError:
