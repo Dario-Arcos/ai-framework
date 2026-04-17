@@ -35,6 +35,17 @@ from _sdd_scenarios import (
 )
 
 
+_BYPASS_ENV = "_SDD_DISABLE_SCENARIOS"
+
+
+def _scenarios_bypass_active():
+    return os.environ.get(_BYPASS_ENV) == "1"
+
+
+def _record_bypass(cwd, hook_name):
+    append_telemetry(cwd, {"event": "scenarios_bypassed", "hook": hook_name})
+
+
 # ─────────────────────────────────────────────────────────────────
 # PATTERNS
 # ─────────────────────────────────────────────────────────────────
@@ -344,6 +355,11 @@ def main():
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
     sid = extract_session_id(input_data)
+    if _scenarios_bypass_active():
+        _record_bypass(cwd, "sdd-test-guard")
+        bypass_active = True
+    else:
+        bypass_active = False
 
     # ─── SCENARIO WRITE-ONCE GUARD (Phase 3) ──────────────────────
     # Edit/Write/MultiEdit/NotebookEdit on a scenario file must either:
@@ -355,7 +371,7 @@ def main():
     # scenario file would have the edit land on the symlink target,
     # leaving the committed baseline hash untouched — a silent bypass of
     # the write-once contract. Enforcing "regular file only" closes this.
-    if tool_name in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
+    if not bypass_active and tool_name in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
         rel = _rel_scenario_path(file_path, cwd)
         if rel is not None:
             abs_path = (Path(cwd) / rel)
@@ -387,7 +403,7 @@ def main():
     # Bash commands that write to .claude/scenarios/ bypass Edit/Write
     # hooks — we block them via regex on the command string. Read-only
     # commands (cat, diff, etc.) are not matched.
-    if tool_name == "Bash":
+    if not bypass_active and tool_name == "Bash":
         command = tool_input.get("command", "")
         if _bash_writes_scenarios(command):
             _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
@@ -401,7 +417,7 @@ def main():
     # ─── COMPLETION-WITHOUT-VERIFICATION GUARD (Phase 3) ──────────
     # Mirrors the task-completed scenario gate at PreToolUse time so
     # the model cannot "mark complete" without invoking verification.
-    if tool_name == "TaskUpdate":
+    if not bypass_active and tool_name == "TaskUpdate":
         if tool_input.get("status") == "completed":
             if has_pending_scenarios(cwd, sid=sid):
                 _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
@@ -413,7 +429,7 @@ def main():
                     category="POLICY",
                 )
 
-    if tool_name == "Bash":
+    if not bypass_active and tool_name == "Bash":
         command = tool_input.get("command", "")
         if _bash_is_git_commit(command) and "--no-verify" not in command:
             if has_pending_scenarios(cwd, sid=sid):

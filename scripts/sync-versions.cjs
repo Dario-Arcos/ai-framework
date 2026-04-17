@@ -24,6 +24,9 @@ const CONFIG_JS_PATH = path.join(
 );
 const README_PATH = path.join(__dirname, "../README.md");
 const PLUGIN_JSON_PATH = path.join(__dirname, "../.claude-plugin/plugin.json");
+// Note: hooks/_sdd_state.py derives HOOK_VERSION from package.json at import
+// time via _read_hook_version() with an lru_cache. No separate propagation
+// needed here.
 
 function main() {
   try {

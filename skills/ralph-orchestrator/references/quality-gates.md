@@ -293,7 +293,7 @@ Escalate from narrowest to broadest rollback:
 
 1. Delete one scenario file in `.claude/scenarios/` to remove a single contract.
 2. Delete the entire `.claude/scenarios/` directory to return the project to backward-compatible pre-scenario behavior.
-3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`. Documented as the broadest bypass shape, but current hook support must exist before relying on it in production.
+3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`. Configure it in the current shell session, the shell profile used for the incident window, or Claude Code `settings.json` via the `env` block. This bypass skips only scenario-specific guards in `sdd-test-guard.py` and `_enforce_scenario_gate` in `task-completed.py`; other policy, gate, test, and coverage checks still run. Every hook invocation that observes the bypass emits a `scenarios_bypassed` telemetry event in `.claude/metrics.jsonl`. See [Migration To Scenarios](../../../../docs/migration-to-scenarios.md) for the canonical operational explanation.
 
 ### Circuit Breaker Tripped
 

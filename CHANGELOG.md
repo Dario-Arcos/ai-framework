@@ -10,6 +10,15 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ## [No Publicado]
 
+### Añadido
+
+- `HOOK_VERSION` ahora deriva de `package.json` (`_read_hook_version()` con `lru_cache`), alineando telemetría y manifiesto.
+- `_SDD_DISABLE_SCENARIOS=1` como bypass real de los guards de escenarios (`sdd-test-guard.py` + `_enforce_scenario_gate` en `task-completed.py`), con evento `scenarios_bypassed` emitido en cada invocación.
+
+### Cambiado
+
+- `docs/migration-to-scenarios.md` y `skills/ralph-orchestrator/references/quality-gates.md`: se elimina el descargo "no cableado" y se documentan las tres superficies de configuración del bypass.
+
 ## [2026.4.0] - 2026-04-16
 
 ### Añadido

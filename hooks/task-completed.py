@@ -539,6 +539,10 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
     no scenarios to gate on — downstream logic runs unmodified for
     backward-compat (SCEN-005).
     """
+    if os.environ.get("_SDD_DISABLE_SCENARIOS") == "1":
+        append_telemetry(cwd, {"event": "scenarios_bypassed", "hook": "task-completed"})
+        return False
+
     files = scenario_files(cwd)
     if not files:
         return False

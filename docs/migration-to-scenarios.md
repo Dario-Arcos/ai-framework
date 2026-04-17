@@ -46,7 +46,18 @@ Use the narrowest rollback that solves the problem:
 1. Delete one scenario file to remove a single contract.
 2. Delete `.claude/scenarios/` to revert the project to fully backward-compatible pre-scenario behavior.
 3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`.
-   This is the broadest rollback shape described in `skills/ralph-orchestrator/references/quality-gates.md`, but it is not wired in the current hook code in this release. Do not depend on it unless your local fork explicitly supports it.
+   Configure it in the narrowest surface that fits the incident:
+   the current shell session (`export _SDD_DISABLE_SCENARIOS=1`), your shell
+   profile for a temporary local default, or the Claude Code
+   `settings.json` `env` block for a workspace-level override.
+   This bypass skips only scenario-specific guards in `sdd-test-guard.py`
+   and the `_enforce_scenario_gate` path in `task-completed.py`.
+   Critical-path warnings, review-file policy, SDD ordering, tautological-test
+   detection, assertion-weakening guards, and downstream test/coverage gates
+   continue to run unchanged.
+   Every hook invocation that sees the bypass appends a
+   `scenarios_bypassed` event to `.claude/metrics.jsonl`, so accidental or
+   long-lived deployment stays visible in telemetry.
 
 ## FAQ
 

@@ -22,7 +22,28 @@ from pathlib import Path
 METRICS_FILE = ".claude/metrics.jsonl"
 METRICS_MAX_SIZE = 10 * 1024 * 1024  # 10 MiB
 METRICS_MAX_ROTATIONS = 3
-HOOK_VERSION = "2026.04.0"
+_HOOK_VERSION_FALLBACK = "2026.04.0"
+
+
+@functools.lru_cache(maxsize=1)
+def _read_hook_version():
+    """Read plugin version from package.json at import time. Fallback on any failure.
+
+    Claude Code hooks consume the same CalVer as the plugin manifest,
+    so HOOK_VERSION stays synchronized without a separate source of truth.
+    """
+    try:
+        pkg_path = Path(__file__).resolve().parent.parent / "package.json"
+        data = json.loads(pkg_path.read_text(encoding="utf-8"))
+        version = data.get("version")
+        if isinstance(version, str) and version:
+            return version
+    except (OSError, ValueError, KeyError):
+        pass
+    return _HOOK_VERSION_FALLBACK
+
+
+HOOK_VERSION = _read_hook_version()
 
 
 def _tmp(*parts):
