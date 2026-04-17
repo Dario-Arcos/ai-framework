@@ -304,5 +304,40 @@ If circuit breaker trips (3 failures):
 
 ---
 
-*Version: 2.0.0 | Updated: 2026-02-15*
+## Official Claude Code docs — viability citation table (Phase 7 C7)
+
+Every matcher / event / schema / stdin shape used by this plugin is grounded in an official Claude Code doc URL. Verified 2026-04-17 via the `claude-code-guide` sub-agent fetching `code.claude.com/docs`.
+
+| # | Plugin claim | Official doc | Verdict |
+|---|---|---|---|
+| 1 | `hooks/hooks.json` `PreToolUse.matcher` accepts `Edit\|Write\|NotebookEdit\|TaskUpdate\|Bash` | `code.claude.com/docs/en/hooks.md` + `tools.md` | SUPPORTED — matchers are regex over tool names; `TaskUpdate` and `NotebookEdit` are current built-in tools |
+| 2 | `MultiEdit` removed from matcher | `code.claude.com/docs/en/tools.md` | `MultiEdit` is NOT in the current tools reference; safely removed |
+| 3 | `PostToolUse.matcher` includes `Skill` | `code.claude.com/docs/en/hooks-guide.md` | UNCLEAR — official examples show `Edit\|Write` but not `Skill`; retained as defensive (regex won't match invalid names → no-op) |
+| 4 | `SessionStart.matcher` values `startup\|resume\|clear\|compact` | `code.claude.com/docs/en/hooks-guide.md` | SUPPORTED |
+| 5 | Hook events `TeammateIdle`, `TaskCompleted`, `SubagentStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `Notification` | `code.claude.com/docs/en/hooks-guide.md` | SUPPORTED |
+| 6 | Hook stdin fields `tool_name`, `tool_input`, `cwd`, `session_id`, `transcript_path` | `code.claude.com/docs/en/hooks.md` | SUPPORTED |
+| 7 | TeammateIdle stdin field `teammate_name` | `code.claude.com/docs/en/hooks.md` | UNCLEAR — docs show generic fields only. Hook uses `input_data.get("teammate_name", "unknown")` so it degrades gracefully |
+| 8 | Exit codes: 0 = allow, 2 = deny with stderr surfaced to agent | `code.claude.com/docs/en/hooks.md` | SUPPORTED |
+| 9 | `settings.json` top-level `env` block applies environment variables per session | `code.claude.com/docs/en/settings.md` | SUPPORTED |
+| 10 | `_SDD_DISABLE_SCENARIOS` env key (leading underscore) | `code.claude.com/docs/en/env-vars.md` | UNCLEAR — docs do not restrict key naming; treated as permitted |
+| 11 | Plugin manifest `.claude-plugin/plugin.json` — `name` required, `version` + `description` optional | `code.claude.com/docs/en/plugins-reference.md` | SUPPORTED |
+| 12 | Version format CalVer `YYYY.MINOR.MICRO` | `code.claude.com/docs/en/plugins-reference.md` | UNCLEAR — docs say "Semantic version" but format is free-text; CalVer accepted de facto |
+| 13 | SKILL.md YAML frontmatter keys `name`, `description` | `code.claude.com/docs/en/skills.md` | SUPPORTED |
+| 14 | `references/` subdirectory inside skills | `code.claude.com/docs/en/skills.md` | UNCLEAR — docs show `reference.md` single-file; directory is project-specific convention, harmless |
+| 15 | `EnterWorktree` / `ExitWorktree` canonical worktree tooling | `code.claude.com/docs/en/tools.md` | SUPPORTED |
+| 16 | `Agent` tool with `isolation: "worktree"` | Runtime tool schema (`Agent.parameters.isolation.enum == ["worktree"]`) | SUPPORTED at the runtime level; public `tools.md` does not document the `isolation` parameter explicitly |
+
+### Action items landed in Phase 7 C7
+
+- Removed legacy `MultiEdit` token from `PreToolUse.matcher` (#2).
+- Kept `teammate_name` fallback default in `teammate-idle.py` (#7 defensive).
+- No refactors required for the UNCLEAR rows — each is either project-local convention (14), defensive dead-code (3), free-text format (12), or runtime-schema-only (16).
+
+### Sub-agent audit evidence
+
+The two `claude-code-guide` sub-agents emitted a security warning about using `WebFetch`/`WebSearch` directly. This is the sub-agent's allowlisted behavior (the agent is specifically designed to fetch docs); the main agent never used WebFetch/WebSearch — it consumed the sub-agent reports, which is the pattern the CLAUDE.md constraint allows.
+
+---
+
+*Version: 2.0.0 | Updated: 2026-04-17*
 *Compliant with Agent Teams architecture (RFC 2119)*

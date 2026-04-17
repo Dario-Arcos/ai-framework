@@ -18,6 +18,8 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 ### Cambiado
 
 - `docs/migration-to-scenarios.md` y `skills/ralph-orchestrator/references/quality-gates.md`: se elimina el descargo "no cableado" y se documentan las tres superficies de configuración del bypass.
+- `hooks/hooks.json` `PreToolUse.matcher`: removido `MultiEdit` (herramienta legacy ausente en la referencia oficial actual de Claude Code). Matcher final: `Edit|Write|NotebookEdit|TaskUpdate|Bash`.
+- `skills/ralph-orchestrator/references/quality-gates.md`: añadida tabla de citas a la documentación oficial Claude Code (Phase 7 C7) — 16 claims verificadas vía `claude-code-guide` sub-agent.
 
 ## [2026.4.0] - 2026-04-16
 

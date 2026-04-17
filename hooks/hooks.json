@@ -66,7 +66,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|TaskUpdate|Bash",
+        "matcher": "Edit|Write|NotebookEdit|TaskUpdate|Bash",
         "hooks": [
           {
             "type": "command",
