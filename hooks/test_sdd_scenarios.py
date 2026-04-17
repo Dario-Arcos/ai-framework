@@ -716,5 +716,36 @@ class TestHasPendingScenarios(unittest.TestCase):
             self.assertFalse(S.has_pending_scenarios(self.tmpdir, sid="abc"))
 
 
+class TestValidatedScenariosBranchCoverage(unittest.TestCase):
+    """Covers the session-id guard and payload-shape rejection paths in
+    record_validated_scenarios / read_validated_scenarios that the main
+    lifecycle tests do not exercise."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-branches-")
+        self.sid = "sid-123"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_record_and_read_validated_scenarios_ignore_missing_session_id(self):
+        S.record_validated_scenarios(self.tmpdir, None, {"SCEN-001", "SCEN-002"})
+        self.assertIsNone(S.read_validated_scenarios(self.tmpdir, None))
+        self.assertIsNone(S._validated_scenarios_path(self.tmpdir, None))
+
+    def test_read_validated_scenarios_rejects_non_list_payload(self):
+        path = S._validated_scenarios_path(self.tmpdir, self.sid)
+        path.write_text(json.dumps({"scenario_ids": "SCEN-001"}), encoding="utf-8")
+        self.assertIsNone(S.read_validated_scenarios(self.tmpdir, self.sid))
+
+    def test_read_validated_scenarios_rejects_non_string_ids(self):
+        path = S._validated_scenarios_path(self.tmpdir, self.sid)
+        path.write_text(
+            json.dumps({"scenario_ids": ["SCEN-001", 2]}),
+            encoding="utf-8",
+        )
+        self.assertIsNone(S.read_validated_scenarios(self.tmpdir, self.sid))
+
+
 if __name__ == "__main__":
     unittest.main()

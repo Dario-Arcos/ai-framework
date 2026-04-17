@@ -482,5 +482,31 @@ class TestConsumeStdinSessionStart(unittest.TestCase):
             session_start.consume_stdin()
 
 
+class TestGitignoreSeparatorBranch(unittest.TestCase):
+    """Covers ensure_gitignore_rules inserting a blank-line separator when the
+    existing .gitignore lacks a trailing newline — a branch not exercised by
+    the main gitignore tests."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="session-gitignore-")
+        self.plugin_root = Path(self.tmpdir) / "plugin"
+        self.project_dir = Path(self.tmpdir) / "project"
+        (self.plugin_root / "template").mkdir(parents=True)
+        self.project_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_ensure_gitignore_adds_separator_when_missing_trailing_newline(self):
+        gitignore = self.project_dir / ".gitignore"
+        gitignore.write_text("node_modules/", encoding="utf-8")
+
+        session_start.ensure_gitignore_rules(self.plugin_root, self.project_dir)
+
+        content = gitignore.read_text(encoding="utf-8")
+        self.assertIn("node_modules/\n\n# AI Framework runtime files", content)
+        self.assertIn("!/.claude/scenarios/", content)
+
+
 if __name__ == "__main__":
     unittest.main()

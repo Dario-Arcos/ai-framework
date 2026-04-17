@@ -858,5 +858,47 @@ class TestReviewFileGuard(unittest.TestCase):
         self.assertEqual(stdout, "")
 
 
+class TestGuardBranchCoverage(unittest.TestCase):
+    """Covers _fail category override, _record_guard_trigger event shape,
+    _find_tautological_test_addition empty input, and _matches_critical_path
+    directory glob — branches not exercised by the main guard tests."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sdd-guard-branches-")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_fail_prefixes_custom_category(self):
+        stderr = io.StringIO()
+        with self.assertRaises(SystemExit) as exc, patch.object(
+            sdd_test_guard.sys, "stderr", stderr
+        ):
+            sdd_test_guard._fail("blocked", category="POLICY")
+
+        self.assertEqual(exc.exception.code, 2)
+        self.assertIn("[SDD:POLICY] SDD Guard: blocked", stderr.getvalue())
+
+    def test_record_guard_trigger_appends_expected_event(self):
+        sdd_test_guard._record_guard_trigger(
+            self.tmpdir, "POLICY", "Write", "src/app.py"
+        )
+
+        metrics = Path(self.tmpdir) / ".claude" / "metrics.jsonl"
+        self.assertTrue(metrics.exists())
+        event = json.loads(metrics.read_text(encoding="utf-8").splitlines()[-1])
+        self.assertEqual(event["event"], "guard_triggered")
+        self.assertEqual(event["category"], "POLICY")
+        self.assertEqual(event["file_path"], "src/app.py")
+
+    def test_find_tautological_test_addition_returns_none_for_empty_input(self):
+        self.assertIsNone(sdd_test_guard._find_tautological_test_addition(""))
+
+    def test_matches_critical_path_supports_directory_glob_prefix(self):
+        self.assertTrue(
+            sdd_test_guard._matches_critical_path("src/pkg", ["src/pkg/**"])
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

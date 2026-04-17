@@ -1532,5 +1532,162 @@ class TestEnsureCoverageReportErrorPaths(unittest.TestCase):
         self.assertIsNone(result)
 
 
+class TestTaskCompletedBranchCoverage(unittest.TestCase):
+    """Covers _format_validated_scenario_ids truncation, _enforce_scenario_gate
+    UnicodeDecodeError branch, main() success telemetry, and main() coverage-gate
+    failure routing — branches the main task-completed tests do not reach."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="task-completed-branches-")
+        self.ralph_dir = Path(self.tmpdir) / ".ralph"
+        self.ralph_dir.mkdir()
+        (self.ralph_dir / "config.sh").write_text("", encoding="utf-8")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_format_validated_scenario_ids_truncates_long_lists(self):
+        scenario_ids = [f"SCEN-{idx:03d}" for idx in range(1, 23)]
+
+        rendered = task_completed._format_validated_scenario_ids(
+            scenario_ids, limit=20
+        )
+
+        self.assertIn("SCEN-001", rendered)
+        self.assertIn("... (+2 more)", rendered)
+
+    def test_enforce_scenario_gate_reports_unreadable_file(self):
+        scenario_file = Path(self.tmpdir) / ".claude" / "scenarios" / "a.scenarios.md"
+        scenario_file.parent.mkdir(parents=True)
+        scenario_file.write_text("placeholder", encoding="utf-8")
+
+        def _raise_decode_error(*_args, **_kwargs):
+            raise UnicodeDecodeError("utf-8", b"x", 0, 1, "bad byte")
+
+        with patch.object(
+            task_completed, "scenario_files", return_value=[scenario_file]
+        ), patch.object(
+            task_completed, "validate_scenario_file", return_value=(True, [], [])
+        ), patch.object(
+            Path, "read_text", side_effect=_raise_decode_error
+        ), patch.object(
+            task_completed, "_record_task_failure"
+        ) as record_failure, patch.object(
+            task_completed, "_fail_task", side_effect=SystemExit(2)
+        ) as fail_task, self.assertRaises(SystemExit):
+            task_completed._enforce_scenario_gate(self.tmpdir, "demo task", "sid-1")
+
+        record_failure.assert_called_once()
+        args, kwargs = fail_task.call_args
+        self.assertEqual(args[0], "Scenario file unreadable for: demo task")
+        self.assertIn(str(scenario_file), args[1])
+        self.assertEqual(kwargs["category"], "SCENARIO")
+
+    def test_main_success_logs_task_completed_event_with_teammate(self):
+        payload = {
+            "task_subject": "demo task",
+            "teammate_name": "agent-1",
+            "session_id": "sid-1",
+            "cwd": self.tmpdir,
+        }
+        config = dict(task_completed.CONFIG_DEFAULTS)
+        config.update(
+            {
+                "GATE_TEST": "",
+                "GATE_TYPECHECK": "",
+                "GATE_LINT": "",
+                "GATE_BUILD": "",
+                "GATE_INTEGRATION": "",
+                "GATE_E2E": "",
+                "GATE_COVERAGE": "",
+                "MIN_TEST_COVERAGE": "0",
+            }
+        )
+        dummy_skill = Path(self.tmpdir) / "skill.marker"
+
+        with patch.object(
+            task_completed.sys, "stdin", io.StringIO(json.dumps(payload))
+        ), patch.object(
+            task_completed, "_has_source_edits", return_value=True
+        ), patch.object(
+            task_completed, "_enforce_scenario_gate", return_value=False
+        ), patch.object(
+            task_completed, "read_skill_invoked", return_value=True
+        ), patch.object(
+            task_completed, "load_config", return_value=config
+        ), patch.object(
+            task_completed, "read_coverage", return_value=None
+        ), patch.object(
+            task_completed, "append_telemetry"
+        ) as append_telemetry, patch.object(
+            task_completed, "_atomic_update_failures", return_value=0
+        ), patch.object(
+            task_completed, "skill_invoked_path", return_value=dummy_skill
+        ), patch.object(
+            task_completed, "clear_baseline"
+        ) as clear_baseline, self.assertRaises(SystemExit) as exc:
+            task_completed.main()
+
+        self.assertEqual(exc.exception.code, 0)
+        clear_baseline.assert_called_once_with(
+            self.tmpdir,
+            task_completed.extract_session_id(payload),
+        )
+        event = append_telemetry.call_args.args[1]
+        self.assertEqual(event["event"], "task_completed")
+        self.assertEqual(event["teammate"], "agent-1")
+        self.assertFalse(event["scenarios_gated"])
+
+    def test_main_fails_when_coverage_gate_command_fails(self):
+        payload = {
+            "task_subject": "demo task",
+            "teammate_name": "agent-1",
+            "session_id": "sid-1",
+            "cwd": self.tmpdir,
+        }
+        config = dict(task_completed.CONFIG_DEFAULTS)
+        config.update(
+            {
+                "GATE_TEST": "",
+                "GATE_TYPECHECK": "",
+                "GATE_LINT": "",
+                "GATE_BUILD": "",
+                "GATE_INTEGRATION": "",
+                "GATE_E2E": "",
+                "GATE_COVERAGE": "python -m pytest --cov",
+                "MIN_TEST_COVERAGE": "85",
+            }
+        )
+
+        with patch.object(
+            task_completed.sys, "stdin", io.StringIO(json.dumps(payload))
+        ), patch.object(
+            task_completed, "_has_source_edits", return_value=True
+        ), patch.object(
+            task_completed, "_enforce_scenario_gate", return_value=False
+        ), patch.object(
+            task_completed, "read_skill_invoked", return_value=True
+        ), patch.object(
+            task_completed, "load_config", return_value=config
+        ), patch.object(
+            task_completed, "run_gate", return_value=(False, "coverage failed")
+        ), patch.object(
+            task_completed, "_atomic_update_failures", return_value=2
+        ), patch.object(
+            task_completed, "_fail_task", side_effect=SystemExit(2)
+        ) as fail_task, patch.object(
+            task_completed, "append_telemetry"
+        ), patch.object(
+            task_completed.time, "monotonic", return_value=0.0
+        ), self.assertRaises(SystemExit) as exc:
+            task_completed.main()
+
+        self.assertEqual(exc.exception.code, 2)
+        args, kwargs = fail_task.call_args
+        self.assertEqual(args[0], "Coverage gate failed for: demo task")
+        self.assertIn("coverage failed", args[1])
+        self.assertEqual(kwargs["category"], "COVERAGE")
+
+
 if __name__ == "__main__":
     unittest.main()
