@@ -152,6 +152,16 @@ def run_in_process_group(command, cwd, timeout, env=None, pgid_file=None):
     to that file. The caller (or next worker) can read it to kill an
     orphaned test group if the worker dies before cleanup.
 
+    Trust boundary — `shell=True` is intentional, not a vulnerability:
+        Callers pass gate commands from `.ralph/config.sh` (user-owned
+        file) or `detect_test_command(cwd)` (hook-detected manifest
+        string). These MUST be shell-interpreted to support pipelines
+        (`npm test && ruff check`), env interpolation (`$GATE_COVERAGE`),
+        and subshells. Any caller that would feed user-derived input
+        (task_subject, file_path, etc.) into `command` would be a
+        regression — the current call sites at task-completed.py and
+        sdd-auto-test.py pass only config-resolved strings.
+
     Returns:
         (returncode: int, stdout: str, stderr: str, timed_out: bool)
     """
