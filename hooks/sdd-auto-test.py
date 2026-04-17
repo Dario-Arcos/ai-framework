@@ -18,7 +18,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    acquire_runner_lock, adaptive_gate_timeout, baseline_path,
+    acquire_runner_lock, adaptive_gate_timeout, append_telemetry,
+    baseline_path,
     clear_rerun_marker, detect_test_command, extract_session_id,
     has_exit_suppression, has_rerun_marker, is_exempt_from_tests,
     is_source_file, is_test_file, is_test_running,
@@ -95,10 +96,19 @@ def _run_tests_worker(cwd, command, sid=None):
 
             started_at = time.time()
             timeout = adaptive_gate_timeout(cwd, default=120, max_timeout=300)
+            append_telemetry(cwd, {
+                "event": "test_run_start",
+                "command": command,
+            })
             try:
                 rc, stdout, stderr, timed_out = run_in_process_group(
                     command, cwd, timeout, pgid_file=pgid_file)
                 if timed_out:
+                    append_telemetry(cwd, {
+                        "event": "test_run_end",
+                        "passed": False,
+                        "duration_s": round(time.time() - started_at, 2),
+                    })
                     write_state(cwd, False, f"tests timed out ({timeout}s)",
                                 started_at=started_at)
                     continue
@@ -110,10 +120,20 @@ def _run_tests_worker(cwd, command, sid=None):
                 raw_tail = raw[-4096:] if raw else ""
                 write_state(cwd, passing, summary,
                             raw_output=raw_tail, started_at=started_at)
+                append_telemetry(cwd, {
+                    "event": "test_run_end",
+                    "passed": passing,
+                    "duration_s": round(time.time() - started_at, 2),
+                })
                 # Baseline: session-scoped, write-once
                 if sid and not baseline_path(cwd, sid).exists():
                     write_baseline(cwd, sid, passing, summary)
             except OSError as e:
+                append_telemetry(cwd, {
+                    "event": "test_run_end",
+                    "passed": False,
+                    "duration_s": round(time.time() - started_at, 2),
+                })
                 write_state(cwd, False, f"test execution error: {e}",
                             started_at=time.time())
 

@@ -14,9 +14,15 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
+
+METRICS_FILE = ".claude/metrics.jsonl"
+METRICS_MAX_SIZE = 10 * 1024 * 1024  # 10 MiB
+METRICS_MAX_ROTATIONS = 3
+HOOK_VERSION = "2026.04.0"
 
 
 def _tmp(*parts):
@@ -187,6 +193,54 @@ def has_exit_suppression(command):
 def project_hash(cwd):
     """Short hash of project root for unique temp file names."""
     return hashlib.md5(cwd.encode()).hexdigest()[:12]
+
+
+def rotate_telemetry(cwd):
+    """Rotate metrics.jsonl -> .1, .1 -> .2, ... best-effort."""
+    base = Path(cwd) / METRICS_FILE
+    try:
+        oldest = Path(f"{base}.{METRICS_MAX_ROTATIONS}")
+        if oldest.exists():
+            oldest.unlink()
+        for idx in range(METRICS_MAX_ROTATIONS - 1, 0, -1):
+            src = Path(f"{base}.{idx}")
+            dst = Path(f"{base}.{idx + 1}")
+            if src.exists():
+                os.replace(src, dst)
+        if base.exists():
+            os.replace(base, f"{base}.1")
+    except OSError:
+        pass
+
+
+def append_telemetry(cwd, event):
+    """Append a best-effort JSONL telemetry event under .claude/."""
+    try:
+        metrics_path = Path(cwd) / METRICS_FILE
+        metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            if metrics_path.stat().st_size > METRICS_MAX_SIZE:
+                rotate_telemetry(cwd)
+        except OSError:
+            pass
+        payload = dict(event)
+        payload.update({
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "project_hash": project_hash(cwd),
+            "session_id": os.environ.get("CLAUDE_SESSION_ID", "unknown"),
+            "hook_version": HOOK_VERSION,
+        })
+        with metrics_path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(payload))
+            f.write("\n")
+    except (OSError, TypeError, ValueError):
+        pass
+
+
+def log_structured(hook_name, event, **kwargs):
+    """Emit a single-line JSON diagnostic to stderr."""
+    line = json.dumps({"hook": hook_name, "event": event, **kwargs})
+    print(line, file=sys.stderr)
 
 
 def extract_session_id(input_data):

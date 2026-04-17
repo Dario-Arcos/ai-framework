@@ -238,6 +238,45 @@ If teammates repeatedly fail the same gate:
 - You SHOULD check if prerequisites are missing
 - You MUST NOT implement fixes as orchestrator because this violates role boundaries
 
+---
+
+## Observability
+
+### Failure mode prefixes
+
+- `[SDD:GATE]` — standard test/typecheck/lint/build/integration/e2e failures. Example: `[SDD:GATE] Quality gate 'lint' failed for: auth refactor`
+- `[SDD:COVERAGE]` — uncovered files or coverage command/threshold failures. Example: `[SDD:COVERAGE] Untested source files for: checkout flow`
+- `[SDD:SCENARIO]` — invalid scenarios, missing verification, or scenario/test-integrity guards. Example: `[SDD:SCENARIO] Scenario verification not invoked for: payment task`
+- `[SDD:POLICY]` — missing required SDD skill invocation or protected review writes. Example: `[SDD:POLICY] SDD skill not invoked for: reviewer task`
+
+### `metrics.jsonl` format
+
+Every line is one JSON object in `.claude/metrics.jsonl`.
+
+- Common fields: `ts`, `project_hash`, `session_id`, `hook_version`, `event`
+- Event-specific fields: `category`, `reason`, `teammate`, `scenarios_gated`, `command`, `passed`, `duration_s`, `tool_name`, `file_path`
+
+### `jq` examples
+
+```bash
+jq -s 'group_by(.category) | map({category: .[0].category, count: length})' .claude/metrics.jsonl
+jq 'select(.event=="task_failed")' .claude/metrics.jsonl | tail -10
+jq -s '
+  [ .[] | select(.event=="test_run_end") ] as $runs
+  | ($runs | map(select(.passed == true)) | length) as $passed
+  | ($runs | map(select(.passed == false)) | length) as $failed
+  | {passed: $passed, failed: $failed, ratio: ($passed / ($failed // 1))}
+' .claude/metrics.jsonl
+```
+
+### Rotation
+
+`metrics.jsonl` rotates once the active file exceeds `10 MiB`. The current file becomes `.claude/metrics.jsonl.1`; older files shift to `.2` and `.3`; `.3` is the oldest retained file.
+
+### Rollback / disable
+
+Deleting `.claude/metrics.jsonl` is safe. The next telemetry write recreates it automatically, and rotation will recreate the numbered files as needed.
+
 ### Circuit Breaker Tripped
 
 If circuit breaker trips (3 failures):

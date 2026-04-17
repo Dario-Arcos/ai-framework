@@ -60,16 +60,27 @@ class TestRunTestsWorker(unittest.TestCase):
     @patch.object(sdd_auto_test, "baseline_path")
     @patch.object(sdd_auto_test, "parse_test_summary", return_value="5 passed")
     @patch.object(sdd_auto_test, "write_state")
+    @patch.object(sdd_auto_test, "append_telemetry")
     @patch.object(sdd_auto_test, "has_exit_suppression", return_value=False)
     @patch.object(sdd_auto_test, "run_in_process_group",
                   return_value=(0, "5 passed\n", "", False))
-    def test_passing_tests(self, mock_run, mock_suppress, mock_write, mock_summary, mock_bp, mock_acquire, mock_release):
+    def test_passing_tests(self, mock_run, mock_suppress, mock_telemetry,
+                           mock_write, mock_summary, mock_bp,
+                           mock_acquire, mock_release):
         mock_bp.return_value = self.pid_file  # non-existent path
         sdd_auto_test._run_tests_worker(self.tmpdir, "pytest")
         mock_write.assert_called_once_with(
             self.tmpdir, True, "5 passed",
             raw_output=ANY, started_at=ANY,
         )
+        self.assertEqual(mock_telemetry.call_count, 2)
+        start_event = mock_telemetry.call_args_list[0].args[1]
+        end_event = mock_telemetry.call_args_list[1].args[1]
+        self.assertEqual(start_event["event"], "test_run_start")
+        self.assertEqual(start_event["command"], "pytest")
+        self.assertEqual(end_event["event"], "test_run_end")
+        self.assertTrue(end_event["passed"])
+        self.assertIn("duration_s", end_event)
 
     @patch.object(sdd_auto_test, "release_runner_lock")
     @patch.object(sdd_auto_test, "acquire_runner_lock", return_value=99)

@@ -223,6 +223,7 @@ class TestFailTask(unittest.TestCase):
         with self.assertRaises(SystemExit):
             task_completed._fail_task("HEADER", "BODY")
         output = mock_stderr.getvalue()
+        self.assertIn("[SDD:GATE]", output)
         self.assertIn("HEADER", output)
         self.assertIn("BODY", output)
         self.assertIn("Fix the issue before completing this task.", output)
@@ -234,6 +235,55 @@ class TestFailTask(unittest.TestCase):
         output = mock_stderr.getvalue()
         self.assertIn("Custom footer message.", output)
         self.assertNotIn("Fix the issue before completing this task.", output)
+
+    def test_category_prefixes(self):
+        for category in ("GATE", "COVERAGE", "SCENARIO", "POLICY"):
+            with self.subTest(category=category):
+                stderr_capture = io.StringIO()
+                with patch("sys.stderr", stderr_capture):
+                    with self.assertRaises(SystemExit):
+                        task_completed._fail_task("Header", "Body", category=category)
+                self.assertIn(f"[SDD:{category}] Header", stderr_capture.getvalue())
+
+
+class TestTaskCompletedTelemetry(unittest.TestCase):
+    """Telemetry side-effects for failure and success paths."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _read_metrics(self):
+        metrics = Path(self.tmpdir) / ".claude" / "metrics.jsonl"
+        self.assertTrue(metrics.exists(), "metrics.jsonl should exist")
+        return [
+            json.loads(line)
+            for line in metrics.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    @patch.object(task_completed, "release_runner_lock")
+    @patch.object(task_completed, "acquire_runner_lock", return_value=99)
+    @patch.object(task_completed, "detect_test_command", return_value="pytest")
+    @patch.object(task_completed, "run_gate", return_value=(False, "1 failed"))
+    def test_failure_path_writes_task_failed_telemetry(self, _mock_gate, _mock_detect,
+                                                       _mock_acquire, _mock_release):
+        with self.assertRaises(SystemExit):
+            task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        event = self._read_metrics()[-1]
+        self.assertEqual(event["event"], "task_failed")
+        self.assertEqual(event["category"], "GATE")
+        self.assertEqual(event["reason"], "Tests failed for: my task")
+
+    @patch.object(task_completed, "detect_test_command", return_value=None)
+    def test_non_ralph_success_writes_task_completed_telemetry(self, _mock_detect):
+        task_completed._handle_non_ralph_completion(self.tmpdir, "my task")
+        event = self._read_metrics()[-1]
+        self.assertEqual(event["event"], "task_completed")
+        self.assertFalse(event["scenarios_gated"])
+        self.assertNotIn("teammate", event)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -490,6 +540,26 @@ class TestMainRalph(unittest.TestCase):
             with self.assertRaises(SystemExit) as ctx:
                 task_completed.main()
             self.assertEqual(ctx.exception.code, 0)
+
+    @patch.object(task_completed, "read_skill_invoked", return_value={"skill": "sop-code-assist"})
+    def test_success_writes_task_completed_telemetry(self, _mock_skill):
+        self._make_ralph_project(
+            'GATE_TEST=""\nGATE_TYPECHECK=""\nGATE_LINT=""\nGATE_BUILD=""\n'
+        )
+        with patch("sys.stdin", self._make_stdin(self._default_input())):
+            with self.assertRaises(SystemExit) as ctx:
+                task_completed.main()
+            self.assertEqual(ctx.exception.code, 0)
+        metrics = Path(self.tmpdir) / ".claude" / "metrics.jsonl"
+        events = [
+            json.loads(line)
+            for line in metrics.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        event = events[-1]
+        self.assertEqual(event["event"], "task_completed")
+        self.assertEqual(event["teammate"], "agent-1")
+        self.assertFalse(event["scenarios_gated"])
 
 
 # ─────────────────────────────────────────────────────────────────

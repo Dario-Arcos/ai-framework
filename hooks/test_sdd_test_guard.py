@@ -165,6 +165,17 @@ class TestAnalyzeEdit(unittest.TestCase):
         self.assertEqual(new_text, "")
 
 
+class TestFailHelper(unittest.TestCase):
+    """Direct tests for _fail() formatting."""
+
+    @patch("sys.stderr", new_callable=io.StringIO)
+    def test_default_category_prefix(self, mock_stderr):
+        with self.assertRaises(SystemExit) as ctx:
+            sdd_test_guard._fail("blocked")
+        self.assertEqual(ctx.exception.code, 2)
+        self.assertIn("[SDD:SCENARIO] SDD Guard: blocked", mock_stderr.getvalue())
+
+
 class TestMain(unittest.TestCase):
     """Test main() decision matrix end-to-end."""
 
@@ -642,6 +653,33 @@ class TestSourceOrderingGuard(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertIn("SDD Guard", stderr)
         self.assertIn("write test scenarios", stderr.lower())
+
+    @patch.object(sdd_test_guard, "read_coverage", return_value={
+        "source_files": ["src/a.py"], "test_files": [],
+    })
+    @patch.object(sdd_test_guard, "has_test_on_disk", return_value=False)
+    def test_denial_writes_guard_telemetry(self, _mock_disk, _mock_cov):
+        exit_code, _stdout, _stderr = self._run_main({
+            "cwd": self.tmpdir,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": "src/feature.py",
+                "old_string": "pass",
+                "new_string": "return 1",
+            },
+        })
+        self.assertEqual(exit_code, 2)
+        metrics = Path(self.tmpdir) / ".claude" / "metrics.jsonl"
+        events = [
+            json.loads(line)
+            for line in metrics.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        event = events[-1]
+        self.assertEqual(event["event"], "guard_triggered")
+        self.assertEqual(event["category"], "SCENARIO")
+        self.assertEqual(event["tool_name"], "Edit")
+        self.assertEqual(event["file_path"], "src/feature.py")
 
     @patch.object(sdd_test_guard, "has_test_on_disk", return_value=True)
     def test_source_test_on_disk_allows(self, _mock_disk):

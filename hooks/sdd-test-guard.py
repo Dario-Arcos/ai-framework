@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
+    append_telemetry,
     extract_session_id, is_exempt_from_tests, is_source_file, is_test_file,
     read_coverage, read_skill_invoked, read_state, has_test_on_disk,
 )
@@ -202,10 +203,20 @@ def _rel_scenario_path(file_path, cwd):
     return str(rel)
 
 
-def _fail(message):
+def _fail(message, category="SCENARIO"):
     """Emit a structured guard denial and exit 2."""
-    print(f"SDD Guard: {message}", file=sys.stderr)
+    print(f"[SDD:{category}] SDD Guard: {message}", file=sys.stderr)
     sys.exit(2)
+
+
+def _record_guard_trigger(cwd, category, tool_name, file_path):
+    """Best-effort telemetry for guard denials."""
+    append_telemetry(cwd, {
+        "event": "guard_triggered",
+        "category": category,
+        "tool_name": tool_name,
+        "file_path": file_path,
+    })
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -349,6 +360,7 @@ def main():
         if rel is not None:
             abs_path = (Path(cwd) / rel)
             if abs_path.is_symlink():
+                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
                 _fail(
                     f"scenario symlink rejected at {rel}\n\n"
                     f"Symlinked scenario files silently bypass the write-once "
@@ -361,6 +373,7 @@ def main():
                 current = current_file_hash(abs_path)
                 if current is not None and current != baseline:
                     if not check_amend_marker(cwd, rel, sid=sid):
+                        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
                         _fail(
                             f"scenario write-once violation on {rel}\n\n"
                             f"The scenario file has changed from its git baseline.\n"
@@ -377,6 +390,7 @@ def main():
     if tool_name == "Bash":
         command = tool_input.get("command", "")
         if _bash_writes_scenarios(command):
+            _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
             _fail(
                 "Bash command modifies scenario files\n\n"
                 "Direct Bash writes to .claude/scenarios/ bypass the write-once\n"
@@ -390,6 +404,7 @@ def main():
     if tool_name == "TaskUpdate":
         if tool_input.get("status") == "completed":
             if has_pending_scenarios(cwd, sid=sid):
+                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
                 _fail(
                     "TaskUpdate(completed) blocked — scenarios require verification\n\n"
                     "Scenarios exist in .claude/scenarios/ but\n"
@@ -401,6 +416,7 @@ def main():
         command = tool_input.get("command", "")
         if _bash_is_git_commit(command) and "--no-verify" not in command:
             if has_pending_scenarios(cwd, sid=sid):
+                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
                 _fail(
                     "git commit blocked — scenarios require verification\n\n"
                     "Scenarios exist in .claude/scenarios/ but\n"
@@ -441,14 +457,14 @@ def main():
     if tool_name == "Write" and ".ralph/reviews/" in file_path:
         ralph_config = Path(cwd) / ".ralph" / "config.sh"
         if ralph_config.exists() and not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
-            print(
-                "SDD Guard: writing review without invoking sop-reviewer\n\n"
+            _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
+            _fail(
+                "writing review without invoking sop-reviewer\n\n"
                 "Invoke sop-reviewer before writing to .ralph/reviews/.\n"
                 "Skill(skill=\"sop-reviewer\", "
                 "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"')",
-                file=sys.stderr,
+                category="POLICY",
             )
-            sys.exit(2)
 
     # ─── SDD ORDERING GUARD ──────────────────────────────────────
     # Source file without test files in session → block (scenarios-first)
@@ -459,15 +475,14 @@ def main():
             cov = read_coverage(cwd, sid=sid)
             if cov and cov.get("source_files") and len(cov.get("test_files", [])) == 0:
                 source_count = len(cov.get("source_files", []))
-                print(
-                    f"SDD Guard: write test scenarios before implementation\n\n"
+                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                _fail(
+                    f"write test scenarios before implementation\n\n"
                     f"Source files edited: {source_count}, test files: 0\n"
                     f"No test file found on disk for: {Path(file_path).name}\n"
                     f"SDD ordering: define scenarios \u2192 write failing tests \u2192 implement.\n"
                     f"Write test files first.",
-                    file=sys.stderr,
                 )
-                sys.exit(2)
 
     # Fast path: not a test file → allow (~1ms)
     if not is_test_file(file_path, cwd=cwd):
@@ -478,13 +493,12 @@ def main():
             _extract_new_text(tool_name, tool_input)
         )
         if category:
-            print(
-                f"SDD Guard: tautological test detected ({category})\n\n"
+            _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+            _fail(
+                f"tautological test detected ({category})\n\n"
                 f"Test edits must assert meaningful behavior, not a trivially "
                 f"true placeholder.",
-                file=sys.stderr,
             )
-            sys.exit(2)
 
     # Read test state
     state = read_state(cwd)
@@ -502,31 +516,29 @@ def main():
 
     if new_count < old_count:
         # DENY: reward hacking detected
-        print(
-            f"SDD Guard: reward hacking detected \u2014 "
+        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+        _fail(
+            f"reward hacking detected \u2014 "
             f"assertions reduced ({old_count}\u2192{new_count})\n\n"
             f"Tests are failing and this edit removes "
             f"{old_count - new_count} assertion(s).\n"
             f"Fix implementation code, not tests.\n"
             f"Weakening a test to match a bug = reward hacking.",
-            file=sys.stderr,
         )
-        sys.exit(2)
 
     # Assertions same or increased → check precision didn't drop
     old_precise = count_precise(old_text)
     new_precise = count_precise(new_text)
     if old_precise > 0 and new_precise < old_precise:
-        print(
-            f"SDD Guard: reward hacking detected \u2014 "
+        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+        _fail(
+            f"reward hacking detected \u2014 "
             f"precision reduced ({old_precise}\u2192{new_precise} precise assertions)\n\n"
             f"Tests are failing and this edit replaces value comparisons "
             f"with existence checks.\n"
             f"Fix implementation code, not test precision.\n"
             f"Replacing precise assertions with loose ones = reward hacking.",
-            file=sys.stderr,
         )
-        sys.exit(2)
 
     # Assertions and precision OK → allow
     sys.exit(0)

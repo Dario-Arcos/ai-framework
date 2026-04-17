@@ -30,7 +30,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
-    acquire_runner_lock, adaptive_gate_timeout, await_test_completion,
+    acquire_runner_lock, adaptive_gate_timeout, append_telemetry,
+    await_test_completion,
     can_trust_state, clear_baseline, clear_coverage, compute_uncovered,
     detect_coverage_command, detect_test_command, extract_session_id,
     has_exit_suppression, is_test_running, kill_orphan_test_group,
@@ -258,10 +259,21 @@ def _has_source_edits(cwd, sid):
     return bool(state and state.get("source_files"))
 
 
-def _fail_task(header, body, footer="Fix the issue before completing this task."):
+def _fail_task(header, body, footer="Fix the issue before completing this task.",
+               category="GATE"):
     """Print failure feedback to stderr and exit 2 (task not complete)."""
-    print(f"{header}\n\n{body}\n\n{footer}", file=sys.stderr)
+    prefix = f"[SDD:{category}]"
+    print(f"{prefix} {header}\n\n{body}\n\n{footer}", file=sys.stderr)
     sys.exit(2)
+
+
+def _record_task_failure(cwd, category, header):
+    """Best-effort telemetry for task denials."""
+    append_telemetry(cwd, {
+        "event": "task_failed",
+        "category": category,
+        "reason": header,
+    })
 
 
 def _format_uncovered_diagnostic(uncovered, coverage_spec):
@@ -476,13 +488,18 @@ def _gate_with_baseline(gate_name, output, cwd, sid,
         return True
     if ralph_dir and teammate_name:
         count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+        header = f"Quality gate '{gate_name}' failed for: {task_subject}"
+        _record_task_failure(cwd, "GATE", header)
         _fail_task(
-            f"Quality gate '{gate_name}' failed for: {task_subject}",
+            header,
             f"Output:\n{output}",
             f"Fix the issue before completing this task. (consecutive failures: {count})",
+            category="GATE",
         )
     else:
-        _fail_task(f"Tests failed for: {task_subject}", f"Output:\n{output}")
+        header = f"Tests failed for: {task_subject}"
+        _record_task_failure(cwd, "GATE", header)
+        _fail_task(header, f"Output:\n{output}", category="GATE")
 
 
 def _check_baseline(cwd, sid, current_output):
@@ -531,31 +548,40 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
     for sf in files:
         valid, errors, _warnings = validate_scenario_file(sf)
         if not valid:
+            header = f"Scenario file invalid for: {task_subject}"
+            _record_task_failure(cwd, "SCENARIO", header)
             _fail_task(
-                f"Scenario file invalid for: {task_subject}",
+                header,
                 f"{sf}: {'; '.join(errors)}",
                 "Fix the scenario file (or invoke sop-reviewer to amend) "
                 "before completion.",
+                category="SCENARIO",
             )
         try:
             content = Path(sf).read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
+            header = f"Scenario file unreadable for: {task_subject}"
+            _record_task_failure(cwd, "SCENARIO", header)
             _fail_task(
-                f"Scenario file unreadable for: {task_subject}",
+                header,
                 f"{sf}: {exc}",
                 "Fix the scenario file before completion.",
+                category="SCENARIO",
             )
         for scenario in parse_scenarios(content):
             if scenario.get("id"):
                 scenario_ids.add(scenario["id"])
 
     if not read_skill_invoked(cwd, "verification-before-completion", sid=sid):
+        header = f"Scenario verification not invoked for: {task_subject}"
+        _record_task_failure(cwd, "SCENARIO", header)
         _fail_task(
-            f"Scenario verification not invoked for: {task_subject}",
+            header,
             "Scenarios exist but verification-before-completion was not called "
             "this session.\n"
             "Invoke: Skill(skill=\"verification-before-completion\") before "
             "completing the task.",
+            category="SCENARIO",
         )
 
     validated_ids = sorted(scenario_ids)
@@ -593,8 +619,10 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                     _gate_with_baseline("test", state.get("raw_output", ""),
                                         cwd, sid, task_subject=task_subject)
                 else:
-                    _fail_task("Test gate timeout",
-                               "Could not run or wait for tests")
+                    header = "Test gate timeout"
+                    _record_task_failure(cwd, "GATE", header)
+                    _fail_task(header, "Could not run or wait for tests",
+                               category="GATE")
             else:
                 try:
                     passed, output = run_gate("test", command, cwd)
@@ -629,12 +657,20 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                     file=sys.stderr,
                 )
             else:
+                header = f"Untested source files for: {task_subject}"
+                _record_task_failure(cwd, "COVERAGE", header)
                 _fail_task(
-                    f"Untested source files for: {task_subject}",
+                    header,
                     f"Source files without detected coverage:\n{diag}\n\n"
                     f"{_UNCOVERED_RESOLUTION}",
                     "Omitting tests = reward hacking by omission.",
+                    category="COVERAGE",
                 )
+
+    append_telemetry(cwd, {
+        "event": "task_completed",
+        "scenarios_gated": scenarios_gated,
+    })
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -680,19 +716,25 @@ def main():
     # rev-* teammates → sop-reviewer, all others → sop-code-assist
     if teammate_name.startswith("rev-"):
         if not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
+            header = f"SDD skill not invoked for: {task_subject}"
+            _record_task_failure(cwd, "POLICY", header)
             _fail_task(
-                f"SDD skill not invoked for: {task_subject}",
+                header,
                 "sop-reviewer was not invoked before review completion. "
                 "Invoke: Skill(skill=\"sop-reviewer\", "
                 "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first.",
+                category="POLICY",
             )
     else:
         if not read_skill_invoked(cwd, "sop-code-assist", sid=sid):
+            header = f"SDD skill not invoked for: {task_subject}"
+            _record_task_failure(cwd, "POLICY", header)
             _fail_task(
-                f"SDD skill not invoked for: {task_subject}",
+                header,
                 "sop-code-assist was not invoked before task completion. "
                 "Invoke: Skill(skill=\"sop-code-assist\", "
                 "args='task_description=\"...\" mode=\"autonomous\"') first.",
+                category="POLICY",
             )
 
     # Load config and run all configured gates.
@@ -735,10 +777,13 @@ def main():
         elapsed = time.monotonic() - gate_start
         remaining = gate_budget - elapsed
         if remaining <= 0:
+            header = f"Timeout budget exhausted before gate '{gate_name}' for: {task_subject}"
+            _record_task_failure(cwd, "GATE", header)
             _fail_task(
-                f"Timeout budget exhausted before gate '{gate_name}' for: {task_subject}",
+                header,
                 f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s. "
                 "Reduce gate execution times or remove unnecessary gates.",
+                category="GATE",
             )
 
         # Adaptive timeout for test gate (history-based); 120s cap for others
@@ -759,8 +804,10 @@ def main():
                                         task_subject=task_subject)
                     continue
                 else:
-                    _fail_task("Test gate timeout",
-                               "Could not run or wait for tests")
+                    header = "Test gate timeout"
+                    _record_task_failure(cwd, "GATE", header)
+                    _fail_task(header, "Could not run or wait for tests",
+                               category="GATE")
             try:
                 passed, output = run_gate("test", gate_cmd, cwd,
                                           timeout=gate_timeout)
@@ -790,28 +837,37 @@ def main():
         elapsed = time.monotonic() - gate_start
         remaining = gate_budget - elapsed
         if remaining <= 0:
+            header = f"Timeout budget exhausted before coverage gate for: {task_subject}"
+            _record_task_failure(cwd, "COVERAGE", header)
             _fail_task(
-                f"Timeout budget exhausted before coverage gate for: {task_subject}",
+                header,
                 f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s.",
+                category="COVERAGE",
             )
         cov_timeout = min(120, int(remaining))
         passed, output = run_gate("coverage", coverage_cmd, cwd, timeout=cov_timeout)
 
         if not passed:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+            header = f"Coverage gate failed for: {task_subject}"
+            _record_task_failure(cwd, "COVERAGE", header)
             _fail_task(
-                f"Coverage gate failed for: {task_subject}",
+                header,
                 f"Output:\n{output}",
                 f"Fix the coverage command before completing this task. (consecutive failures: {count})",
+                category="COVERAGE",
             )
 
         pct = extract_coverage_pct(output)
         if pct is not None and pct < min_coverage:
             count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+            header = f"Coverage below threshold for: {task_subject}"
+            _record_task_failure(cwd, "COVERAGE", header)
             _fail_task(
-                f"Coverage below threshold for: {task_subject}",
+                header,
                 f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\nOutput:\n{output}",
                 f"Increase test coverage before completing this task. (consecutive failures: {count})",
+                category="COVERAGE",
             )
 
     # All gates passed — check coverage before accepting.
@@ -840,12 +896,15 @@ def main():
                 )
             else:
                 count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+                header = f"Untested source files for: {task_subject}"
+                _record_task_failure(cwd, "COVERAGE", header)
                 _fail_task(
-                    f"Untested source files for: {task_subject}",
+                    header,
                     f"Source files without detected coverage:\n{diag}\n\n"
                     f"{_UNCOVERED_RESOLUTION}",
                     f"Omitting tests = reward hacking by omission. "
                     f"(consecutive failures: {count})",
+                    category="COVERAGE",
                 )
 
     _atomic_update_failures(ralph_dir, teammate_name, "reset")
@@ -860,6 +919,12 @@ def main():
     # Clean up session-specific baseline on success
     if sid:
         clear_baseline(cwd, sid)
+
+    append_telemetry(cwd, {
+        "event": "task_completed",
+        "teammate": teammate_name,
+        "scenarios_gated": scenarios_gated,
+    })
 
     sys.exit(0)
 
