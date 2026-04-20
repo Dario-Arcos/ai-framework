@@ -15,6 +15,7 @@ Decision matrix:
 
 State shared with sdd-auto-test.py via /tmp/ files (keyed by project hash).
 """
+import hashlib
 import json
 import os
 import re
@@ -214,6 +215,61 @@ def _rel_scenario_path(file_path, cwd):
     return str(rel)
 
 
+def _predict_scenario_post_edit_hash(abs_path, tool_name, tool_input):
+    """SHA256 of the bytes the scenario file WILL have after tool applies.
+
+    PreToolUse fires before the Edit/Write/MultiEdit/NotebookEdit tool
+    actually touches disk, so `current_file_hash(abs_path)` alone equals
+    baseline and cannot detect divergence. Simulate the tool's effect
+    from `tool_input` and hash the predicted bytes.
+
+    Returns None when the prediction cannot be computed (missing field,
+    encoding failure, unreadable on-disk source for an Edit). The caller
+    falls back to the disk-state check only — a graceful degrade that
+    keeps the symlink and post-mutation guards active.
+    """
+    try:
+        if tool_name == "Edit":
+            old = tool_input.get("old_string")
+            new = tool_input.get("new_string")
+            if old is None or new is None:
+                return None
+            disk = abs_path.read_bytes()
+            predicted = disk.replace(old.encode("utf-8"), new.encode("utf-8"), 1)
+        elif tool_name == "Write":
+            content = tool_input.get("content")
+            if content is None:
+                return None
+            predicted = content.encode("utf-8")
+        elif tool_name == "MultiEdit":
+            edits = tool_input.get("edits")
+            if not isinstance(edits, list):
+                return None
+            predicted = abs_path.read_bytes()
+            for edit in edits:
+                if not isinstance(edit, dict):
+                    return None
+                old = edit.get("old_string")
+                new = edit.get("new_string")
+                if old is None or new is None:
+                    return None
+                replace_all = bool(edit.get("replace_all"))
+                count = -1 if replace_all else 1
+                predicted = predicted.replace(
+                    old.encode("utf-8"), new.encode("utf-8"), count,
+                )
+        elif tool_name == "NotebookEdit":
+            new_source = tool_input.get("new_source")
+            if new_source is None:
+                return None
+            predicted = new_source.encode("utf-8")
+        else:
+            return None
+    except (OSError, UnicodeEncodeError):
+        return None
+    return hashlib.sha256(predicted).hexdigest()
+
+
 def _fail(message, category="SCENARIO"):
     """Emit a structured guard denial and exit 2."""
     print(f"[SDD:{category}] SDD Guard: {message}", file=sys.stderr)
@@ -386,17 +442,32 @@ def main():
                 )
             baseline = scenario_baseline_hash(cwd, rel)
             if baseline is not None:
+                # Defense-in-depth: check BOTH current disk state and the
+                # predicted post-edit state. PreToolUse fires BEFORE the
+                # tool applies, so disk still equals baseline — the disk
+                # check alone cannot catch tool-driven divergence. Simulate
+                # applying tool_input to predict the post-edit hash.
+                # (Dogfood A1 surfaced this: guard silently passed.)
                 current = current_file_hash(abs_path)
-                if current is not None and current != baseline:
+                disk_diverges = current is not None and current != baseline
+                predicted = _predict_scenario_post_edit_hash(
+                    abs_path, tool_name, tool_input,
+                )
+                predict_diverges = (
+                    predicted is not None and predicted != baseline
+                )
+                if disk_diverges or predict_diverges:
                     if not check_amend_marker(cwd, rel, sid=sid):
                         _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
                         _fail(
                             f"scenario write-once violation on {rel}\n\n"
-                            f"The scenario file has changed from its git baseline.\n"
+                            f"The scenario file would diverge from its git "
+                            f"baseline (disk_diverges={disk_diverges}, "
+                            f"predict_diverges={predict_diverges}).\n"
                             f"To amend a scenario, invoke sop-reviewer and create\n"
                             f"an amend marker:\n"
                             f"  .claude/scenarios/.amends/<name>-<HEAD_SHA>.marker\n"
-                            f"Or revert the file to match baseline."
+                            f"Or revert the edit to match baseline."
                         )
 
     # ─── BASH SCENARIO MODIFICATION GUARD (Phase 3) ───────────────
