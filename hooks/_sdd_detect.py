@@ -456,13 +456,89 @@ def cascade_impacted_test_command(cwd, changed_file, sid=None):
                 "session_test_files_count": len(session_tests),
             }
 
-    # Rung 2 pending: fall through to full suite.
+    # Rung 2: source edit without session tests → stack-native fallback
+    # with SDD ordering signal. Factory.ai philosophy: surface the
+    # violation ("worker edited source without authoring tests first")
+    # while still running the best-available impacted subset.
+    try:
+        is_src = is_source_file(changed_file, cwd=cwd)
+    except (OSError, ValueError):
+        is_src = False
+    if is_src:
+        native = _stack_native_impacted_command(cwd, changed_file)
+        if native is not None:
+            return {
+                "command": native,
+                "rung": "2",
+                "forced_full_reason": None,
+                "session_test_files_count": 0,
+                "ordering_warning": True,
+            }
+
     return {
         "command": None,
         "rung": "3",
         "forced_full_reason": None,
         "session_test_files_count": len(session_tests),
     }
+
+
+def _cargo_package_name(cwd):
+    """Extract `[package].name` from Cargo.toml; None on any failure."""
+    cargo_path = Path(cwd) / "Cargo.toml"
+    if not cargo_path.exists():
+        return None
+    try:
+        text = cargo_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    m = re.search(
+        r"^\s*\[package\][^\[]*?name\s*=\s*\"([^\"]+)\"",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    return m.group(1) if m else None
+
+
+def _stack_native_impacted_command(cwd, changed_file):
+    """Rung 2: stack-native impacted-test command for a source-file edit.
+
+    Returns None when no primitive applies (caller falls to Rung 3).
+    Uses each stack's documented impacted primitive — never invents,
+    never graph-analyses beyond what the tool natively provides.
+    """
+    framework = _detect_test_framework(cwd)
+    if framework is None:
+        return None
+    cwd_path = Path(cwd).resolve(strict=False)
+    cf = Path(changed_file)
+    if not cf.is_absolute():
+        cf = cwd_path / cf
+    try:
+        rel = cf.resolve(strict=False).relative_to(cwd_path).as_posix()
+    except ValueError:
+        return None
+
+    if framework == "jest":
+        return f"npx jest --findRelatedTests {rel}"
+    if framework == "vitest":
+        return f"npx vitest related {rel} --run"
+    if framework == "go":
+        try:
+            rel_pkg = cf.parent.resolve(strict=False).relative_to(cwd_path).as_posix()
+        except ValueError:
+            return None
+        pkg_spec = f"./{rel_pkg}" if rel_pkg and rel_pkg != "." else "./..."
+        return f"go test {pkg_spec}"
+    if framework == "cargo":
+        pkg = _cargo_package_name(cwd)
+        if pkg:
+            return f"cargo test -p {pkg}"
+        return None
+    # pytest requires pytest-testmon installed + prior baseline run to be
+    # useful; probing that reliably from manifests is noisy. Rung 2 for
+    # pytest returns None → Rung 3 full-suite (safer default than guessing).
+    return None
 
 
 def _scoped_test_command_for_session_tests(cwd, test_files):
