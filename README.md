@@ -196,7 +196,7 @@ The `sdd-test-guard` hook blocks edits that reduce test assertions. The `sdd-aut
 
 MIT License — See [LICENSE](LICENSE)
 
-**Version:** 2026.3.1 | [CHANGELOG.md](CHANGELOG.md) | CalVer `YYYY.MINOR.MICRO`
+**Version:** 2026.3.2 | [CHANGELOG.md](CHANGELOG.md) | CalVer `YYYY.MINOR.MICRO`
 
 Contributions welcome via [GitHub Issues](https://github.com/Dario-Arcos/ai-framework/issues)
 
