@@ -59,6 +59,7 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 
 | Artifact | Detected Phase |
 |----------|----------------|
+| Any `*.code-task.md` exists AND `.claude/scenarios/{goal}.scenarios.md` MISSING in `git HEAD` | legacy-migration (Step 3.5 authors scenarios, then Step 4 regenerates task files — stale tasks MUST NOT be reused) |
 | All `*.code-task.md` with `Status: COMPLETED` | COMPLETE |
 | Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 7) |
 | Any `*.code-task.md` with `Status: PENDING` | execution (Step 7) |
@@ -67,6 +68,8 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 | `design/detailed-design.md` + `.claude/scenarios/{goal}.scenarios.md` committed | planning-complete (Step 4) |
 | `referents/catalog.md` | referent-complete (Step 3) |
 | Nothing | NEW |
+
+> **Precedence matters**: rows are evaluated top-down. The legacy-migration row appears first so it wins over Status-based rows when a pre-Step-3.5 spec has both `Status: PENDING` tasks and missing scenarios. Dogfood C7 confirmed this placement prevents silent reuse of stale task files.
 
 **Use AskUserQuestion** to confirm: resume from detected phase, or choose goal if multiple. Surface `blockers.md` content if exists.
 
