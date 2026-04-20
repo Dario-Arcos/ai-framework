@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _sdd_detect import (
     acquire_runner_lock, adaptive_gate_timeout, append_telemetry,
-    baseline_path,
+    baseline_path, cascade_impacted_test_command,
     clear_rerun_marker, detect_test_command, extract_session_id,
     has_exit_suppression, has_rerun_marker, is_exempt_from_tests,
     is_source_file, is_test_file, is_test_running,
@@ -28,6 +28,7 @@ from _sdd_detect import (
     release_runner_lock, run_in_process_group, test_pgid_path,
     write_baseline, write_rerun_marker, write_skill_invoked, write_state,
 )
+import _sdd_config  # noqa: E402
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -195,13 +196,23 @@ def main():
             write_skill_invoked(cwd, skill_name, sid)
         sys.exit(0)
 
-    # Test file tracking: record for coverage, don't launch tests
+    # Test file tracking: record for coverage.
+    # FAST_PATH_ENABLED=False (default): preserve pre-Phase-8 behavior —
+    #   test-file edits record state but don't trigger a run (source-file
+    #   edits will sweep them in on the next full suite).
+    # FAST_PATH_ENABLED=True: fall through to cascade, which routes
+    #   test-file edits to Rung 1a (scoped to that test file).
     if is_test_file(file_path, cwd=cwd):
         record_file_edit(cwd, file_path, sid)
-        sys.exit(0)
+        if not _sdd_config.FAST_PATH_ENABLED:
+            sys.exit(0)
+        is_test_edit = True
+    else:
+        is_test_edit = False
 
-    # Guard: only source files
-    if not is_source_file(file_path, cwd=cwd):
+    # Guard: relevant files only. Source files proceed; test files already
+    # handled above. Everything else exits.
+    if not is_test_edit and not is_source_file(file_path, cwd=cwd):
         sys.exit(0)
 
     # Guard: exempt files tracked but don't trigger tests or nudge
@@ -209,14 +220,35 @@ def main():
         sys.exit(0)
 
     # Track source file edit for coverage (also records edit timestamp)
-    record_file_edit(cwd, file_path, sid)
+    if not is_test_edit:
+        record_file_edit(cwd, file_path, sid)
+
+    # Phase 8 cascade: pick the narrowest command that still catches
+    # breakage for this edit. Cascade returns Rung 3 (command=None) when
+    # fast-path is disabled, so existing installs keep the full-suite
+    # behavior until they flip FAST_PATH_ENABLED=True.
+    cascade = cascade_impacted_test_command(cwd, file_path, sid=sid)
+    scoped_command = cascade.get("command")
+    fast_path_rung = cascade.get("rung", "3")
+    ordering_warning = bool(cascade.get("ordering_warning"))
+    forced_full_reason = cascade.get("forced_full_reason")
 
     # Read previous test state (project-scoped) — only report failures
     previous = read_state(cwd)
-    msg = format_feedback(previous) if previous and not previous.get("passing") else None
+    msg = None
 
-    # SDD ordering nudge (when no test failure to report AND no passing state)
-    if not msg and not (previous and previous.get("passing")):
+    # Rung 2 signals an SDD-ordering violation; surface it to the agent
+    # as a passive context signal (Law 1: no decision to retrieve it).
+    if ordering_warning:
+        msg = (
+            "[SDD:ORDERING] source edited without session tests — "
+            "fast-path fell back to stack-native impacted command. "
+            "Author tests first to enter Rung 1b (session-scoped)."
+        )
+    elif previous and not previous.get("passing"):
+        msg = format_feedback(previous)
+    elif not (previous and previous.get("passing")):
+        # Legacy ordering nudge when fast-path is off: same signal, older phrasing
         cov = read_coverage(cwd, sid=sid)
         if cov and cov.get("source_files") and not cov.get("test_files"):
             msg = (
@@ -224,13 +256,21 @@ def main():
                 "Define test scenarios before continuing with implementation."
             )
 
+    # Telemetry: every queued run. Meta PTS-style — data before tuning.
+    append_telemetry(cwd, {
+        "event": "test_run_queued",
+        "fast_path_rung": fast_path_rung,
+        "forced_full_reason": forced_full_reason,
+        "session_test_files_count": cascade.get("session_test_files_count", 0),
+    })
+
     # Signal rerun needed — written before debounce check so a running
     # worker picks up this edit even if we skip spawning a new one
     write_rerun_marker(cwd)
 
     # Guard: debounce — project-scoped, one runner at a time
     if not is_test_running(cwd):
-        command = detect_test_command(cwd)
+        command = scoped_command or detect_test_command(cwd)
         if command and not has_exit_suppression(command):
             run_tests_background(cwd, command, sid)
 
