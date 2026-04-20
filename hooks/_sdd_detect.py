@@ -292,3 +292,150 @@ def parse_test_summary(output, returncode):
 
     # Fallback
     return "tests passed" if returncode == 0 else "tests failed"
+
+
+# ─────────────────────────────────────────────────────────────────
+# PHASE 8 — PER-EDIT IMPACTED-TEST CASCADE (Factory.ai-aligned)
+# ─────────────────────────────────────────────────────────────────
+
+import _sdd_config  # noqa: E402
+
+
+def _detect_test_framework(cwd):
+    """Identify the project's test framework from manifest inspection.
+
+    Returns: "pytest" | "vitest" | "jest" | "go" | "cargo" | None.
+
+    `detect_test_command` returns the invocation command (e.g. `npm test`),
+    which hides the underlying framework from string inspection. This
+    helper reads manifests directly to recover it. Cached per cwd at the
+    detect_test_command level is respected indirectly via short lifetimes.
+    """
+    cwd_path = Path(cwd)
+    pkg = cwd_path / "package.json"
+    if pkg.exists():
+        try:
+            data = json.loads(pkg.read_text(encoding="utf-8"))
+            script = data.get("scripts", {}).get("test", "") or ""
+            deps = {}
+            deps.update(data.get("dependencies", {}) or {})
+            deps.update(data.get("devDependencies", {}) or {})
+            if "vitest" in script or "vitest" in deps:
+                return "vitest"
+            if "jest" in script or "jest" in deps:
+                return "jest"
+        except (OSError, json.JSONDecodeError):
+            pass
+    if (cwd_path / "pyproject.toml").exists() or (cwd_path / "pytest.ini").exists() \
+            or (cwd_path / "setup.py").exists():
+        return "pytest"
+    if (cwd_path / "go.mod").exists():
+        return "go"
+    if (cwd_path / "Cargo.toml").exists():
+        return "cargo"
+    return None
+
+
+def _scoped_test_command_for_test_file(cwd, test_file):
+    """Rung 1a: command that runs ONLY this test file.
+
+    Go is package-scoped by convention (not file-scoped) since go test
+    discovers tests per-directory. Unknown runners return None so the
+    caller falls back to Rung 3.
+    """
+    framework = _detect_test_framework(cwd)
+    if framework is None:
+        return None
+    cwd_path = Path(cwd).resolve(strict=False)
+    tf_path = Path(test_file)
+    if not tf_path.is_absolute():
+        tf_path = cwd_path / tf_path
+    try:
+        rel = tf_path.resolve(strict=False).relative_to(cwd_path).as_posix()
+    except ValueError:
+        return None
+
+    if framework == "pytest":
+        return f"pytest {rel}"
+    if framework == "vitest":
+        return f"npx vitest run {rel}"
+    if framework == "jest":
+        return f"npx jest {rel}"
+    if framework == "go":
+        pkg_dir = tf_path.parent
+        try:
+            rel_pkg = pkg_dir.resolve(strict=False).relative_to(cwd_path).as_posix()
+        except ValueError:
+            return None
+        pkg_spec = f"./{rel_pkg}" if rel_pkg and rel_pkg != "." else "./..."
+        return f"go test {pkg_spec}"
+    if framework == "cargo":
+        if rel.startswith("tests/"):
+            test_name = Path(rel).stem
+            return f"cargo test --test {test_name}"
+        return None
+    return None
+
+
+def cascade_impacted_test_command(cwd, changed_file, sid=None):
+    """Factory.ai-aligned per-edit cascade.
+
+    Returns dict:
+      command: str | None (None → caller uses full suite = Rung 3)
+      rung: "1a" | "1b" | "2" | "3"
+      forced_full_reason: str | None
+      session_test_files_count: int
+
+    Cascade order:
+      * FAST_PATH_ENABLED=False               → Rung 3
+      * basename in FAST_PATH_FORCE_FULL_FILES → Rung 3 (forced)
+      * IS test file + scoped cmd available   → Rung 1a
+      * IS source + session has test files    → Rung 1b  (SCEN-013)
+      * IS source + no session tests          → Rung 2   (SCEN-014)
+      * otherwise                             → Rung 3
+
+    SCEN-012 implements: Rung 3 gate + forced-full + Rung 1a.
+    Rungs 1b / 2 stubbed; filled in SCEN-013 / SCEN-014.
+    """
+    if not _sdd_config.FAST_PATH_ENABLED:
+        return {
+            "command": None,
+            "rung": "3",
+            "forced_full_reason": "disabled",
+            "session_test_files_count": 0,
+        }
+
+    basename = Path(changed_file).name
+    if basename in _sdd_config.FAST_PATH_FORCE_FULL_FILES:
+        reason = "config"
+        if basename.endswith(".lock") or basename.endswith("-lock.json") \
+                or basename.endswith("-lock.yaml") \
+                or basename in ("requirements.txt",):
+            reason = "lockfile"
+        return {
+            "command": None,
+            "rung": "3",
+            "forced_full_reason": reason,
+            "session_test_files_count": 0,
+        }
+
+    try:
+        if is_test_file(changed_file, cwd=cwd):
+            scoped = _scoped_test_command_for_test_file(cwd, changed_file)
+            if scoped is not None:
+                return {
+                    "command": scoped,
+                    "rung": "1a",
+                    "forced_full_reason": None,
+                    "session_test_files_count": 0,
+                }
+    except (OSError, ValueError):
+        pass
+
+    # Rungs 1b / 2 pending: fall through to full suite.
+    return {
+        "command": None,
+        "rung": "3",
+        "forced_full_reason": None,
+        "session_test_files_count": 0,
+    }
