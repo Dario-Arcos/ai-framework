@@ -432,10 +432,87 @@ def cascade_impacted_test_command(cwd, changed_file, sid=None):
     except (OSError, ValueError):
         pass
 
-    # Rungs 1b / 2 pending: fall through to full suite.
+    # Rung 1b: source edit + session has test files → run those tests.
+    # Session state is keyed on (cwd, sid), so Ralph worktrees naturally
+    # isolate: W1's session tests do not leak to W2's cascade.
+    session_tests = []
+    if sid:
+        try:
+            cov = read_coverage(cwd, sid=sid)
+            if cov:
+                session_tests = [
+                    tf for tf in cov.get("test_files", [])
+                    if isinstance(tf, str)
+                ]
+        except (OSError, ValueError):
+            pass
+    if session_tests:
+        scoped = _scoped_test_command_for_session_tests(cwd, session_tests)
+        if scoped is not None:
+            return {
+                "command": scoped,
+                "rung": "1b",
+                "forced_full_reason": None,
+                "session_test_files_count": len(session_tests),
+            }
+
+    # Rung 2 pending: fall through to full suite.
     return {
         "command": None,
         "rung": "3",
         "forced_full_reason": None,
-        "session_test_files_count": 0,
+        "session_test_files_count": len(session_tests),
     }
+
+
+def _scoped_test_command_for_session_tests(cwd, test_files):
+    """Rung 1b: command running the session's tracked test files.
+
+    Go deduplicates to unique parent directories (package-scoped).
+    Cargo requires all files under tests/; mixed → None (fall through).
+    """
+    framework = _detect_test_framework(cwd)
+    if framework is None:
+        return None
+    cwd_path = Path(cwd).resolve(strict=False)
+    rels = []
+    parents = []
+    for tf in test_files:
+        p = Path(tf)
+        if not p.is_absolute():
+            p = cwd_path / p
+        try:
+            rel = p.resolve(strict=False).relative_to(cwd_path).as_posix()
+        except ValueError:
+            continue
+        rels.append(rel)
+        try:
+            parents.append(
+                p.parent.resolve(strict=False).relative_to(cwd_path).as_posix()
+            )
+        except ValueError:
+            pass
+    if not rels:
+        return None
+
+    if framework == "pytest":
+        return "pytest " + " ".join(rels)
+    if framework == "vitest":
+        return "npx vitest run " + " ".join(rels)
+    if framework == "jest":
+        return "npx jest " + " ".join(rels)
+    if framework == "go":
+        unique_pkgs = []
+        seen = set()
+        for pp in parents:
+            spec = f"./{pp}" if pp and pp != "." else "./..."
+            if spec not in seen:
+                seen.add(spec)
+                unique_pkgs.append(spec)
+        return "go test " + " ".join(unique_pkgs) if unique_pkgs else None
+    if framework == "cargo":
+        if not all(r.startswith("tests/") for r in rels):
+            return None
+        names = [Path(r).stem for r in rels]
+        return "cargo test " + " ".join(f"--test {n}" for n in names)
+    return None
