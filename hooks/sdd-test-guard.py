@@ -215,27 +215,66 @@ def _rel_scenario_path(file_path, cwd):
     return str(rel)
 
 
+def _malformed_scenario_edit_reason(tool_name, tool_input, disk_bytes):
+    """Return reason string if the edit cannot be faithfully simulated.
+
+    Malformed inputs are rejected by the guard (deny) rather than fed to
+    `replace()` — empty `old_string` would insert between every byte
+    (memory blow-up risk on large files), and an `old_string` absent from
+    disk would produce `predicted == disk` (silent allow). Both cases
+    break the write-once contract semantics. Phase 7 edge-case review
+    MEDIUM findings #1 and #2.
+    """
+    if tool_name == "Edit":
+        old = tool_input.get("old_string")
+        if old == "":
+            return "Edit.old_string is empty"
+        if disk_bytes is not None and old is not None:
+            try:
+                if old.encode("utf-8") not in disk_bytes:
+                    return "Edit.old_string not found in scenario file"
+            except UnicodeEncodeError:
+                return "Edit.old_string contains non-UTF-8 bytes"
+    elif tool_name == "MultiEdit":
+        edits = tool_input.get("edits")
+        if isinstance(edits, list):
+            for idx, edit in enumerate(edits):
+                if not isinstance(edit, dict):
+                    return f"edits[{idx}] is not an object"
+                old = edit.get("old_string")
+                if old == "":
+                    return f"edits[{idx}].old_string is empty"
+    return None
+
+
 def _predict_scenario_post_edit_hash(abs_path, tool_name, tool_input):
-    """SHA256 of the bytes the scenario file WILL have after tool applies.
+    """SHA256 of canonicalized bytes the scenario WILL have post-apply.
 
     PreToolUse fires before the Edit/Write/MultiEdit/NotebookEdit tool
     actually touches disk, so `current_file_hash(abs_path)` alone equals
     baseline and cannot detect divergence. Simulate the tool's effect
     from `tool_input` and hash the predicted bytes.
 
+    Bytes are canonicalized (BOM stripped, CRLF → LF) before hashing so
+    editor serialization quirks on Windows don't force false denies
+    (edge-case review HIGH finding).
+
     Returns None when the prediction cannot be computed (missing field,
-    encoding failure, unreadable on-disk source for an Edit). The caller
-    falls back to the disk-state check only — a graceful degrade that
-    keeps the symlink and post-mutation guards active.
+    encoding failure, unreadable source). The caller falls back to the
+    disk-state check only.
     """
     try:
         if tool_name == "Edit":
             old = tool_input.get("old_string")
             new = tool_input.get("new_string")
-            if old is None or new is None:
+            if not old or new is None:
                 return None
             disk = abs_path.read_bytes()
-            predicted = disk.replace(old.encode("utf-8"), new.encode("utf-8"), 1)
+            replace_all = bool(tool_input.get("replace_all"))
+            count = -1 if replace_all else 1
+            predicted = disk.replace(
+                old.encode("utf-8"), new.encode("utf-8"), count,
+            )
         elif tool_name == "Write":
             content = tool_input.get("content")
             if content is None:
@@ -251,7 +290,7 @@ def _predict_scenario_post_edit_hash(abs_path, tool_name, tool_input):
                     return None
                 old = edit.get("old_string")
                 new = edit.get("new_string")
-                if old is None or new is None:
+                if not old or new is None:
                     return None
                 replace_all = bool(edit.get("replace_all"))
                 count = -1 if replace_all else 1
@@ -267,7 +306,8 @@ def _predict_scenario_post_edit_hash(abs_path, tool_name, tool_input):
             return None
     except (OSError, UnicodeEncodeError):
         return None
-    return hashlib.sha256(predicted).hexdigest()
+    from _sdd_scenarios import _canon_scenario_bytes
+    return hashlib.sha256(_canon_scenario_bytes(predicted)).hexdigest()
 
 
 def _fail(message, category="SCENARIO"):
@@ -448,6 +488,21 @@ def main():
                 # check alone cannot catch tool-driven divergence. Simulate
                 # applying tool_input to predict the post-edit hash.
                 # (Dogfood A1 surfaced this: guard silently passed.)
+                try:
+                    disk_bytes = abs_path.read_bytes()
+                except OSError:
+                    disk_bytes = None
+                malformed = _malformed_scenario_edit_reason(
+                    tool_name, tool_input, disk_bytes,
+                )
+                if malformed and not check_amend_marker(cwd, rel, sid=sid):
+                    _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                    _fail(
+                        f"scenario write-once — malformed edit on {rel}\n\n"
+                        f"Simulator cannot verify: {malformed}.\n"
+                        f"Reject to preserve contract. Provide a valid edit "
+                        f"payload or invoke sop-reviewer for an amend."
+                    )
                 current = current_file_hash(abs_path)
                 disk_diverges = current is not None and current != baseline
                 predicted = _predict_scenario_post_edit_hash(

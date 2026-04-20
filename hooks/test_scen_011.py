@@ -200,6 +200,138 @@ class TestScen011PreEditSimulation(unittest.TestCase):
             f"Write with baseline content must be allowed; "
             f"got exit={exit_code}, stderr={stderr!r}")
 
+    def test_write_baseline_content_with_crlf_allowed(self):
+        """Write same content with CRLF line endings must be allowed (EOL canon).
+
+        Quality-gate finding HIGH: Windows/editor CRLF serialization would
+        cause byte-level divergence from LF-stored baseline → false deny.
+        Canonicalization normalizes CRLF → LF before hashing.
+        """
+        self._baseline_still_on_disk()
+        crlf_content = _VALID_FILE.replace("\n", "\r\n")
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "content": crlf_content,
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-crlf-noop",
+        })
+        self.assertEqual(exit_code, 0,
+            f"Write with CRLF-normalized baseline content must be allowed; "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
+    def test_write_baseline_content_with_bom_allowed(self):
+        """Write same content prefixed with UTF-8 BOM must be allowed.
+
+        Quality-gate finding HIGH variant: some editors inject BOM on save.
+        Canonicalization strips leading BOM before hashing.
+        """
+        self._baseline_still_on_disk()
+        bom_content = "﻿" + _VALID_FILE
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "Write",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "content": bom_content,
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-bom-noop",
+        })
+        self.assertEqual(exit_code, 0,
+            f"Write with BOM-prefixed baseline content must be allowed; "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
+    def test_edit_absent_old_string_denies(self):
+        """Edit with old_string absent from disk must deny (defense in depth).
+
+        Quality-gate finding MEDIUM: `str.replace(absent, new, 1)` returns
+        the original string unchanged → predicted == baseline → guard would
+        silently pass. Contract requires denial when the simulator cannot
+        verify the intended divergence.
+        """
+        self._baseline_still_on_disk()
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "old_string": "this-literal-does-not-appear-in-the-file",
+                "new_string": "whatever",
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-absent-old",
+        })
+        self.assertEqual(exit_code, 2,
+            f"Edit with absent old_string must deny (simulator cannot verify); "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
+    def test_edit_empty_old_string_denies(self):
+        """Edit with old_string='' must deny (malformed input, not a pass).
+
+        Quality-gate finding MEDIUM: `bytes.replace(b'', new, 1)` inserts
+        `new` at position 0, producing absurd output and risking memory
+        blowup on large files. Malformed input → deny.
+        """
+        self._baseline_still_on_disk()
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "old_string": "",
+                "new_string": "X",
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-empty-old",
+        })
+        self.assertEqual(exit_code, 2,
+            f"Edit with empty old_string must deny (malformed input); "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
+    def test_edit_replace_all_flag_divergence_denied(self):
+        """Edit{replace_all: True} simulation must honor the flag.
+
+        Quality-gate finding P2: `_predict_scenario_post_edit_hash` hardcoded
+        count=1 for Edit; real Edit tool accepts `replace_all: bool`. Without
+        the flag, divergence predicted on multiple-occurrence strings would
+        be under-counted (still denies in this direction, but simulator
+        diverges from real tool). Test asserts divergence IS still caught.
+        """
+        self._baseline_still_on_disk()
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "old_string": "Evidence",
+                "new_string": "Proof",
+                "replace_all": True,
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-replace-all",
+        })
+        self.assertEqual(exit_code, 2,
+            f"Edit{{replace_all: True}} with divergent replacement must deny; "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
+    def test_multiedit_noop_allowed(self):
+        """MultiEdit with all edits identity (old==new) must be allowed."""
+        self._baseline_still_on_disk()
+        exit_code, _, stderr = _run_hook_stdin(sdd_test_guard.main, {
+            "tool_name": "MultiEdit",
+            "tool_input": {
+                "file_path": str(self.scenario_path),
+                "edits": [
+                    {"old_string": "Evidence", "new_string": "Evidence"},
+                    {"old_string": "Given", "new_string": "Given"},
+                ],
+            },
+            "cwd": self.tmpdir,
+            "session_id": "scen011-multi-noop",
+        })
+        self.assertEqual(exit_code, 0,
+            f"MultiEdit with identity edits must be allowed; "
+            f"got exit={exit_code}, stderr={stderr!r}")
+
 
 if __name__ == "__main__":
     unittest.main()

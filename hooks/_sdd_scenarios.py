@@ -307,10 +307,25 @@ def validate_scenario_file(path):
 # Hashing / baseline protocol
 # ─────────────────────────────────────────────────────────────────
 
+def _canon_scenario_bytes(b):
+    """Canonicalize scenario bytes for stable hash comparison.
+
+    Strips UTF-8 BOM and normalizes CRLF → LF. Different editors and
+    platforms serialize scenario files with BOM or CRLF; byte-level
+    comparison would falsely deny no-op rewrites from Windows contributors
+    or BOM-injecting editors (Phase 7 edge-case review HIGH finding).
+    """
+    if b.startswith(b"\xef\xbb\xbf"):
+        b = b[3:]
+    return b.replace(b"\r\n", b"\n")
+
+
 def current_file_hash(path):
-    """SHA256 of the file's on-disk bytes. Returns None on I/O error."""
+    """SHA256 of the file's canonicalized on-disk bytes. None on I/O error."""
     try:
-        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        return hashlib.sha256(
+            _canon_scenario_bytes(Path(path).read_bytes())
+        ).hexdigest()
     except OSError:
         return None
 
@@ -354,7 +369,7 @@ def scenario_baseline_hash(cwd, rel_path):
     result = _run_git(cwd, "show", f"{commits[-1]}:{rel_path}")
     if result is None or result.returncode != 0:
         return None
-    return hashlib.sha256(result.stdout).hexdigest()
+    return hashlib.sha256(_canon_scenario_bytes(result.stdout)).hexdigest()
 
 
 def current_head_sha(cwd):
