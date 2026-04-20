@@ -8,7 +8,7 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
-## [No Publicado]
+## [2026.3.2] - 2026-04-20
 
 ### Corregido
 
