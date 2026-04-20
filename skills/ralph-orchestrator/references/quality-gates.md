@@ -97,6 +97,19 @@ When `.claude/scenarios/` exists, committed scenario artifacts are the primary q
 - Coverage is an informational signal when scenarios exist, not the authority on task correctness.
 - A task that satisfies all committed scenarios but has thin coverage still needs follow-up, but the scenario contract remains the main acceptance decision.
 
+### Write-Once Contract (PreToolUse Guard)
+
+Committed scenario files are protected by two layers of `sdd-test-guard.py`:
+
+1. **Post-mutation disk check** (SCEN-001..010): if the on-disk file diverges from the baseline recorded at first add-commit, deny unless a valid amend marker exists. Catches out-of-band edits (external editors, git operations, Bash piping).
+2. **Pre-edit simulation check** (SCEN-011): at `PreToolUse` timing the tool has not yet applied, so disk still equals baseline. `_predict_scenario_post_edit_hash()` simulates the pending edit — `Edit(old, new, replace_all?)` via `str.replace`, `Write(content)` wholesale, `MultiEdit[edits]` sequentially, `NotebookEdit(new_source)` wholesale — hashes the predicted bytes, and denies if the prediction diverges from baseline.
+
+Both sides canonicalize via `_canon_scenario_bytes()` (strips UTF-8 BOM + normalizes CRLF→LF) so editor serialization differences do not trigger false denies.
+
+Malformed edits are denied BEFORE simulation: `Edit.old_string` empty or absent from disk, non-object MultiEdit entries. This prevents pathological `replace()` semantics and silent pass-through when the simulator cannot verify the divergence.
+
+Amend flow: invoke `/ai-framework:sop-reviewer` in the session, then create `.claude/scenarios/.amends/{stem}-{HEAD_SHA}.marker`. The marker is invalidated by the next `git commit`, enforcing "amends must be justified per-commit".
+
 ---
 
 ## Exit Code Suppression (Anti-Pattern)

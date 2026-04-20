@@ -10,8 +10,14 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ## [No Publicado]
 
+### Corregido
+
+- **P0 write-once scenario guard**: `sdd-test-guard.py` comparaba solo el hash del archivo en disco contra el baseline git. Al momento de `PreToolUse`, la herramienta aún no aplica el cambio, por lo que el disco seguía siendo baseline → el guard permitía silenciosamente cualquier Edit/Write/MultiEdit/NotebookEdit sobre scenarios ya committeados. El contrato write-once no se enforzaba para mutaciones tool-driven en sesiones reales. Los tests SCEN-001..010 pasaban pre-mutando el disco — artefacto de simulación, no semántica real. Fix (`ad4c396`): `_predict_scenario_post_edit_hash()` simula el Edit (`str.replace` once), Write (`content`), MultiEdit (replaces secuenciales honrando `replace_all`) o NotebookEdit (`new_source`), hashea los bytes predichos y compara contra baseline. El guard ahora deniega si **disk OR predicted** diverge — defense in depth. SCEN-011 (5 tests) codifica el contrato de timing real. Descubierto via Phase 7 real-world dogfood.
+- **Hardening post-P0** (`a748c77`): tras parallel quality gate (code-reviewer + security-reviewer + edge-case-detector), se cerraron 1 HIGH + 2 MEDIUM + 2 P2 findings en el mismo módulo. `_canon_scenario_bytes()` strips UTF-8 BOM + normaliza CRLF→LF sobre baseline/disk/predicted — evita false-deny en re-saves desde editores Windows. `_malformed_scenario_edit_reason()` detecta `Edit.old_string` vacío o ausente y deniega antes de alimentar `replace()` con input inválido (cierra DoS narrow + silent-pass). `Edit.replace_all` ahora honrado (paridad con `MultiEdit[i].replace_all`). SCEN-011 crece a 11 tests, suite 975 → 986, zero regresiones.
+
 ### Añadido
 
+- **SCEN-011**: acceptance contract para el timing real de PreToolUse — prueba Edit/Write/MultiEdit divergence denied + Edit/Write no-op allowed. Complementa SCEN-001..010 (que cubren el caso out-of-band disk mutation via defense-in-depth).
 - `HOOK_VERSION` ahora deriva de `package.json` (`_read_hook_version()` con `lru_cache`), alineando telemetría y manifiesto.
 - `_SDD_DISABLE_SCENARIOS=1` como bypass real de los guards de escenarios (`sdd-test-guard.py` + `_enforce_scenario_gate` en `task-completed.py`), con evento `scenarios_bypassed` emitido en cada invocación.
 
