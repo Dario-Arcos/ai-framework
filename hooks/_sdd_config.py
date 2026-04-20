@@ -70,6 +70,42 @@ HOOK_TIMEOUT_PRE_TOOL_USE = 5
 HOOK_TIMEOUT_POST_TOOL_USE = 10
 HOOK_TIMEOUT_TASK_COMPLETED = 300
 
+# ─────────────────────────────────────────────────────────────────
+# PHASE 8 — PER-EDIT FAST-PATH (Factory.ai-aligned test impact)
+#
+# Rollout default: OFF. Existing installs preserve full-suite per edit
+# (current behavior). Users opt in per-project via .claude/config.json
+# after validating fast-path telemetry against their workload.
+#
+# Cascade (when enabled) — hooks/sdd-auto-test.py:
+#   Rung 1a: edit IS a test file           → run that test file only
+#   Rung 1b: edit IS source + session tests → run record_file_edit tests
+#   Rung 2:  edit IS source + no session   → [SDD:ORDERING] warn + stack-native impacted
+#   Rung 3:  no primitive / failure / fvf  → full suite (safety net)
+#   Milestone (TaskCompleted): full suite + coverage + scenarios [unchanged]
+#
+# Telemetry (test_run_end): fast_path_rung, fast_path_duration_seconds,
+# forced_full_reason, session_test_files_count — Meta PTS-style empirical
+# tuning: measure for 30 days before flipping default.
+# ─────────────────────────────────────────────────────────────────
+FAST_PATH_ENABLED = False           # rollout default: zero behavior change
+FAST_PATH_BUDGET_SECONDS = 30       # rungs 1-2 per-edit cap
+
+# Files whose edit forces Rung 3 (Microsoft TIA fall-back-to-all pattern).
+# Lockfiles can invalidate any test through dependency resolution; config
+# files alter runtime assumptions test runners can't self-detect.
+FAST_PATH_FORCE_FULL_FILES = frozenset({
+    # Lockfiles — dependency resolution
+    "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+    "poetry.lock", "uv.lock", "Cargo.lock", "requirements.txt",
+    # Stack configs — runtime assumptions
+    "pyproject.toml", "tsconfig.json", "nx.json", "turbo.json",
+    "pytest.ini",
+    "jest.config.js", "jest.config.ts", "jest.config.mjs", "jest.config.cjs",
+    "vitest.config.js", "vitest.config.ts", "vitest.config.mjs",
+    "vitest.config.cjs",
+})
+
 
 # ─────────────────────────────────────────────────────────────────
 # TIER 2 — STACK PATTERNS (config-driven via .claude/config.json)
