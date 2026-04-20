@@ -8,6 +8,26 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ---
 
+## [No Publicado]
+
+### Añadido
+
+- **Phase 8 — per-edit fast-path (Factory.ai-aligned test impact, opt-in)**: `hooks/_sdd_detect.py::cascade_impacted_test_command(cwd, file, sid)` sustituye la invocación ciega `detect_test_command(cwd)` en `sdd-auto-test.py` por una cascada de cuatro rungs que eligen el comando más angosto que aún detecta la regresión para ese edit. La cascada:
+  - **Rung 1a** — edit sobre archivo de test → corre SOLO ese test (pytest/vitest/jest scope por archivo; go scope por paquete por convención).
+  - **Rung 1b** — edit sobre source con tests editados previamente en la sesión (`record_file_edit` keyed por `(cwd, sid)` → aislamiento natural por worktree Ralph) → corre esos tests de sesión.
+  - **Rung 2** — edit sobre source sin tests en sesión → stderr `[SDD:ORDERING]` warning + fallback stack-native (`jest --findRelatedTests`, `vitest related`, `go test ./<pkg>`, `cargo test -p <pkg>`). pytest defiere a Rung 3 (testmon requiere runtime probe que no puede leer desde manifest).
+  - **Rung 3** — lockfile / config edit (Microsoft TIA fall-back-to-all), o Rung 2 sin primitive, o fast-path deshabilitado → full suite (`detect_test_command(cwd)`).
+  - **Milestone** — `TaskCompleted` gate sigue corriendo full suite + coverage + scenarios (Factory.ai milestone boundary, sin cambios).
+- `hooks/_sdd_config.py`: `FAST_PATH_ENABLED=False` (default rollout seguro — cero regresión para installs existentes), `FAST_PATH_BUDGET_SECONDS=30`, `FAST_PATH_FORCE_FULL_FILES` (lockfiles + configs de stack).
+- Telemetría Meta-PTS-style en cada `test_run_queued`: `fast_path_rung`, `forced_full_reason`, `session_test_files_count` — datos para tunear el default después de 30 días de observación.
+- SCEN-012..016 (22 tests) codifican el contrato de aceptación con red-green-refactor verificado por rung.
+
+### Cambiado
+
+- `hooks/sdd-auto-test.py:main()`: consulta cascade antes de dispatch; emite `[SDD:ORDERING]` como additionalContext cuando Rung 2 detecta source-sin-tests-en-sesión — Factory.ai surface-at-edit-time, no solo at-milestone.
+
+---
+
 ## [2026.3.2] - 2026-04-20
 
 ### Corregido
