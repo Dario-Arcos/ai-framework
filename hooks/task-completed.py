@@ -599,6 +599,84 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
     return True
 
 
+_WEB_FRAMEWORK_DEPS = frozenset({
+    "react", "vue", "svelte", "next", "nuxt", "astro", "remix",
+    "@angular/core", "solid-js",
+})
+
+
+def _detect_web_project(cwd):
+    """True iff package.json declares a web-framework dependency.
+
+    Checks both `dependencies` and `devDependencies`. A library
+    published to npm that happens to list react as a peer dep does
+    NOT count as a web project — we look at concrete (dev)deps only.
+    Fail-safe on missing / malformed package.json: return False.
+    """
+    pj_path = Path(cwd) / "package.json"
+    if not pj_path.is_file():
+        return False
+    try:
+        pj = json.loads(pj_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    for key in ("dependencies", "devDependencies"):
+        deps = pj.get(key)
+        if isinstance(deps, dict) and any(
+            name in _WEB_FRAMEWORK_DEPS for name in deps
+        ):
+            return True
+    return False
+
+
+def _auto_dogfood_enabled(cwd):
+    """`.claude/config.json` AUTO_DOGFOOD knob (default True).
+
+    Explicit `false` opts the project out. Malformed/missing config
+    falls back to the True default.
+    """
+    config_path = Path(cwd) / ".claude" / "config.json"
+    if not config_path.is_file():
+        return True
+    try:
+        cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return True
+    if not isinstance(cfg, dict):
+        return True
+    return cfg.get("AUTO_DOGFOOD", True) is not False
+
+
+def _emit_dogfood_signal_if_web(cwd, task_subject, mode):
+    """Post-gate: emit milestone_dogfood_needed for web projects.
+
+    Called by BOTH Ralph main() (mode="ralph") and
+    _handle_non_ralph_completion (mode="non-ralph") after code gates
+    pass but before final telemetry. The signal is surfaced in
+    subsequent /mission-report output; non-Ralph additionally prints
+    to stderr so the dev sees it immediately in-session.
+    """
+    if not _detect_web_project(cwd):
+        return
+    if not _auto_dogfood_enabled(cwd):
+        return
+    append_telemetry(cwd, {
+        "event": "milestone_dogfood_needed",
+        "mode": mode,
+        "task_subject": task_subject,
+    })
+    if mode == "non-ralph":
+        print(
+            f"[SDD:DOGFOOD] Web project detected — code gates passed, "
+            f"but runtime UI validation has not been executed.\n"
+            f"Invoke /ai-framework:dogfood (uses agent-browser) to "
+            f"catch console errors, failed requests, and broken UX "
+            f"before declaring '{task_subject}' complete.\n"
+            f"Opt out: .claude/config.json {{\"AUTO_DOGFOOD\": false}}",
+            file=sys.stderr,
+        )
+
+
 def _coverage_uncovered_gate(cwd, sid, task_subject, scenarios_gated,
                               ralph_dir=None, teammate_name=None,
                               gate_budget=None, gate_start=None):
@@ -889,6 +967,9 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     # Coverage → uncovered-files gate (shared helper with Ralph path).
     _coverage_uncovered_gate(cwd, sid, task_subject, scenarios_gated)
 
+    # Phase 9.3: flag web projects for UI validation follow-up.
+    _emit_dogfood_signal_if_web(cwd, task_subject, mode="non-ralph")
+
     append_telemetry(cwd, {
         "event": "task_completed",
         "scenarios_gated": scenarios_gated,
@@ -974,6 +1055,11 @@ def main():
         ralph_dir=ralph_dir, teammate_name=teammate_name,
         gate_budget=gate_budget, gate_start=gate_start,
     )
+
+    # Phase 9.3: flag web projects for UI validation follow-up before
+    # tearing down. Ralph teammates can't run agent-browser, so the
+    # signal appears in the next mission-report for the dev.
+    _emit_dogfood_signal_if_web(cwd, task_subject, mode="ralph")
 
     # All gates passed — success teardown.
     _teardown_success(cwd, ralph_dir, teammate_name, sid)

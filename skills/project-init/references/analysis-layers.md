@@ -168,4 +168,72 @@ non-default overrides; redundant content is noise.
 
 ---
 
-*Version: 1.2.0 | Updated: 2026-04-16*
+## Layer 7: Factory-Readiness Audit (`.claude/rules/factory-readiness.md`)
+
+Teach new users the mental model of the ai-framework factory contract
+by showing them where they stand. Emit on every `/project-init`
+invocation so the file tracks reality over time (as scenarios are
+authored, Ralph configured, coverage added).
+
+Observable checks, each emitted as a short bullet that cites a file
+path the user can inspect:
+
+### Scenario contract presence
+
+- Count `.claude/scenarios/*.scenarios.md` files in git HEAD.
+- Zero: `Scenarios: not yet defined — run /scenario-driven-development to author the first holdout contract.`
+- N > 0: `Scenarios: {N} file(s) tracked in git.`
+
+### Ralph orchestration readiness
+
+- Check `.ralph/config.sh` presence and the GATE_* variables within.
+- Missing: `Ralph mode: not configured — plugin operates in non-Ralph (interactive) mode.`
+- Present + GATE_TEST set: `Ralph mode: ready. Configured gates: {list of GATE_* with non-empty values}.`
+- Present + GATE_TEST empty: `Ralph mode: partial — .ralph/config.sh exists but GATE_TEST is empty. Configure gates before spawning teammates.`
+
+### Per-edit cascade configuration
+
+- Read `FAST_PATH_ENABLED` from plugin config (inspect
+  `.claude/config.json` override; default True post-Phase-8.1).
+- Emit: `Per-edit cascade: {on|off} (FAST_PATH_ENABLED={true|false}).`
+
+### Coverage detection
+
+- Probe `detect_coverage_command` for the project.
+- Detected: `Coverage: {command} → {report path}.`
+- None: `Coverage: no tool detected — add pytest-cov / c8 / cargo-llvm-cov to enable the coverage gate.`
+
+### Web project signature
+
+- If `package.json` declares a web-framework dep
+  (react/vue/svelte/next/nuxt/astro/remix):
+  `Web project detected: /dogfood will be signaled at milestone completion (set AUTO_DOGFOOD=false in .claude/config.json to opt out).`
+
+### Mission observability
+
+- Check `.claude/metrics.jsonl` existence + recent
+  `mission_report_generated` events.
+- No reports ever written: `Mission reports: none yet — invoke /ai-framework:mission-report any time to aggregate telemetry.`
+- One or more: `Mission reports: last written {path} ({iso timestamp}).`
+
+### Emission format
+
+`.claude/rules/factory-readiness.md` receives the bullets under a
+short preamble explaining the file's purpose (mirror, not gate). The
+rule file is auto-regenerated on every `/project-init`.
+
+Rationale: factory-readiness is not an enforcement gate, it's a
+mirror. New users learn the contract by seeing their gaps; advanced
+users see what's missing before shipping to teammates.
+
+### Scope discipline
+
+- Only OBSERVABLE checks (files on disk, git state, config values).
+  Never "I think you should do X."
+- Each bullet cites a file path the user can inspect.
+- Do NOT duplicate content that lives in CLAUDE.md or other rule
+  files — this layer teaches the contract, not constraints.
+
+---
+
+*Version: 1.3.0 | Updated: 2026-04-21*
