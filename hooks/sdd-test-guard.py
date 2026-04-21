@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
@@ -177,6 +178,64 @@ def _bash_is_git_commit(command):
     # Drop shell comments (# to end of line)
     stripped = re.sub(r"(?<!\\)#[^\n]*", "", stripped)
     return bool(_BASH_GIT_COMMIT_RE.search(stripped))
+
+
+_WORKTREE_CACHE: dict = {}  # cwd → bool; per-process cache keyed by resolved cwd
+
+
+def _is_git_worktree(cwd):
+    """True iff cwd is inside a linked worktree (not the main clone).
+
+    Detection: git exposes `--git-dir` (this clone's git dir, which for a
+    worktree lives under `<main>/.git/worktrees/<name>`) and `--git-common-dir`
+    (the shared dir, i.e. `<main>/.git`). In the main clone these are
+    identical; in a linked worktree they differ.
+
+    Cached per-cwd — worktree identity doesn't change within a process.
+    Returns False (fail-open) on any git subprocess failure: safer to
+    let legitimate authoring through than to lock out a broken clone.
+    """
+    key = str(Path(cwd).resolve()) if cwd else ""
+    if key in _WORKTREE_CACHE:
+        return _WORKTREE_CACHE[key]
+    try:
+        git_dir = subprocess.run(
+            ["git", "-C", str(cwd), "rev-parse", "--git-dir"],
+            capture_output=True, text=True, timeout=3,
+        )
+        common_dir = subprocess.run(
+            ["git", "-C", str(cwd), "rev-parse", "--git-common-dir"],
+            capture_output=True, text=True, timeout=3,
+        )
+        if git_dir.returncode != 0 or common_dir.returncode != 0:
+            result = False
+        else:
+            # Resolve both to absolute paths for comparison (they can be
+            # reported as relative to cwd by older git versions).
+            gd = (Path(cwd) / git_dir.stdout.strip()).resolve()
+            cd = (Path(cwd) / common_dir.stdout.strip()).resolve()
+            result = gd != cd
+    except (OSError, subprocess.TimeoutExpired):
+        result = False
+    _WORKTREE_CACHE[key] = result
+    return result
+
+
+def _is_scenario_tracked(cwd, rel):
+    """True iff rel is tracked by git in cwd.
+
+    Uses `git ls-files --error-unmatch` which returns non-zero for
+    untracked paths. Fail-open on git failure (treat as tracked so we
+    don't over-block).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(cwd), "ls-files", "--error-unmatch", rel],
+            capture_output=True, text=True, timeout=3,
+        )
+        return result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return True
 
 
 def _rel_scenario_path(file_path, cwd):
@@ -479,6 +538,24 @@ def main():
                     f"contract (edits land on the target, leaving the tracked "
                     f"baseline hash unchanged).\n"
                     f"Replace the symlink with a regular file and re-commit."
+                )
+            # ─── PARENT-BRANCH AUTHORSHIP (Phase 9.1) ─────────────
+            # Teammate worktrees must inherit scenarios from their branch,
+            # never author fresh ones — factory.ai-style holdout requires
+            # the contract to exist BEFORE workers run. New (untracked)
+            # scenario files inside a linked worktree are rejected;
+            # main-clone authoring is unaffected.
+            if (not _is_scenario_tracked(cwd, rel)
+                    and _is_git_worktree(cwd)):
+                _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
+                _fail(
+                    f"scenario parent-branch-only on {rel}\n\n"
+                    f"First-write of a new scenario is not permitted inside "
+                    f"a teammate worktree. Author and commit scenarios on "
+                    f"the parent branch BEFORE spawning worktrees — "
+                    f"teammates inherit the holdout via branch checkout.\n"
+                    f"If you ARE the leader, run this action on the main "
+                    f"clone (not the worktree)."
                 )
             baseline = scenario_baseline_hash(cwd, rel)
             if baseline is not None:
