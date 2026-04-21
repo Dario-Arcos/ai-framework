@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""SCEN-016 — FAST_PATH_ENABLED=False preserves full-suite behavior.
+"""SCEN-016 — Fast-path rollout infrastructure invariants.
 
-Phase 8 rollout safety: the default configuration MUST preserve current
-behavior for every existing install. Per-edit still runs the full suite
-until the user explicitly opts in via `.claude/config.json`.
+Policies the cascade depends on regardless of the FAST_PATH_ENABLED
+default (SCEN-019 owns the default-value policy):
 
-Observable: when `FAST_PATH_ENABLED=False` (default), the cascade
-function returns the full-suite command regardless of edit classification
-or session state. Telemetry records `fast_path_rung="3"` +
-`forced_full_reason="disabled"`.
+  - Per-edit budget exists and is bounded (no runaway per-edit runs).
+  - FAST_PATH_FORCE_FULL_FILES covers mainstream lockfiles (dependency
+    resolution changes invalidate everything).
+  - FAST_PATH_FORCE_FULL_FILES covers mainstream stack configs
+    (runtime-assumption changes test runners can't self-detect).
+
+These are the safety rails for Phase 8's per-edit scoping. When
+FAST_PATH_ENABLED=True (Phase 8.1 default), these rails ensure that
+lockfile/config edits still force Rung 3 full-suite.
 """
 import importlib
 import sys
@@ -28,21 +32,8 @@ except Exception as exc:  # pragma: no cover
 
 
 @unittest.skipUnless(_HAS_FAST_PATH_KNOBS, f"fast-path knobs missing: {_IMPORT_ERR}")
-class TestScen016RolloutDefault(unittest.TestCase):
-    """Default configuration preserves current behavior. Zero-regression rollout."""
-
-    def test_fast_path_disabled_by_default(self):
-        """Rollout invariant: Phase 8 ships with the switch OFF.
-
-        Every existing install upgrades without behavior change. Users opt
-        in per-project via `.claude/config.json` after validating the
-        fast-path telemetry against their workload.
-        """
-        self.assertFalse(
-            _sdd_config.FAST_PATH_ENABLED,
-            "FAST_PATH_ENABLED must default to False for safe rollout; "
-            f"got: {_sdd_config.FAST_PATH_ENABLED!r}",
-        )
+class TestScen016RolloutInfrastructure(unittest.TestCase):
+    """Budget + force-full-files rails that keep the cascade safe."""
 
     def test_budget_defined(self):
         """FAST_PATH_BUDGET_SECONDS defined and reasonable."""

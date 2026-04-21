@@ -73,11 +73,14 @@ HOOK_TIMEOUT_TASK_COMPLETED = 300
 # ─────────────────────────────────────────────────────────────────
 # PHASE 8 — PER-EDIT FAST-PATH (Factory.ai-aligned test impact)
 #
-# Rollout default: OFF. Existing installs preserve full-suite per edit
-# (current behavior). Users opt in per-project via .claude/config.json
-# after validating fast-path telemetry against their workload.
+# Rollout default (Phase 8.1): ON. Large projects need per-edit impact
+# scoping out of the box — full-suite on every edit is unsustainable.
+# Safety rests on the milestone gate (TaskCompleted) which always runs
+# the full suite regardless of this flag. Users who want the old
+# full-suite-per-edit behavior opt out via .claude/config.json:
+#     {"FAST_PATH_ENABLED": false}
 #
-# Cascade (when enabled) — hooks/sdd-auto-test.py:
+# Cascade — hooks/sdd-auto-test.py:
 #   Rung 1a: edit IS a test file           → run that test file only
 #   Rung 1b: edit IS source + session tests → run record_file_edit tests
 #   Rung 2:  edit IS source + no session   → [SDD:ORDERING] warn + stack-native impacted
@@ -86,9 +89,9 @@ HOOK_TIMEOUT_TASK_COMPLETED = 300
 #
 # Telemetry (test_run_end): fast_path_rung, fast_path_duration_seconds,
 # forced_full_reason, session_test_files_count — Meta PTS-style empirical
-# tuning: measure for 30 days before flipping default.
+# observation for rung-distribution analysis post-deployment.
 # ─────────────────────────────────────────────────────────────────
-FAST_PATH_ENABLED = False           # rollout default: zero behavior change
+FAST_PATH_ENABLED = True            # Phase 8.1 default: cascade ON for per-edit efficiency
 FAST_PATH_BUDGET_SECONDS = 30       # rungs 1-2 per-edit cap
 
 # Files whose edit forces Rung 3 (Microsoft TIA fall-back-to-all pattern).
