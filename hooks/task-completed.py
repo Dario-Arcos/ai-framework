@@ -599,6 +599,253 @@ def _enforce_scenario_gate(cwd, task_subject, sid):
     return True
 
 
+def _coverage_uncovered_gate(cwd, sid, task_subject, scenarios_gated,
+                              ralph_dir=None, teammate_name=None,
+                              gate_budget=None, gate_start=None):
+    """Evaluate coverage → uncovered files; emit signal or fail task.
+
+    Single owner of the coverage-demotion logic shared by Ralph main()
+    and _handle_non_ralph_completion. When scenarios are the primary
+    contract AND passed, uncovered files are informational (print to
+    stderr). Without scenarios, uncovered is a hard fail.
+
+    Ralph mode (ralph_dir + teammate_name + gate_budget + gate_start
+    provided): bounds the coverage-report wait by remaining budget,
+    increments per-teammate failure counter, footer includes count.
+    Non-Ralph mode (all None): uses 120s default wait, no failure
+    counter, static footer.
+    """
+    cov_state = read_coverage(cwd, sid=sid)
+    if not cov_state:
+        return
+    if (ralph_dir is not None
+            and gate_budget is not None
+            and gate_start is not None):
+        remaining_budget = max(
+            15, int(gate_budget - (time.monotonic() - gate_start))
+        )
+        max_wait = min(120, remaining_budget)
+    else:
+        max_wait = 120
+    coverage_spec = _ensure_coverage_report(
+        cwd, cov_state, max_wait_seconds=max_wait,
+    )
+    uncovered = compute_uncovered(
+        cwd, cov_state, coverage_spec=coverage_spec, sid=sid,
+    )
+    # Clear coverage BEFORE any _fail_task (Codex Phase 3 M2) — sys.exit(2)
+    # skips downstream cleanup and stale state would be re-read next run.
+    clear_coverage(cwd, sid)
+    if not uncovered:
+        return
+    diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
+    if scenarios_gated:
+        print(
+            f"Coverage signal for: {task_subject}\n"
+            f"{len(uncovered)} file(s) without detected coverage "
+            f"(informational — scenarios passed):\n{diag}",
+            file=sys.stderr,
+        )
+        return
+    header = f"Untested source files for: {task_subject}"
+    _record_task_failure(cwd, "COVERAGE", header)
+    if ralph_dir is not None:
+        count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+        footer = (
+            f"Omitting tests = reward hacking by omission. "
+            f"(consecutive failures: {count})"
+        )
+    else:
+        footer = "Omitting tests = reward hacking by omission."
+    _fail_task(
+        header,
+        f"Source files without detected coverage:\n{diag}\n\n"
+        f"{_UNCOVERED_RESOLUTION}",
+        footer,
+        category="COVERAGE",
+    )
+
+
+def _enforce_skill_invoked(cwd, teammate_name, task_subject, sid):
+    """Ralph SDD skill enforcement: rev-* teammates need sop-reviewer,
+    others need sop-code-assist. Fails the task if skill not invoked.
+    """
+    if teammate_name.startswith("rev-"):
+        required, args_example = (
+            "sop-reviewer",
+            "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"'",
+        )
+    else:
+        required, args_example = (
+            "sop-code-assist",
+            "args='task_description=\"...\" mode=\"autonomous\"'",
+        )
+    if read_skill_invoked(cwd, required, sid=sid):
+        return
+    header = f"SDD skill not invoked for: {task_subject}"
+    _record_task_failure(cwd, "POLICY", header)
+    _fail_task(
+        header,
+        f"{required} was not invoked before "
+        f"{'review' if teammate_name.startswith('rev-') else 'task'} completion. "
+        f"Invoke: Skill(skill=\"{required}\", {args_example}) first.",
+        category="POLICY",
+    )
+
+
+def _run_gate_loop(cwd, sid, ralph_dir, teammate_name, task_subject,
+                    gates, gate_budget, gate_start):
+    """Execute configured gates in order with budget + adaptive timeout.
+
+    First failure triggers _gate_with_baseline and exits. Test gate
+    has a fast-path (reuse recent auto-test state) and flock serialization
+    with sdd-auto-test; other gates run fresh each time.
+    """
+    for gate_name, gate_cmd in gates:
+        if not gate_cmd:
+            continue
+
+        # Fast path for test gate: reuse recent auto-test state
+        if gate_name == "test":
+            resolved, passed, output = _try_cached_test_gate(cwd, sid)
+            if resolved and passed:
+                continue
+            if resolved and not passed:
+                _gate_with_baseline(
+                    "test", output, cwd, sid,
+                    ralph_dir=ralph_dir, teammate_name=teammate_name,
+                    task_subject=task_subject,
+                )
+                continue
+
+        elapsed = time.monotonic() - gate_start
+        remaining = gate_budget - elapsed
+        if remaining <= 0:
+            header = (f"Timeout budget exhausted before gate "
+                      f"'{gate_name}' for: {task_subject}")
+            _record_task_failure(cwd, "GATE", header)
+            _fail_task(
+                header,
+                f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s. "
+                "Reduce gate execution times or remove unnecessary gates.",
+                category="GATE",
+            )
+
+        max_gate = adaptive_gate_timeout(cwd) if gate_name == "test" else 120
+        gate_timeout = min(max_gate, int(remaining))
+
+        if gate_name == "test":
+            lock_fd = acquire_runner_lock(cwd)
+            if lock_fd is None:
+                state = await_test_completion(cwd, timeout=60)
+                if state and state.get("passing"):
+                    continue
+                elif state:
+                    _gate_with_baseline(
+                        "test", state.get("raw_output", ""),
+                        cwd, sid, ralph_dir=ralph_dir,
+                        teammate_name=teammate_name,
+                        task_subject=task_subject,
+                    )
+                    continue
+                else:
+                    header = "Test gate timeout"
+                    _record_task_failure(cwd, "GATE", header)
+                    _fail_task(header, "Could not run or wait for tests",
+                               category="GATE")
+            try:
+                passed, output = run_gate(
+                    "test", gate_cmd, cwd, timeout=gate_timeout,
+                )
+                write_state(
+                    cwd, passed,
+                    parse_test_summary(output, 0 if passed else 1),
+                    raw_output=output,
+                )
+            finally:
+                release_runner_lock(lock_fd, cwd)
+        else:
+            passed, output = run_gate(
+                gate_name, gate_cmd, cwd, timeout=gate_timeout,
+            )
+
+        if not passed:
+            _gate_with_baseline(
+                gate_name, output, cwd, sid,
+                ralph_dir=ralph_dir, teammate_name=teammate_name,
+                task_subject=task_subject,
+            )
+
+
+def _coverage_percentage_gate(cwd, ralph_dir, teammate_name, task_subject,
+                                config, gate_budget, gate_start):
+    """Run GATE_COVERAGE and validate against MIN_TEST_COVERAGE.
+
+    Skipped silently when either knob is absent/zero. Failures increment
+    the teammate failure counter and fail the task with [SDD:COVERAGE].
+    """
+    try:
+        min_coverage = int(config["MIN_TEST_COVERAGE"])
+    except (ValueError, TypeError):
+        min_coverage = 0
+    coverage_cmd = config["GATE_COVERAGE"]
+    if min_coverage <= 0 or not coverage_cmd:
+        return
+    elapsed = time.monotonic() - gate_start
+    remaining = gate_budget - elapsed
+    if remaining <= 0:
+        header = (f"Timeout budget exhausted before coverage gate "
+                  f"for: {task_subject}")
+        _record_task_failure(cwd, "COVERAGE", header)
+        _fail_task(
+            header,
+            f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s.",
+            category="COVERAGE",
+        )
+    cov_timeout = min(120, int(remaining))
+    passed, output = run_gate(
+        "coverage", coverage_cmd, cwd, timeout=cov_timeout,
+    )
+    if not passed:
+        count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+        header = f"Coverage gate failed for: {task_subject}"
+        _record_task_failure(cwd, "COVERAGE", header)
+        _fail_task(
+            header,
+            f"Output:\n{output}",
+            f"Fix the coverage command before completing this task. "
+            f"(consecutive failures: {count})",
+            category="COVERAGE",
+        )
+    pct = extract_coverage_pct(output)
+    if pct is not None and pct < min_coverage:
+        count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
+        header = f"Coverage below threshold for: {task_subject}"
+        _record_task_failure(cwd, "COVERAGE", header)
+        _fail_task(
+            header,
+            f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\n"
+            f"Output:\n{output}",
+            f"Increase test coverage before completing this task. "
+            f"(consecutive failures: {count})",
+            category="COVERAGE",
+        )
+
+
+def _teardown_success(cwd, ralph_dir, teammate_name, sid):
+    """Post-gate cleanup: reset failure counter, clear skill-invoked
+    state (prevents inheritance across teammates), clear session baseline.
+    """
+    _atomic_update_failures(ralph_dir, teammate_name, "reset")
+    for _skill in ("sop-code-assist", "sop-reviewer"):
+        try:
+            skill_invoked_path(cwd, _skill, sid).unlink(missing_ok=True)
+        except OSError:
+            pass
+    if sid:
+        clear_baseline(cwd, sid)
+
+
 def _handle_non_ralph_completion(cwd, task_subject, sid=None):
     """Test gate for projects without ralph. Reuses auto-test state when trusted."""
     scenarios_gated = _enforce_scenario_gate(cwd, task_subject, sid)
@@ -639,37 +886,8 @@ def _handle_non_ralph_completion(cwd, task_subject, sid=None):
                 finally:
                     release_runner_lock(lock_fd, cwd)
 
-    # Coverage gate: diff-coverage via runner report, fallback to basename.
-    # When scenarios gated this task and passed, coverage is demoted to an
-    # informational signal (Phase 3): scenarios are the primary quality
-    # contract, coverage is second-class diagnostic.
-    state = read_coverage(cwd, sid=sid)
-    if state:
-        coverage_spec = _ensure_coverage_report(cwd, state)
-        uncovered = compute_uncovered(cwd, state, coverage_spec=coverage_spec, sid=sid)
-        # Clear coverage BEFORE any _fail_task — otherwise sys.exit(2)
-        # skips the cleanup and the next hook invocation re-reads stale
-        # state (Codex Phase 3 M2).
-        clear_coverage(cwd, sid)
-        if uncovered:
-            diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
-            if scenarios_gated:
-                print(
-                    f"Coverage signal for: {task_subject}\n"
-                    f"{len(uncovered)} file(s) without detected coverage "
-                    f"(informational — scenarios passed):\n{diag}",
-                    file=sys.stderr,
-                )
-            else:
-                header = f"Untested source files for: {task_subject}"
-                _record_task_failure(cwd, "COVERAGE", header)
-                _fail_task(
-                    header,
-                    f"Source files without detected coverage:\n{diag}\n\n"
-                    f"{_UNCOVERED_RESOLUTION}",
-                    "Omitting tests = reward hacking by omission.",
-                    category="COVERAGE",
-                )
+    # Coverage → uncovered-files gate (shared helper with Ralph path).
+    _coverage_uncovered_gate(cwd, sid, task_subject, scenarios_gated)
 
     append_telemetry(cwd, {
         "event": "task_completed",
@@ -716,39 +934,16 @@ def main():
     # demotes coverage to signal below.
     scenarios_gated = _enforce_scenario_gate(cwd, task_subject, sid)
 
-    # SDD Skill enforcement: teammate must invoke the correct skill
-    # rev-* teammates → sop-reviewer, all others → sop-code-assist
-    if teammate_name.startswith("rev-"):
-        if not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
-            header = f"SDD skill not invoked for: {task_subject}"
-            _record_task_failure(cwd, "POLICY", header)
-            _fail_task(
-                header,
-                "sop-reviewer was not invoked before review completion. "
-                "Invoke: Skill(skill=\"sop-reviewer\", "
-                "args='task_id=\"...\" task_file=\"...\" mode=\"autonomous\"') first.",
-                category="POLICY",
-            )
-    else:
-        if not read_skill_invoked(cwd, "sop-code-assist", sid=sid):
-            header = f"SDD skill not invoked for: {task_subject}"
-            _record_task_failure(cwd, "POLICY", header)
-            _fail_task(
-                header,
-                "sop-code-assist was not invoked before task completion. "
-                "Invoke: Skill(skill=\"sop-code-assist\", "
-                "args='task_description=\"...\" mode=\"autonomous\"') first.",
-                category="POLICY",
-            )
+    # SDD skill enforcement (rev-* → sop-reviewer, others → sop-code-assist)
+    _enforce_skill_invoked(cwd, teammate_name, task_subject, sid)
 
-    # Load config and run all configured gates.
+    # Load config and prepare gate pipeline.
     # Ralph mode is explicit configuration: if user wrote GATE_TEST="" in
     # .ralph/config.sh, that means "skip the test gate" — do not override
-    # with auto-detection. Non-Ralph mode (_handle_non_ralph_completion)
-    # uses detect_test_command directly because no .ralph/config.sh exists.
-    # This preserves backward-compat for users who explicitly disable gates.
+    # with auto-detection. Non-Ralph mode uses detect_test_command directly
+    # because no .ralph/config.sh exists. This preserves backward-compat
+    # for users who explicitly disable gates.
     config = load_config(config_path)
-
     gates = [
         ("test", config["GATE_TEST"]),
         ("typecheck", config["GATE_TYPECHECK"]),
@@ -757,172 +952,31 @@ def main():
         ("integration", config["GATE_INTEGRATION"]),
         ("e2e", config["GATE_E2E"]),
     ]
-
-    # Budget from _sdd_config.GATE_BUDGET_SECONDS (hooks.json timeout=300s minus 30s margin)
     from _sdd_config import GATE_BUDGET_SECONDS
     gate_budget = GATE_BUDGET_SECONDS
     gate_start = time.monotonic()
 
-    for gate_name, gate_cmd in gates:
-        if not gate_cmd:
-            continue
+    # Run configured gates in order; first failure short-circuits.
+    _run_gate_loop(
+        cwd, sid, ralph_dir, teammate_name, task_subject,
+        gates, gate_budget, gate_start,
+    )
 
-        # Fast path for test gate: reuse recent auto-test state
-        if gate_name == "test":
-            resolved, passed, output = _try_cached_test_gate(cwd, sid)
-            if resolved and passed:
-                continue  # Skip to next gate
-            if resolved and not passed:
-                _gate_with_baseline("test", output, cwd, sid,
-                                    ralph_dir=ralph_dir, teammate_name=teammate_name,
-                                    task_subject=task_subject)
-                continue
+    # Coverage percentage gate (GATE_COVERAGE + MIN_TEST_COVERAGE).
+    _coverage_percentage_gate(
+        cwd, ralph_dir, teammate_name, task_subject,
+        config, gate_budget, gate_start,
+    )
 
-        elapsed = time.monotonic() - gate_start
-        remaining = gate_budget - elapsed
-        if remaining <= 0:
-            header = f"Timeout budget exhausted before gate '{gate_name}' for: {task_subject}"
-            _record_task_failure(cwd, "GATE", header)
-            _fail_task(
-                header,
-                f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s. "
-                "Reduce gate execution times or remove unnecessary gates.",
-                category="GATE",
-            )
+    # Coverage → uncovered-files gate (shared helper with non-Ralph path).
+    _coverage_uncovered_gate(
+        cwd, sid, task_subject, scenarios_gated,
+        ralph_dir=ralph_dir, teammate_name=teammate_name,
+        gate_budget=gate_budget, gate_start=gate_start,
+    )
 
-        # Adaptive timeout for test gate (history-based); 120s cap for others
-        max_gate = adaptive_gate_timeout(cwd) if gate_name == "test" else 120
-        gate_timeout = min(max_gate, int(remaining))
-
-        if gate_name == "test":
-            # flock serializes with sdd-auto-test
-            lock_fd = acquire_runner_lock(cwd)
-            if lock_fd is None:
-                state = await_test_completion(cwd, timeout=60)
-                if state and state.get("passing"):
-                    continue
-                elif state:
-                    _gate_with_baseline("test", state.get("raw_output", ""),
-                                        cwd, sid, ralph_dir=ralph_dir,
-                                        teammate_name=teammate_name,
-                                        task_subject=task_subject)
-                    continue
-                else:
-                    header = "Test gate timeout"
-                    _record_task_failure(cwd, "GATE", header)
-                    _fail_task(header, "Could not run or wait for tests",
-                               category="GATE")
-            try:
-                passed, output = run_gate("test", gate_cmd, cwd,
-                                          timeout=gate_timeout)
-                write_state(cwd, passed,
-                            parse_test_summary(output, 0 if passed else 1),
-                            raw_output=output)
-            finally:
-                release_runner_lock(lock_fd, cwd)
-        else:
-            passed, output = run_gate(gate_name, gate_cmd, cwd,
-                                      timeout=gate_timeout)
-
-        if not passed:
-            _gate_with_baseline(gate_name, output, cwd, sid,
-                                ralph_dir=ralph_dir, teammate_name=teammate_name,
-                                task_subject=task_subject)
-
-    # Coverage gate (after quality gates pass)
-    try:
-        min_coverage = int(config["MIN_TEST_COVERAGE"])
-    except (ValueError, TypeError):
-        min_coverage = 0
-
-    coverage_cmd = config["GATE_COVERAGE"]
-
-    if min_coverage > 0 and coverage_cmd:
-        elapsed = time.monotonic() - gate_start
-        remaining = gate_budget - elapsed
-        if remaining <= 0:
-            header = f"Timeout budget exhausted before coverage gate for: {task_subject}"
-            _record_task_failure(cwd, "COVERAGE", header)
-            _fail_task(
-                header,
-                f"Elapsed: {elapsed:.0f}s, budget: {gate_budget}s.",
-                category="COVERAGE",
-            )
-        cov_timeout = min(120, int(remaining))
-        passed, output = run_gate("coverage", coverage_cmd, cwd, timeout=cov_timeout)
-
-        if not passed:
-            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-            header = f"Coverage gate failed for: {task_subject}"
-            _record_task_failure(cwd, "COVERAGE", header)
-            _fail_task(
-                header,
-                f"Output:\n{output}",
-                f"Fix the coverage command before completing this task. (consecutive failures: {count})",
-                category="COVERAGE",
-            )
-
-        pct = extract_coverage_pct(output)
-        if pct is not None and pct < min_coverage:
-            count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-            header = f"Coverage below threshold for: {task_subject}"
-            _record_task_failure(cwd, "COVERAGE", header)
-            _fail_task(
-                header,
-                f"Coverage: {pct:.1f}% (minimum: {min_coverage}%)\n\nOutput:\n{output}",
-                f"Increase test coverage before completing this task. (consecutive failures: {count})",
-                category="COVERAGE",
-            )
-
-    # All gates passed — check coverage before accepting.
-    # Coverage demotion (Phase 3): when scenarios gated this task and
-    # passed, coverage becomes informational. Scenarios are the primary
-    # gate; coverage is diagnostic second-class.
-    cov_state = read_coverage(cwd, sid=sid)
-    if cov_state:
-        # Bound coverage regen to remaining gate budget (never exceed hook timeout)
-        remaining_budget = max(15, int(gate_budget - (time.monotonic() - gate_start)))
-        coverage_spec = _ensure_coverage_report(
-            cwd, cov_state, max_wait_seconds=min(120, remaining_budget)
-        )
-        uncovered = compute_uncovered(cwd, cov_state, coverage_spec=coverage_spec, sid=sid)
-        # Clear coverage BEFORE any _fail_task (Codex Phase 3 M2) — sys.exit(2)
-        # skips downstream cleanup and stale state would be re-read next run.
-        clear_coverage(cwd, sid)
-        if uncovered:
-            diag = _format_uncovered_diagnostic(uncovered, coverage_spec)
-            if scenarios_gated:
-                print(
-                    f"Coverage signal for: {task_subject}\n"
-                    f"{len(uncovered)} file(s) without detected coverage "
-                    f"(informational — scenarios passed):\n{diag}",
-                    file=sys.stderr,
-                )
-            else:
-                count = _atomic_update_failures(ralph_dir, teammate_name, "increment")
-                header = f"Untested source files for: {task_subject}"
-                _record_task_failure(cwd, "COVERAGE", header)
-                _fail_task(
-                    header,
-                    f"Source files without detected coverage:\n{diag}\n\n"
-                    f"{_UNCOVERED_RESOLUTION}",
-                    f"Omitting tests = reward hacking by omission. "
-                    f"(consecutive failures: {count})",
-                    category="COVERAGE",
-                )
-
-    _atomic_update_failures(ralph_dir, teammate_name, "reset")
-
-    # Clear skill state so next teammate starts fresh (prevents inheritance)
-    for _skill in ("sop-code-assist", "sop-reviewer"):
-        try:
-            skill_invoked_path(cwd, _skill, sid).unlink(missing_ok=True)
-        except OSError:
-            pass
-
-    # Clean up session-specific baseline on success
-    if sid:
-        clear_baseline(cwd, sid)
+    # All gates passed — success teardown.
+    _teardown_success(cwd, ralph_dir, teammate_name, sid)
 
     append_telemetry(cwd, {
         "event": "task_completed",
