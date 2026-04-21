@@ -324,6 +324,10 @@ def _detect_test_framework(cwd):
                 return "vitest"
             if "jest" in script or "jest" in deps:
                 return "jest"
+            # npm-as-shim for pytest (ai-framework shape): scripts.test
+            # runs python/pytest but no Python manifest exists. SCEN-024.
+            if "pytest" in script:
+                return "pytest"
         except (OSError, json.JSONDecodeError):
             pass
     if (cwd_path / "pyproject.toml").exists() or (cwd_path / "pytest.ini").exists() \
