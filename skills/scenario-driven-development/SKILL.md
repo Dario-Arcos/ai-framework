@@ -395,7 +395,8 @@ Before writing or modifying scenarios, review the testing anti-patterns to avoid
 
 | Receives | Produces |
 |---|---|
-| Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Satisfied code with all scenarios passing |
+| Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Scenario file(s) at `.claude/scenarios/{slug}.scenarios.md`, committed before implementation begins (parent branch in Ralph mode) |
+| | Satisfied code with all scenarios passing |
 | | Quality Integration complete (code-reviewer + code-simplifier + edge-case-detector + performance-engineer agents) |
 
 **← From:** brainstorming produces the holdout scenarios, crystallized in the approved plan file.
@@ -421,6 +422,12 @@ task_id: TIP-003      # optional, ralph-only
 **Then**: response 200 with session token, redirect to /dashboard
 **Evidence**: HTTP response body, cookies set
 ```
+
+Output steps (non-negotiable):
+- NEVER emit scenarios anywhere other than `.claude/scenarios/{kebab-slug}.scenarios.md`. The slug is the primary goal noun, kebab-cased (example: `password-reset-flow`).
+- NEVER leave a SCEN block without an `**Evidence**:` field naming a concrete observable (HTTP response, DOM state, DB row, log line, file content). Scenarios without Evidence are unverifiable and fail the parser.
+- NEVER proceed to implementation while `.claude/scenarios/` remains uncommitted. In Ralph mode, commit on the parent branch BEFORE teammate worktrees spawn — teammates inherit the holdout via branch, not via re-authoring.
+- NEVER re-open a committed scenario to adjust assertions toward your code. That is reward hacking. Legitimate edits go through the amend-marker protocol below.
 
 Operational rules:
 - Scenario artifacts are write-once after the first commit. Treat the committed file as the holdout contract.

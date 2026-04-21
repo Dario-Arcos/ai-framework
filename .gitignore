@@ -127,3 +127,6 @@ human-handbook/.vitepress/cache/
 /.brainstorm/
 /.visual-companion/
 /docs/specs/
+
+# AI Framework runtime files (auto-added)
+!/.claude/scenarios/
