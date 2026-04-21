@@ -4,10 +4,10 @@ outline: 2
 
 # Phase 8 Certification — Factory.ai-aligned Test Impact Analysis
 
-**Date**: 2026-04-20
+**Date**: 2026-04-20 (original) · 2026-04-21 (Phase 8.1 addendum, §10)
 **Baseline commit**: `20b9698` (v2026.3.2)
 **Phase 8 commits**: `8fe557d`..`0911402` (5 commits)
-**Verification**: empirical benchmark + 22 SCEN tests + 1008 pytest suite
+**Verification**: empirical benchmark + 79 SCEN test methods across 16 files (Phase 8 battery: SCEN-001..016) + 1008 pytest suite. Phase 8.1 adds 12 methods in SCEN-017..019 (see §10).
 
 ## 1. Strategic objective
 
@@ -18,7 +18,7 @@ outline: 2
 | Factory.ai Missions primitive | ai-framework post-Phase-8 | Evidence |
 |---|---|---|
 | Validation contract written BEFORE code (VAL-XXX-NNN) | `.claude/scenarios/*.scenarios.md` with SCEN-NNN, written at Step 3.5 and committed on parent branch | Ralph orchestrator Step 3.5; SCEN-001..011 write-once enforced by `sdd-test-guard.py` |
-| Write-once contract protects holdout | `_predict_scenario_post_edit_hash()` + `_canon_scenario_bytes()` + `_malformed_scenario_edit_reason()` | SCEN-001..011 (22 tests); red-green verified across two commits (`ad4c396`, `a748c77`) |
+| Write-once contract protects holdout | `_predict_scenario_post_edit_hash()` + `_canon_scenario_bytes()` + `_malformed_scenario_edit_reason()` | SCEN-001..011 (58 test methods); red-green verified across two commits (`ad4c396`, `a748c77`) |
 | Fresh-context validator at milestone | `verification-before-completion` skill invoked at `TaskCompleted`; sub-agents via `isolation: "worktree"` provide process-level fresh context | `task-completed.py:579`; dogfood C6 + C7 executed via worktree sub-agents |
 | Black-box execution-grounded verification | Observable `Evidence:` field in every SCEN block; `TaskCompleted` gate runs real commands, not source inspection | `_sdd_scenarios.py` parser enforces Evidence presence; `verification-before-completion` Iron Law |
 | Milestone-boundary full validation | `TaskCompleted` runs full suite + coverage + scenarios + skill-invoked check — unchanged by Phase 8 | `task-completed.py:604, 717` |
@@ -93,14 +93,15 @@ Milestone (`TaskCompleted`) always runs full suite + coverage + scenarios + veri
 
 ## 5. Verification evidence
 
-### SCEN battery — 22/22 green
+### Phase 8 SCEN battery — 21/21 green (Phase 8 scope)
 ```
 SCEN-012 (Rung 1a): 5/5    — pytest, vitest, go, non-test negative, FAST_PATH_ENABLED=False negative
 SCEN-013 (Rung 1b + Ralph): 3/3 — source with session tests, no session tests, W1/W2 worktree isolation
 SCEN-014 (Rung 2): 5/5     — jest findRelatedTests, vitest related, go package-scope, cargo -p, unknown→Rung3
 SCEN-015 (forced-full): 5/5 — package-lock.json, Cargo.lock, pyproject.toml, tsconfig.json, jest.config.js
-SCEN-016 (rollout default): 4/4 — FAST_PATH_ENABLED=False, budget defined, lockfiles covered, configs covered
+SCEN-016 (rollout infrastructure): 3/3 — budget bounded, lockfiles covered, configs covered
 ```
+*Note: SCEN-016 originally contained 4 tests including `test_fast_path_disabled_by_default`. Phase 8.1 flipped the default to True; that specific assertion moved to SCEN-019 (§10) and SCEN-016 now owns only the rollout infrastructure rails independent of the default value.*
 
 ### Red-green-refactor per SCEN
 Every SCEN proven via revert-restore cycle: tests fail when implementation reverted, pass when restored. Not tautological — each test catches a specific regression of its rung.
@@ -154,9 +155,42 @@ Every SCEN proven via revert-restore cycle: tests fail when implementation rever
 I certify, as the implementing engineer applying radical honesty:
 
 1. Phase 8 implements Factory.ai's per-edit primitive (session-state-first, stack-native fallback) in 5 atomic commits, each with red-green-refactor proof and zero regressions.
-2. 22 SCEN tests codify the contract; 1008-test suite green; empirical benchmark shows 3.76× speedup on a trivial fixture with extrapolated 30-180× on monorepo-scale workloads.
+2. Phase 8 scope contributes 21 SCEN test methods across SCEN-012..016; total SCEN battery at the time of Phase 8 release was 79 methods across 16 files; 1008-test suite green; empirical benchmark shows 3.76× speedup on a trivial fixture with extrapolated 30-180× on monorepo-scale workloads.
 3. The plugin is 12/14 Factory.ai primitives 1:1; remaining 2 are deferred with explicit roadmap (Phase 9: per-mission aggregation, auto UI dogfood at milestone).
-4. Rollout is safe by construction: `FAST_PATH_ENABLED=False` default preserves current behavior for every existing install until telemetry justifies flipping.
+4. Rollout at Phase 8 was safe by construction: `FAST_PATH_ENABLED=False` default preserved current behavior until post-release audit (Phase 8.1, §10) authorized flipping the default.
 5. Nothing in this document is a claim without observable evidence (commit SHA, test output, benchmark time, or cited URL). Claims I could not verify are flagged as "pending" or "roadmap", not asserted.
 
 Signed — the ai-framework Phase 8 commit chain: `8fe557d` → `10d1bbf` → `68804ad` → `22688cd` → `0911402`.
+
+## 10. Phase 8.1 Addendum (2026-04-21)
+
+Post-release Tech-Lead audit (parallel council of 4 agents) surfaced three P0 integrity defects in what Phase 8 shipped. Phase 8.1 closes them plus promotes the per-edit cascade to default-on. All fixes authored red-green with mutation proof.
+
+### 10.1 Defects found and closed
+
+| # | Defect | File:line | Impact before fix |
+|---|---|---|---|
+| 1 | PreToolUse matcher omitted `MultiEdit` | `hooks/hooks.json:69` | `sdd-test-guard.py` simulation of MultiEdit (lines 238-246, 283-299, 470, 580) was dead code — hook never fired on MultiEdit. Write-once contract had a bypass. |
+| 2 | PostToolUse matcher omitted `MultiEdit` + `NotebookEdit` | `hooks/hooks.json:81` | `record_file_edit` never called for those tools. Rung 1b cascade silently degraded to Rung 2/3 on any session whose tests were created via MultiEdit. Advertised 3.90× speedup was narrower than claimed. |
+| 3 | SDD skill never instructed file authorship | `skills/scenario-driven-development/SKILL.md` | Ralph Step 3.5 invoked `/scenario-driven-development` expecting `.claude/scenarios/*.scenarios.md` on parent branch, but skill only described format. Whole anti-reward-hacking architecture rested on artifact that was never explicitly emitted. |
+
+### 10.2 Policy change — FAST_PATH_ENABLED default = True
+
+Rationale: the large-project problem that motivated Phase 8 (full-suite on every edit = unsustainable) must be solved without manual opt-in. Safety rests on the milestone gate (`TaskCompleted`) which always runs the full suite regardless of this flag. SCEN-019 encodes the invariant: `task-completed.py` does not reference `FAST_PATH_ENABLED` nor `cascade_impacted_test_command` — milestone is architecturally independent of per-edit scoping. Users who want the old behavior opt out via `.claude/config.json: {"FAST_PATH_ENABLED": false}`.
+
+### 10.3 Phase 8.1 SCEN additions — 12/12 green
+```
+SCEN-017 (PreToolUse matcher): 4/4   — MultiEdit present, existing tokens preserved, unique, no empty
+SCEN-018 (PostToolUse matcher): 4/4  — MultiEdit + NotebookEdit present, Edit/Write/Skill preserved, unique
+SCEN-019 (default + milestone): 4/4  — default is True, task-completed doesn't read flag, doesn't invoke cascade, force-full-files populated
+```
+
+Every Phase 8.1 test proved its claim via mutation: revert the fix → test fails (`git stash hooks.json` observed 3 failures); restore → test passes. Final full suite: **1019 passed, 4 skipped, 3 xpassed, 44 subtests** — zero regressions across the Phase 8.1 delta.
+
+### 10.4 Updated factory.ai alignment
+
+Factory.ai score is unchanged at 12/14 primitives 1:1 (no new primitive claimed; Phase 8.1 closes integrity holes on primitives already claimed by Phase 8). Remaining 2 deferred primitives stay on the Phase 9 roadmap.
+
+### 10.5 Phase 8.1 commit chain
+
+To be filled at commit time by the implementing Tech Lead.
