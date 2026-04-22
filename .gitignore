@@ -130,3 +130,7 @@ human-handbook/.vitepress/cache/
 
 # AI Framework runtime files (auto-added)
 !/.claude/scenarios/
+
+# AI Framework template rules (one-time sync)
+/.claude/metrics.jsonl
+/.claude/metrics.jsonl.*

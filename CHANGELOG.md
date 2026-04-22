@@ -21,30 +21,28 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 - `hooks/_sdd_config.py`: `FAST_PATH_ENABLED=False` (default rollout seguro — cero regresión para installs existentes), `FAST_PATH_BUDGET_SECONDS=30`, `FAST_PATH_FORCE_FULL_FILES` (lockfiles + configs de stack).
 - Telemetría Meta-PTS-style en cada `test_run_queued`: `fast_path_rung`, `forced_full_reason`, `session_test_files_count` — datos para tunear el default después de 30 días de observación.
 - SCEN-012..016 (22 tests) codifican el contrato de aceptación con red-green-refactor verificado por rung.
-
-### Cambiado
-
-- `hooks/sdd-auto-test.py:main()`: consulta cascade antes de dispatch; emite `[SDD:ORDERING]` como additionalContext cuando Rung 2 detecta source-sin-tests-en-sesión — Factory.ai surface-at-edit-time, no solo at-milestone.
-
----
-
-## [2026.3.2] - 2026-04-20
+- **Phase 8.1 — integrity fixes + per-edit default ON**: matchers de hooks.json ampliados para cubrir `MultiEdit` (PreToolUse) y `MultiEdit|NotebookEdit` (PostToolUse), cerrando bypass silencioso del write-once contract y degradación silenciosa del cascade Rung 1b. `FAST_PATH_ENABLED=True` como default (milestone gate sigue corriendo full suite sin importar el flag — safety net intacto). SCEN-017/018/019 codifican los contratos.
+- **Phase 9.1 — mechanical parent-branch scenarios enforcement**: nuevo guard en `sdd-test-guard.py` que detecta worktrees de Ralph (via `git rev-parse --git-dir` vs `--git-common-dir`) y deniega first-write de `.claude/scenarios/*.scenarios.md` nuevos dentro del worktree. El leader debe autorear y commitear scenarios en la rama padre antes de spawn de teammates. SCEN-020 codifica la paridad Ralph / non-Ralph.
+- **Phase 9.2 — mission-report skill + auto-trigger**: nueva skill `ai-framework:mission-report` con aggregator stdlib-only (`skills/mission-report/scripts/aggregate.py`) que lee `.claude/metrics.jsonl` y produce un archivo markdown de una página con convergence/cascade/friction/evidence. `teammate-idle.py` auto-invoca al abrirse el circuit breaker o en ABORT. Ralph escribe a `.ralph/mission-report-{ts}.md`, non-Ralph a `.claude/mission-report-{ts}.md`. SCEN-021 cubre 8 casos.
+- **Phase 9.3 — auto /dogfood signal para proyectos web**: `task-completed.py` detecta proyectos web (package.json con react/vue/svelte/next/nuxt/astro/remix/angular/solid-js) y emite `milestone_dogfood_needed` tras gates verdes. Non-Ralph adicionalmente imprime `[SDD:DOGFOOD]` en stderr. Opt-out via `.claude/config.json: {"AUTO_DOGFOOD": false}`. `skills/project-init/references/analysis-layers.md` gana Layer 7 (factory-readiness audit). SCEN-022 cubre 6 casos.
+- **Phase 9.4 — task-completed.py refactor sin cambio de comportamiento**: `main()` descompuesta de 250 LOC a 95 LOC, extractos nombrados por responsabilidad (`_coverage_uncovered_gate`, `_enforce_skill_invoked`, `_run_gate_loop`, `_coverage_percentage_gate`, `_teardown_success`). 28 LOC de coverage-demotion duplicada entre Ralph/non-Ralph colapsadas en un helper único. SCEN-023 asserts invariantes estructurales; `test_task_completed.py` (1693 LOC) pasa idéntico pre/post como oracle de behavior preservation.
+- **Phase 9.5 — detección pytest vía npm shim**: `_detect_test_framework` reconoce `scripts.test` con `pytest` cuando no hay manifiesto Python (caso ai-framework mismo). Corrige falla silenciosa donde el default `FAST_PATH_ENABLED=True` caía a Rung 3 en proyectos con npm-as-task-runner. SCEN-024 cubre el camino + regression guards.
 
 ### Corregido
 
 - **P0 write-once scenario guard**: `sdd-test-guard.py` comparaba solo el hash del archivo en disco contra el baseline git. Al momento de `PreToolUse`, la herramienta aún no aplica el cambio, por lo que el disco seguía siendo baseline → el guard permitía silenciosamente cualquier Edit/Write/MultiEdit/NotebookEdit sobre scenarios ya committeados. El contrato write-once no se enforzaba para mutaciones tool-driven en sesiones reales. Los tests SCEN-001..010 pasaban pre-mutando el disco — artefacto de simulación, no semántica real. Fix (`ad4c396`): `_predict_scenario_post_edit_hash()` simula el Edit (`str.replace` once), Write (`content`), MultiEdit (replaces secuenciales honrando `replace_all`) o NotebookEdit (`new_source`), hashea los bytes predichos y compara contra baseline. El guard ahora deniega si **disk OR predicted** diverge — defense in depth. SCEN-011 (5 tests) codifica el contrato de timing real. Descubierto via Phase 7 real-world dogfood.
 - **Hardening post-P0** (`a748c77`): tras parallel quality gate (code-reviewer + security-reviewer + edge-case-detector), se cerraron 1 HIGH + 2 MEDIUM + 2 P2 findings en el mismo módulo. `_canon_scenario_bytes()` strips UTF-8 BOM + normaliza CRLF→LF sobre baseline/disk/predicted — evita false-deny en re-saves desde editores Windows. `_malformed_scenario_edit_reason()` detecta `Edit.old_string` vacío o ausente y deniega antes de alimentar `replace()` con input inválido (cierra DoS narrow + silent-pass). `Edit.replace_all` ahora honrado (paridad con `MultiEdit[i].replace_all`). SCEN-011 crece a 11 tests, suite 975 → 986, zero regresiones.
-
-### Añadido
-
-- **SCEN-011**: acceptance contract para el timing real de PreToolUse — prueba Edit/Write/MultiEdit divergence denied + Edit/Write no-op allowed. Complementa SCEN-001..010 (que cubren el caso out-of-band disk mutation via defense-in-depth).
-- `HOOK_VERSION` ahora deriva de `package.json` (`_read_hook_version()` con `lru_cache`), alineando telemetría y manifiesto.
-- `_SDD_DISABLE_SCENARIOS=1` como bypass real de los guards de escenarios (`sdd-test-guard.py` + `_enforce_scenario_gate` en `task-completed.py`), con evento `scenarios_bypassed` emitido en cada invocación.
+- **Flake resolution** (`cfabace`): `test_probe_vs_acquire_race_never_false_while_held` relaja aserción de `==0` mismatches a `<5%` para tolerar scheduler variance bajo full-suite load en macOS. Una regresión real produciría ~100% mismatch; 1-2% es scheduling inherente a correlación de dos procesos via archivo compartido. Documentado en docstring.
 
 ### Cambiado
 
+- `hooks/sdd-auto-test.py:main()`: consulta cascade antes de dispatch; emite `[SDD:ORDERING]` como additionalContext cuando Rung 2 detecta source-sin-tests-en-sesión — Factory.ai surface-at-edit-time, no solo at-milestone.
+- `skills/scenario-driven-development/SKILL.md`: agregado `Output steps` subsection con 4 constraints de phrasing negativo (Zhang 2026) instruyendo autoría y commit de `.claude/scenarios/` antes de implementación. Cierra gap silent-dependency donde Ralph Step 3.5 dependía de que el implementer interpretara escribir-y-commitear el artefacto.
+- `hooks/hooks.json` `PreToolUse.matcher`: ampliado a `Edit|Write|MultiEdit|NotebookEdit|TaskUpdate|Bash` (Phase 8.1). Decisión previa de Phase 7 de remover MultiEdit se revierte porque el write-once guard en `sdd-test-guard.py` simula MultiEdit internamente — el matcher debe dispatchear el hook para que esa simulación aplique.
+- `hooks/hooks.json` `PostToolUse.matcher`: ampliado a `Edit|Write|MultiEdit|NotebookEdit|Skill` (Phase 8.1). Cierra gap de session-edit tracking donde tests creados vía MultiEdit/NotebookEdit no entraban al set de session-tests → cascade Rung 1b degradaba silenciosamente.
+- `_SDD_DISABLE_SCENARIOS=1` como bypass real de los guards de escenarios (`sdd-test-guard.py` + `_enforce_scenario_gate` en `task-completed.py`), con evento `scenarios_bypassed` emitido en cada invocación.
+- `HOOK_VERSION` ahora deriva de `package.json` (`_read_hook_version()` con `lru_cache`), alineando telemetría y manifiesto.
 - `docs/migration-to-scenarios.md` y `skills/ralph-orchestrator/references/quality-gates.md`: se elimina el descargo "no cableado" y se documentan las tres superficies de configuración del bypass.
-- `hooks/hooks.json` `PreToolUse.matcher`: removido `MultiEdit` (herramienta legacy ausente en la referencia oficial actual de Claude Code). Matcher final: `Edit|Write|NotebookEdit|TaskUpdate|Bash`.
 - `skills/ralph-orchestrator/references/quality-gates.md`: añadida tabla de citas a la documentación oficial Claude Code (Phase 7 C7) — 16 claims verificadas vía `claude-code-guide` sub-agent.
 - Flujo de worktrees migrado a herramientas nativas de Claude Code (`EnterWorktree`, `ExitWorktree`, `Agent({isolation: "worktree"})`). README, `human-handbook/docs/skills-guide.md`, `human-handbook/docs/ai-first-workflow.md` actualizados.
 
@@ -52,6 +50,8 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 - `skills/worktree-create/` — reemplazado por la tool nativa `EnterWorktree` (ver `code.claude.com/docs/en/tools.md`).
 - `skills/worktree-cleanup/` — reemplazado por `ExitWorktree` + flujo nativo de worktree cleanup.
+
+---
 
 ## [2026.4.0] - 2026-04-16
 
