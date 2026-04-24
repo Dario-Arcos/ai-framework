@@ -14,7 +14,13 @@ outline: 2
 
 ## RESUME INSTRUCTIONS FOR A FRESH AGENT (READ FIRST)
 
-**If you are a Claude Opus 4.7 Tech Lead with NO session context reading this file**: this document is self-sufficient to complete Phase 10. Follow this section end-to-end before reading the rest of the plan.
+**If you are a Claude Opus 4.7 Tech Lead with NO session context reading this file**: this document is self-sufficient to complete Phase 10. Read these THREE files, in order, before any other action:
+
+1. **This file** (`docs/phase10-plan.md`) — mission, design decisions, phase breakdown, code map
+2. **`.ralph/specs/phase10/scenarios/phase10.scenarios.md`** — the 27 active SCEN acceptance contracts (+ 2 DROPPED, explicitly marked)
+3. **`docs/phase10-progress.md`** — durable progress ledger, one row per SCEN. Tells you what's done, what's mid-flight, what's next. Update it in the SAME commit that satisfies each SCEN.
+
+Then follow this section end-to-end.
 
 ### What you need to know in 60 seconds
 
@@ -36,7 +42,8 @@ set -euo pipefail
 cd /Users/dariarcos/G-Lab/IA-First-Development/prod/ai-framework
 
 # 1. Latest plan commit is an ancestor of (or equal to) current HEAD
-LATEST_PLAN=$(git log --grep="docs(phase10): plan" --oneline | head -1 | awk '{print $1}')
+# Use -1 on git log itself to avoid SIGPIPE from `| head -1` under pipefail
+LATEST_PLAN=$(git log -1 --format=%h --grep="^docs(phase10): plan")
 [ -n "$LATEST_PLAN" ] || { echo "FAIL: no phase10 plan commit found"; exit 1; }
 git merge-base --is-ancestor "$LATEST_PLAN" HEAD || { echo "FAIL: HEAD predates latest plan $LATEST_PLAN"; exit 1; }
 
@@ -79,9 +86,8 @@ If ANY check fails: STOP. Either the environment was reset or the baseline is wr
 
 | Phase | Scope | SCEN gated | Estimated |
 |---|---|---|---|
-| 10.1 | Config-driven discovery primitive (`_sdd_config.SCENARIO_DISCOVERY_ROOTS` + glob-based `scenario_files(cwd)`) | 101, 102, 104, 122 | 2h |
-| 10.2 | Hook path migration + legacy fail-closed + session-start CRITICAL_GITIGNORE_RULES update (10.2 MUST land with 10.1 in merged sequence, not solo — enforcement breaks otherwise) | 103, 105, 106, 107, 108, 109, 119, 126 | 3h |
-| 10.3 | Cheap integrity gate BEFORE `_has_source_edits` early-exit (`task-completed.py` restructure) + `/tmp/sdd-discovery-{project_hash}-{sid}.json` cache | 110, 111, 112 | 2h |
+| 10.1+10.2 (atomic) | Config-driven discovery primitive + hook path migration + legacy fail-closed + session-start update — MUST land together on one branch | 101, 102, 103, 104, 105, 106, 107, 108, 109, 119, 125, 126 | 5h |
+| 10.3 | Cheap integrity gate BEFORE `_has_source_edits` early-exit (`task-completed.py` restructure) + discovery fast-path + `/tmp/sdd-discovery-{project_hash}-{sid}.json` cache | 110, 111, 112, 122 | 2h |
 | 10.4 | Skill alignment: brainstorming, SDD skill, ralph-orchestrator Step 3.5, sop-* chain, verification-before-completion canonical path refs, PROMPT_implementer/reviewer teammate skill invocation instructions | 114, 115, 116, 117, 121 | 3h |
 | 10.5 | Path Z skill propagation: (a) extend `sdd-auto-test.py:192` allowlist with `verification-before-completion`; (b) drop sid from `skill_invoked_path`; (c) normalize `ai-framework:` prefix before allowlist match | 128 | 2h |
 | 10.6 | Tests migration: ~100 LOC hardcoded `.claude/scenarios/` fixtures → discovery-based; full suite 1053+ | 120 | 2h |
@@ -201,24 +207,32 @@ Allowed files for legacy references (annotated as migration/deprecation document
 - `hooks/task-completed.py` — only inside `legacy_scenarios_present()` call site
 
 ```bash
-grep -rn "\.claude/scenarios" hooks/ skills/ template/ .claude/ scripts/ docs/ \
+matches=$(grep -rn "\.claude/scenarios" hooks/ skills/ template/ .claude/ scripts/ docs/ \
   --include="*.py" --include="*.md" --include="*.template" --include="*.json" \
-  --exclude-dir="__pycache__" \
+  --exclude-dir="__pycache__" 2>/dev/null \
   | grep -v "docs/migration-to-phase10\.md:" \
   | grep -v "^CHANGELOG\.md:" \
   | grep -v "legacy_scenarios_present" \
-  | grep -vE "^hooks/(sdd-test-guard|session-start|task-completed)\.py:.*(MIGRATION_REQUIRED|legacy_scenarios_present|# legacy|# deprecated)"
+  | grep -vE "^hooks/(sdd-test-guard|session-start|task-completed)\.py:.*(MIGRATION_REQUIRED|legacy_scenarios_present|# legacy|# deprecated)" \
+  || true)
+test -z "$matches" && echo "GREP GATE PASS — no stale refs" || { echo "FAIL — stale refs:"; echo "$matches"; exit 1; }
 ```
 
-Expected result: empty output + exit 0. Any match = stale reference to investigate.
+Expected result: `GREP GATE PASS` + exit 0. Any match = stale reference to investigate before release.
 
 ---
 
-## Historical review trail (non-normative — do NOT use as design spec)
+## Historical review trail (APPENDIX — non-normative, SUPERSEDED)
 
-**FOR AUDIT ONLY.** The tables below document plan v1-v5 review findings and iterative resolutions. Executable design lives ONLY in the **Resume Instructions** section above and in **`.ralph/specs/phase10/scenarios/phase10.scenarios.md`**. If anything below contradicts the Resume Instructions, the Resume Instructions win.
-
-Historical resolutions like "`_has_source_edits` natural classifier" or "`metadata.admin=true` opt-IN" were SUPERSEDED by **Path Z** (v5): drop classifier entirely, all tasks face the same gate. SCEN-113 and SCEN-118 are DROPPED. Do not implement the classifier.
+> **DO NOT READ THIS FOR IMPLEMENTATION GUIDANCE.** Everything in this appendix documents older plan versions (v1-v5) that are now SUPERSEDED. Executable design lives ONLY in the **Resume Instructions** section at the top of this file and in **`.ralph/specs/phase10/scenarios/phase10.scenarios.md`**.
+>
+> **Specifically SUPERSEDED below** (do not grep these as specs):
+> - Any mention of `_has_source_edits` as admin/implementation classifier → SUPERSEDED by Path Z (no classifier)
+> - Any mention of `metadata.admin=true` or `metadata.codeTaskFile` → SUPERSEDED by Path Z (no metadata)
+> - SCEN-125 "duplicate basename = REJECT" → SUPERSEDED by SCEN-125 "coexist + telemetry"
+> - SCEN-126 "symlinked spec directory" only → SUPERSEDED by SCEN-126 "4 symlink vectors"
+>
+> Skip ahead to the next h2 heading if you are a fresh-context agent implementing Phase 10.
 
 ## Codex v3 verdict — B1/B2 architectural blockers resolved in v4
 
