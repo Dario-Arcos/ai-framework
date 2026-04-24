@@ -8,7 +8,7 @@ outline: 2
 **Owner**: Claude Opus 4.7 (Tech Lead)
 **Supersedes**: prior Option A/B/C proposals and plan v1-v5
 **Target release**: 2026.4.0
-**Plan baseline commit**: `f1860e9` (plan v6c) — current HEAD is `f1860e9` OR LATER (future v6d, v7 may follow). Use `git log --grep="phase10" --oneline` to find the latest phase10 plan commit before starting.
+**Plan baseline commit**: discover via `git log -1 --format=%h --grep="^docs(phase10): plan"` — this returns the LATEST plan revision regardless of version number. (As of this writing: `b5d7400` v6f, approved self-sufficient for fresh-context resume by Codex 5.5 xhigh.)
 
 ---
 
@@ -64,7 +64,15 @@ SCEN_DROPPED=$(grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenar
 [ "$SCEN_TOTAL" = "29" ] || { echo "FAIL: expected 29 SCEN headings, got $SCEN_TOTAL"; exit 1; }
 [ "$SCEN_DROPPED" = "2" ] || { echo "FAIL: expected 2 DROPPED markers, got $SCEN_DROPPED"; exit 1; }
 
-echo "PREFLIGHT PASS — plan $LATEST_PLAN, $PASSED tests, $SCEN_TOTAL SCEN ($SCEN_DROPPED DROPPED)"
+# 5. Progress ledger invariants (must exist and match canonical counts)
+[ -f docs/phase10-progress.md ] || { echo "FAIL: progress ledger missing"; exit 1; }
+LEDGER_ROWS=$(grep -c "^| SCEN-1" docs/phase10-progress.md)
+LEDGER_DROPPED=$(grep -c "DROPPED v5" docs/phase10-progress.md)
+[ "$LEDGER_ROWS" = "29" ] || { echo "FAIL: ledger expected 29 SCEN rows, got $LEDGER_ROWS"; exit 1; }
+[ "$LEDGER_DROPPED" = "2" ] || { echo "FAIL: ledger expected 2 DROPPED markers, got $LEDGER_DROPPED"; exit 1; }
+grep -q "Total active: 27" docs/phase10-progress.md || { echo "FAIL: ledger missing 'Total active: 27' canonical count line"; exit 1; }
+
+echo "PREFLIGHT PASS — plan $LATEST_PLAN, $PASSED tests, $SCEN_TOTAL SCEN ($SCEN_DROPPED DROPPED), ledger $LEDGER_ROWS rows"
 ```
 
 If ANY check fails: STOP. Either the environment was reset or the baseline is wrong. Do not proceed.
