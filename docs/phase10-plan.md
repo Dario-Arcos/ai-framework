@@ -31,24 +31,33 @@ Phase 10 goal: migrate scenarios to spec-folder architecture, fix 2 architectura
 ### Preflight (MUST RUN before writing code)
 
 ```bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 cd /Users/dariarcos/G-Lab/IA-First-Development/prod/ai-framework
 
-# Find latest plan commit and verify current HEAD is an ancestor-or-equal
+# 1. Latest plan commit is an ancestor of (or equal to) current HEAD
 LATEST_PLAN=$(git log --grep="docs(phase10): plan" --oneline | head -1 | awk '{print $1}')
-echo "Latest plan commit: $LATEST_PLAN"
-git merge-base --is-ancestor "$LATEST_PLAN" HEAD || { echo "HEAD predates latest plan; rebase/checkout forward"; exit 1; }
+[ -n "$LATEST_PLAN" ] || { echo "FAIL: no phase10 plan commit found"; exit 1; }
+git merge-base --is-ancestor "$LATEST_PLAN" HEAD || { echo "FAIL: HEAD predates latest plan $LATEST_PLAN"; exit 1; }
 
-# Working tree should be clean (untracked docs/specs/ is tolerable)
-git status --short | grep -v "^?? docs/specs/$" | head -5 || true
+# 2. Working tree clean except tolerable untracked docs/specs/ (which is a Phase 10 output directory that may be empty in fresh checkouts)
+DIRTY=$(git status --short | grep -v "^?? docs/specs/$" || true)
+[ -z "$DIRTY" ] || { echo "FAIL: working tree dirty:"; echo "$DIRTY"; exit 1; }
 
-# Tests: baseline 1053+ passing (set -o pipefail means the pytest exit code is honored)
-python3 -m pytest hooks/ -q | tail -3
+# 3. Tests pass with >=1053 passing (parsed, not tailed)
+PYTEST_OUT=$(python3 -m pytest hooks/ -q 2>&1 | tail -1)
+echo "$PYTEST_OUT"
+PASSED=$(echo "$PYTEST_OUT" | grep -oE "[0-9]+ passed" | head -1 | awk '{print $1}')
+[ -n "$PASSED" ] && [ "$PASSED" -ge 1053 ] || { echo "FAIL: expected >=1053 passed, got '$PASSED'"; exit 1; }
 
-# SCEN file invariants
-ls .ralph/specs/phase10/scenarios/phase10.scenarios.md
-[ "$(grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md)" = "29" ] && echo "SCEN headings OK (29)"
-[ "$(grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenarios.md)" = "2" ] && echo "DROPPED count OK (2)"
+# 4. SCEN invariants (exact counts)
+[ -f .ralph/specs/phase10/scenarios/phase10.scenarios.md ] || { echo "FAIL: scenarios file missing"; exit 1; }
+SCEN_TOTAL=$(grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md)
+SCEN_DROPPED=$(grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenarios.md)
+[ "$SCEN_TOTAL" = "29" ] || { echo "FAIL: expected 29 SCEN headings, got $SCEN_TOTAL"; exit 1; }
+[ "$SCEN_DROPPED" = "2" ] || { echo "FAIL: expected 2 DROPPED markers, got $SCEN_DROPPED"; exit 1; }
+
+echo "PREFLIGHT PASS — plan $LATEST_PLAN, $PASSED tests, $SCEN_TOTAL SCEN ($SCEN_DROPPED DROPPED)"
 ```
 
 If ANY check fails: STOP. Either the environment was reset or the baseline is wrong. Do not proceed.
@@ -180,22 +189,36 @@ All of the following are true:
 | 128 | `hooks/sdd-auto-test.py:192-196` (extend allowlist + normalize `ai-framework:` prefix), `hooks/_sdd_state.py:655-680` (`skill_invoked_path(cwd, skill)` drop sid), `skills/ralph-orchestrator/scripts/PROMPT_implementer.md` + `PROMPT_reviewer.md` (add skill invocation instruction) | `hooks/test_scen_phase10_skill_propagation.py` (NEW) |
 | 129 | `template/gitignore.template` | grep-based test |
 
-### Grep exclusions reference
+### Grep exclusions reference (CANONICAL — use this exact command)
 
-After Phase 10 complete, this command MUST return zero matches (proof no stale refs remain):
+After Phase 10 complete, the command below MUST return zero matches.
+
+Allowed files for legacy references (annotated as migration/deprecation documentation):
+- `docs/migration-to-phase10.md` (user-facing migration guide)
+- `CHANGELOG.md` (version history)
+- `hooks/sdd-test-guard.py` — only inside `legacy_scenarios_present()` helper and the enforcement messages
+- `hooks/session-start.py` — only inside CRITICAL_GITIGNORE_RULES comments marking legacy rule as removed
+- `hooks/task-completed.py` — only inside `legacy_scenarios_present()` call site
 
 ```bash
-grep -rn "\.claude/scenarios/" hooks/ skills/ template/ .claude/ \
-  | grep -v "migration-to-phase10" \
+grep -rn "\.claude/scenarios" hooks/ skills/ template/ .claude/ scripts/ docs/ \
+  --include="*.py" --include="*.md" --include="*.template" --include="*.json" \
+  --exclude-dir="__pycache__" \
+  | grep -v "docs/migration-to-phase10\.md:" \
+  | grep -v "^CHANGELOG\.md:" \
   | grep -v "legacy_scenarios_present" \
-  | grep -v "deprecated" \
-  | grep -v "DEPRECATED" \
-  | grep -v "\.md:"   # markdown-only refs (docs, changelog) acceptable if they describe legacy
+  | grep -vE "^hooks/(sdd-test-guard|session-start|task-completed)\.py:.*(MIGRATION_REQUIRED|legacy_scenarios_present|# legacy|# deprecated)"
 ```
 
-If any match remains, it is either a real bug OR documentation that must be annotated as "legacy/deprecated".
+Expected result: empty output + exit 0. Any match = stale reference to investigate.
 
 ---
+
+## Historical review trail (non-normative — do NOT use as design spec)
+
+**FOR AUDIT ONLY.** The tables below document plan v1-v5 review findings and iterative resolutions. Executable design lives ONLY in the **Resume Instructions** section above and in **`.ralph/specs/phase10/scenarios/phase10.scenarios.md`**. If anything below contradicts the Resume Instructions, the Resume Instructions win.
+
+Historical resolutions like "`_has_source_edits` natural classifier" or "`metadata.admin=true` opt-IN" were SUPERSEDED by **Path Z** (v5): drop classifier entirely, all tasks face the same gate. SCEN-113 and SCEN-118 are DROPPED. Do not implement the classifier.
 
 ## Codex v3 verdict — B1/B2 architectural blockers resolved in v4
 

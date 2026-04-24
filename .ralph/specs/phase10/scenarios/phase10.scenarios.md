@@ -2,8 +2,8 @@
 name: phase10
 created_by: tech-lead
 created_at: 2026-04-24T14:00:00Z
-revised_at: 2026-04-24T14:45:00Z
-revision_reason: Codex v3 review — B1/B2 architectural blockers resolved via (a) project-scoped skill state, (b) _has_source_edits natural classifier (already tracked)
+revised_at: 2026-04-24T15:00:00Z
+revision_reason: Plan v6d Path Z — drop admin/implementation classifier entirely. All TaskUpdate(completed) face the same gate (SCEN-128). B1 closed via project-scoped skill state + allowlist extension + prefix normalization. B2 closed via no-classifier (no bypass possible because there is nothing to bypass).
 ---
 
 ## SCEN-101: discovery finds Ralph-spec scenarios
@@ -121,16 +121,16 @@ All TaskUpdate(completed) calls require verification-before-completion (checked 
 **Evidence**: full suite run output
 
 ## SCEN-121: verification-before-completion handles multi-spec discovery
-**Given**: project with 3 active specs in `.ralph/specs/` (including `auth`, `checkout`, `payment`) and 2 in `docs/specs/` (including `onboarding`, `admin-panel`)
-**When**: skill iterates scenarios to verify
-**Then**: reads all 5 specs' scenarios; validates each SCEN block against execution evidence; reports per-spec satisfaction
-**Evidence**: skill references discovery primitive; integration test with multi-spec fixture (5 concrete specs)
+**Given**: fixture repo at `hooks/test_fixtures/phase10_multi_spec/` with 3 specs in `.ralph/specs/` (auth, checkout, payment — each with one scenarios file containing 2 SCEN blocks) and 2 specs in `docs/specs/` (onboarding, admin-panel — each with one scenarios file containing 1 SCEN block)
+**When**: test runs `scenario_files(fixture_root)` and iterates each result through `parse_scenarios()`
+**Then**: returned list length == 5 (paths); total SCEN blocks parsed == 8 (3 specs × 2 + 2 specs × 1); each parse returns valid dict with `id`/`when`/`then` populated
+**Evidence**: `hooks/test_scen_phase10_multi_spec.py::test_discovers_and_parses_all_specs` asserts exact counts; `grep` of `skills/verification-before-completion/SKILL.md` confirms the skill documents iterating `scenario_files(cwd)` (not the old `.claude/scenarios/` path)
 
 ## SCEN-122: discovery performance fast-path with benchmark baseline
-**Given**: fixture repo with 2000 files, zero scenarios in any discovery root
-**When**: PreToolUse Edit on any file fires
-**Then**: `has_any_scenarios(cwd)` returns False. Benchmark: median of 100 invocations < 5ms on CI hardware; hard cap 10ms. Test asserts against baseline; CI records for regression tracking.
-**Evidence**: perf benchmark test with explicit fixture + baseline assertion
+**Given**: fixture at `hooks/test_fixtures/phase10_perf_empty/` — 2000 placeholder files (empty) under various paths, zero `*.scenarios.md` anywhere under `.ralph/specs/` or `docs/specs/` or any configured SCENARIO_DISCOVERY_ROOTS
+**When**: `has_any_scenarios(fixture_root)` is invoked 100 times in a tight loop (measured via `time.perf_counter()`)
+**Then**: returns False for every call. Median of 100 invocations ≤ 5 ms. Max ≤ 10 ms. Test command: `pytest hooks/test_scen_phase10_perf.py::test_has_any_scenarios_empty_perf -v`. Test asserts `median_ms <= 5 and max_ms <= 10`. Failure = regression.
+**Evidence**: `hooks/test_scen_phase10_perf.py` fixture + explicit assertion; if CI variability causes flakes, the test xfails with `strict=False` and comment `tracked for root-cause` — do NOT relax thresholds
 
 ## SCEN-123: migration audit tool detects secrets via defined detector + covers ralph runtime
 **Audit scope** extended: scans all tracked paths under `.ralph/specs/` AND explicitly reports if `.ralph/config.sh` exists and contains secrets (warning, not blocking — config.sh is meant to be ignored but users sometimes commit by mistake).
