@@ -4,11 +4,26 @@ outline: 2
 
 # Phase 10 — Scenarios-in-Specs + Enforcement Refinement
 
-**Status**: AUTHORIZED 2026-04-24 by user
+**Status**: AUTHORIZED 2026-04-24 by user · REVISED post Codex 5.5 xhigh review
 **Owner**: Claude Opus 4.7 (Tech Lead)
 **Supersedes**: prior Option A/B/C proposals
 **Target release**: 2026.4.0
-**Baseline**: `a87d807` (65 commits ahead of origin)
+**Baseline**: `2b82b2a` (66 commits ahead of origin — plan v1 committed, revisions pending)
+
+## Codex 5.5 xhigh review — 10 findings addressed in this revision
+
+| # | Finding | Resolution |
+|---|---|---|
+| C1 | SCEN ID `SCEN-10-NNN` fails parser `SCEN-\d{3}` | Renumbered to `SCEN-1NN` (3-digit) |
+| C2 | Migration fail-open via silent "no scenarios" fallback | SCEN-103, 119 — legacy path FAIL CLOSED |
+| C3 | SID-allowlist weak for "leader vs teammate" | SCEN-112 — no allowlist; commit-before-spawn contract |
+| C4 | Admin-task bypass on metadata absence | SCEN-118 — explicit opt-IN `metadata.admin=true` only |
+| C5 | Gitignore nested-override risk | SCEN-124 — migration doc covers `!/.ralph/specs/**` + verification cmd |
+| C6 | G1 gate full-verification friction on admin tasks | SCEN-110, 113 — split: cheap integrity always, full verification only for `metadata.codeTaskFile` |
+| C7 | Amend marker global/upward search | SCEN-108 — strict `rel.parent / ".amends"`, symlinks rejected |
+| C8 | Discovery perf on monorepos | SCEN-122 — `has_any_scenarios(cwd)` fast-path + lru_cache |
+| C9 | Test migration false-green risk | Plan validation cycle #4 (mutation) mandatory per SCEN |
+| C10 | Sensitive data in `.ralph/specs/` on migration | SCEN-123 — `phase10-migration-audit.py` secret scan |
 
 ## Executive summary
 
@@ -54,42 +69,51 @@ Override via `.claude/config.json` → `SCENARIO_DISCOVERY_ROOTS`.
 
 ---
 
-## Observable scenarios (SCEN-10-*, SDD contract)
+## Observable scenarios (SCEN-1XX, SDD contract)
+
+Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/phase10/scenarios/phase10.scenarios.md`. 24 scenarios organized by category.
 
 ### Category A — Architecture migration
-- **SCEN-10-001**: Discovery glob finds scenarios under `.ralph/specs/*/scenarios/*.scenarios.md`
-- **SCEN-10-002**: Discovery glob finds scenarios under `docs/specs/*/scenarios/*.scenarios.md`
-- **SCEN-10-003**: `.claude/scenarios/` presence emits `[SDD:DEPRECATED]` warning at SessionStart; files NOT discovered (forced migration)
-- **SCEN-10-004**: Config override `SCENARIO_DISCOVERY_ROOTS` in `.claude/config.json` honored
-- **SCEN-10-005**: Write-once guard path resolution correct for nested scenario paths (`.ralph/specs/feat-x/scenarios/feat-x.scenarios.md`)
+- **SCEN-101**: discovery finds `.ralph/specs/*/scenarios/*.scenarios.md`
+- **SCEN-102**: discovery finds `docs/specs/*/scenarios/*.scenarios.md`
+- **SCEN-103**: legacy `.claude/scenarios/` FAIL CLOSED at PreToolUse/TaskCompleted (NOT silent skip)
+- **SCEN-104**: `SCENARIO_DISCOVERY_ROOTS` config override honored
 
-### Category B — Hook migration
-- **SCEN-10-006**: PreToolUse Edit on scenario under new path → DENY `[SDD:SCENARIO]` (parity with old path)
-- **SCEN-10-007**: Bash writes (sed -i, rm, etc.) to new scenario paths → DENY
-- **SCEN-10-008**: Amend marker location updated: `{spec}/scenarios/.amends/...` — resolution works
-- **SCEN-10-009**: Post-tool-use telemetry `guard_triggered` includes full new path in `file_path` field
+### Category B — Hook path resolution
+- **SCEN-105**: nested-path write-once guard
+- **SCEN-106**: PreToolUse Edit parity across locations
+- **SCEN-107**: Bash sed/rm on nested scenario DENY
+- **SCEN-108**: amend marker strict parent-scoped (symlinks rejected, non-sibling rejected)
+- **SCEN-109**: telemetry records full nested path
 
-### Category C — G1 fix (Codex finding)
-- **SCEN-10-010**: Ralph teammate marks TaskUpdate(completed) after modifying ONLY scenarios → gate runs BEFORE `_has_source_edits` early-exit → REJECT if hash mismatch
-- **SCEN-10-011**: Integrity gate on deletion: teammate deletes a committed scenario → gate detects missing path → REJECT
-- **SCEN-10-012**: Integrity gate on new scenario: teammate creates new scenario not in baseline → REJECT unless leader-authored (Ralph Step 3.5)
+### Category C — G1 fix (Codex finding — integrity gate)
+- **SCEN-110**: CHEAP integrity check BEFORE `_has_source_edits` early-exit; admin-task fast-path when no scenario divergence
+- **SCEN-111**: deletion detection
+- **SCEN-112**: untracked scenario REJECTED at completion — NO sid allowlist (commit-before-spawn contract)
+- **SCEN-113**: FULL verification runs ONLY on tasks with `metadata.codeTaskFile`
 
 ### Category D — Skill alignment
-- **SCEN-10-013**: `scenario-driven-development` skill outputs to `docs/specs/{name}/scenarios/` (non-Ralph) or `.ralph/specs/{goal}/scenarios/` (Ralph) — never `.claude/scenarios/`
-- **SCEN-10-014**: `brainstorming` skill output location aligned — artifacts in `docs/specs/{name}/` or `.ralph/specs/{goal}/`
-- **SCEN-10-015**: `ralph-orchestrator` Step 3.5 updated: outputs scenarios under `.ralph/specs/{goal}/scenarios/`
-- **SCEN-10-016**: `sop-discovery`, `sop-planning`, `sop-task-generator`, `sop-code-assist`, `sop-reviewer` reference new path canonically
-- **SCEN-10-017**: `verification-before-completion` skill references new path; handles multi-spec discovery
+- **SCEN-114**: scenario-driven-development outputs spec-folder
+- **SCEN-115**: brainstorming outputs spec-folder
+- **SCEN-116**: ralph-orchestrator Step 3.5 new path
+- **SCEN-117**: sop-* chain references aligned
 
-### Category E — Admin task friction
-- **SCEN-10-018**: TaskUpdate(completed) on admin-tracking tasks (no `metadata.codeTaskFile`) → policy gate SKIPS (no verification required)
-- **SCEN-10-019**: TaskUpdate(completed) on Ralph-generated tasks (has `metadata.codeTaskFile`) → policy gate ENFORCES (verification required)
+### Category E — Admin task friction (OPT-IN, fail-closed default)
+- **SCEN-118**: explicit `metadata.admin=true` required to bypass — missing metadata FAILS CLOSED
 
-### Category F — Backward compat (minimal, clean break)
-- **SCEN-10-020**: Project with ONLY legacy `.claude/scenarios/` → SessionStart emits `[SDD:MIGRATION]` warning with migration instructions, hooks treat as if no scenarios present (backward-compat mode)
-- **SCEN-10-021**: Full suite on this repo (ai-framework itself) continues passing at ≥1053 tests after migration
+### Category F — Migration (clean break, no silent degradation)
+- **SCEN-119**: legacy `.claude/scenarios/` BLOCKS commit + TaskUpdate until migrated
+- **SCEN-120**: ai-framework self-suite passes (≥1053 tests)
 
-**Satisfaction criteria**: 21/21 scenarios satisfied via execution evidence (red-green-refactor per SCEN).
+### Category G — Performance
+- **SCEN-121**: `verification-before-completion` handles multi-spec
+- **SCEN-122**: `has_any_scenarios(cwd)` fast-path <5ms for empty case
+
+### Category H — Migration tooling
+- **SCEN-123**: `scripts/phase10-migration-audit.py` detects secrets in `.ralph/specs/`
+- **SCEN-124**: migration doc covers nested `.gitignore` edge case
+
+**Satisfaction criteria**: 24/24 scenarios satisfied via execution evidence (red-green-refactor-mutation per SCEN).
 
 ---
 
@@ -120,15 +144,18 @@ Override via `.claude/config.json` → `SCENARIO_DISCOVERY_ROOTS`.
 
 **Gate**: SCEN-10-003, 005, 006, 007, 008, 009, 020 satisfied.
 
-### Phase 10.3 — G1 fix (integrity gate before early-exit) (2h)
+### Phase 10.3 — G1 fix (split: cheap integrity + full verification) (2-3h)
 
 **Commits**:
-- `fix(hooks): task-completed scenario integrity BEFORE _has_source_edits early-exit`
-- `feat(hooks): _enforce_scenario_integrity — deleted/extra/modified detection via manifest-like check`
+- `feat(hooks): _enforce_scenario_integrity_cheap — deleted/extra/modified detection via git-HEAD diff`
+- `fix(hooks): task-completed runs cheap integrity BEFORE _has_source_edits; full verification gated on metadata.codeTaskFile`
 
-**Implementation note**: use live git-HEAD comparison (not separate manifest JSON — simpler). For each tracked scenario at HEAD: if disk missing → REJECT. For each disk scenario: if not tracked at HEAD (no first-add-commit) → REJECT unless leader's own session created it (sid-scoped allowlist).
+**Implementation note** (Codex revisions):
+- **Cheap check** (always runs): disk path set diff against `git ls-tree -r HEAD -- {discovery_roots}`. Deleted → REJECT. Untracked scenario → REJECT (no sid allowlist; leader must commit before spawn).
+- **Full verification** (only for `metadata.codeTaskFile` tasks): validate_scenario_file + require verification-before-completion skill invocation.
+- **Fast-path**: `has_any_scenarios(cwd)` lru_cached; returns False in <5ms for empty-scenario repos — integrity check short-circuits.
 
-**Gate**: SCEN-10-010, 011, 012 satisfied.
+**Gate**: SCEN-110, 111, 112, 113, 122 satisfied.
 
 ### Phase 10.4 — Skill updates (3h)
 
@@ -141,12 +168,14 @@ Override via `.claude/config.json` → `SCENARIO_DISCOVERY_ROOTS`.
 
 **Gate**: SCEN-10-013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
 
-### Phase 10.5 — Admin task friction fix (1-2h)
+### Phase 10.5 — Admin task opt-IN (fail-closed default) (1-2h)
 
 **Commits**:
-- `fix(hooks): TaskUpdate guard narrowed — only enforces on tasks with codeTaskFile metadata`
+- `fix(hooks): TaskUpdate guard — fail-closed unless metadata.admin=true explicit opt-IN`
 
-**Gate**: SCEN-10-018, 019 satisfied.
+**Codex revision**: absence of metadata does NOT bypass (previous plan was fail-open). Only explicit `metadata.admin=true` flag skips the gate.
+
+**Gate**: SCEN-118 satisfied.
 
 ### Phase 10.6 — Tests migration + full suite (2h)
 
@@ -155,15 +184,20 @@ Override via `.claude/config.json` → `SCENARIO_DISCOVERY_ROOTS`.
 
 **Gate**: `pytest hooks/ -q` → 1053+ passed (SCEN-10-021 satisfied).
 
-### Phase 10.7 — Docs + CHANGELOG + threat-model + release prep (1-2h)
+### Phase 10.7 — Migration tooling + docs + release prep (2-3h)
 
 **Commits**:
+- `feat(scripts): phase10-migration-audit.py — scan .ralph/specs/ for secrets pre-commit`
+- `docs: migration-to-phase10.md — user guide with nested-gitignore warnings + secret audit step`
 - `docs: update threat-model.md for Phase 10 architecture + empirical hook-firing evidence`
-- `docs: migration-to-phase10.md — user-facing migration guide (humanized)`
 - `docs: CHANGELOG 2026.4.0 entry (humanized)`
 - `chore: remove template/.claude/scenarios/ placeholder if present`
 
-**Gate**: /humanizer pass on user-facing prose; CHANGELOG validated; no orphan refs to `.claude/scenarios/`.
+**Codex revisions**:
+- Migration audit tool (SCEN-123) required before user `git add .ralph/specs/` — scans for API keys, passwords, tokens
+- Migration doc covers nested `.gitignore` edge case with `git check-ignore -v` verification command (SCEN-124)
+
+**Gate**: /humanizer pass on user-facing prose; CHANGELOG validated; no orphan refs to `.claude/scenarios/` outside migration docs; SCEN-123, 124 satisfied.
 
 ---
 
