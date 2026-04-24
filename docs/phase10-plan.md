@@ -10,11 +10,37 @@ outline: 2
 **Target release**: 2026.4.0
 **Baseline**: `2b82b2a` (66 commits ahead of origin — plan v1 committed, revisions pending)
 
-## Codex 5.5 xhigh review — 10 findings addressed in this revision
+## Codex 5.5 xhigh review v2 — 10 original + 4 new findings addressed in v3
+
+Plan v1 had 10 findings. Plan v2 addressed the intent but 7/10 remained open + 4 new holes emerged. Plan v3 closes all 14 with explicit operationalization. Review trail commits: `2b82b2a` (v1) → `3239190` (v2) → THIS commit (v3).
+
+### v2 review follow-ups
+
+| # | Finding v2 | Resolution v3 |
+|---|---|---|
+| C1b | Plan body referenced `SCEN-10-*` in gates/success criteria (stale from v1) | All refs rewritten to `SCEN-1NN` via sed |
+| C2b | SCEN-103 missed that current `task-completed.py:546,1007` skip on no scenarios / no source edits | Enforcement at 4 points explicit; `legacy_scenarios_present(cwd)` check inserted before every early-exit |
+| C3b | Commit-before-spawn isn't enough; leader's own completion can race | SCEN-112 extended: commit BEFORE any completion (leader, teammate, admin) |
+| C4b | `metadata.admin=true` transport unspecified (hook reads stdin only, no TaskGet) | SCEN-118 explicit: reads `tool_input.metadata.admin` from stdin JSON — payload-based, no external calls |
+| C5b | session-start.py auto-adds `!/.claude/scenarios/`; .gitignore never committed; `!/.ralph/specs/**` missing; template still ignores `/.ralph/` | Phase 10.2 scope includes session-start.py CRITICAL_GITIGNORE_RULES update + template/gitignore.template update; gitignore fixed in THIS commit with `!/.ralph/specs/**` + `!/docs/specs/**` |
+| C6b/C8b | "cheap" = git ls-tree subprocess; lru_cache per-process is weak | SCEN-110 cache to `/tmp/sdd-discovery-{project_hash}-{sid}.json` TTL 600s; SCEN-122 concrete benchmark baseline |
+| C9b | mutation per-phase, not per-SCEN | Validation cycle updated: each SCEN gets red-green-refactor-mutation individually |
+| C10b | secret detector method unspecified | SCEN-123: explicit regex list + entropy threshold + `.migration-allowlist` |
+
+### v2 new holes
 
 | # | Finding | Resolution |
 |---|---|---|
-| C1 | SCEN ID `SCEN-10-NNN` fails parser `SCEN-\d{3}` | Renumbered to `SCEN-1NN` (3-digit) |
+| N1 | Duplicate scenario names across specs — no conflict policy | SCEN-125: dedup by basename, duplicate = error |
+| N2 | Symlinked spec/scenario directories not covered | SCEN-126: symlinks rejected at discovery with telemetry |
+| N3 | Phase ordering risk: 10.1 alone breaks enforcement | Phase plan notes 10.1 + 10.2 MUST land together or 10.1 in-flight leaves hooks referencing old paths |
+| N4 | `template/.claude.template/config.json.template` missing SCENARIO_DISCOVERY_ROOTS | SCEN-127: template updated in Phase 10.4 |
+
+### Plan v1 findings (for trail completeness)
+
+| # | Finding | Resolution |
+|---|---|---|
+| C1 | SCEN ID `SCEN-1NNN` fails parser `SCEN-\d{3}` | Renumbered to `SCEN-1NN` (3-digit) |
 | C2 | Migration fail-open via silent "no scenarios" fallback | SCEN-103, 119 — legacy path FAIL CLOSED |
 | C3 | SID-allowlist weak for "leader vs teammate" | SCEN-112 — no allowlist; commit-before-spawn contract |
 | C4 | Admin-task bypass on metadata absence | SCEN-118 — explicit opt-IN `metadata.admin=true` only |
@@ -113,7 +139,13 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - **SCEN-123**: `scripts/phase10-migration-audit.py` detects secrets in `.ralph/specs/`
 - **SCEN-124**: migration doc covers nested `.gitignore` edge case
 
-**Satisfaction criteria**: 24/24 scenarios satisfied via execution evidence (red-green-refactor-mutation per SCEN).
+**Satisfaction criteria**: **27/27** scenarios satisfied via execution evidence (red-green-refactor-mutation per SCEN).
+
+### Category I — Conflict + symlink + template
+
+- **SCEN-125**: duplicate scenario basename across specs → REJECT
+- **SCEN-126**: symlinked spec directory → SKIP at discovery with telemetry
+- **SCEN-127**: `template/.claude.template/config.json.template` includes SCENARIO_DISCOVERY_ROOTS
 
 ---
 
@@ -133,16 +165,19 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - `feat(hooks): _sdd_config SCENARIO_DISCOVERY_ROOTS + DISCOVERY_PATTERN` + `test_sdd_config_discovery`
 - `refactor(hooks): _sdd_scenarios discovery glob-based, backward-compat fallback REMOVED`
 
-**Gate**: all existing scenario tests either updated or explicitly skipped; new discovery tests green; SCEN-10-001, 002, 004 satisfied.
+**Gate**: all existing scenario tests either updated or explicitly skipped; new discovery tests green; SCEN-101, SCEN-102, SCEN-104 satisfied.
 
-### Phase 10.2 — Hook path migration (2h)
+### Phase 10.2 — Hook path migration + legacy fail-closed + session-start update (3h)
+
+**Must land TOGETHER with Phase 10.1 in single merge (coupling: 10.1 introduces discovery, 10.2 consumes it; 10.1 alone breaks enforcement).**
 
 **Commits**:
-- `refactor(hooks): sdd-test-guard path resolution for nested spec paths` + tests
-- `refactor(hooks): amend marker resolver co-located with spec`
-- `feat(hooks): SessionStart emits [SDD:DEPRECATED] for legacy .claude/scenarios/`
+- `refactor(hooks): sdd-test-guard path resolution for nested spec paths + symlink rejection` + tests
+- `refactor(hooks): amend marker resolver strict sibling-scoped (rel.parent/.amends only)` + symlink rejection tests
+- `feat(hooks): legacy_scenarios_present(cwd) helper + 4-point fail-closed enforcement (SessionStart, PreToolUse, TaskUpdate, TaskCompleted)`
+- `refactor(hooks): session-start.py CRITICAL_GITIGNORE_RULES for Phase 10 — remove legacy !/.claude/scenarios/, add !/.ralph/specs/ !/.ralph/specs/** !/docs/specs/ !/docs/specs/**`
 
-**Gate**: SCEN-10-003, 005, 006, 007, 008, 009, 020 satisfied.
+**Gate**: SCEN-103, 105, 106, 107, 108, 109, 119, 126 satisfied.
 
 ### Phase 10.3 — G1 fix (split: cheap integrity + full verification) (2-3h)
 
@@ -166,7 +201,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - `docs(skills): sop-* chain references aligned`
 - `docs(skills): verification-before-completion canonical path reference updated`
 
-**Gate**: SCEN-10-013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
+**Gate**: SCEN-1013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
 
 ### Phase 10.5 — Admin task opt-IN (fail-closed default) (1-2h)
 
@@ -182,7 +217,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 **Commits**:
 - `test(hooks): migrate all hardcoded .claude/scenarios/ to discovery-based fixtures`
 
-**Gate**: `pytest hooks/ -q` → 1053+ passed (SCEN-10-021 satisfied).
+**Gate**: `pytest hooks/ -q` → 1053+ passed (SCEN-1021 satisfied).
 
 ### Phase 10.7 — Migration tooling + docs + release prep (2-3h)
 
@@ -236,7 +271,7 @@ Before Phase 10.7 release prep:
 ## Success definition
 
 Plugin 2026.4.0 ships when:
-- 21/21 SCEN-10-* scenarios satisfied with fresh execution evidence
+- 21/21 SCEN-1* scenarios satisfied with fresh execution evidence
 - `pytest hooks/ -q` ≥1053 passed
 - Zero references to `.claude/scenarios/` outside explicit deprecation/migration docs
 - Codex 5.5 xhigh per-phase reviews clean (no P0/P1 open)
