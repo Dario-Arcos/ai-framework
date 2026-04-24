@@ -228,18 +228,16 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 
 **Gate**: SCEN-1013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
 
-### Phase 10.5 — Admin vs implementation via session edits (B1/B2 fixes) (1-2h)
+### Phase 10.5 — Skill invocation propagation (Path Z complete B1 fix) (2-3h)
 
 **Commits**:
-- `refactor(hooks): skill-invoked state project-scoped (remove sid from filename), 30min TTL` — B1 fix
-- `fix(hooks): TaskUpdate + task-completed policy gate classifies via _has_source_edits (no metadata)` — B2 fix
+- `feat(hooks): sdd-auto-test Skill allowlist extended with verification-before-completion` — required so the invocation is actually recorded
+- `refactor(hooks): skill_invoked_path drops sid parameter, state project-scoped, 30min TTL` — leader invocation inherited by teammates
+- `docs(skills): PROMPT_implementer + PROMPT_reviewer instruct teammate to invoke /ai-framework:verification-before-completion before TaskUpdate(completed)` — close path Z
 
-**Changes**:
-- `_sdd_state.py`: `skill_invoked_path(cwd, skill, sid)` → `skill_invoked_path(cwd, skill)` (drop sid). Existing tests updated.
-- `sdd-test-guard.py:623`: TaskUpdate policy gate reads `_has_source_edits(cwd, sid)` instead of checking scenarios-existence. If False → bypass. If True → enforce verification requirement.
-- Admin tasks (markdown/docs edits only) naturally bypass; implementation tasks naturally enforce.
+**NO classification**: admin/implementation distinction dropped (Codex v4 found Bash-based bypass). All tasks go through same gate. Accepted friction: admin tasks invoke the skill too (skill returns fast when no work to verify).
 
-**Gate**: SCEN-113, 118, 128 satisfied.
+**Gate**: SCEN-128 satisfied (absorbs previously-separate SCEN-113, 118 which are now dropped).
 
 ### Phase 10.6 — Tests migration + full suite (2h)
 

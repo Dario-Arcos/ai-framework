@@ -78,12 +78,8 @@ revision_reason: Codex v3 review — B1/B2 architectural blockers resolved via (
 **Then**: exit=2 `[SDD:SCENARIO] integrity — untracked: <rel-path> (scenarios must be committed to parent branch BEFORE ANY completion; invoke Ralph Step 3.5 → commit → then proceed)`
 **Evidence**: test with new untracked scenario in (a) teammate session, (b) leader session with admin task, (c) leader session with code task — all 3 rejected
 
-## SCEN-113: full verification runs when session edited source code
-**Given**: session state records `source_files` set (populated by `record_file_edit` for `is_source_file`-matching paths; markdown/docs excluded by `sdd-auto-test.py:215` filter)
-**When**: task-completed.py runs after cheap integrity passes
-**Then**: if `_has_source_edits(cwd, sid)` returns True → full `_enforce_scenario_gate` runs (scenarios validate + verification-before-completion skill requirement). If False (admin task: only docs/markdown/scenarios edited) → full gate skipped (integrity check already covered scenarios).
-**Evidence**: test — (a) session edits `.py` files + no skill invocation → rejected with POLICY; (b) session edits only `.md` → full gate skipped, integrity check passes, TaskUpdate succeeds
-**Transport rationale**: classifier is session-state-driven (already exists), not tool-metadata-driven (doesn't reach hook)
+## SCEN-113: [DROPPED v5] no admin/implementation classifier
+Classification by `_has_source_edits` is bypassable via Bash-based source edits (Codex v4 finding). Path Z: drop the distinction. All tasks face the same gates. Friction is accepted; admin tasks invoke skill fast (no-op for clean state).
 
 ## SCEN-114: scenario-driven-development outputs spec-folder
 **Given**: SKILL invoked with scenario name "auth"
@@ -109,12 +105,8 @@ revision_reason: Codex v3 review — B1/B2 architectural blockers resolved via (
 **Then**: zero references to `.claude/scenarios/`; all use `{spec-root}/{spec}/scenarios/`
 **Evidence**: grep returns empty for the old pattern outside migration docs
 
-## SCEN-118: admin vs implementation classified by source-file-edits (no metadata)
-**Given**: the classification mechanism from SCEN-113 is applied at BOTH sdd-test-guard PreToolUse (TaskUpdate payload) AND task-completed.py TaskCompleted
-**When**: `TaskUpdate(status="completed")` fires
-**Then**: if session has `_has_source_edits(cwd, sid) == False` (admin task), PreToolUse policy gate SKIPS (no verification requirement). If True (implementation), PreToolUse enforces — exit=2 `[SDD:POLICY]` unless verification-before-completion invoked.
-**Transport**: zero new mechanism; uses existing session state (`source_files` set recorded by PostToolUse). No tool metadata needed.
-**Evidence**: live probes — (a) session only edited markdown → TaskUpdate allowed without skill invocation; (b) session edited source code → TaskUpdate blocked until skill invoked
+## SCEN-118: [DROPPED v5] no admin opt-IN bypass
+All TaskUpdate(completed) calls require verification-before-completion (checked via project-scoped shared state, SCEN-128). No metadata-based bypass. No session-state-based bypass. Friction is intentional — it's the signal that work was verified.
 
 ## SCEN-119: legacy .claude/scenarios/ blocks at 4 points (aligned with SCEN-103)
 **Given**: project upgraded to 2026.4.0 with legacy `.claude/scenarios/X.scenarios.md` still present
@@ -171,13 +163,29 @@ revision_reason: Codex v3 review — B1/B2 architectural blockers resolved via (
 **Then**: template includes commented default `"SCENARIO_DISCOVERY_ROOTS": [".ralph/specs", "docs/specs"]` AND example override comment
 **Evidence**: grep asserts; new project `/project-init` produces config.json with the key
 
-## SCEN-128: skill-invoked state project-scoped (shared across teammates) — B1 fix
-**Given**: leader invokes `/ai-framework:verification-before-completion` in session sid=LEADER_SID; state file written at `/tmp/sdd-skill-verification-before-completion-{project_hash}.json` (NO sid in filename)
-**When**: teammate in same cwd, different sid=TEAMMATE_SID, calls `read_skill_invoked(cwd, "verification-before-completion", sid=TEAMMATE_SID)`
-**Then**: returns True (state shared across sessions within the same project); TTL 30 min enforces recency
-**Given (TTL expired)**: leader invoked 31 min ago; teammate attempts TaskUpdate(completed)
-**Then**: `read_skill_invoked` returns False; gate blocks teammate with `[SDD:POLICY]`
-**Evidence**: test (a) leader-writes then teammate-reads → True; (b) stale state (mtime > 30 min) → False; (c) concurrent teammates both see same state
+## SCEN-128: skill-invoked state project-scoped AND recorder allowlist extended (complete B1 fix)
+Two mechanical changes together:
+
+**Change 1**: `sdd-auto-test.py:192` PostToolUse Skill allowlist extended from `{sop-code-assist, sop-reviewer}` to `{sop-code-assist, sop-reviewer, verification-before-completion}`. Otherwise `verification-before-completion` invocation is NEVER recorded — the gate's check is unreachable.
+
+**Change 2**: `skill_invoked_path(cwd, skill)` drops the `sid` parameter. File written at `/tmp/sdd-skill-{skill}-{project_hash}.json` (no sid). TTL 30 min via mtime.
+
+**Propagation mechanism** (also requires Phase 10.4):
+- `PROMPT_implementer.md` updated: "Before calling `TaskUpdate(status=completed)`, invoke `Skill(skill='ai-framework:verification-before-completion')` in YOUR session"
+- `PROMPT_reviewer.md` updated: same
+- Leader's invocation in main session ALSO counts (project-scoped); if leader invokes before spawning teammates, teammates within 30 min TTL already inherit
+
+**Given**: any session invokes `/ai-framework:verification-before-completion`
+**When**: the hook PostToolUse records the skill
+**Then**: file `/tmp/sdd-skill-verification-before-completion-{project_hash}.json` exists with mtime=now
+
+**Given (read path)**: any session in same cwd calls `read_skill_invoked(cwd, "verification-before-completion")` within 30 min
+**Then**: returns True
+
+**Given (TTL expired)**: 31 min since last invocation
+**Then**: `read_skill_invoked` returns False; TaskUpdate blocked; agent must re-invoke skill
+
+**Evidence**: tests (a) skill invoke → file exists; (b) different session reads → True within TTL; (c) mtime>30min → False; (d) PROMPT_implementer.md grep confirms invocation instruction; (e) allowlist in sdd-auto-test.py grep confirms verification-before-completion present
 
 ## SCEN-129: template/gitignore.template Phase-10 aligned
 **Given**: `template/gitignore.template` (distributed to downstream projects on install)
