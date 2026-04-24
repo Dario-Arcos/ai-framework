@@ -4,11 +4,151 @@ outline: 2
 
 # Phase 10 — Scenarios-in-Specs + Enforcement Refinement
 
-**Status**: AUTHORIZED 2026-04-24 by user · REVISED post Codex 5.5 xhigh review
+**Status**: READY FOR IMPLEMENTATION 2026-04-24 · Plan v6 final after 5 Codex 5.5 xhigh reviews
 **Owner**: Claude Opus 4.7 (Tech Lead)
-**Supersedes**: prior Option A/B/C proposals
+**Supersedes**: prior Option A/B/C proposals and plan v1-v5
 **Target release**: 2026.4.0
-**Baseline**: `2b82b2a` (66 commits ahead of origin — plan v1 committed, revisions pending)
+**Plan baseline commit**: `8df91da` (plan v6) — current HEAD is `8df91da`, 70 commits ahead of origin/main
+
+---
+
+## RESUME INSTRUCTIONS FOR A FRESH AGENT (READ FIRST)
+
+**If you are a Claude Opus 4.7 Tech Lead with NO session context reading this file**: this document is self-sufficient to complete Phase 10. Follow this section end-to-end before reading the rest of the plan.
+
+### What you need to know in 60 seconds
+
+`ai-framework` is a Claude Code plugin. Its mission: factory.ai-grade anti-reward-hacking via scenario-driven development. Scenarios (`.scenarios.md` files) are write-once observable behavior contracts. Ralph orchestrator skill spawns parallel teammates (sub-agents via `Task(team_name=...)`) who implement tasks. The plugin's hooks enforce scenario immutability, integrity, and verification-before-completion.
+
+Current state (pre-Phase-10):
+- Scenarios live in `.claude/scenarios/*.scenarios.md` (flat, global — architecturally misaligned)
+- 1053 passing pytest tests in `hooks/`
+- Phase 9 delivered cascade routing (Rung 1a/1b/2/3), mission-report aggregator, auto-dogfood signal
+- Cache path: `~/.claude/plugins/cache/ai-framework-marketplace/ai-framework/2026.3.1/` — installed and active
+
+Phase 10 goal: migrate scenarios to spec-folder architecture, fix 2 architectural enforcement holes (B1: skill-invoked state per-sid doesn't propagate leader→teammate; B2: bypass via Bash source edits), close ~29 issues identified across 5 Codex review rounds.
+
+### Preflight (MUST RUN before writing code)
+
+```bash
+cd /Users/dariarcos/G-Lab/IA-First-Development/prod/ai-framework
+git log --oneline -1                         # should show 8df91da "docs(phase10): plan v6..."
+git rev-list --count origin/main..HEAD       # should show 70
+git status --short                           # should be empty (working tree clean)
+python3 -m pytest hooks/ -q | tail -3        # must show "1053 passed, 4 skipped, 3 xpassed"
+ls .ralph/specs/phase10/scenarios/           # must show phase10.scenarios.md
+grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md   # must show 27 (25 active + 2 marked DROPPED)
+```
+
+If ANY check fails: STOP. Either the environment was reset or the baseline is wrong. Do not proceed.
+
+### Methodology (non-negotiable, enforced by CLAUDE.md)
+
+1. **SDD**: every SCEN is red-green-refactor-mutation.
+   - Write failing test first (red)
+   - Implement minimum code to pass (green)
+   - Refactor for clarity (keep green)
+   - Revert implementation → test MUST go red (proves test is effective)
+   - Restore → test green
+2. **Per phase**: end with `pytest hooks/ -q` (1053+ passing, monotonic growth)
+3. **Per phase**: Codex 5.5 xhigh review of `git diff {phase_start}..HEAD` — address P0/P1 before next phase
+4. **Commits**: conventional format (`feat(hooks): ...`, `fix(hooks): ...`, etc.) — NEVER `--no-verify` unless probe-with-revert-in-same-session
+5. **Scenarios already committed in `.ralph/specs/phase10/scenarios/phase10.scenarios.md`** — they are the contract. DO NOT modify them during implementation unless you ALSO write the amend marker via sop-reviewer.
+
+### Phase sequence (implement IN ORDER, commit per sub-step)
+
+| Phase | Scope | SCEN gated | Estimated |
+|---|---|---|---|
+| 10.1 | Config-driven discovery primitive (`_sdd_config.SCENARIO_DISCOVERY_ROOTS` + glob-based `scenario_files(cwd)`) | 101, 102, 104, 122 | 2h |
+| 10.2 | Hook path migration + legacy fail-closed + session-start CRITICAL_GITIGNORE_RULES update (10.2 MUST land with 10.1 in merged sequence, not solo — enforcement breaks otherwise) | 103, 105, 106, 107, 108, 109, 119, 126 | 3h |
+| 10.3 | Cheap integrity gate BEFORE `_has_source_edits` early-exit (`task-completed.py` restructure) + `/tmp/sdd-discovery-{project_hash}-{sid}.json` cache | 110, 111, 112 | 2h |
+| 10.4 | Skill alignment: brainstorming, SDD skill, ralph-orchestrator Step 3.5, sop-* chain, verification-before-completion canonical path refs, PROMPT_implementer/reviewer teammate skill invocation instructions | 114, 115, 116, 117, 121 | 3h |
+| 10.5 | Path Z skill propagation: (a) extend `sdd-auto-test.py:192` allowlist with `verification-before-completion`; (b) drop sid from `skill_invoked_path`; (c) normalize `ai-framework:` prefix before allowlist match | 128 | 2h |
+| 10.6 | Tests migration: ~100 LOC hardcoded `.claude/scenarios/` fixtures → discovery-based; full suite 1053+ | 120 | 2h |
+| 10.7 | Migration tooling + docs: `scripts/phase10-migration-audit.py`, `docs/migration-to-phase10.md`, `template/.claude.template/config.json.template` + `template/gitignore.template` updates, CHANGELOG 2026.4.0 entry | 123, 124, 127, 129 | 2-3h |
+
+Total effort estimate: 16-17h.
+
+### Hard constraints (from `/Users/dariarcos/CLAUDE.md`)
+
+- NEVER `git push` without explicit user authorization
+- NEVER skip `/verification-before-completion` before any commit/completion claim
+- NEVER deliver user-facing prose without `/humanizer` (changelogs, migration docs)
+- NEVER use WebSearch/WebFetch directly — route through `/agent-browser`
+- NEVER answer about external APIs from pre-training — use Context7 or `/agent-browser`
+- NEVER execute multi-step work inline — TaskCreate + delegate to sub-agents
+- NEVER modify context files (skills/, agents/, rules/, CLAUDE.md) without FIRST invoking `/context-engineering`
+- NEVER start a task without defining observable scenarios — for Phase 10, scenarios are already in `.ralph/specs/phase10/scenarios/phase10.scenarios.md`
+- WHEN context is long: re-read files before editing, re-execute before claiming done
+- Language: Spanish user-facing · English code/commits/context files
+
+### What was decided and WHY (chronological trail)
+
+These are the non-obvious design decisions. A fresh agent must understand these to avoid re-litigating.
+
+1. **Scenarios moved from `.claude/scenarios/` to `.ralph/specs/{goal}/scenarios/` (Ralph) or `docs/specs/{name}/scenarios/` (non-Ralph)**. Reason: factory.ai / StrongDM Factory co-locate validation contracts with their spec (design/plan/tasks in same folder). Flat global `.claude/scenarios/` = orphaned state. User explicitly authorized this architectural move 2026-04-24.
+
+2. **NO backward-compat for `.claude/scenarios/`**. User authorized clean break. Legacy path must FAIL CLOSED at 4 points (SessionStart, PreToolUse, TaskUpdate, task-completed) via `legacy_scenarios_present(cwd)` helper. Silent migration is unacceptable.
+
+3. **Admin/implementation classifier DROPPED (Path Z, plan v5)**. Earlier plan versions (v1-v4) attempted to distinguish admin tasks (docs only) from implementation (code) to reduce friction. Codex v4 identified that the classifier (`_has_source_edits`) is bypassable via Bash-based source edits — `cat > src/auth.py <<EOF` doesn't trigger `record_file_edit` because that's only called from PostToolUse on Edit/Write tools, not Bash. Path Z: drop the classifier, all tasks face same gate. Accepted friction: admin tasks also invoke `verification-before-completion` (fast no-op). SCEN-113, 118 marked DROPPED in the SCEN file.
+
+4. **verification-before-completion mechanics (B1 fix)**: (a) `sdd-auto-test.py:192` PostToolUse Skill allowlist extends to include `verification-before-completion` (previously only recorded `sop-code-assist` + `sop-reviewer` — invocation was never captured). (b) `skill_invoked_path(cwd, skill)` drops `sid` parameter, file becomes per-project-hash with 30min mtime TTL. (c) Skill-name normalization: strip `ai-framework:` prefix before allowlist match because PROMPTs invoke `Skill(skill='ai-framework:verification-before-completion')` (namespaced) but allowlist matches unqualified. All three pieces MUST land together (Phase 10.5) — partial landing = broken enforcement.
+
+5. **Phase 10.1 + 10.2 coupling**: discovery primitive alone (10.1) breaks hooks that still reference old paths. Must land with 10.2 (hook path migration) OR ship as two commits on same merge. Prefer atomic.
+
+6. **Scenario IDs parser-compatible**: current regex `^SCEN-\d{3}$` in `hooks/_sdd_scenarios.py:42`. DO NOT use `SCEN-10-NNN` — use `SCEN-1NN` (3-digit). The plan and scenarios file already use the correct form.
+
+7. **Gitignore un-ignore already committed** at `10f3597` — `.gitignore` has `!/.ralph/specs/**` and `!/docs/specs/**` so tracked specs work. Template file (`template/gitignore.template`) still needs the SAME updates in Phase 10.7 (user projects that adopt the plugin).
+
+8. **Empirical evidence from Fase 0 decisive probe** (2026-04-24): `Task(team_name=X, subagent_type=general-purpose, NO isolation)` teammates share leader cwd AND hooks DO fire in their session (`PreToolUse sdd-test-guard` emits `[SDD:SCENARIO] scenario write-once violation` on teammate's Edit attempt). Telemetry confirmed: `guard_triggered` events in `.claude/metrics.jsonl` with teammate-timestamp. This means Phase 9 already protects against direct scenario edits by teammates. Phase 10 closes the remaining integrity gaps (deletion, untracked creation, Bash-based tampering of non-scenario source).
+
+9. **Pitfalls to avoid**:
+   - `Bash` commands that contain literal `.claude/scenarios/` WILL trip the guard even in diagnostic contexts. Construct paths via Python variables in subprocess calls, or use `_SDD_DISABLE_SCENARIOS=1` env for probe-only operations.
+   - `TaskUpdate(completed)` policy gate fires when scenarios exist. To commit probe scenarios during experiments use `--no-verify` only with "probe, revert after" in commit message AND revert in the same session.
+   - `git worktree` created by `Agent(isolation=worktree)` branches from OLD commits (release tag `bcfff25`), NOT current HEAD. Do not assume current commits are inherited. Use `Task(team_name=..., NO isolation)` for in-tree parallelism — teammates share leader branch.
+
+### Verification cadence per phase
+
+After each phase, in order:
+
+```bash
+# 1. Full suite
+python3 -m pytest hooks/ -q | tail -3
+
+# 2. Count new tests — monotonic growth expected
+python3 -m pytest hooks/ -q 2>&1 | tail -1 | grep -oE "[0-9]+ passed"
+
+# 3. Codex review
+PHASE_START_COMMIT=<commit-before-this-phase>
+git diff ${PHASE_START_COMMIT}..HEAD > /tmp/phase-review.patch
+codex exec --model gpt-5.5 --config model_reasoning_effort=xhigh --sandbox read-only \
+  "Review this Phase 10 diff for bugs, races, edge cases. Check against docs/phase10-plan.md and .ralph/specs/phase10/scenarios/phase10.scenarios.md SCEN contracts. Be brutal." < /tmp/phase-review.patch
+
+# 4. Dogfood: manual probe of the specific SCEN just satisfied
+# (e.g., for Phase 10.2 SCEN-105: feed PreToolUse Edit payload on a nested scenario path, expect [SDD:SCENARIO] denial)
+```
+
+Address any P0/P1 before next phase. Document mitigations in commit body.
+
+### When Phase 10 is DONE
+
+All of the following are true:
+- 25 active SCEN satisfied with execution evidence (in commit bodies or test output)
+- `pytest hooks/ -q` = 1053+ passing (monotonic from start)
+- `grep -rn "\.claude/scenarios/" hooks/ skills/ template/ | grep -v migration-to-phase10 | grep -v deprecation` = empty
+- Codex 5.5 xhigh review of final diff clean (P0/P1 addressed)
+- CHANGELOG 2026.4.0 entry humanized (invoke `/ai-framework:humanizer` after writing)
+- `docs/migration-to-phase10.md` humanized
+- User explicitly authorizes `npm version 2026.4.0` + push + tag
+
+### Escape hatches
+
+- If a phase reveals the plan is wrong: STOP implementation, update `docs/phase10-plan.md` + SCEN file, re-request Codex review, get user approval, resume
+- If a test regression: immediately revert, diagnose (invoke `/ai-framework:systematic-debugging`), fix, commit separately from feature
+- If a phase takes 3x estimate: flag to user, consider scope trim
+- If locked/stuck: invoke `/brainstorming` or ask user directly
+
+---
 
 ## Codex v3 verdict — B1/B2 architectural blockers resolved in v4
 
