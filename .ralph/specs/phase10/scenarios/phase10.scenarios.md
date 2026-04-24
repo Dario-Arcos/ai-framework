@@ -2,8 +2,8 @@
 name: phase10
 created_by: tech-lead
 created_at: 2026-04-24T14:00:00Z
-revised_at: 2026-04-24T14:30:00Z
-revision_reason: Codex 5.5 xhigh v2 review — 7 of 10 findings still open + 4 new holes
+revised_at: 2026-04-24T14:45:00Z
+revision_reason: Codex v3 review — B1/B2 architectural blockers resolved via (a) project-scoped skill state, (b) _has_source_edits natural classifier (already tracked)
 ---
 
 ## SCEN-101: discovery finds Ralph-spec scenarios
@@ -78,11 +78,12 @@ revision_reason: Codex 5.5 xhigh v2 review — 7 of 10 findings still open + 4 n
 **Then**: exit=2 `[SDD:SCENARIO] integrity — untracked: <rel-path> (scenarios must be committed to parent branch BEFORE ANY completion; invoke Ralph Step 3.5 → commit → then proceed)`
 **Evidence**: test with new untracked scenario in (a) teammate session, (b) leader session with admin task, (c) leader session with code task — all 3 rejected
 
-## SCEN-113: full verification runs only on implementation tasks
-**Given**: task with `tool_input.metadata.codeTaskFile` present (Ralph implementation task)
+## SCEN-113: full verification runs when session edited source code
+**Given**: session state records `source_files` set (populated by `record_file_edit` for `is_source_file`-matching paths; markdown/docs excluded by `sdd-auto-test.py:215` filter)
 **When**: task-completed.py runs after cheap integrity passes
-**Then**: full `_enforce_scenario_gate` runs (validates all scenarios + requires verification-before-completion skill invocation). For tasks WITHOUT codeTaskFile, full verification is skipped.
-**Evidence**: test — implementation task without skill invocation → rejected with POLICY; admin task → full verification skipped
+**Then**: if `_has_source_edits(cwd, sid)` returns True → full `_enforce_scenario_gate` runs (scenarios validate + verification-before-completion skill requirement). If False (admin task: only docs/markdown/scenarios edited) → full gate skipped (integrity check already covered scenarios).
+**Evidence**: test — (a) session edits `.py` files + no skill invocation → rejected with POLICY; (b) session edits only `.md` → full gate skipped, integrity check passes, TaskUpdate succeeds
+**Transport rationale**: classifier is session-state-driven (already exists), not tool-metadata-driven (doesn't reach hook)
 
 ## SCEN-114: scenario-driven-development outputs spec-folder
 **Given**: SKILL invoked with scenario name "auth"
@@ -108,21 +109,18 @@ revision_reason: Codex 5.5 xhigh v2 review — 7 of 10 findings still open + 4 n
 **Then**: zero references to `.claude/scenarios/`; all use `{spec-root}/{spec}/scenarios/`
 **Evidence**: grep returns empty for the old pattern outside migration docs
 
-## SCEN-118: admin task opt-IN via tool_input.metadata (fail-closed default)
-**Given**: a TaskUpdate call with `tool_input = {"status": "completed", "metadata": {"admin": true}}`
-**When**: sdd-test-guard PreToolUse processes the tool_input
-**Then**: policy gate SKIPS for this tool_input; exit=0
-**Given (negative case)**: a TaskUpdate without `metadata.admin=true` (default absent, or `admin=false`)
-**When**: TaskUpdate(completed) fires with scenarios present
-**Then**: policy gate ENFORCES — exit=2 `[SDD:POLICY]` unless verification-before-completion invoked
-**Transport**: hook reads `tool_input.metadata.admin` from the stdin JSON payload (`input_data["tool_input"]["metadata"]["admin"]`). NO external TaskGet call — purely payload-based.
-**Evidence**: live probes — admin flag honored, missing flag fails closed, default fails closed
+## SCEN-118: admin vs implementation classified by source-file-edits (no metadata)
+**Given**: the classification mechanism from SCEN-113 is applied at BOTH sdd-test-guard PreToolUse (TaskUpdate payload) AND task-completed.py TaskCompleted
+**When**: `TaskUpdate(status="completed")` fires
+**Then**: if session has `_has_source_edits(cwd, sid) == False` (admin task), PreToolUse policy gate SKIPS (no verification requirement). If True (implementation), PreToolUse enforces — exit=2 `[SDD:POLICY]` unless verification-before-completion invoked.
+**Transport**: zero new mechanism; uses existing session state (`source_files` set recorded by PostToolUse). No tool metadata needed.
+**Evidence**: live probes — (a) session only edited markdown → TaskUpdate allowed without skill invocation; (b) session edited source code → TaskUpdate blocked until skill invoked
 
-## SCEN-119: legacy .claude/scenarios/ blocks commit AND TaskUpdate
+## SCEN-119: legacy .claude/scenarios/ blocks at 4 points (aligned with SCEN-103)
 **Given**: project upgraded to 2026.4.0 with legacy `.claude/scenarios/X.scenarios.md` still present
-**When**: user/agent attempts Bash(git commit) OR TaskUpdate(completed) OR task-completed gate runs
-**Then**: exit=2 `[SDD:MIGRATION_REQUIRED] legacy .claude/scenarios/ detected — migrate to docs/specs/{name}/scenarios/ or .ralph/specs/{goal}/scenarios/ (see docs/migration-to-phase10.md)` — until migrated, no commits or completions proceed. Check runs in PreToolUse AND TaskCompleted (dual enforcement).
-**Evidence**: live test with legacy fixture; all 3 enforcement points block
+**When**: ANY of — SessionStart, Bash(git commit), TaskUpdate(completed), or task-completed gate — runs
+**Then**: exit=2 `[SDD:MIGRATION_REQUIRED] legacy .claude/scenarios/ detected — migrate to docs/specs/{name}/scenarios/ or .ralph/specs/{goal}/scenarios/ (see docs/migration-to-phase10.md)` — until migrated, no sessions, commits, or completions proceed. `legacy_scenarios_present(cwd)` helper called at all 4 points before any early-exit or scenarios-missing skip.
+**Evidence**: live test with legacy fixture; all 4 enforcement points block
 
 ## SCEN-120: ai-framework self-suite still passes
 **Given**: ai-framework repo post-Phase-10 migration
@@ -142,8 +140,9 @@ revision_reason: Codex 5.5 xhigh v2 review — 7 of 10 findings still open + 4 n
 **Then**: `has_any_scenarios(cwd)` returns False. Benchmark: median of 100 invocations < 5ms on CI hardware; hard cap 10ms. Test asserts against baseline; CI records for regression tracking.
 **Evidence**: perf benchmark test with explicit fixture + baseline assertion
 
-## SCEN-123: migration audit tool detects secrets via defined detector
-**Given**: project with a `.ralph/specs/{goal}/design/detailed-design.md` containing any of — `API_KEY=sk-[0-9a-zA-Z]+`, `password=` followed by non-placeholder, `-----BEGIN (RSA|EC) PRIVATE KEY-----`, `AKIA[0-9A-Z]{16}`, high-entropy string ≥32 chars with base64/hex alphabet (entropy > 4.5 bits/char)
+## SCEN-123: migration audit tool detects secrets via defined detector + covers ralph runtime
+**Audit scope** extended: scans all tracked paths under `.ralph/specs/` AND explicitly reports if `.ralph/config.sh` exists and contains secrets (warning, not blocking — config.sh is meant to be ignored but users sometimes commit by mistake).
+**Given**: project with a `.ralph/specs/{goal}/design/detailed-design.md` OR `.ralph/config.sh` containing any of — `API_KEY=sk-[0-9a-zA-Z]+`, `password=` followed by non-placeholder, `-----BEGIN (RSA|EC) PRIVATE KEY-----`, `AKIA[0-9A-Z]{16}`, high-entropy string ≥32 chars with base64/hex alphabet (entropy > 4.5 bits/char)
 **When**: `scripts/phase10-migration-audit.py` runs
 **Then**: stdout lists findings with `file:line:pattern`; exit=1 if ANY finding; supports `.migration-allowlist` for false positives (file-line suppressions with justification comment)
 **Evidence**: test fixture with 5 secret types + 1 allowlisted false positive → audit catches 5, allows 1; test fixture with pure prose → exit=0
@@ -154,20 +153,34 @@ revision_reason: Codex 5.5 xhigh v2 review — 7 of 10 findings still open + 4 n
 **Then**: doc explicitly shows `!/.ralph/specs/` + `!/.ralph/specs/**` AND warns about nested `.gitignore` that can re-ignore descendants AND provides verification command `git check-ignore -v .ralph/specs/x/scenarios/x.scenarios.md` with expected "file NOT ignored" output AND provides `session-start.py CRITICAL_GITIGNORE_RULES` update reference
 **Evidence**: migration doc grep confirms all 4 components present
 
-## SCEN-125: duplicate scenario name across specs rejected
-**Given**: a scenario at `docs/specs/auth/scenarios/flow.scenarios.md` AND another at `.ralph/specs/auth-redesign/scenarios/flow.scenarios.md` (both named "flow")
+## SCEN-125: multiple specs with same scenario basename coexist (no false rejection)
+**Given**: legitimate specs `auth/scenarios/auth.scenarios.md` AND `auth-redesign/scenarios/auth.scenarios.md` (both named `auth` within their own spec scope)
 **When**: `scenario_files(cwd)` runs
-**Then**: exit=2 `[SDD:CONFLICT] duplicate scenario file name 'flow' across specs — rename to unique filename per spec` OR discovery returns both paths with conflict metadata allowing downstream hooks to reject. Implementation-wise: dedup is BY BASENAME, not by abs-path. Duplicates = error.
-**Evidence**: test with 2 duplicate-name fixtures; discovery asserts error
+**Then**: both paths returned (dedup by ABSOLUTE PATH only, not basename). If the user genuinely wants each file treated as a distinct scenario contract, this works. Telemetry event `discovery_same_basename_detected` emitted (info-level, not error) to surface potential confusion.
+**Evidence**: test with 2 legit same-basename-different-spec fixtures → both discovered, no rejection, telemetry present
 
-## SCEN-126: symlinked spec directories rejected at discovery
-**Given**: `.ralph/specs/auth` is a symlink pointing to `/tmp/external-spec`
-**When**: `scenario_files(cwd)` runs
-**Then**: symlinked spec directory is SKIPPED with telemetry event `discovery_symlink_rejected`; scenarios under it not discovered; migration doc explicitly lists symlinked specs as unsupported
-**Evidence**: test fixture with symlinked spec dir; discovery returns empty for that branch; telemetry present
+## SCEN-126: symlinks rejected at ALL discovery entry points
+**Given**: 4 symlink vectors — (a) symlinked discovery root `.ralph/specs -> /tmp/specs`, (b) symlinked spec dir `.ralph/specs/auth -> /tmp/auth`, (c) symlinked scenarios dir `.ralph/specs/auth/scenarios -> /tmp/scenarios`, (d) symlinked scenario file `.ralph/specs/auth/scenarios/auth.scenarios.md -> /tmp/auth.md`
+**When**: `scenario_files(cwd)` runs on each
+**Then**: each symlink is SKIPPED at discovery with telemetry event `discovery_symlink_rejected` including the vector type; scenarios under the symlinked branch not discovered; `Path.is_symlink()` check applied BEFORE any glob iteration; migration doc lists all 4 vectors as unsupported
+**Evidence**: test fixture parametrized over all 4 vectors; discovery returns empty for each; telemetry present with correct vector label
 
 ## SCEN-127: template config updated with SCENARIO_DISCOVERY_ROOTS
 **Given**: `template/.claude.template/config.json.template`
 **When**: grep for SCENARIO_DISCOVERY_ROOTS
 **Then**: template includes commented default `"SCENARIO_DISCOVERY_ROOTS": [".ralph/specs", "docs/specs"]` AND example override comment
 **Evidence**: grep asserts; new project `/project-init` produces config.json with the key
+
+## SCEN-128: skill-invoked state project-scoped (shared across teammates) — B1 fix
+**Given**: leader invokes `/ai-framework:verification-before-completion` in session sid=LEADER_SID; state file written at `/tmp/sdd-skill-verification-before-completion-{project_hash}.json` (NO sid in filename)
+**When**: teammate in same cwd, different sid=TEAMMATE_SID, calls `read_skill_invoked(cwd, "verification-before-completion", sid=TEAMMATE_SID)`
+**Then**: returns True (state shared across sessions within the same project); TTL 30 min enforces recency
+**Given (TTL expired)**: leader invoked 31 min ago; teammate attempts TaskUpdate(completed)
+**Then**: `read_skill_invoked` returns False; gate blocks teammate with `[SDD:POLICY]`
+**Evidence**: test (a) leader-writes then teammate-reads → True; (b) stale state (mtime > 30 min) → False; (c) concurrent teammates both see same state
+
+## SCEN-129: template/gitignore.template Phase-10 aligned
+**Given**: `template/gitignore.template` (distributed to downstream projects on install)
+**When**: grep for ralph/scenarios/docs/specs rules
+**Then**: template does NOT have legacy `!/.claude/scenarios/` (removed); DOES have `!/.ralph/specs/`, `!/.ralph/specs/**`, `!/docs/specs/`, `!/docs/specs/**`; does NOT have `.claude/scenarios/` legacy allowance; ephemeral Ralph state still ignored (`.ralph/config.sh`, `.ralph/metrics.json`, `.ralph/failures.json`, `.ralph/ABORT`)
+**Evidence**: grep of template file asserts all changes; downstream new-project generation includes correct gitignore

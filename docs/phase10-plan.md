@@ -10,6 +10,31 @@ outline: 2
 **Target release**: 2026.4.0
 **Baseline**: `2b82b2a` (66 commits ahead of origin — plan v1 committed, revisions pending)
 
+## Codex v3 verdict — B1/B2 architectural blockers resolved in v4
+
+v3 review said NO. 6 blockers remained, 2 architectural:
+
+- **B1** (skill invocation per-sid): leader sid ≠ teammate sid → state doesn't propagate
+- **B2** (task metadata transport): `TaskUpdate(completed)` payload doesn't carry TaskCreate metadata to the hook
+
+### v4 resolutions (no new complex mechanisms)
+
+**B1 fix** — swap skill-invoked state from per-sid file to per-project file with 30min TTL. ~20 LOC in `_sdd_state.py`. Leader invokes verification → all teammates in same cwd inherit within TTL. Factory.ai semantic: one mission = one verification contract.
+
+**B2 fix** — **drop metadata entirely**. Classifier is the already-tracked `_has_source_edits(cwd, sid)`:
+- Session edited `.py/.ts/.go/...` → implementation task → full gate
+- Session edited only `.md/docs/scenarios` → admin task → integrity check only
+
+Empirically verified: `sdd-auto-test.py:215` filters non-source/non-test files BEFORE `record_file_edit` — markdown never enters `source_files` set. No new transport needed.
+
+### Other v3 findings closed
+
+- SCEN-103 / SCEN-119 aligned at 4 enforcement points (SessionStart + PreToolUse + TaskUpdate + task-completed)
+- SCEN-125 reverted from reject-by-basename to accept + telemetry (fixes overcorrection)
+- SCEN-126 expanded to 4 symlink vectors
+- SCEN-127 + new SCEN-129 close template scope (`template/.claude.template/config.json.template` + `template/gitignore.template`)
+- SCEN-123 expanded: audit scans `.ralph/config.sh` too
+
 ## Codex 5.5 xhigh review v2 — 10 original + 4 new findings addressed in v3
 
 Plan v1 had 10 findings. Plan v2 addressed the intent but 7/10 remained open + 4 new holes emerged. Plan v3 closes all 14 with explicit operationalization. Review trail commits: `2b82b2a` (v1) → `3239190` (v2) → THIS commit (v3).
@@ -203,14 +228,18 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 
 **Gate**: SCEN-1013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
 
-### Phase 10.5 — Admin task opt-IN (fail-closed default) (1-2h)
+### Phase 10.5 — Admin vs implementation via session edits (B1/B2 fixes) (1-2h)
 
 **Commits**:
-- `fix(hooks): TaskUpdate guard — fail-closed unless metadata.admin=true explicit opt-IN`
+- `refactor(hooks): skill-invoked state project-scoped (remove sid from filename), 30min TTL` — B1 fix
+- `fix(hooks): TaskUpdate + task-completed policy gate classifies via _has_source_edits (no metadata)` — B2 fix
 
-**Codex revision**: absence of metadata does NOT bypass (previous plan was fail-open). Only explicit `metadata.admin=true` flag skips the gate.
+**Changes**:
+- `_sdd_state.py`: `skill_invoked_path(cwd, skill, sid)` → `skill_invoked_path(cwd, skill)` (drop sid). Existing tests updated.
+- `sdd-test-guard.py:623`: TaskUpdate policy gate reads `_has_source_edits(cwd, sid)` instead of checking scenarios-existence. If False → bypass. If True → enforce verification requirement.
+- Admin tasks (markdown/docs edits only) naturally bypass; implementation tasks naturally enforce.
 
-**Gate**: SCEN-118 satisfied.
+**Gate**: SCEN-113, 118, 128 satisfied.
 
 ### Phase 10.6 — Tests migration + full suite (2h)
 
