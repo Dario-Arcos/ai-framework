@@ -114,8 +114,19 @@ human-handbook/.vitepress/cache/
 # Research documents (working files, not for version control)
 /docs/research/
 
-# Ralph orchestrator runtime
-/.ralph/
+# Ralph orchestrator runtime state (ephemeral — not tracked)
+/.ralph/config.sh
+/.ralph/guardrails.md
+/.ralph/metrics.json
+/.ralph/failures.json
+/.ralph/ABORT
+/.ralph/mission-report-*.md
+
+# Ralph specs (design, scenarios, plan, tasks) ARE tracked — intellectual artifacts
+!/.ralph/specs/
+
+# Non-Ralph specs tracked at docs/specs/
+!/docs/specs/
 
 # Deep research artifacts
 /.research/
@@ -126,11 +137,10 @@ human-handbook/.vitepress/cache/
 # AI Framework template rules (one-time sync)
 /.brainstorm/
 /.visual-companion/
-/docs/specs/
+
+# Legacy .claude/scenarios/ DEPRECATED post-Phase-10 (migrate to docs/specs/ or .ralph/specs/)
+/.claude/scenarios/
 
 # AI Framework runtime files (auto-added)
-!/.claude/scenarios/
-
-# AI Framework template rules (one-time sync)
 /.claude/metrics.jsonl
 /.claude/metrics.jsonl.*
