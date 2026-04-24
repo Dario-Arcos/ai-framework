@@ -168,6 +168,8 @@ Two mechanical changes together:
 
 **Change 1**: `sdd-auto-test.py:192` PostToolUse Skill allowlist extended from `{sop-code-assist, sop-reviewer}` to `{sop-code-assist, sop-reviewer, verification-before-completion}`. Otherwise `verification-before-completion` invocation is NEVER recorded — the gate's check is unreachable.
 
+**Change 1b (normalization, Codex v5 finding)**: `tool_input.skill` values arrive as either unqualified (`verification-before-completion`) or namespaced (`ai-framework:verification-before-completion`). Before the allowlist match, strip any `<plugin>:` prefix so the canonical unqualified key is both stored and consumed. Without this step, `Skill(skill="ai-framework:verification-before-completion")` invocations (what prompts recommend) fail to match the allowlist and no state is recorded.
+
 **Change 2**: `skill_invoked_path(cwd, skill)` drops the `sid` parameter. File written at `/tmp/sdd-skill-{skill}-{project_hash}.json` (no sid). TTL 30 min via mtime.
 
 **Propagation mechanism** (also requires Phase 10.4):
