@@ -31,14 +31,24 @@ Phase 10 goal: migrate scenarios to spec-folder architecture, fix 2 architectura
 ### Preflight (MUST RUN before writing code)
 
 ```bash
+set -eo pipefail
 cd /Users/dariarcos/G-Lab/IA-First-Development/prod/ai-framework
-git log --grep="phase10.*plan" --oneline | head -5   # should list plan commits; pick the LATEST version (v6c+)
-git log --oneline -1                                 # shows current HEAD — check against plan latest version
-git status --short                                   # should be empty (working tree clean) OR only untracked docs/specs/ (ok)
-python3 -m pytest hooks/ -q | tail -3                # must show "1053 passed" or greater
-ls .ralph/specs/phase10/scenarios/                   # must show phase10.scenarios.md
-grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md   # must show exactly 29 (27 active + 2 marked DROPPED)
-grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenarios.md    # must show exactly 2
+
+# Find latest plan commit and verify current HEAD is an ancestor-or-equal
+LATEST_PLAN=$(git log --grep="docs(phase10): plan" --oneline | head -1 | awk '{print $1}')
+echo "Latest plan commit: $LATEST_PLAN"
+git merge-base --is-ancestor "$LATEST_PLAN" HEAD || { echo "HEAD predates latest plan; rebase/checkout forward"; exit 1; }
+
+# Working tree should be clean (untracked docs/specs/ is tolerable)
+git status --short | grep -v "^?? docs/specs/$" | head -5 || true
+
+# Tests: baseline 1053+ passing (set -o pipefail means the pytest exit code is honored)
+python3 -m pytest hooks/ -q | tail -3
+
+# SCEN file invariants
+ls .ralph/specs/phase10/scenarios/phase10.scenarios.md
+[ "$(grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md)" = "29" ] && echo "SCEN headings OK (29)"
+[ "$(grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenarios.md)" = "2" ] && echo "DROPPED count OK (2)"
 ```
 
 If ANY check fails: STOP. Either the environment was reset or the baseline is wrong. Do not proceed.
@@ -134,7 +144,7 @@ Address any P0/P1 before next phase. Document mitigations in commit body.
 ### When Phase 10 is DONE
 
 All of the following are true:
-- 25 active SCEN satisfied with execution evidence (in commit bodies or test output)
+- 27 active SCEN satisfied with execution evidence (29 headings total in the SCEN file; SCEN-113 and SCEN-118 are explicitly DROPPED and do not count toward this total)
 - `pytest hooks/ -q` = 1053+ passing (monotonic from start)
 - `grep -rn "\.claude/scenarios/" hooks/ skills/ template/ | grep -v migration-to-phase10 | grep -v deprecation` = empty
 - Codex 5.5 xhigh review of final diff clean (P0/P1 addressed)
@@ -345,8 +355,8 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 
 ### Category I — Conflict + symlink + template
 
-- **SCEN-125**: duplicate scenario basename across specs → REJECT
-- **SCEN-126**: symlinked spec directory → SKIP at discovery with telemetry
+- **SCEN-125**: legitimate duplicate scenario basenames across specs COEXIST (dedup by absolute path only, not basename); info-level telemetry `discovery_same_basename_detected`. No rejection.
+- **SCEN-126**: symlinks rejected at ALL 4 discovery entry points — (a) symlinked discovery root, (b) symlinked spec directory, (c) symlinked scenarios/ directory, (d) symlinked scenario file — with `Path.is_symlink()` check BEFORE glob iteration and telemetry `discovery_symlink_rejected` including vector label
 - **SCEN-127**: `template/.claude.template/config.json.template` includes SCENARIO_DISCOVERY_ROOTS
 
 ---
@@ -383,18 +393,19 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 
 **Gate**: SCEN-103, 105, 106, 107, 108, 109, 119, 126 satisfied.
 
-### Phase 10.3 — G1 fix (split: cheap integrity + full verification) (2-3h)
+### Phase 10.3 — Integrity gate (Path Z aligned, 2-3h)
 
 **Commits**:
 - `feat(hooks): _enforce_scenario_integrity_cheap — deleted/extra/modified detection via git-HEAD diff`
-- `fix(hooks): task-completed runs cheap integrity BEFORE _has_source_edits; full verification gated on metadata.codeTaskFile`
+- `fix(hooks): task-completed runs cheap integrity BEFORE _has_source_edits early-exit`
 
-**Implementation note** (Codex revisions):
-- **Cheap check** (always runs): disk path set diff against `git ls-tree -r HEAD -- {discovery_roots}`. Deleted → REJECT. Untracked scenario → REJECT (no sid allowlist; leader must commit before spawn).
-- **Full verification** (only for `metadata.codeTaskFile` tasks): validate_scenario_file + require verification-before-completion skill invocation.
-- **Fast-path**: `has_any_scenarios(cwd)` lru_cached; returns False in <5ms for empty-scenario repos — integrity check short-circuits.
+**Path Z alignment**: there is NO metadata-based classifier and NO admin/implementation split here. Phase 10.3 delivers ONE mechanism — the cheap integrity check — that runs before any early-exit. Full verification (scenarios shape + skill invocation) lives in the existing `_enforce_scenario_gate` and applies unconditionally when scenarios exist. Admin tasks pay the small cost of invoking `verification-before-completion` (the skill returns fast when there's nothing to verify).
 
-**Gate**: SCEN-110, 111, 112, 113, 122 satisfied.
+- **Cheap check** (always runs first): disk path set diff against `git ls-tree -r HEAD -- {discovery_roots}`. Deleted → REJECT. Untracked scenario → REJECT (no sid allowlist; leader must commit before spawn).
+- **Full verification** (unconditional when scenarios exist): existing `_enforce_scenario_gate` with project-scoped skill-invoked state from Phase 10.5.
+- **Fast-path**: `has_any_scenarios(cwd)` lru_cached + disk cache at `/tmp/sdd-discovery-{project_hash}-{sid}.json` TTL 600s; returns False in <5ms for empty-scenario repos — integrity check short-circuits.
+
+**Gate**: SCEN-110, 111, 112, 122 satisfied. (SCEN-113 is DROPPED — do not gate on it.)
 
 ### Phase 10.4 — Skill updates (3h)
 
