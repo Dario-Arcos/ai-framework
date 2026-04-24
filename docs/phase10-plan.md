@@ -148,6 +148,42 @@ All of the following are true:
 - If a phase takes 3x estimate: flag to user, consider scope trim
 - If locked/stuck: invoke `/brainstorming` or ask user directly
 
+### Code Map — exact files + functions to edit per SCEN
+
+| SCEN | Files to edit (current line refs) | Tests to write |
+|---|---|---|
+| 101, 102, 104 | `hooks/_sdd_config.py` (add `SCENARIO_DISCOVERY_ROOTS`, `SCENARIO_FILE_PATTERN`), `hooks/_sdd_scenarios.py:55-67` (rewrite `scenario_dir`/`scenario_files` glob-based) | `hooks/test_sdd_config_discovery.py` (NEW), `hooks/test_sdd_scenarios.py` (UPDATE — legacy path tests go red, replaced with discovery-based) |
+| 103, 119 | `hooks/sdd-test-guard.py` (NEW `legacy_scenarios_present(cwd)` helper + call at PreToolUse Edit, Bash git commit, TaskUpdate), `hooks/task-completed.py:540-560` (call at TaskCompleted), `hooks/session-start.py:35-50` (call + emit `[SDD:MIGRATION_REQUIRED]`) | `hooks/test_scen_phase10_legacy.py` (NEW) — 4 enforcement points × fixture with legacy `.claude/scenarios/X.scenarios.md` |
+| 105, 106, 107, 108 | `hooks/sdd-test-guard.py:241-274` (`_rel_scenario_path` — verify nested paths resolve), `hooks/_sdd_scenarios.py:415-445` (amend marker resolver → strict sibling) | `hooks/test_scen_phase10_nested.py` (NEW) |
+| 109 | `hooks/_sdd_state.py` telemetry writers (already record file_path; verify passthrough) | `hooks/test_scen_phase10_telemetry.py` (NEW) |
+| 110, 111, 112 | `hooks/task-completed.py:529-599` (`_enforce_scenario_gate` split into `_enforce_scenario_integrity_cheap` + existing full verification), `hooks/_sdd_scenarios.py` (add batch `git ls-tree -r HEAD` helper, cache at `/tmp/sdd-discovery-{project_hash}-{sid}.json` TTL 600s) | `hooks/test_scen_phase10_integrity.py` (NEW) |
+| 114, 115, 116, 117 | `skills/brainstorming/SKILL.md`, `skills/scenario-driven-development/SKILL.md`, `skills/ralph-orchestrator/SKILL.md:107, 147, 149`, all `skills/sop-*/SKILL.md` | `hooks/test_scen_phase10_docs.py` (NEW) — grep-based invariants |
+| 120 | Run `python3 -m pytest hooks/ -q` after all prior phases | — (suite gate) |
+| 121 | `skills/verification-before-completion/SKILL.md` (reference new discovery primitive) | `hooks/test_scen_phase10_multi_spec.py` (NEW) |
+| 122 | `hooks/_sdd_scenarios.py` (add `has_any_scenarios(cwd)` fast-path + lru_cache) | `hooks/test_scen_phase10_perf.py` (NEW) — 2000-file fixture, <5ms median |
+| 123 | `scripts/phase10-migration-audit.py` (NEW, ~150 LOC) | `hooks/test_phase10_migration_audit.py` (NEW) |
+| 124 | `docs/migration-to-phase10.md` (NEW) | grep-based test in `hooks/test_scen_phase10_docs.py` |
+| 125 | `hooks/_sdd_scenarios.py:scenario_files` (dedup by abs-path, NOT basename; emit telemetry on duplicate basename) | `hooks/test_scen_phase10_nested.py` (extend) |
+| 126 | `hooks/_sdd_scenarios.py:scenario_files` (4 symlink vectors — check each entry with `Path.is_symlink()` before descending) | `hooks/test_scen_phase10_symlink.py` (NEW) |
+| 127 | `template/.claude.template/config.json.template` | grep-based test |
+| 128 | `hooks/sdd-auto-test.py:192-196` (extend allowlist + normalize `ai-framework:` prefix), `hooks/_sdd_state.py:655-680` (`skill_invoked_path(cwd, skill)` drop sid), `skills/ralph-orchestrator/scripts/PROMPT_implementer.md` + `PROMPT_reviewer.md` (add skill invocation instruction) | `hooks/test_scen_phase10_skill_propagation.py` (NEW) |
+| 129 | `template/gitignore.template` | grep-based test |
+
+### Grep exclusions reference
+
+After Phase 10 complete, this command MUST return zero matches (proof no stale refs remain):
+
+```bash
+grep -rn "\.claude/scenarios/" hooks/ skills/ template/ .claude/ \
+  | grep -v "migration-to-phase10" \
+  | grep -v "legacy_scenarios_present" \
+  | grep -v "deprecated" \
+  | grep -v "DEPRECATED" \
+  | grep -v "\.md:"   # markdown-only refs (docs, changelog) acceptable if they describe legacy
+```
+
+If any match remains, it is either a real bug OR documentation that must be annotated as "legacy/deprecated".
+
 ---
 
 ## Codex v3 verdict — B1/B2 architectural blockers resolved in v4
@@ -262,7 +298,7 @@ Override via `.claude/config.json` → `SCENARIO_DISCOVERY_ROOTS`.
 
 ## Observable scenarios (SCEN-1XX, SDD contract)
 
-Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/phase10/scenarios/phase10.scenarios.md`. 24 scenarios organized by category.
+Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/phase10/scenarios/phase10.scenarios.md`. **Canonical count: 29 SCEN headings total · 27 active · 2 DROPPED (SCEN-113, SCEN-118).** All other numeric mentions in this doc defer to this truth.
 
 ### Category A — Architecture migration
 - **SCEN-101**: discovery finds `.ralph/specs/*/scenarios/*.scenarios.md`
@@ -281,7 +317,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - **SCEN-110**: CHEAP integrity check BEFORE `_has_source_edits` early-exit; admin-task fast-path when no scenario divergence
 - **SCEN-111**: deletion detection
 - **SCEN-112**: untracked scenario REJECTED at completion — NO sid allowlist (commit-before-spawn contract)
-- **SCEN-113**: FULL verification runs ONLY on tasks with `metadata.codeTaskFile`
+- **SCEN-113**: [DROPPED v5] — classifier was bypassable via Bash edits. Absorbed into SCEN-128 where all tasks face same gate.
 
 ### Category D — Skill alignment
 - **SCEN-114**: scenario-driven-development outputs spec-folder
@@ -290,7 +326,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - **SCEN-117**: sop-* chain references aligned
 
 ### Category E — Admin task friction (OPT-IN, fail-closed default)
-- **SCEN-118**: explicit `metadata.admin=true` required to bypass — missing metadata FAILS CLOSED
+- **SCEN-118**: [DROPPED v5] — metadata-based admin opt-IN was unsound (transport + Bash bypass). All TaskUpdate(completed) face same gate via SCEN-128.
 
 ### Category F — Migration (clean break, no silent degradation)
 - **SCEN-119**: legacy `.claude/scenarios/` BLOCKS commit + TaskUpdate until migrated
@@ -324,7 +360,11 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 2. User reviews + approves plan via ExitPlanMode
 3. Codex review of plan before Phase 10.1
 
-### Phase 10.1 — Config-driven discovery primitive (2h)
+### Phase 10.1+10.2 — Discovery primitive + hook migration (ATOMIC, 5h)
+
+**These two phases MUST land together on a single feature branch before merge.** Phase 10.1 alone breaks enforcement because hooks still reference `.claude/scenarios/`. Split only for logical clarity below; ship as one branch with atomic merge (squash or fast-forward).
+
+#### 10.1 sub-scope — Config-driven discovery primitive
 
 **Commits**:
 - `feat(hooks): _sdd_config SCENARIO_DISCOVERY_ROOTS + DISCOVERY_PATTERN` + `test_sdd_config_discovery`
@@ -332,9 +372,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 
 **Gate**: all existing scenario tests either updated or explicitly skipped; new discovery tests green; SCEN-101, SCEN-102, SCEN-104 satisfied.
 
-### Phase 10.2 — Hook path migration + legacy fail-closed + session-start update (3h)
-
-**Must land TOGETHER with Phase 10.1 in single merge (coupling: 10.1 introduces discovery, 10.2 consumes it; 10.1 alone breaks enforcement).**
+#### 10.2 sub-scope — Hook path migration + legacy fail-closed + session-start update
 
 **Commits**:
 - `refactor(hooks): sdd-test-guard path resolution for nested spec paths + symlink rejection` + tests
@@ -366,7 +404,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 - `docs(skills): sop-* chain references aligned`
 - `docs(skills): verification-before-completion canonical path reference updated`
 
-**Gate**: SCEN-1013, 014, 015, 016, 017 satisfied (verified by grep + test_scen_10_docs.py).
+**Gate**: SCEN-114, 115, 116, 117, 121 satisfied (verified by grep + test_scen_phase10_docs.py fixture).
 
 ### Phase 10.5 — Skill invocation propagation (Path Z complete B1 fix) (2-3h)
 
@@ -384,7 +422,7 @@ Revised 2026-04-24 post Codex 5.5 xhigh review. Full contract: `.ralph/specs/pha
 **Commits**:
 - `test(hooks): migrate all hardcoded .claude/scenarios/ to discovery-based fixtures`
 
-**Gate**: `pytest hooks/ -q` → 1053+ passed (SCEN-1021 satisfied).
+**Gate**: `pytest hooks/ -q` → 1053+ passed (SCEN-120 satisfied).
 
 ### Phase 10.7 — Migration tooling + docs + release prep (2-3h)
 
@@ -438,7 +476,7 @@ Before Phase 10.7 release prep:
 ## Success definition
 
 Plugin 2026.4.0 ships when:
-- 21/21 SCEN-1* scenarios satisfied with fresh execution evidence
+- 27/27 active SCEN-1* scenarios satisfied with fresh execution evidence (SCEN-113 and SCEN-118 are DROPPED and not counted)
 - `pytest hooks/ -q` ≥1053 passed
 - Zero references to `.claude/scenarios/` outside explicit deprecation/migration docs
 - Codex 5.5 xhigh per-phase reviews clean (no P0/P1 open)
