@@ -8,7 +8,7 @@ outline: 2
 **Owner**: Claude Opus 4.7 (Tech Lead)
 **Supersedes**: prior Option A/B/C proposals and plan v1-v5
 **Target release**: 2026.4.0
-**Plan baseline commit**: `8df91da` (plan v6) — current HEAD is `8df91da`, 70 commits ahead of origin/main
+**Plan baseline commit**: `f1860e9` (plan v6c) — current HEAD is `f1860e9` OR LATER (future v6d, v7 may follow). Use `git log --grep="phase10" --oneline` to find the latest phase10 plan commit before starting.
 
 ---
 
@@ -32,12 +32,13 @@ Phase 10 goal: migrate scenarios to spec-folder architecture, fix 2 architectura
 
 ```bash
 cd /Users/dariarcos/G-Lab/IA-First-Development/prod/ai-framework
-git log --oneline -1                         # should show 8df91da "docs(phase10): plan v6..."
-git rev-list --count origin/main..HEAD       # should show 70
-git status --short                           # should be empty (working tree clean)
-python3 -m pytest hooks/ -q | tail -3        # must show "1053 passed, 4 skipped, 3 xpassed"
-ls .ralph/specs/phase10/scenarios/           # must show phase10.scenarios.md
-grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md   # must show 27 (25 active + 2 marked DROPPED)
+git log --grep="phase10.*plan" --oneline | head -5   # should list plan commits; pick the LATEST version (v6c+)
+git log --oneline -1                                 # shows current HEAD — check against plan latest version
+git status --short                                   # should be empty (working tree clean) OR only untracked docs/specs/ (ok)
+python3 -m pytest hooks/ -q | tail -3                # must show "1053 passed" or greater
+ls .ralph/specs/phase10/scenarios/                   # must show phase10.scenarios.md
+grep -c "^## SCEN-1" .ralph/specs/phase10/scenarios/phase10.scenarios.md   # must show exactly 29 (27 active + 2 marked DROPPED)
+grep -c "\[DROPPED" .ralph/specs/phase10/scenarios/phase10.scenarios.md    # must show exactly 2
 ```
 
 If ANY check fails: STOP. Either the environment was reset or the baseline is wrong. Do not proceed.
