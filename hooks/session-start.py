@@ -37,10 +37,15 @@ ALLOWED_TEMPLATE_PATHS = [
 # Only framework internals that break if tracked. User-decidable rules
 # (/.ralph/, /.research/, etc.) live in gitignore.template only — never
 # re-enforced, so users can remove them without session-start re-adding.
+#
+# Phase 10 migration: scenarios will move to `.ralph/specs/*/scenarios/`
+# and `docs/specs/*/scenarios/`. Until that migration ships (2026.4.0),
+# the `!/.claude/scenarios/` un-ignore belongs to user choice via
+# template/gitignore.template — NOT auto-re-enforced here. Auto-adding
+# it caused working-tree drift on every SessionStart.
 CRITICAL_GITIGNORE_RULES = [
     "/.claude/*",
     "!/.claude/rules/",
-    "!/.claude/scenarios/",  # NEW: scenarios must be tracked
     "/CLAUDE.md",
     "/hooks/*.db",
     "/hooks/__pycache__/",

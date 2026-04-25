@@ -505,7 +505,9 @@ class TestGitignoreSeparatorBranch(unittest.TestCase):
 
         content = gitignore.read_text(encoding="utf-8")
         self.assertIn("node_modules/\n\n# AI Framework runtime files", content)
-        self.assertIn("!/.claude/scenarios/", content)
+        # Assert on any critical rule that IS re-enforced (not the legacy
+        # scenarios un-ignore, which was removed to stop SessionStart drift).
+        self.assertIn("/.claude/*", content)
 
 
 if __name__ == "__main__":
