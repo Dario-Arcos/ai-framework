@@ -27,7 +27,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _subprocess_harness import cleanup_all_state, invoke_hook
 from _sdd_detect import write_state
-from _sdd_scenarios import SCENARIO_DIR, SCENARIO_FILE_SUFFIX
+from _sdd_scenarios import SCENARIO_FILE_SUFFIX
+
+# Phase 10 fixture path: scenarios live under spec folders.
+SCENARIO_DIR = ".ralph/specs/perf/scenarios"
 
 
 _GIT_AVAILABLE = shutil.which("git") is not None

@@ -64,6 +64,9 @@ created_at: 2026-04-16T10:00:00Z
 **Evidence**: HTTP response body, cookies set
 """
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR_REL = ".ralph/specs/scen009/scenarios"
+
 
 class TestScen009(unittest.TestCase):
     """SCEN-009: worktree isolation via project_hash(cwd).
@@ -95,7 +98,7 @@ class TestScen009(unittest.TestCase):
         # the scenario file). No git setup needed for the core isolation
         # invariant — cwd-hash isolation is path-based, not git-based.
         for wt in (self.worktree1, self.worktree2):
-            scen_dir = wt / _sdd_scenarios.SCENARIO_DIR
+            scen_dir = wt / _SCENARIO_DIR_REL
             scen_dir.mkdir(parents=True)
             (scen_dir / f"login{_sdd_scenarios.SCENARIO_FILE_SUFFIX}").write_text(
                 _VALID_SCENARIO_BODY, encoding="utf-8"
@@ -307,7 +310,7 @@ class TestScen009(unittest.TestCase):
             ["git", "-C", str(parent), "config", "user.name", "t"],
             check=True, env=env,
         )
-        scen_dir = parent / _sdd_scenarios.SCENARIO_DIR
+        scen_dir = parent / _SCENARIO_DIR_REL
         scen_dir.mkdir(parents=True)
         scen_file = scen_dir / f"login{_sdd_scenarios.SCENARIO_FILE_SUFFIX}"
         scen_file.write_text(_VALID_SCENARIO_BODY, encoding="utf-8")
@@ -330,11 +333,11 @@ class TestScen009(unittest.TestCase):
         # Both parent and worktree contain the committed scenario file
         # (shared git content), but their cwd-based project hashes differ.
         self.assertTrue(
-            (parent / _sdd_scenarios.SCENARIO_DIR /
+            (parent / _SCENARIO_DIR_REL /
              f"login{_sdd_scenarios.SCENARIO_FILE_SUFFIX}").exists()
         )
         self.assertTrue(
-            (wt_a / _sdd_scenarios.SCENARIO_DIR /
+            (wt_a / _SCENARIO_DIR_REL /
              f"login{_sdd_scenarios.SCENARIO_FILE_SUFFIX}").exists()
         )
         self.assertNotEqual(

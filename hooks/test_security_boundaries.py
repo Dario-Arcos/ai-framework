@@ -26,7 +26,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _subprocess_harness import HOOKS_DIR, cleanup_all_state, invoke_hook
-from _sdd_scenarios import SCENARIO_DIR, SCENARIO_FILE_SUFFIX, scenario_baseline_hash
+from _sdd_scenarios import SCENARIO_FILE_SUFFIX, scenario_baseline_hash
+
+# Phase 10 fixture path: scenarios live under spec folders.
+SCENARIO_DIR = ".ralph/specs/security/scenarios"
 
 
 _GIT_AVAILABLE = shutil.which("git") is not None
@@ -65,7 +68,7 @@ def _init_repo_with_scenario(cwd):
     scen_dir.mkdir(parents=True, exist_ok=True)
     scen_path = scen_dir / f"auth{SCENARIO_FILE_SUFFIX}"
     scen_path.write_text(_VALID_SCENARIO, encoding="utf-8")
-    _git(["add", f".claude/scenarios/auth{SCENARIO_FILE_SUFFIX}"], cwd)
+    _git(["add", f"{SCENARIO_DIR}/auth{SCENARIO_FILE_SUFFIX}"], cwd)
     _git(["commit", "-q", "-m", "add scenarios"], cwd)
     return scen_path
 
@@ -190,7 +193,7 @@ class TestDocumentedBypassesThatAreBlocked(_SecurityBase):
                 "tool_name": "Bash",
                 "tool_input": {
                     "command": (
-                        "ln -s /tmp/fake .claude/scenarios/evil.scenarios.md"
+                        f"ln -s /tmp/fake {SCENARIO_DIR}/evil.scenarios.md"
                     ),
                 },
             },
@@ -206,7 +209,7 @@ class TestDocumentedBypassesThatAreBlocked(_SecurityBase):
                 "tool_name": "Bash",
                 "tool_input": {
                     "command": (
-                        "sed -i 's/X/Y/' \".claude/scenarios/auth.scenarios.md\""
+                        f"sed -i 's/X/Y/' \"{SCENARIO_DIR}/auth.scenarios.md\""
                     ),
                 },
             },

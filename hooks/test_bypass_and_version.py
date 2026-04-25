@@ -18,7 +18,7 @@ from _sdd_detect import write_state
 from _subprocess_harness import HOOKS_DIR, cleanup_all_state, invoke_hook
 
 
-_SCENARIO_REL = ".claude/scenarios/login.scenarios.md"
+_SCENARIO_REL = ".ralph/specs/bypass-version/scenarios/login.scenarios.md"
 _METRICS_REL = Path(".claude") / "metrics.jsonl"
 _VALID_SCENARIO = """\
 ---
@@ -177,7 +177,7 @@ class TestPhase7Bypass(unittest.TestCase):
             "cwd": self.tmpdir,
             "tool_name": "Bash",
             "tool_input": {
-                "command": "cat > .claude/scenarios/foo.scenarios.md <<'EOF'\ntext\nEOF\n",
+                "command": "cat > .ralph/specs/bypass-version/scenarios/foo.scenarios.md <<'EOF'\ntext\nEOF\n",
             },
         }
 

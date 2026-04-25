@@ -140,9 +140,9 @@ human-handbook/.vitepress/cache/
 /.brainstorm/
 /.visual-companion/
 
-# Legacy .claude/scenarios/ DEPRECATED post-Phase-10 (migrate to docs/specs/ or .ralph/specs/)
-/.claude/scenarios/
-
 # AI Framework runtime files (auto-added)
 /.claude/metrics.jsonl
 /.claude/metrics.jsonl.*
+
+# AI Framework runtime files (auto-added)
+!/.claude/scenarios/

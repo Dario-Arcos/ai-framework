@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
-"""SCEN-005 — Backward-compat canary: projects without `.claude/scenarios/`
+"""SCEN-005 — Opt-in canary: projects without any spec-folder scenarios
 behave identically to the pre-Phase-3 baseline.
 
-From SPEC Section 5:
-    Project without `.claude/scenarios/` → behavior unchanged from baseline
-    (700+ tests still pass).
+Phase 10 layout: scenarios live under `.ralph/specs/{goal}/scenarios/` or
+`docs/specs/{name}/scenarios/`. Absent any scenarios under those discovery
+roots, no new gate should fire, no new guard should trip, no new failure
+path should surface — the scenarios machinery is opt-in.
 
-This is the "All-phases" canary — it must pass in every phase from 0 through 6.
-The scenarios machinery is opt-in: absent a scenarios directory, no new gate
-should fire, no new guard should trip, no new failure path should surface.
-
-Unlike the other SCEN tests, this one is intentionally GREEN today. It locks
-in the backward-compat contract so any future regression in the scenarios
+Unlike other SCEN tests, this one is intentionally GREEN. It locks in the
+backward-compat contract so any future regression in the scenarios
 infrastructure fails loudly here rather than leaking into unsuspecting
 projects.
 """
@@ -54,7 +51,7 @@ def _invoke_guard(cwd, payload):
 
 
 class TestScen005BackwardCompat(unittest.TestCase):
-    """No .claude/scenarios/ → all scenario predicates return safe-empty +
+    """No spec-folder scenarios → all scenario predicates return safe-empty +
     guards do not fire.
     """
 
@@ -64,34 +61,36 @@ class TestScen005BackwardCompat(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def test_scenario_files_empty_without_dir(self):
+    def test_scenario_files_empty_without_spec_folders(self):
         """scenario_files on a fresh project yields [] without side effects."""
         self.assertEqual(scenarios.scenario_files(self.tmpdir), [])
-        # Probe must not create the directory as a side effect
+        # Probe must not create discovery roots as a side effect
         self.assertFalse(
-            (Path(self.tmpdir) / scenarios.SCENARIO_DIR).exists(),
-            "Discovery must not implicitly create the scenarios dir",
+            (Path(self.tmpdir) / ".ralph" / "specs").exists(),
+            "Discovery must not implicitly create discovery roots",
         )
 
-    def test_has_pending_scenarios_false_without_dir(self):
-        """No scenarios dir → never pending, regardless of sid presence."""
+    def test_has_pending_scenarios_false_without_spec_folders(self):
+        """No spec-folder scenarios → never pending, regardless of sid."""
         self.assertFalse(scenarios.has_pending_scenarios(self.tmpdir))
         self.assertFalse(scenarios.has_pending_scenarios(self.tmpdir, sid="x"))
 
-    def test_check_amend_marker_false_without_dir(self):
+    def test_check_amend_marker_false_without_spec_folders(self):
         """Amend check returns False (not an error) when no scenarios exist."""
         self.assertFalse(
             scenarios.check_amend_marker(
-                self.tmpdir, ".claude/scenarios/x.scenarios.md"
+                self.tmpdir,
+                ".ralph/specs/scen005/scenarios/x.scenarios.md",
             )
         )
 
-    def test_safe_scenario_path_still_validates_name_format(self):
-        """Path-traversal guard works even when scenarios dir does not exist
-        yet. The function validates the NAME, not directory existence.
-        """
-        self.assertIsNotNone(scenarios.safe_scenario_path(self.tmpdir, "login"))
-        self.assertIsNone(scenarios.safe_scenario_path(self.tmpdir, "../escape"))
+    def test_default_discovery_roots_resolve_to_spec_folders(self):
+        """The opt-in contract is anchored on the spec-folder roots."""
+        from _sdd_config import get_scenario_discovery_roots
+        self.assertEqual(
+            get_scenario_discovery_roots(self.tmpdir),
+            (".ralph/specs", "docs/specs"),
+        )
 
     def test_guard_allows_edit_on_non_scenario_file_without_dir(self):
         """PreToolUse Edit on an ordinary file in a project with no scenarios
@@ -138,17 +137,17 @@ class TestScen005BackwardCompat(unittest.TestCase):
 
     def test_state_files_still_isolated_by_project_hash(self):
         """The session/state infrastructure used by scenarios must coexist
-        with legacy projects. Writing state in a scenarios-less project
-        must not leak into or depend on scenario-specific artifacts.
+        with scenarios-less projects. Writing state must not leak into or
+        depend on scenario-specific artifacts.
         """
         sid = state.extract_session_id({"session_id": "bc-sess"})
         state.write_state(self.tmpdir, passing=True, summary="ok")
         read = state.read_state(self.tmpdir)
         self.assertIsNotNone(read)
         self.assertTrue(read["passing"])
-        # No scenarios artifacts must have been created
+        # No discovery roots must have been created as a side effect
         self.assertFalse(
-            (Path(self.tmpdir) / ".claude" / "scenarios").exists()
+            (Path(self.tmpdir) / ".ralph" / "specs").exists()
         )
 
 

@@ -39,9 +39,13 @@ created_at: 2026-04-16T10:00:00Z
 """
 
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR_REL = ".ralph/specs/sdd-scenarios-test/scenarios"
+
+
 def _make_scenario_dir(cwd):
-    """Create .claude/scenarios/ under cwd and return the path."""
-    d = Path(cwd) / S.SCENARIO_DIR
+    """Create the spec-folder scenarios directory under cwd and return it."""
+    d = Path(cwd) / _SCENARIO_DIR_REL
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -51,6 +55,11 @@ def _write_scenario(cwd, name, content):
     p = d / f"{name}{S.SCENARIO_FILE_SUFFIX}"
     p.write_text(content, encoding="utf-8")
     return p
+
+
+def _scenario_rel(name):
+    """Return the spec-folder-relative path string for a scenario name."""
+    return f"{_SCENARIO_DIR_REL}/{name}{S.SCENARIO_FILE_SUFFIX}"
 
 
 def _git_init_with_commit(cwd, rel_path, content):
@@ -113,11 +122,19 @@ class TestDiscovery(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def test_scenario_dir_builds_expected_path(self):
-        self.assertEqual(
-            S.scenario_dir(self.tmpdir),
-            Path(self.tmpdir) / ".claude" / "scenarios",
-        )
+    def test_discovery_resolves_to_spec_folder_paths(self):
+        """Phase 10: discovery returns absolute paths under spec folders.
+
+        Replaces the legacy `scenario_dir(cwd)` helper assertion. Same
+        precision class — equality on resolved Path values — but anchored
+        on the new contract: spec-folder layout under `.ralph/specs/`.
+        """
+        _write_scenario(self.tmpdir, "login", _VALID_FILE)
+        files = S.scenario_files(self.tmpdir)
+        expected = (
+            Path(self.tmpdir) / _SCENARIO_DIR_REL / f"login{S.SCENARIO_FILE_SUFFIX}"
+        ).resolve()
+        self.assertEqual(files, [expected])
 
     def test_scenario_files_empty_when_dir_missing(self):
         self.assertEqual(S.scenario_files(self.tmpdir), [])
@@ -141,10 +158,10 @@ class TestDiscovery(unittest.TestCase):
         files = [p.name for p in S.scenario_files(self.tmpdir)]
         self.assertEqual(files, sorted(files))
 
-    def test_scenario_files_skips_subdirectories(self):
-        """Nested subdirectories (e.g. .amends/) must not pollute the list."""
+    def test_scenario_files_skips_amends_subdir(self):
+        """The sibling `.amends/` directory must not pollute the list."""
         _write_scenario(self.tmpdir, "login", _VALID_FILE)
-        (S.amend_marker_dir(self.tmpdir)).mkdir(parents=True)
+        S.amend_marker_dir(self.tmpdir, _scenario_rel("login")).mkdir(parents=True)
         files = S.scenario_files(self.tmpdir)
         self.assertEqual(len(files), 1)
 
@@ -497,11 +514,11 @@ class TestHashing(unittest.TestCase):
         _write_scenario(self.tmpdir, "x", _VALID_FILE)
         # No git init: baseline_hash must not raise
         self.assertIsNone(
-            S.scenario_baseline_hash(self.tmpdir, ".claude/scenarios/x.scenarios.md")
+            S.scenario_baseline_hash(self.tmpdir, _scenario_rel("x"))
         )
 
     def test_baseline_hash_matches_committed_content(self):
-        rel = ".claude/scenarios/x.scenarios.md"
+        rel = _scenario_rel("x")
         _git_init_with_commit(self.tmpdir, rel, _VALID_FILE)
         # Mutate disk; baseline must still reflect committed content
         (Path(self.tmpdir) / rel).write_text("changed", encoding="utf-8")
@@ -514,14 +531,14 @@ class TestHashing(unittest.TestCase):
         with patch.object(S.subprocess, "run",
                           side_effect=S.subprocess.TimeoutExpired("git", 5)):
             self.assertIsNone(
-                S.scenario_baseline_hash(self.tmpdir, ".claude/scenarios/x.scenarios.md")
+                S.scenario_baseline_hash(self.tmpdir, _scenario_rel("x"))
             )
 
 
 class TestBaselineHashFirstCommit(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-baseline-")
-        self.rel = ".claude/scenarios/x.scenarios.md"
+        self.rel = _scenario_rel("x")
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -577,40 +594,74 @@ class TestBaselineHashFirstCommit(unittest.TestCase):
 
 
 # ─────────────────────────────────────────────────────────────────
-# safe_scenario_path — path traversal guard
+# Discovery path safety — Phase 10 replaces flat-name resolution
+# (`safe_scenario_path`) with config-bound glob across spec roots.
+# Each test below locks in one traversal-class invariant of the new
+# layer with the same precision as the legacy guard.
 # ─────────────────────────────────────────────────────────────────
 
-class TestSafeScenarioPath(unittest.TestCase):
+class TestDiscoveryPathSafety(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-")
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def test_valid_name_resolves(self):
-        p = S.safe_scenario_path(self.tmpdir, "login-validation")
-        self.assertIsNotNone(p)
-        self.assertTrue(p.name.endswith(S.SCENARIO_FILE_SUFFIX))
+    def test_legacy_safe_scenario_path_helper_removed(self):
+        """The flat-name resolver no longer exists post-Phase-10."""
+        self.assertIsNone(getattr(S, "safe_scenario_path", None))
 
-    def test_empty_name_rejected(self):
-        self.assertIsNone(S.safe_scenario_path(self.tmpdir, ""))
+    def test_legacy_scenario_dir_helper_removed(self):
+        """The flat-layout `scenario_dir(cwd)` helper is gone."""
+        self.assertIsNone(getattr(S, "scenario_dir", None))
 
-    def test_traversal_dots_rejected(self):
-        self.assertIsNone(S.safe_scenario_path(self.tmpdir, "../escape"))
-        self.assertIsNone(S.safe_scenario_path(self.tmpdir, "../../etc/passwd"))
+    def test_default_discovery_roots_are_relative_and_anchored(self):
+        """Defaults must stay inside the project (no absolute, no `..`)."""
+        from _sdd_config import get_scenario_discovery_roots
+        roots = get_scenario_discovery_roots(self.tmpdir)
+        self.assertEqual(roots, (".ralph/specs", "docs/specs"))
 
-    def test_slash_in_name_rejected(self):
-        self.assertIsNone(S.safe_scenario_path(self.tmpdir, "sub/nested"))
+    def test_absolute_root_override_falls_back_to_defaults(self):
+        """Absolute paths in config override are rejected."""
+        from _sdd_config import get_scenario_discovery_roots
+        config_dir = Path(self.tmpdir) / ".claude"
+        config_dir.mkdir()
+        (config_dir / "config.json").write_text(
+            '{"SCENARIO_DISCOVERY_ROOTS": ["/etc/passwd"]}', encoding="utf-8",
+        )
+        self.assertEqual(
+            get_scenario_discovery_roots(self.tmpdir),
+            (".ralph/specs", "docs/specs"),
+        )
 
-    def test_null_byte_rejected(self):
-        self.assertIsNone(S.safe_scenario_path(self.tmpdir, "evil\x00payload"))
+    def test_traversal_root_override_falls_back_to_defaults(self):
+        """`..` entries in config override are rejected."""
+        from _sdd_config import get_scenario_discovery_roots
+        config_dir = Path(self.tmpdir) / ".claude"
+        config_dir.mkdir()
+        (config_dir / "config.json").write_text(
+            '{"SCENARIO_DISCOVERY_ROOTS": ["../escape"]}', encoding="utf-8",
+        )
+        self.assertEqual(
+            get_scenario_discovery_roots(self.tmpdir),
+            (".ralph/specs", "docs/specs"),
+        )
 
-    def test_special_chars_rejected(self):
-        for bad in ("name with space", "name$var", "name;rm", "name`x`"):
-            self.assertIsNone(
-                S.safe_scenario_path(self.tmpdir, bad),
-                f"expected rejection: {bad!r}",
+    def test_discovery_does_not_traverse_symlinked_root(self):
+        """Symlinked discovery roots are skipped (SCEN-126 vector a)."""
+        outside = Path(tempfile.mkdtemp(prefix="sdd-outside-"))
+        try:
+            outside_scen = outside / "spec" / "scenarios"
+            outside_scen.mkdir(parents=True)
+            (outside_scen / f"x{S.SCENARIO_FILE_SUFFIX}").write_text(
+                _VALID_FILE, encoding="utf-8",
             )
+            link_root = Path(self.tmpdir) / ".ralph" / "specs"
+            link_root.parent.mkdir(parents=True)
+            link_root.symlink_to(outside, target_is_directory=True)
+            self.assertEqual(S.scenario_files(self.tmpdir), [])
+        finally:
+            shutil.rmtree(outside, ignore_errors=True)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -620,9 +671,10 @@ class TestSafeScenarioPath(unittest.TestCase):
 class TestAmendMarker(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen-")
-        self.rel = ".claude/scenarios/login.scenarios.md"
+        self.rel = _scenario_rel("login")
         self.sha = _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
-        self.markers_dir = S.amend_marker_dir(self.tmpdir)
+        # Phase 10: amend markers are sibling-scoped to the scenario.
+        self.markers_dir = S.amend_marker_dir(self.tmpdir, self.rel)
         self.markers_dir.mkdir(parents=True)
 
     def tearDown(self):
@@ -676,7 +728,9 @@ class TestAmendMarker(unittest.TestCase):
         """Passing something that isn't `.scenarios.md` returns False."""
         self._write_marker("login", self.sha[:10])
         self.assertFalse(
-            S.check_amend_marker(self.tmpdir, ".claude/scenarios/login.md")
+            S.check_amend_marker(
+                self.tmpdir, f"{_SCENARIO_DIR_REL}/login.md"
+            )
         )
 
 

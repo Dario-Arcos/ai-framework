@@ -2,8 +2,8 @@
 name: phase10
 created_by: tech-lead
 created_at: 2026-04-24T14:00:00Z
-revised_at: 2026-04-24T15:00:00Z
-revision_reason: Plan v6d Path Z — drop admin/implementation classifier entirely. All TaskUpdate(completed) face the same gate (SCEN-128). B1 closed via project-scoped skill state + allowlist extension + prefix normalization. B2 closed via no-classifier (no bypass possible because there is nothing to bypass).
+revised_at: 2026-04-25T00:00:00Z
+revision_reason: User-authorized clean drop of legacy `.claude/scenarios/` migration enforcement. SCEN-103, 119, 123, 124 marked DROPPED — no migration guards, no audit tool, no migration doc. New scenarios author into spec folders from day one; legacy files (if any) become harmless artifacts the user removes manually. Active count drops from 27 → 23.
 ---
 
 ## SCEN-101: discovery finds Ralph-spec scenarios
@@ -18,11 +18,8 @@ revision_reason: Plan v6d Path Z — drop admin/implementation classifier entire
 **Then**: returned list contains that path
 **Evidence**: test asserts inclusion; glob pattern `docs/specs/**/scenarios/*.scenarios.md` matches
 
-## SCEN-103: legacy location fails closed at every enforcement point
-**Given**: a file at `.claude/scenarios/legacy.scenarios.md`
-**When**: ANY of — SessionStart, PreToolUse Edit, TaskUpdate(completed), or task-completed gate — runs
-**Then**: exit=2 `[SDD:MIGRATION_REQUIRED]` with migration guidance; `scenario_files()` does NOT include legacy path; `legacy_scenarios_present(cwd)` helper returns True at ALL four enforcement points BEFORE any early-exit or scenarios-missing skip
-**Evidence**: live hook test at each of the 4 points; exit code + stderr verbatim
+## SCEN-103: [DROPPED 2026-04-25] no migration enforcement for legacy path
+User-authorized clean break. The discovery primitive simply does NOT scan `.claude/scenarios/`. Any legacy file there becomes an inert artifact the user removes manually. No `[SDD:MIGRATION_REQUIRED]` guard, no audit tooling, no migration doc. Phase 10 forward-only.
 
 ## SCEN-104: SCENARIO_DISCOVERY_ROOTS config override
 **Given**: `.claude/config.json` with `{"SCENARIO_DISCOVERY_ROOTS": ["custom/specs"]}`
@@ -108,11 +105,8 @@ Classification by `_has_source_edits` is bypassable via Bash-based source edits 
 ## SCEN-118: [DROPPED v5] no admin opt-IN bypass
 All TaskUpdate(completed) calls require verification-before-completion (checked via project-scoped shared state, SCEN-128). No metadata-based bypass. No session-state-based bypass. Friction is intentional — it's the signal that work was verified.
 
-## SCEN-119: legacy .claude/scenarios/ blocks at 4 points (aligned with SCEN-103)
-**Given**: project upgraded to 2026.4.0 with legacy `.claude/scenarios/X.scenarios.md` still present
-**When**: ANY of — SessionStart, Bash(git commit), TaskUpdate(completed), or task-completed gate — runs
-**Then**: exit=2 `[SDD:MIGRATION_REQUIRED] legacy .claude/scenarios/ detected — migrate to docs/specs/{name}/scenarios/ or .ralph/specs/{goal}/scenarios/ (see docs/migration-to-phase10.md)` — until migrated, no sessions, commits, or completions proceed. `legacy_scenarios_present(cwd)` helper called at all 4 points before any early-exit or scenarios-missing skip.
-**Evidence**: live test with legacy fixture; all 4 enforcement points block
+## SCEN-119: [DROPPED 2026-04-25] superseded by SCEN-103 drop
+Same rationale as SCEN-103 — no enforcement on legacy path. New scenarios author into spec folders from day one.
 
 ## SCEN-120: ai-framework self-suite still passes
 **Given**: ai-framework repo post-Phase-10 migration
@@ -132,18 +126,11 @@ All TaskUpdate(completed) calls require verification-before-completion (checked 
 **Then**: returns False for every call. Median of 100 invocations ≤ 5 ms. Max ≤ 10 ms. Test command: `pytest hooks/test_scen_phase10_perf.py::test_has_any_scenarios_empty_perf -v`. Test asserts `median_ms <= 5 and max_ms <= 10`. Failure = regression.
 **Evidence**: `hooks/test_scen_phase10_perf.py` fixture + explicit assertion; if CI variability causes flakes, the test xfails with `strict=False` and comment `tracked for root-cause` — do NOT relax thresholds
 
-## SCEN-123: migration audit tool detects secrets via defined detector + covers ralph runtime
-**Audit scope** extended: scans all tracked paths under `.ralph/specs/` AND explicitly reports if `.ralph/config.sh` exists and contains secrets (warning, not blocking — config.sh is meant to be ignored but users sometimes commit by mistake).
-**Given**: project with a `.ralph/specs/{goal}/design/detailed-design.md` OR `.ralph/config.sh` containing any of — `API_KEY=sk-[0-9a-zA-Z]+`, `password=` followed by non-placeholder, `-----BEGIN (RSA|EC) PRIVATE KEY-----`, `AKIA[0-9A-Z]{16}`, high-entropy string ≥32 chars with base64/hex alphabet (entropy > 4.5 bits/char)
-**When**: `scripts/phase10-migration-audit.py` runs
-**Then**: stdout lists findings with `file:line:pattern`; exit=1 if ANY finding; supports `.migration-allowlist` for false positives (file-line suppressions with justification comment)
-**Evidence**: test fixture with 5 secret types + 1 allowlisted false positive → audit catches 5, allows 1; test fixture with pure prose → exit=0
+## SCEN-123: [DROPPED 2026-04-25] no migration audit tool
+No migration → no audit. If users want to scan their own specs for secrets, that's a generic concern outside Phase 10 scope.
 
-## SCEN-124: gitignore nested-override docs with verification command
-**Given**: user has `.ralph/` ignored globally AND wants to track `.ralph/specs/`
-**When**: user reads `docs/migration-to-phase10.md`
-**Then**: doc explicitly shows `!/.ralph/specs/` + `!/.ralph/specs/**` AND warns about nested `.gitignore` that can re-ignore descendants AND provides verification command `git check-ignore -v .ralph/specs/x/scenarios/x.scenarios.md` with expected "file NOT ignored" output AND provides `session-start.py CRITICAL_GITIGNORE_RULES` update reference
-**Evidence**: migration doc grep confirms all 4 components present
+## SCEN-124: [DROPPED 2026-04-25] no migration documentation
+No migration → no migration doc. The new layout is documented in skill SKILL.md files (Phase 10.4 scope) and in CHANGELOG (Phase 10.7 scope).
 
 ## SCEN-125: multiple specs with same scenario basename coexist (no false rejection)
 **Given**: legitimate specs `auth/scenarios/auth.scenarios.md` AND `auth-redesign/scenarios/auth.scenarios.md` (both named `auth` within their own spec scope)

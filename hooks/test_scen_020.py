@@ -120,7 +120,7 @@ class TestScen020ParentBranchScenarioEnforcement(unittest.TestCase):
 
     def _write_scenario_payload(self, cwd, filename):
         """Build a PreToolUse payload for authoring a new scenario file."""
-        rel = f".claude/scenarios/{filename}"
+        rel = f".ralph/specs/scen020/scenarios/{filename}"
         abs_path = str(Path(cwd) / rel)
         return {
             "cwd": str(cwd),
@@ -179,7 +179,7 @@ class TestScen020ParentBranchScenarioEnforcement(unittest.TestCase):
         Proves 9.1 does not over-reach onto tracked files.
         """
         env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-        scenario_rel = ".claude/scenarios/shared.scenarios.md"
+        scenario_rel = ".ralph/specs/scen020/scenarios/shared.scenarios.md"
         scenario_abs = self.main_clone / scenario_rel
         scenario_abs.parent.mkdir(parents=True, exist_ok=True)
         scenario_abs.write_text(_VALID_SCENARIO, encoding="utf-8")
@@ -240,7 +240,7 @@ class TestScen020ParentBranchScenarioEnforcement(unittest.TestCase):
         )
 
     def test_worktree_non_scenario_file_unaffected(self):
-        """Guard targets only .claude/scenarios/ — other files in worktree must pass."""
+        """Guard targets only spec-folder scenarios — other files in worktree must pass."""
         other_path = self.worktree / "src" / "feature.py"
         payload = {
             "cwd": str(self.worktree),

@@ -121,8 +121,12 @@ class TestSessionScopedPaths(unittest.TestCase):
     def test_coverage_path_backward_compat(self):
         self.assertEqual(str(coverage_path(self.cwd)), str(coverage_path(self.cwd, None)))
 
-    def test_skill_path_differs_with_sid(self):
-        self.assertNotEqual(
+    def test_skill_path_is_project_scoped_ignoring_sid(self):
+        """Phase 10 / B1 fix: skill state propagates leader→teammate via the
+        shared cwd, so the path MUST NOT vary by sid. Worktree isolation
+        still holds because project_hash(cwd) differs across distinct cwds.
+        """
+        self.assertEqual(
             str(skill_invoked_path(self.cwd, "sop-code-assist", "abc")),
             str(skill_invoked_path(self.cwd, "sop-code-assist", "def")),
         )

@@ -47,7 +47,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _sdd_state import extract_session_id, project_hash, skill_invoked_path, _write_json_atomic
-from _sdd_scenarios import SCENARIO_DIR, SCENARIO_FILE_SUFFIX
+from _sdd_scenarios import SCENARIO_FILE_SUFFIX
+
+# Phase 10 fixture path: scenarios live under spec folders.
+SCENARIO_DIR = ".ralph/specs/real-world/scenarios"
 from _subprocess_harness import cleanup_all_state, invoke_hook
 
 
@@ -231,7 +234,7 @@ class TestRealWorldRewardHackingAttempt(unittest.TestCase):
                 "cwd": self.tmpdir,
                 "tool_name": "Bash",
                 "tool_input": {
-                    "command": "sed -i 's/foo/bar/' \".claude/scenarios/auth.scenarios.md\"",
+                    "command": f"sed -i 's/foo/bar/' \"{SCENARIO_DIR}/auth.scenarios.md\"",
                 },
             },
             env={"_SDD_DISABLE_SCENARIOS": ""},

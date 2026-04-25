@@ -21,7 +21,7 @@ from _subprocess_harness import HOOKS_DIR, cleanup_all_state, invoke_hook
 _GIT_AVAILABLE = shutil.which("git") is not None
 pytestmark = pytest.mark.skipif(not _GIT_AVAILABLE, reason="git required for e2e tests")
 
-_SCENARIO_REL = ".claude/scenarios/auth.scenarios.md"
+_SCENARIO_REL = ".ralph/specs/lifecycle/scenarios/auth.scenarios.md"
 _METRICS_REL = Path(".claude") / "metrics.jsonl"
 
 
@@ -268,7 +268,11 @@ class TestPhase7EndToEndFlow(_Phase7Base):
         self.assertIn("scenario write-once", stderr)
 
         head_sha = _git_rev_parse_head(cwd)
-        marker = Path(cwd) / ".claude" / "scenarios" / ".amends" / f"auth-{head_sha}.marker"
+        # Phase 10: amend markers are sibling-scoped to the scenario file.
+        marker = (
+            Path(cwd) / Path(_SCENARIO_REL).parent
+            / ".amends" / f"auth-{head_sha}.marker"
+        )
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("approved\n", encoding="utf-8")
         _record_skill_invoked(cwd, "sop-reviewer", sid)
@@ -392,7 +396,7 @@ class TestPhase7EndToEndFlow(_Phase7Base):
                 "tool_name": "Bash",
                 "tool_input": {
                     "command": (
-                        "cat > .claude/scenarios/auth.scenarios.md <<'EOF'\n"
+                        "cat > .ralph/specs/lifecycle/scenarios/auth.scenarios.md <<'EOF'\n"
                         "text\n"
                         "EOF\n"
                     ),

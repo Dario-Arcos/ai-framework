@@ -1,10 +1,15 @@
 """Scenario artifact parser and validator.
 
-Scenarios are observable behavior contracts stored in `.claude/scenarios/`.
-They are write-once after first commit: modifications require an explicit
-amend marker authored by the sop-reviewer skill, scoped to the current
-HEAD commit. This raises the cost of reward-hacking via scenario-text
-mutation — the model cannot silently weaken a scenario to match output.
+Scenarios are observable behavior contracts co-located with their spec at
+`.ralph/specs/{goal}/scenarios/*.scenarios.md` (Ralph mode) or
+`docs/specs/{name}/scenarios/*.scenarios.md` (non-Ralph). Discovery roots
+are configurable via `_sdd_config.SCENARIO_DISCOVERY_ROOTS`.
+
+Scenarios are write-once after first commit: modifications require an
+explicit amend marker authored by the sop-reviewer skill, scoped to the
+current HEAD commit AND the scenario's own parent directory. This raises
+the cost of reward-hacking via scenario-text mutation — the model cannot
+silently weaken a scenario to match output.
 
 Shape (per SPEC 3.3):
 
@@ -35,7 +40,6 @@ from pathlib import Path
 from _sdd_state import _write_json_atomic, project_hash, read_skill_invoked
 
 
-SCENARIO_DIR = ".claude/scenarios"
 SCENARIO_FILE_SUFFIX = ".scenarios.md"
 AMEND_SUBDIR = ".amends"
 
@@ -49,23 +53,48 @@ _GIT_SUBPROCESS_TIMEOUT = 5  # seconds
 
 
 # ─────────────────────────────────────────────────────────────────
-# Discovery
+# Discovery (Phase 10 — glob across configured spec roots)
 # ─────────────────────────────────────────────────────────────────
 
-def scenario_dir(cwd):
-    """Path to the scenarios directory for a project."""
-    return Path(cwd) / SCENARIO_DIR
-
-
 def scenario_files(cwd):
-    """All scenario files in the project (non-recursive, *.scenarios.md)."""
-    d = scenario_dir(cwd)
-    if not d.is_dir():
-        return []
-    return sorted(
-        p for p in d.glob("*" + SCENARIO_FILE_SUFFIX)
-        if p.is_file()
-    )
+    """All scenario files reachable from configured discovery roots.
+
+    Globs `{root}/**/scenarios/*.scenarios.md` for each root in
+    `_sdd_config.get_scenario_discovery_roots(cwd)`. Returns a sorted
+    list of absolute paths.
+
+    Symlinks are skipped at every step (root, intermediate dir, file)
+    to keep the write-once contract honest — a symlinked scenario would
+    let edits land on a target outside the tracked baseline.
+    """
+    from _sdd_config import get_scenario_discovery_roots, SCENARIO_FILE_PATTERN
+
+    seen = set()
+    results = []
+    base = Path(cwd)
+    for root in get_scenario_discovery_roots(cwd):
+        root_dir = base / root
+        if root_dir.is_symlink() or not root_dir.is_dir():
+            continue
+        for match in root_dir.glob(SCENARIO_FILE_PATTERN):
+            if match.is_symlink() or not match.is_file():
+                continue
+            # Reject if any ancestor between root_dir and match is a symlink
+            ancestor = match.parent
+            tainted = False
+            while ancestor != root_dir and ancestor != ancestor.parent:
+                if ancestor.is_symlink():
+                    tainted = True
+                    break
+                ancestor = ancestor.parent
+            if tainted:
+                continue
+            abs_path = match.resolve(strict=False)
+            if abs_path in seen:
+                continue
+            seen.add(abs_path)
+            results.append(abs_path)
+    return sorted(results)
 
 
 def _validated_scenarios_path(cwd, sid):
@@ -382,54 +411,40 @@ def current_head_sha(cwd):
 
 
 # ─────────────────────────────────────────────────────────────────
-# Safe path resolution (path traversal guard)
-# ─────────────────────────────────────────────────────────────────
-
-def safe_scenario_path(cwd, name):
-    """Resolve a scenario name to a Path inside scenario_dir(cwd).
-
-    Returns the resolved Path on success, or None when:
-      * name is empty or fails TASK_ID_RE (allows `A-Za-z0-9_-` only)
-      * The resolved path escapes scenario_dir(cwd) (traversal attempt)
-    """
-    if not name or not TASK_ID_RE.match(name):
-        return None
-    d = scenario_dir(cwd)
-    candidate = (d / f"{name}{SCENARIO_FILE_SUFFIX}").resolve(strict=False)
-    try:
-        d_resolved = d.resolve(strict=False)
-    except OSError:
-        return None
-    try:
-        candidate.relative_to(d_resolved)
-    except ValueError:
-        return None
-    return candidate
-
-
-# ─────────────────────────────────────────────────────────────────
 # Amend-marker protocol (sop-reviewer attestation)
+#
+# Markers live as siblings of the scenario they amend:
+#   {scenario_parent}/.amends/{stem}-{HEAD_SHA}.marker
+# e.g. `.ralph/specs/auth/scenarios/.amends/auth-abc1234.marker`.
+# Co-locating the marker with the scenario keeps amend authority
+# scoped to the spec that owns the contract — a marker in one spec
+# cannot authorize edits in another.
 # ─────────────────────────────────────────────────────────────────
 
-def amend_marker_dir(cwd):
-    """Path to `.claude/scenarios/.amends/`."""
-    return scenario_dir(cwd) / AMEND_SUBDIR
+def amend_marker_dir(cwd, rel_scenario_path):
+    """Strict-sibling amend directory for a scenario file.
+
+    `{scenario_parent}/.amends/` where parent is the scenario's own
+    directory. A marker under any other directory is not honored.
+    """
+    return Path(cwd) / Path(rel_scenario_path).parent / AMEND_SUBDIR
 
 
 def check_amend_marker(cwd, rel_scenario_path, sid=None):
     """Return True iff a valid amend marker exists for this scenario file.
 
     A valid marker:
-      * Lives under `.claude/scenarios/.amends/{stem}-{sha}.marker`
+      * Lives under `{scenario_parent}/.amends/{stem}-{sha}.marker`
       * `stem` matches the scenario file's basename (before `.scenarios.md`)
       * `sha` is a prefix of the current HEAD commit SHA
       * When `sid` is provided: sop-reviewer was invoked in that session
+      * Marker and marker dir are regular files/dirs (no symlinks)
 
     A new commit invalidates all prior markers (SHA mismatch). This
     enforces the "amend must be justified per-commit" invariant.
     """
-    marker_dir = amend_marker_dir(cwd)
-    if not marker_dir.is_dir():
+    marker_dir = amend_marker_dir(cwd, rel_scenario_path)
+    if marker_dir.is_symlink() or not marker_dir.is_dir():
         return False
 
     rel_path = Path(rel_scenario_path)
@@ -447,6 +462,8 @@ def check_amend_marker(cwd, rel_scenario_path, sid=None):
         return False
 
     for marker in marker_dir.glob(f"{stem}-*.marker"):
+        if marker.is_symlink() or not marker.is_file():
+            continue
         m = _AMEND_MARKER_RE.match(marker.name)
         if not m:
             continue

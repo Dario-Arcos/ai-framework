@@ -94,7 +94,7 @@ class TestScen011PreEditSimulation(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen011-")
-        self.rel = f"{S.SCENARIO_DIR}/login{S.SCENARIO_FILE_SUFFIX}"
+        self.rel = f".ralph/specs/scen011/scenarios/login{S.SCENARIO_FILE_SUFFIX}"
         _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
         self.scenario_path = Path(self.tmpdir) / self.rel
 

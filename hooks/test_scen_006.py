@@ -40,6 +40,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _sdd_scenarios as S
 import _sdd_state as State
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR_REL = ".ralph/specs/scen006/scenarios"
+
 
 # ─────────────────────────────────────────────────────────────────
 # Fixtures — pattern reused from test_sdd_scenarios.py / test_scen_003.py
@@ -115,7 +118,7 @@ class TestScen006(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write_scenario(self):
-        d = Path(self.tmpdir) / S.SCENARIO_DIR
+        d = Path(self.tmpdir) / _SCENARIO_DIR_REL
         d.mkdir(parents=True, exist_ok=True)
         (d / f"login{S.SCENARIO_FILE_SUFFIX}").write_text(
             _VALID_FILE, encoding="utf-8",
@@ -185,11 +188,11 @@ class TestScen006(unittest.TestCase):
     # ─────────────────────────────────────────────────────────
 
     def test_taskupdate_completed_without_scenarios_allows(self):
-        """No `.claude/scenarios/` dir → backward-compat passthrough (exit 0)."""
+        """No spec-folder scenarios → backward-compat passthrough (exit 0)."""
         # Explicitly assert the directory is absent so the fixture intent
         # survives future setUp edits.
         self.assertFalse(
-            (Path(self.tmpdir) / S.SCENARIO_DIR).exists(),
+            (Path(self.tmpdir) / _SCENARIO_DIR_REL).exists(),
             "precondition: scenarios dir must not exist for backward-compat path",
         )
 

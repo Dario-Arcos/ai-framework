@@ -77,7 +77,7 @@ class TestScen004(unittest.TestCase):
             {"session_id": self.raw_sid}
         )
         # Scenarios dir + one valid file (shared across happy + missing-verification).
-        self._scen_dir = Path(self.tmpdir) / _sdd_scenarios.SCENARIO_DIR
+        self._scen_dir = Path(self.tmpdir) / ".ralph/specs/scen004/scenarios"
         self._scen_dir.mkdir(parents=True)
         (self._scen_dir / f"login{_sdd_scenarios.SCENARIO_FILE_SUFFIX}").write_text(
             _VALID_SCENARIO_BODY, encoding="utf-8"

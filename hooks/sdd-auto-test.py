@@ -189,10 +189,18 @@ def main():
     tool_input = input_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
 
-    # Skill tracking: record sop-code-assist invocations
+    # Skill tracking: record skill invocations the SDD gates depend on.
+    # Strip the `<plugin>:` namespace prefix so namespaced calls
+    # (e.g. `ai-framework:verification-before-completion`) match the
+    # canonical allowlist keys.
     if tool_name == "Skill":
-        skill_name = tool_input.get("skill", "")
-        if skill_name in ("sop-code-assist", "sop-reviewer"):
+        raw_skill = tool_input.get("skill", "")
+        skill_name = raw_skill.split(":", 1)[-1] if ":" in raw_skill else raw_skill
+        if skill_name in (
+            "sop-code-assist",
+            "sop-reviewer",
+            "verification-before-completion",
+        ):
             write_skill_invoked(cwd, skill_name, sid)
         sys.exit(0)
 

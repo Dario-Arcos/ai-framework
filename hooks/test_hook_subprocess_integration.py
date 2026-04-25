@@ -31,7 +31,7 @@ created_at: 2026-04-16T10:00:00Z
 **Evidence**: HTTP response body, cookies set
 """
 
-_SCENARIO_REL = ".claude/scenarios/login.scenarios.md"
+_SCENARIO_REL = ".ralph/specs/hook-subprocess/scenarios/login.scenarios.md"
 _METRICS_REL = Path(".claude") / "metrics.jsonl"
 
 
@@ -242,7 +242,7 @@ class TestPhase7CategoryPrefixes(unittest.TestCase):
             "cwd": self.tmpdir,
             "tool_name": "Bash",
             "tool_input": {
-                "command": "cat > .claude/scenarios/foo.scenarios.md <<'EOF'\ntext\nEOF\n",
+                "command": "cat > .ralph/specs/hook-subprocess/scenarios/foo.scenarios.md <<'EOF'\ntext\nEOF\n",
             },
         })
         self.assertEqual(rc, 2)

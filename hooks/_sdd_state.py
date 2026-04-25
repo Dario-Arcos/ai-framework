@@ -652,31 +652,62 @@ def can_trust_state(state, cwd, sid):
 # SKILL INVOCATION STATE — tracks sop-code-assist invocations
 # ─────────────────────────────────────────────────────────────────
 
+_SKILL_TTL_SECONDS = 30 * 60  # 30 min — leader→teammate inheritance window
+
+
+def _normalize_skill_name(skill_name):
+    """Strip plugin namespace prefix so allowlist + state keys are canonical.
+
+    Skill invocations arrive as either unqualified (`verification-before-completion`)
+    or namespaced (`ai-framework:verification-before-completion`). The state
+    file and allowlist key on the unqualified form.
+    """
+    if not skill_name:
+        return skill_name
+    return skill_name.split(":", 1)[-1] if ":" in skill_name else skill_name
+
+
 def skill_invoked_path(cwd, skill_name="sop-code-assist", sid=None):
-    """Path to SDD skill invocation state file (per-skill). Session-scoped when sid provided."""
-    suffix = f"-{sid}" if sid else ""
-    return _tmp(f"sdd-skill-{skill_name}-{project_hash(cwd)}{suffix}.json")
+    """Path to SDD skill invocation state file (per-skill, project-scoped).
+
+    Phase 10 / B1 fix: state is project-scoped (keyed on cwd via project_hash),
+    NOT per-session. This is the propagation channel for leader→teammate
+    skill inheritance: teammates spawned via `Task(team_name=…)` share the
+    leader's cwd, so a skill invoked by the leader is visible to teammates
+    within the TTL window.
+
+    The `sid` parameter is accepted for caller compatibility but ignored
+    in the path computation. Worktree isolation still holds because
+    `project_hash(cwd)` differs across distinct working trees.
+    """
+    canonical = _normalize_skill_name(skill_name)
+    return _tmp(f"sdd-skill-{canonical}-{project_hash(cwd)}.json")
 
 
 def write_skill_invoked(cwd, skill_name, sid=None):
-    """Record that an SDD skill was invoked."""
+    """Record that an SDD skill was invoked. Project-scoped (no sid)."""
+    canonical = _normalize_skill_name(skill_name)
     data = {
-        "skill": skill_name,
+        "skill": canonical,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    _write_json_atomic(skill_invoked_path(cwd, skill_name, sid), data, prefix="sdd-skill-")
+    _write_json_atomic(skill_invoked_path(cwd, canonical), data, prefix="sdd-skill-")
 
 
-def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=14400, sid=None):
+def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=_SKILL_TTL_SECONDS, sid=None):
     """Read skill invocation state. Returns dict or None.
 
+    Default TTL is 30 minutes — the leader→teammate inheritance window.
+    Beyond this, the leader must re-invoke the skill before spawning
+    new teammates.
+
     Args:
-        max_age_seconds: Ignore state older than this (default 14400s = 4h).
-            Prevents cross-session skill state inheritance between teammates.
-        sid: Session ID hash for teammate isolation.
+        max_age_seconds: Ignore state older than this (default 1800s).
+        sid: Accepted for caller compatibility, ignored in path computation.
     """
+    canonical = _normalize_skill_name(skill_name)
     return _read_json_with_ttl(
-        skill_invoked_path(cwd, skill_name, sid), max_age_seconds, use_flock=True
+        skill_invoked_path(cwd, canonical), max_age_seconds, use_flock=True
     )
 
 

@@ -138,10 +138,11 @@ class TestScen003(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="scen-003-")
-        self.rel = f"{S.SCENARIO_DIR}/login{S.SCENARIO_FILE_SUFFIX}"
+        self.rel = ".ralph/specs/scen003/scenarios/login.scenarios.md"
         self.scenario_path = Path(self.tmpdir) / self.rel
         self.sha1 = _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
-        self.markers_dir = S.amend_marker_dir(self.tmpdir)
+        # Phase 10: amend markers are sibling-scoped to the scenario file.
+        self.markers_dir = S.amend_marker_dir(self.tmpdir, self.rel)
         self.markers_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):

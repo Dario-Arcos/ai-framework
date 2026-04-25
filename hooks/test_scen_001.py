@@ -37,6 +37,9 @@ except Exception as exc:  # pragma: no cover - defensive
 
 import _sdd_scenarios as S  # noqa: E402
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR = ".ralph/specs/scen001/scenarios"
+
 
 _VALID_FILE = """\
 ---
@@ -100,7 +103,7 @@ class TestScen001(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="sdd-scen001-")
-        self.rel = f"{S.SCENARIO_DIR}/login{S.SCENARIO_FILE_SUFFIX}"
+        self.rel = f"{_SCENARIO_DIR}/login{S.SCENARIO_FILE_SUFFIX}"
         # Establish baseline: commit the valid scenario content.
         _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
         self.scenario_path = Path(self.tmpdir) / self.rel
@@ -181,7 +184,7 @@ class TestScen001SymlinkHardening(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="scen001-sym-")
-        self.rel = ".claude/scenarios/login.scenarios.md"
+        self.rel = f"{_SCENARIO_DIR}/login{S.SCENARIO_FILE_SUFFIX}"
         _git_init_with_commit(self.tmpdir, self.rel, _VALID_FILE)
 
     def tearDown(self):

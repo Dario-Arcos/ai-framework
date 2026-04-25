@@ -31,10 +31,11 @@ from _sdd_detect import (
     read_coverage, read_skill_invoked, read_state, has_test_on_disk,
 )
 from _sdd_scenarios import (
-    SCENARIO_DIR, SCENARIO_FILE_SUFFIX,
+    SCENARIO_FILE_SUFFIX,
     check_amend_marker, current_file_hash, has_pending_scenarios,
     scenario_baseline_hash, scenario_files,
 )
+from _sdd_config import get_scenario_discovery_roots
 
 
 _BYPASS_ENV = "_SDD_DISABLE_SCENARIOS"
@@ -129,7 +130,7 @@ _BASH_SCENARIO_WRITE_RE = re.compile(
     r"|echo\s+[^|]*>"                 # echo > / >>
     r"|printf\s+[^|]*>"               # printf >
     r"|dd\s+[^|]*of="                 # dd of=
-    r"|>\s*[^&|;]*\.claude/scenarios/"  # any redirect that lands here
+    r"|>\s*[^&|;]*/scenarios/[^/\s&|;]*\.scenarios\.md"  # any redirect to a scenario file
     r")"
 )
 
@@ -152,15 +153,21 @@ def _strip_quoted(command):
     return _QUOTED_LITERAL_RE.sub(lambda m: " " * len(m.group(0)), command)
 
 
-def _bash_writes_scenarios(command):
-    """True iff the Bash command writes into .claude/scenarios/.
+def _bash_writes_scenarios(command, cwd):
+    """True iff the Bash command writes into a scenario file.
 
-    Deliberately does NOT strip quoted literals: a path quoted as
-    `"`.claude/scenarios/x`"` is still a legitimate write target.
-    Quote-stripping applies only to git-commit detection, where the
-    concern is avoiding false positives from `echo "git commit"`.
+    Detection: the command mentions any configured discovery root AND
+    invokes a write-verb against a `.scenarios.md` file. Read-only
+    commands (cat, diff, etc.) are not matched.
+
+    Deliberately does NOT strip quoted literals: a quoted scenario
+    path is still a legitimate write target. Quote-stripping is
+    reserved for git-commit detection where false positives matter.
     """
-    if not command or SCENARIO_DIR not in command:
+    if not command:
+        return False
+    roots = get_scenario_discovery_roots(cwd)
+    if not any(root in command for root in roots):
         return False
     return bool(_BASH_SCENARIO_WRITE_RE.search(command))
 
@@ -239,17 +246,16 @@ def _is_scenario_tracked(cwd, rel):
 
 
 def _rel_scenario_path(file_path, cwd):
-    """Return file_path relative to cwd if it lies under scenarios dir.
+    """Return file_path relative to cwd if it is a scenario file.
 
-    None if the path is not a scenario file or not under cwd.
+    A scenario file lives under one of the configured discovery roots
+    AND has a parent directory named `scenarios` AND ends in
+    `.scenarios.md`. None otherwise.
 
     Normalises by resolving the PARENT directory only (canonicalises
     platform quirks like macOS /var → /private/var), then appends the
-    filename verbatim. This preserves symlink-at-target detection: a
-    symlinked scenario file is still recognised as "under scenarios/"
-    so the caller's `is_symlink()` guard can fire. Fully resolving
-    would instead follow the symlink out of the scenarios tree and
-    silently skip the guard.
+    filename verbatim. Preserves symlink-at-target detection so the
+    caller's `is_symlink()` guard can fire on symlinked scenarios.
     """
     if not file_path:
         return None
@@ -266,12 +272,15 @@ def _rel_scenario_path(file_path, cwd):
         rel = p_abs.relative_to(base_abs)
     except ValueError:
         return None
-    parts = rel.parts
-    if len(parts) < 3 or parts[0] != ".claude" or parts[1] != "scenarios":
-        return None
     if not p_abs.name.endswith(SCENARIO_FILE_SUFFIX):
         return None
-    return str(rel)
+    if p_abs.parent.name != "scenarios":
+        return None
+    rel_str = rel.as_posix()
+    for root in get_scenario_discovery_roots(cwd):
+        if rel_str.startswith(root.rstrip("/") + "/"):
+            return str(rel)
+    return None
 
 
 def _malformed_scenario_edit_reason(tool_name, tool_input, disk_bytes):
@@ -608,7 +617,7 @@ def main():
     # commands (cat, diff, etc.) are not matched.
     if not bypass_active and tool_name == "Bash":
         command = tool_input.get("command", "")
-        if _bash_writes_scenarios(command):
+        if _bash_writes_scenarios(command, cwd):
             _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
             _fail(
                 "Bash command modifies scenario files\n\n"

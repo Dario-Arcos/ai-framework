@@ -2,11 +2,11 @@
 """SCEN-002 — PreToolUse must deny Bash modifications of scenario files.
 
 Fail-today design: the guard does not yet detect Bash writes to
-`.claude/scenarios/`. These tests encode the target behaviour from
+`.ralph/specs/scen002/scenarios/`. These tests encode the target behaviour from
 SPEC Section 3.4 Point 1 and SPEC Section 5 SCEN-002. They fail now
 (guard exits 0) and will pass once the guard implements the regex-
 based block on sed/cat>/tee/cp/mv/rm/echo>/printf>/dd of= against
-paths under `.claude/scenarios/`.
+paths under `.ralph/specs/scen002/scenarios/`.
 """
 import importlib
 import io
@@ -38,9 +38,12 @@ name: login
 """
 
 
+_SCENARIO_DIR = ".ralph/specs/scen002/scenarios"
+
+
 def _seed_scenario_file(cwd):
-    """Create `.claude/scenarios/login.scenarios.md` under cwd."""
-    d = Path(cwd) / S.SCENARIO_DIR
+    """Create the scenario file under the spec-folder layout."""
+    d = Path(cwd) / _SCENARIO_DIR
     d.mkdir(parents=True, exist_ok=True)
     p = d / f"login{S.SCENARIO_FILE_SUFFIX}"
     p.write_text(_MINIMAL_SCENARIO, encoding="utf-8")
@@ -71,7 +74,7 @@ def _invoke_guard(cwd, command):
 # ─────────────────────────────────────────────────────────────────
 
 class TestScen002(unittest.TestCase):
-    """PreToolUse must DENY Bash commands that write to .claude/scenarios/."""
+    """PreToolUse must DENY Bash commands that write to .ralph/specs/scen002/scenarios/."""
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="scen-002-")
@@ -81,8 +84,8 @@ class TestScen002(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_bash_write_commands_denied(self):
-        """Every Bash write variant against .claude/scenarios/ must exit 2."""
-        target = ".claude/scenarios/login.scenarios.md"
+        """Every Bash write variant against .ralph/specs/scen002/scenarios/ must exit 2."""
+        target = ".ralph/specs/scen002/scenarios/login.scenarios.md"
         commands = [
             f"sed -i 's/foo/bar/' {target}",
             f"cat > {target} << EOF\nnew content\nEOF",
@@ -104,7 +107,7 @@ class TestScen002(unittest.TestCase):
 
     def test_denied_message_mentions_scenario_and_bash(self):
         """Stderr must explain the denial with scenario/Bash/modification vocab."""
-        cmd = "sed -i 's/x/y/' .claude/scenarios/login.scenarios.md"
+        cmd = "sed -i 's/x/y/' .ralph/specs/scen002/scenarios/login.scenarios.md"
         code, stderr = _invoke_guard(self.tmpdir, cmd)
         self.assertEqual(code, 2, "must deny sed -i against scenario file")
         lowered = stderr.lower()
@@ -117,10 +120,10 @@ class TestScen002(unittest.TestCase):
     def test_read_only_bash_commands_allowed(self):
         """Bash reads against scenario files must NOT be blocked (exit 0)."""
         read_only = [
-            "cat .claude/scenarios/login.scenarios.md",
-            "diff a.md .claude/scenarios/login.scenarios.md",
-            "grep SCEN .claude/scenarios/login.scenarios.md",
-            "ls .claude/scenarios/",
+            "cat .ralph/specs/scen002/scenarios/login.scenarios.md",
+            "diff a.md .ralph/specs/scen002/scenarios/login.scenarios.md",
+            "grep SCEN .ralph/specs/scen002/scenarios/login.scenarios.md",
+            "ls .ralph/specs/scen002/scenarios/",
         ]
         for cmd in read_only:
             with self.subTest(command=cmd):
@@ -149,9 +152,9 @@ class TestScen002Hardening(unittest.TestCase):
     def test_ln_blocked(self):
         """Hardlink/symlink into scenarios dir is blocked (Codex H1 root #2)."""
         variants = [
-            "ln existing.md .claude/scenarios/login.scenarios.md",
-            "ln -s /tmp/fake.md .claude/scenarios/login.scenarios.md",
-            "ln -sf /tmp/fake.md .claude/scenarios/login.scenarios.md",
+            "ln existing.md .ralph/specs/scen002/scenarios/login.scenarios.md",
+            "ln -s /tmp/fake.md .ralph/specs/scen002/scenarios/login.scenarios.md",
+            "ln -sf /tmp/fake.md .ralph/specs/scen002/scenarios/login.scenarios.md",
         ]
         for cmd in variants:
             with self.subTest(command=cmd):
@@ -165,11 +168,11 @@ class TestScen002Hardening(unittest.TestCase):
         write-verb regex must run against the ORIGINAL command.
         """
         variants = [
-            'sed -i "s/foo/bar/" ".claude/scenarios/login.scenarios.md"',
-            "sed -i 's/foo/bar/' '.claude/scenarios/login.scenarios.md'",
-            'cp /tmp/other ".claude/scenarios/login.scenarios.md"',
-            'echo "payload" > ".claude/scenarios/login.scenarios.md"',
-            'cat "/tmp/source" > ".claude/scenarios/login.scenarios.md"',
+            'sed -i "s/foo/bar/" ".ralph/specs/scen002/scenarios/login.scenarios.md"',
+            "sed -i 's/foo/bar/' '.ralph/specs/scen002/scenarios/login.scenarios.md'",
+            'cp /tmp/other ".ralph/specs/scen002/scenarios/login.scenarios.md"',
+            'echo "payload" > ".ralph/specs/scen002/scenarios/login.scenarios.md"',
+            'cat "/tmp/source" > ".ralph/specs/scen002/scenarios/login.scenarios.md"',
         ]
         for cmd in variants:
             with self.subTest(command=cmd):

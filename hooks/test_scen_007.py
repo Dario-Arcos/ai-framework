@@ -31,6 +31,9 @@ sdd_test_guard = importlib.import_module("sdd-test-guard")
 import _sdd_scenarios as S
 import _sdd_state as State
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR_REL = ".ralph/specs/scen007/scenarios"
+
 
 # ─────────────────────────────────────────────────────────────────
 # Fixture — reused scenario shape from test_sdd_scenarios.py
@@ -55,8 +58,8 @@ SID = hashlib.md5(SESSION_ID_RAW.encode()).hexdigest()[:8]
 
 
 def _seed_scenarios(cwd):
-    """Create `.claude/scenarios/login.scenarios.md` under cwd."""
-    d = Path(cwd) / S.SCENARIO_DIR
+    """Create the spec-folder scenarios file under cwd."""
+    d = Path(cwd) / _SCENARIO_DIR_REL
     d.mkdir(parents=True, exist_ok=True)
     (d / f"login{S.SCENARIO_FILE_SUFFIX}").write_text(_VALID_FILE, encoding="utf-8")
 
@@ -177,10 +180,10 @@ class TestScen007(unittest.TestCase):
         )
 
     def test_no_scenarios_dir_allows_commit(self):
-        """No `.claude/scenarios/` → backward compat, exit 0."""
+        """No spec-folder scenarios → backward compat, exit 0."""
         # Deliberately skip _seed_scenarios — no scenarios dir exists.
         self.assertFalse(
-            (Path(self.tmpdir) / S.SCENARIO_DIR).exists(),
+            (Path(self.tmpdir) / _SCENARIO_DIR_REL).exists(),
             "precondition: scenarios directory must be absent",
         )
         code, _out, err = _invoke_guard(self.tmpdir, 'git commit -m "x"')

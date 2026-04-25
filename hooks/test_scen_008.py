@@ -30,6 +30,9 @@ task_completed = importlib.import_module("task-completed")
 import _sdd_scenarios
 import _sdd_state
 
+# Phase 10 fixture path: scenarios live under spec folders.
+_SCENARIO_DIR_REL = ".ralph/specs/scen008/scenarios"
+
 
 # ─────────────────────────────────────────────────────────────────
 # HELPERS
@@ -63,8 +66,8 @@ name: login-validation
 
 
 def _write_scenario(cwd, name, content):
-    """Create .claude/scenarios/<name>.scenarios.md under cwd."""
-    d = Path(cwd) / _sdd_scenarios.SCENARIO_DIR
+    """Create the spec-folder <name>.scenarios.md under cwd."""
+    d = Path(cwd) / _SCENARIO_DIR_REL
     d.mkdir(parents=True, exist_ok=True)
     p = d / f"{name}{_sdd_scenarios.SCENARIO_FILE_SUFFIX}"
     p.write_text(content, encoding="utf-8")
