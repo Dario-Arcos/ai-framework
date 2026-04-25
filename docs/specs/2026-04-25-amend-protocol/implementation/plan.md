@@ -15,8 +15,8 @@ Land the four-gate amend protocol with adversarial judge isolation, Format R esc
 
 ## Prerequisites
 
-**P1 — Phase 10 finishing must land first** (separate work track, not in this plan).
-The amend protocol's SKILL.md modifications (Steps 5-6 below) assume `scenario-driven-development` and `ralph-orchestrator` SKILL.md files already point to the new discovery roots (`.ralph/specs/{goal}/scenarios/`, `docs/specs/{name}/scenarios/`). If Phase 10 finishing has not landed when this plan begins, either (a) merge that work first, or (b) bundle the path-migration edits into Steps 5-6 of this plan with an explicit note in the commit.
+**P1 — Phase 10 finishing is BUNDLED into Steps 5-6** (CTO decision 2026-04-25).
+Phase 10 finishing covers: skills/scenario-driven-development/SKILL.md (4 refs to `.claude/scenarios/`), skills/ralph-orchestrator/SKILL.md (13 refs), skills/verification-before-completion/SKILL.md (2 refs), template/gitignore.template (un-ignore dead path + ignore live paths), and stale comments in session-start.py + sdd-test-guard.py error messages. None of this is committed at plan-execution start. Steps 5-6 of THIS plan absorb the path-migration edits alongside the amend-protocol additions, in the same files. Commit messages in Steps 5-6 must explicitly note "(bundles Phase 10 path migration)". Acceptance for Steps 5-6 expands to include `grep -rn "\.claude/scenarios" skills/ template/ hooks/` returns empty (excluding immutable historical contexts: CHANGELOG.md, docs/phase9-plan.md).
 
 **P2 — Test infrastructure**
 - `hooks/_subprocess_harness.py::invoke_hook` exists and supports `env=` parameter (verified 2026-04-25)
@@ -46,8 +46,10 @@ Lock decomposition before writing tasks. Each file has one clear responsibility;
 | `hooks/test_real_world_scenarios.py` | MODIFIED | Remove `TestRealWorldSettingsJsonEnvBypass` class and its settings.json env-block delivery comment block. |
 | `hooks/test_scen_020.py` | MODIFIED | Remove `test_worktree_bypass_env_honored` (lines 227-240) and the docstring claim at line 26 about bypass-env honored in both contexts. |
 | `hooks/session-start.py` | MODIFIED | Add cleanup logic for resolved amend proposals: scan `.ralph/specs/*/scenarios/amend-proposals/`, delete BOTH `<stem>.json` and `<stem>.resolved.json` only when (proposal mtime > 24h AND sibling `.resolved.json` exists). Idempotent; no error if directory missing. |
-| `skills/scenario-driven-development/SKILL.md` | MODIFIED | Document `amend_request` shape (5-field with structured `evidence_artifact`), pre-mortem format with good/bad examples, "what worries me" examples, STOP-after-2 protocol guidance. |
-| `skills/ralph-orchestrator/SKILL.md` | MODIFIED | New "Amend proposals" section explaining the leader's supervision loop reads `.ralph/specs/{goal}/amend-proposals/`. |
+| `skills/scenario-driven-development/SKILL.md` | MODIFIED | (a) Document `amend_request` shape (5-field with structured `evidence_artifact`), pre-mortem format with good/bad examples, "what worries me" examples, STOP-after-2 protocol guidance. (b) Phase 10 bundle: replace 4 `.claude/scenarios/` references with new discovery-root paths. |
+| `skills/ralph-orchestrator/SKILL.md` | MODIFIED | (a) New "Amend proposals" section explaining the leader's supervision loop reads `.ralph/specs/{goal}/amend-proposals/`. (b) Phase 10 bundle: replace 13 `.claude/scenarios/` references with new discovery-root paths. |
+| `skills/verification-before-completion/SKILL.md` | MODIFIED | Phase 10 bundle: replace 2 `.claude/scenarios/` references (lines 257, 260) with `scenario_files(cwd)` discovery-primitive guidance. No amend-protocol-specific changes. |
+| `template/gitignore.template` | MODIFIED | Phase 10 bundle: remove `!/.claude/scenarios/` (dead path), add `!/.ralph/specs/`, `!/.ralph/specs/**`, `!/docs/specs/`, `!/docs/specs/**` un-ignore rules. Closes SCEN-129 from phase10.scenarios.md (referenced but never implemented). |
 | `skills/ralph-orchestrator/scripts/PROMPT_implementer.md` | MODIFIED | Teammate STOP-after-2 protocol; how to write amend proposal; `blocked-pending-amend` task state. Mandatory `Skill(skill='ai-framework:verification-before-completion')` invocation before TaskUpdate(completed). |
 | `skills/ralph-orchestrator/scripts/PROMPT_reviewer.md` | MODIFIED | Same as implementer. |
 | `docs/migration-to-scenarios.md` | MODIFIED | Remove rollback step 3 ("Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`...", lines 48-60). Replace with three-sentence pointer to: amend protocol Format R for scenario divergence, `git commit --no-verify` for hotfix-without-validation, `git rm` for obsolete scenarios. |
@@ -55,7 +57,7 @@ Lock decomposition before writing tasks. Each file has one clear responsibility;
 | `docs/phase10-plan.md` | MODIFIED | Remove bypass recommendation at line 140 ("...or use `_SDD_DISABLE_SCENARIOS=1` env for probe-only operations"). The surrounding `.claude/scenarios/` pitfall block is also stale post-Phase-10; review and trim. |
 | `skills/mission-report/SKILL.md` | MODIFIED | Remove `scenarios_bypassed` mention in example aggregator output (line 71). New sessions emit zero such events. The aggregator script (`scripts/aggregate.py`) is left UNCHANGED for backward-compat with historical `metrics.jsonl` logs (Out of scope per spec). |
 
-**Total**: 6 NEW + 14 MODIFIED.
+**Total**: 6 NEW + 16 MODIFIED (14 amend-protocol + 2 Phase 10 bundle).
 
 **Out of scope** (per spec):
 - `CHANGELOG.md` — historical entry left as immutable record (Keep a Changelog convention)
@@ -111,8 +113,10 @@ Wire Gate 2 in `hooks/_amend_protocol.py`:
 
 ### Step 3 — Integrate amend protocol into sdd-test-guard (size: M)
 
+**Pre-Step empirical check (Gotcha #1 from CTO validation 2026-04-25)**: hook side reads `tool_input.amend_request` correctly when present (verified). UNKNOWN: whether Claude Code's Edit tool API preserves arbitrary fields in `tool_input` payload sent to PreToolUse hooks. **First action of Step 3**: invoke a no-op Edit on a sandbox file with `tool_input.amend_request={"diag":"probe"}` and inspect `.claude/metrics.jsonl` or hook stderr to confirm the field arrives. If CC strips unknown fields → pivot to disk transport: agent writes amend_request JSON to `.ralph/specs/{goal}/amend-proposals/inline-{sid}-{ts}.json` BEFORE invoking Edit; hook reads from that file at PreToolUse. Document the empirical result in commit message; no other change needed unless CC strips.
+
 Modify `hooks/sdd-test-guard.py`:
-- When scenario edit divergence detected (existing write-once guard logic), read `tool_input.amend_request`
+- When scenario edit divergence detected (existing write-once guard logic), read `tool_input.amend_request` (or fall back to disk transport per pivot above)
 - If present: call `_amend_protocol.evaluate_amend_request`, respect verdict (4/4 PASS → allow Edit + write amend marker; ANY FAIL → block + emit `amend_escalated` telemetry with Format R skeleton)
 - If absent: current behavior (block edit) — preserves backward-compat
 - Add 2-attempt counter: track `(sid, scenario_rel)` in session state; on attempt 3, block with stderr instructing amend proposal construction
@@ -155,17 +159,25 @@ Create `hooks/test_scen_a23_envvar_parity.py`:
 - SCEN-223: 4-case parametrized test passes (mode×hook parity).
 - Full pytest suite green: `pytest hooks/ -q` → no regressions.
 
-### Step 5 — Document amend protocol in skills (size: M)
+### Step 5 — Document amend protocol in skills + bundle Phase 10 path migration (size: M-L)
+
+**Bundles Phase 10 finishing** (per Prerequisite P1 / CTO decision): every skill file modified below ALSO has its remaining `.claude/scenarios/` references replaced with the new discovery-root paths (`.ralph/specs/{goal}/scenarios/` for Ralph mode, `docs/specs/{name}/scenarios/` for non-Ralph mode). One PR, two purposes, no scope mixing risk because all changes target the same files.
 
 Modify `skills/scenario-driven-development/SKILL.md`:
 - Add "Amend protocol" section documenting the 5-field `amend_request` shape
 - Pre-mortem format with good/bad examples (per design.md `## The pre-mortem` section)
 - "What worries me most" examples
 - Reference to amend-protocol-v2 spec for full context
+- **Phase 10 bundle**: replace 4 `.claude/scenarios/` references (lines 398, 407, 427, 429, 434 — verified) with new discovery-root paths
 
 Modify `skills/ralph-orchestrator/SKILL.md`:
 - New "Amend proposals" section: leader's supervision loop reads `.ralph/specs/{goal}/amend-proposals/` each tick
 - Document parallel-proposal first-write-wins via Gate 0 staleness
+- **Phase 10 bundle**: replace 13 `.claude/scenarios/` references (lines 62, 67, 68, 107, 110, 134, 139, 144, 145, 149, 155, 168, 432 — verified) with new discovery-root paths
+
+Modify `skills/verification-before-completion/SKILL.md` (added by Phase 10 bundle):
+- Replace 2 `.claude/scenarios/` references (lines 257, 260) with new discovery-root paths
+- Update example to use `scenario_files(cwd)` discovery primitive instead of hardcoded path
 
 Modify `skills/ralph-orchestrator/scripts/PROMPT_implementer.md`:
 - Teammate STOP-after-2 protocol with concrete steps
@@ -176,9 +188,15 @@ Modify `skills/ralph-orchestrator/scripts/PROMPT_implementer.md`:
 Modify `skills/ralph-orchestrator/scripts/PROMPT_reviewer.md`:
 - Same as implementer (parity)
 
+Modify `template/gitignore.template` (added by Phase 10 bundle):
+- Remove `!/.claude/scenarios/` un-ignore (dead path)
+- Add `!/.ralph/specs/`, `!/.ralph/specs/**`, `!/docs/specs/`, `!/docs/specs/**` un-ignore rules
+- Per design.md SCEN-129 reference (in phase10.scenarios.md but never satisfied in code)
+
 **Acceptance**:
 - SCEN-208: grep of PROMPT_implementer.md confirms STOP instruction text
 - SCEN-209: integration test simulates teammate hitting STOP; assert proposal file appears at correct path with five-field shape; assert `TaskUpdate(status="blocked-pending-amend")` was called; assert confession marker emitted
+- **Phase 10 bundle acceptance**: `grep -rn "\.claude/scenarios" skills/ template/ hooks/` returns ONLY references inside immutable historical contexts (CHANGELOG.md, docs/phase9-plan.md, mission-report/scripts/aggregate.py), zero in active production paths
 
 ### Step 6 — Implement Ralph leader supervision loop + cleanup (size: M)
 
