@@ -256,6 +256,54 @@ def get_coverage_report_path(cwd, default_path: str) -> str:
     return override
 
 
+# ─────────────────────────────────────────────────────────────────
+# PHASE 10 — SCENARIO DISCOVERY ROOTS
+#
+# Scenarios live alongside their spec folders, not in a flat
+# `.claude/scenarios/` directory. Default discovery roots cover both
+# the Ralph factory layout (`.ralph/specs/{goal}/scenarios/`) and the
+# generic docs layout (`docs/specs/{name}/scenarios/`). Projects with
+# non-standard spec locations override via `.claude/config.json`.
+#
+# Pattern matches files at `{root}/{spec}/scenarios/{name}.scenarios.md`
+# at any depth — `**` handles nested spec hierarchies (e.g. monorepos
+# with `docs/specs/auth/v2/scenarios/auth-v2.scenarios.md`).
+# ─────────────────────────────────────────────────────────────────
+DEFAULT_SCENARIO_DISCOVERY_ROOTS = (".ralph/specs", "docs/specs")
+SCENARIO_FILE_PATTERN = "**/scenarios/*.scenarios.md"
+
+
+def get_scenario_discovery_roots(cwd=None) -> tuple:
+    """Discovery roots for scenario files. Override via `.claude/config.json`:
+        {"SCENARIO_DISCOVERY_ROOTS": ["custom/specs"]}
+
+    Validation: list/tuple of non-empty relative path strings. Absolute
+    paths and `..` traversal entries fall back to defaults — discovery
+    must never escape the project root.
+
+    When cwd is None, returns defaults (called from contexts without
+    project scope).
+    """
+    if cwd is None:
+        return DEFAULT_SCENARIO_DISCOVERY_ROOTS
+    override = _load_project_config(cwd).get("SCENARIO_DISCOVERY_ROOTS")
+    if override is None:
+        return DEFAULT_SCENARIO_DISCOVERY_ROOTS
+    if not isinstance(override, (list, tuple)):
+        return DEFAULT_SCENARIO_DISCOVERY_ROOTS
+    valid = []
+    for root in override:
+        if not isinstance(root, str) or not root.strip():
+            continue
+        p = root.strip()
+        if p.startswith("/") or ".." in Path(p).parts:
+            continue
+        valid.append(p)
+    if not valid:
+        return DEFAULT_SCENARIO_DISCOVERY_ROOTS
+    return tuple(valid)
+
+
 def _clear_project_config_cache() -> None:
     """Reset ALL per-cwd caches that depend on project config.
 
