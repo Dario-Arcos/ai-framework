@@ -82,11 +82,16 @@ _CLASS_B_IDLE_WINDOW_SECONDS = 30
 # Substrings whose presence inside proposal payloads indicates the proposer
 # is trying to inject a synthetic judge prompt (SCEN-217). Kept as a tuple
 # so the check is a simple `any(s in haystack for s in _INJECTION_TOKENS)`.
+#
+# Scope (false-positive C2 / SCEN-310): only tokens that the Gate-2 judge
+# template actually substitutes are included here. `<premortem>` was a
+# false positive — Gate-2 never substitutes it (see
+# `_JUDGE_TEMPLATE_TOKENS` below) — and its presence in this list blocked
+# legitimate meta-scenarios that document the protocol itself.
 _INJECTION_TOKENS = (
     "<scenario_original>",
     "<unified_diff>",
     "<evidence_artifact_content>",
-    "<premortem>",
 )
 
 _EVIDENCE_LINE_RE = re.compile(r"^\*\*Evidence\*\*:", re.IGNORECASE)
@@ -845,7 +850,10 @@ def verify_proposal_received_at(cwd: Path, payload: dict) -> Optional[float]:
     nonce = payload.get("_received_at_nonce")
     provided = payload.get("_received_at_hmac")
     scenario_rel = payload.get("scenario_rel")
-    if not isinstance(received_at, (int, float)):
+    # bool is a subclass of int in Python, so plain `isinstance(x, (int, float))`
+    # accepts True/False. Exclude bool explicitly — it is never a legitimate
+    # timestamp type (false-positive C1 / SCEN-309).
+    if not isinstance(received_at, (int, float)) or isinstance(received_at, bool):
         return None
     if not isinstance(nonce, str) or not nonce:
         return None

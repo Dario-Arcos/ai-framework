@@ -149,13 +149,57 @@ def _run_tests_worker(cwd, command, sid=None):
 # FEEDBACK FORMATTING
 # ─────────────────────────────────────────────────────────────────
 
+_FAIL_INDICATORS = (
+    "failed",
+    "error",
+    "timed out",
+    "fail",
+    "errors",
+)
+
+
+def _summary_indicates_pure_pass(summary):
+    """Return True if `summary` is an unambiguous pure-pass string.
+
+    Pure-pass = at least one `\\d+ passed` count AND no fail/error/timeout
+    indicator. Used by `format_feedback` to repair a writer-side desync
+    where `passing=False` is paired with a pure-pass summary (false-positive
+    D1 / SCEN-311). A genuine failure summary like `13 passed, 1 failed`
+    is NOT pure-pass and the repair leaves it alone.
+    """
+    if not isinstance(summary, str):
+        return False
+    low = summary.lower()
+    if any(tok in low for tok in _FAIL_INDICATORS):
+        return False
+    # Require an explicit `\d+ passed` count to avoid matching empty strings
+    # or non-pytest/jest summaries.
+    import re as _re
+    return _re.search(r"\d+\s+passed", low) is not None
+
+
 def format_feedback(state):
-    """Format test state into a systemMessage string."""
+    """Format test state into a systemMessage string.
+
+    Contract (false-positive D1 / SCEN-311): the icon and the action tail
+    must be consistent with the summary. If `passing` and `summary`
+    contradict each other in the unambiguous direction (`passing=False`
+    + pure-pass summary), trust the summary and render `[PASS]`. The
+    inverse (`passing=True` + failure-bearing summary) is left alone:
+    silencing a real failure is worse than rendering an extra one.
+    """
     if not state:
         return None
 
     passing = state.get("passing", False)
     summary = state.get("summary", "unknown")
+    # Repair desync: pre-D1 the worker could pair `passing=False` with a
+    # pure-pass summary string (e.g., truncated raw output, post-summary
+    # collector error), producing the contradictory
+    # `[FAIL]: 13 passed — fix implementation`. Recompute when the
+    # summary is unambiguously pure-pass.
+    if not passing and _summary_indicates_pure_pass(summary):
+        passing = True
     icon = "[PASS]" if passing else "[FAIL]"
     msg = f"SDD Auto-Test {icon}: {summary}"
     if not passing:
