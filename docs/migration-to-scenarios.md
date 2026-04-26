@@ -41,23 +41,12 @@ This guide is for projects already using the plugin from before Phase 3, where s
 
 ## Rollback
 
-Use the narrowest rollback that solves the problem:
+Use the narrowest rollback that solves the problem (no env-var bypass — the back door was removed in amend-protocol Step 4 per the factory.ai holdout principle):
 
-1. Delete one scenario file to remove a single contract.
-2. Delete `.claude/scenarios/` to revert the project to fully backward-compatible pre-scenario behavior.
-3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`.
-   Configure it in the narrowest surface that fits the incident:
-   the current shell session (`export _SDD_DISABLE_SCENARIOS=1`), your shell
-   profile for a temporary local default, or the Claude Code
-   `settings.json` `env` block for a workspace-level override.
-   This bypass skips only scenario-specific guards in `sdd-test-guard.py`
-   and the `_enforce_scenario_gate` path in `task-completed.py`.
-   Critical-path warnings, review-file policy, SDD ordering, tautological-test
-   detection, assertion-weakening guards, and downstream test/coverage gates
-   continue to run unchanged.
-   Every hook invocation that sees the bypass appends a
-   `scenarios_bypassed` event to `.claude/metrics.jsonl`, so accidental or
-   long-lived deployment stays visible in telemetry.
+1. `git rm` a single scenario file under its discovery root (`.ralph/specs/{goal}/scenarios/` for Ralph mode, `docs/specs/{name}/scenarios/` for non-Ralph) to drop one contract from the holdout. Commit the removal.
+2. `git rm -r` the goal's `scenarios/` directory to revert the project to fully backward-compatible pre-scenario behavior for that goal.
+3. For genuine scenario divergence (the contract is wrong, not the code): construct an `amend_request` and route it through the four-gate amend protocol documented at `docs/specs/2026-04-25-amend-protocol/`. If any gate fails the hook surfaces a Format R escalation and a human disposes of the proposal — there is no single-key escape hatch.
+4. Hotfix-without-validation in an incident window: `git commit --no-verify`. The bypass is telemetry-logged; review it post-incident and either roll forward with a real validation or revert.
 
 ## FAQ
 

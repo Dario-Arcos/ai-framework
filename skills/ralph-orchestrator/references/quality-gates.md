@@ -333,8 +333,7 @@ Every matcher / event / schema / stdin shape used by this plugin is grounded in 
 | 7 | TeammateIdle stdin field `teammate_name` | `code.claude.com/docs/en/hooks.md` | UNCLEAR — docs show generic fields only. Hook uses `input_data.get("teammate_name", "unknown")` so it degrades gracefully |
 | 8 | Exit codes: 0 = allow, 2 = deny with stderr surfaced to agent | `code.claude.com/docs/en/hooks.md` | SUPPORTED |
 | 9 | `settings.json` top-level `env` block applies environment variables per session | `code.claude.com/docs/en/settings.md` | SUPPORTED |
-| 10 | `_SDD_DISABLE_SCENARIOS` env key (leading underscore) | `code.claude.com/docs/en/env-vars.md` | UNCLEAR — docs do not restrict key naming; treated as permitted |
-| 11 | Plugin manifest `.claude-plugin/plugin.json` — `name` required, `version` + `description` optional | `code.claude.com/docs/en/plugins-reference.md` | SUPPORTED |
+| 10 | Plugin manifest `.claude-plugin/plugin.json` — `name` required, `version` + `description` optional | `code.claude.com/docs/en/plugins-reference.md` | SUPPORTED |
 | 12 | Version format CalVer `YYYY.MINOR.MICRO` | `code.claude.com/docs/en/plugins-reference.md` | UNCLEAR — docs say "Semantic version" but format is free-text; CalVer accepted de facto |
 | 13 | SKILL.md YAML frontmatter keys `name`, `description` | `code.claude.com/docs/en/skills.md` | SUPPORTED |
 | 14 | `references/` subdirectory inside skills | `code.claude.com/docs/en/skills.md` | UNCLEAR — docs show `reference.md` single-file; directory is project-specific convention, harmless |

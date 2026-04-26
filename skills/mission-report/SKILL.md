@@ -68,8 +68,11 @@ The script prints the written file path on stdout.
 
 1. Read `.claude/metrics.jsonl` line by line; skip malformed JSON silently.
 2. Aggregate events into counters: task_completed, task_failed,
-   test_run_queued (+ fast_path_rung), scenarios_bypassed,
-   milestone_dogfood_needed.
+   test_run_queued (+ fast_path_rung), milestone_dogfood_needed.
+   The aggregator script under `scripts/aggregate.py` still reads
+   `scenarios_bypassed` for backward-compatibility with historical
+   metrics.jsonl logs; no new sessions emit it (the env-var bypass
+   was removed in amend-protocol Step 4).
 3. Render markdown with fixed sections. Empty metrics → "no events"
    note (does not crash).
 4. Write to the mode-appropriate path.
