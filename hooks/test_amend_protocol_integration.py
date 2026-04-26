@@ -479,23 +479,30 @@ def test_scen_219_counter_increments_across_hook_invocations(repo_modes):
         _cleanup_attempts_file(cwd, sid, scen_rel)
 
 
-def test_scen_219_hook_cannot_reset_counter_without_judge(repo):
-    """SCEN-219 architectural reality: hook judge_callable is always None.
+def test_scen_219_rejected_amend_respects_stop_ceiling(repo):
+    """SCEN-219 + Fix 5A: rejected amend_request also enforces STOP-after-2.
 
-    The hook supplies an amend_request via tool_input but cannot reach
-    autonomous-PASS because Gate 2 fails closed under the no-judge
-    architecture. The counter is therefore NOT reset; the leader-side
-    supervision loop (Step 6) is the path that produces autonomous PASS.
-    The hook surfaces a Format R escalation (`[SDD:AMEND_R]`) instead.
+    Pre-Fix-5A the rejected-amend branch incremented the counter but
+    NEVER checked `attempts >= _AMEND_ATTEMPTS_MAX`. An agent who hit
+    the no-amend ATTEMPTS wall could switch to spamming malformed
+    amend_requests — each rejected with [SDD:AMEND_R] but no ceiling
+    enforcement. Post-Fix-5A the rejected branch surfaces ATTEMPTS once
+    the post-increment counter meets the ceiling.
+
+    Pre-seed counter=1 (one failed attempt on record). The agent then
+    sends an Edit with a malformed amend_request — the hook rejects via
+    Gate 2 fail-closed (no judge_callable), increments counter to 2,
+    sees 2 >= MAX, and emits [SDD:ATTEMPTS]. The previous behavior
+    would have emitted [SDD:AMEND_R] and let the agent retry forever.
     """
-    raw_sid = "scen-219-reset"
+    raw_sid = "scen-219-rejected-ceiling"
     sid = _hashed_sid(raw_sid)
     cwd = str(repo["cwd"])
     scen_rel = repo["scen_rel"]
 
     counter = _sdd_test_guard._amend_attempts_path(cwd, sid, scen_rel)
     assert counter is not None
-    Path(counter).write_text("2")
+    Path(counter).write_text("1")
 
     try:
         new_content = repo["scen_content"] + "**Notes**: clarification\n"
@@ -524,24 +531,260 @@ def test_scen_219_hook_cannot_reset_counter_without_judge(repo):
             },
         })
 
-        assert rc == 2, f"expected exit 2 (Gate 2 fails closed), got {rc}; stderr={stderr!r}"
-        assert "[SDD:AMEND_R]" in stderr, stderr
+        assert rc == 2, f"expected exit 2, got {rc}; stderr={stderr!r}"
+        assert "[SDD:ATTEMPTS]" in stderr, (
+            f"Fix 5A: rejected-amend at ceiling must emit ATTEMPTS, not "
+            f"AMEND_R. stderr={stderr!r}"
+        )
+        assert "rejected proposals consume the budget" in stderr
 
-        # Counter is NOT reset — only autonomous PASS resets it, and the
-        # hook cannot reach PASS without a judge. Confirms architectural
-        # boundary documented in sdd-test-guard.py Step 3 block. Fix 2
-        # additionally INCREMENTS the counter on every rejected amend so
-        # an agent cannot spam malformed proposals forever — counter
-        # post-condition is therefore ≥ pre-seeded value, never reset.
-        assert Path(counter).exists(), "counter file removed unexpectedly"
-        post = int(Path(counter).read_text().strip())
-        assert post >= 2, (
-            f"counter must not be reset by rejected amend; got {post}"
+        # Counter advanced from 1 to 2 — the ceiling threshold
+        assert Path(counter).exists()
+        assert Path(counter).read_text().strip() == "2"
+
+        # Telemetry tagged with `via=rejected_amend` to distinguish from
+        # the no-amend exhaustion path
+        events = _telemetry_events(cwd, "amend_attempts_exhausted")
+        assert any(
+            ev.get("scenario_rel") == scen_rel and ev.get("via") == "rejected_amend"
+            for ev in events
+        ), f"expected amend_attempts_exhausted with via=rejected_amend; events={events}"
+    finally:
+        _cleanup_attempts_file(cwd, sid, scen_rel)
+
+
+def test_fix5c_disk_proposal_mtime_immune_to_os_utime(repo):
+    """Fix 5C adversarial: `os.utime` on the proposal JSON file MUST NOT
+    forge `proposal_mtime`. The disk transport now reads the HMAC-sealed
+    `_received_at` from inside the JSON, not the OS mtime.
+
+    Pre-Fix-5C an agent could:
+      1. Run a sandboxed command at T=0 → captures artifact at mtime=0
+      2. Run write_proposal at T=1 → file mtime=1, gap=1, fails idle window
+      3. `os.utime(proposal_path, (T=999, T=999))` → file mtime=999,
+         gap=999, passes the 30-second idle window.
+    Post-Fix-5C step 3 changes mtime but NOT the JSON bytes, so the
+    HMAC-sealed `_received_at` still reads as T=1 → gap=1 → fails.
+    """
+    import os as _os
+    from _amend_protocol import (
+        verify_proposal_received_at, write_proposal, evaluate_amend_request,
+    )
+
+    sid = "fix5c-utime"
+    payload = {
+        "proposed_content": _happy_proposed_content(repo["scen_content"]),
+        "premortem": "If wrong, revert via git revert; blast radius single scenario file.",
+        "evidence_artifact": {
+            "path": "sandbox_run.txt",
+            "class": "sandboxed_run_output",
+            "metadata": {},
+        },
+        "base_head_sha": repo["head_sha"],
+        "base_file_hash": repo["file_hash"],
+        "scenario_rel": repo["scen_rel"],
+    }
+    proposal_path = write_proposal(repo["cwd"], "test", sid, payload)
+
+    # Stat baseline: trusted received_at vs OS mtime
+    loaded = json.loads(Path(proposal_path).read_text())
+    trusted_at = verify_proposal_received_at(repo["cwd"], loaded)
+    assert trusted_at is not None, "freshly written proposal must verify"
+
+    # Forge: bump OS mtime forward by 9999s — simulates `touch -t future`
+    far_future = trusted_at + 9999
+    _os.utime(proposal_path, (far_future, far_future))
+    forged_os_mtime = Path(proposal_path).stat().st_mtime
+    assert forged_os_mtime == far_future, "os.utime should land"
+
+    # Re-verify: the HMAC-sealed received_at is unchanged because the
+    # JSON bytes are unchanged. The OS mtime forge has no effect on
+    # the trusted timestamp.
+    re_verified = verify_proposal_received_at(repo["cwd"], loaded)
+    assert re_verified == trusted_at, (
+        f"HMAC-sealed received_at must be immune to os.utime; "
+        f"trusted={trusted_at}, after_utime_check={re_verified}"
+    )
+
+    # Now drive Gate 1 Class B end-to-end with a sandboxed artifact
+    # whose mtime is recent (gap < 30s vs trusted received_at). Without
+    # Fix 5C the os.utime attack would have inflated the gap; with
+    # Fix 5C the gap remains small and the gate fails.
+    artifact = repo["cwd"] / "sandbox_run.txt"
+    artifact.write_text("captured\n")
+    _os.utime(artifact, (trusted_at - 5, trusted_at - 5))  # 5s before proposal
+    decision = evaluate_amend_request(
+        cwd=repo["cwd"],
+        scenario_rel=repo["scen_rel"],
+        proposed_content=payload["proposed_content"],
+        premortem=payload["premortem"],
+        evidence_artifact={
+            "path": "sandbox_run.txt",
+            "class": "sandboxed_run_output",
+            "metadata": {},
+        },
+        base_head_sha=repo["head_sha"],
+        base_file_hash=repo["file_hash"],
+        proposal_mtime=trusted_at,  # what _load_amend_request would supply
+    )
+    assert decision.approved is False
+    assert decision.failed_gate == "evidence"
+    assert decision.reason == "class_b_idle_window_violation", (
+        "with trusted received_at + 5s artifact gap, Class B must fail"
+    )
+
+
+def test_fix5c_tampered_proposal_invalidates_received_at(repo):
+    """Fix 5C: mutating any sealed field (received_at, nonce, scenario_rel)
+    invalidates the HMAC. `verify_proposal_received_at` returns None,
+    forcing `_load_amend_request` to return `(payload, None)` — Class B
+    fails closed via `class_b_proposal_mtime_missing`.
+    """
+    from _amend_protocol import (
+        verify_proposal_received_at, write_proposal,
+    )
+
+    payload = {
+        "proposed_content": _happy_proposed_content(repo["scen_content"]),
+        "premortem": "x" * 40,
+        "evidence_artifact": {"path": "x", "class": "sandboxed_run_output", "metadata": {}},
+        "base_head_sha": repo["head_sha"],
+        "base_file_hash": repo["file_hash"],
+        "scenario_rel": repo["scen_rel"],
+    }
+    proposal_path = write_proposal(repo["cwd"], "test", "fix5c-tamper", payload)
+    loaded = json.loads(Path(proposal_path).read_text())
+
+    # Baseline: verifies
+    assert verify_proposal_received_at(repo["cwd"], loaded) is not None
+
+    # Mutate received_at — HMAC no longer matches
+    forged = dict(loaded)
+    forged["_received_at"] = loaded["_received_at"] + 9999
+    assert verify_proposal_received_at(repo["cwd"], forged) is None, (
+        "mutated _received_at must fail HMAC verification"
+    )
+
+    # Mutate nonce
+    forged = dict(loaded)
+    forged["_received_at_nonce"] = "deadbeef"
+    assert verify_proposal_received_at(repo["cwd"], forged) is None
+
+    # Mutate scenario_rel (binding to a different scenario)
+    forged = dict(loaded)
+    forged["scenario_rel"] = "docs/specs/OTHER/scenarios/other.scenarios.md"
+    assert verify_proposal_received_at(repo["cwd"], forged) is None
+
+    # Strip HMAC
+    forged = dict(loaded)
+    forged.pop("_received_at_hmac")
+    assert verify_proposal_received_at(repo["cwd"], forged) is None
+
+
+def test_scen_219_increment_atomic_under_concurrent_calls(repo):
+    """Fix 5B: `_increment_amend_attempts` must be atomic.
+
+    Pre-Fix-5B was a naive read-modify-write — two concurrent calls
+    could both read N and both write N+1, advancing only by one.
+    Fix 5B uses `fcntl.flock` to serialize the read+write window. This
+    test launches 20 concurrent threads that each call `_increment`
+    once and asserts the final counter equals 20 (no lost updates).
+    """
+    import threading
+    raw_sid = "scen-219-atomic"
+    sid = _hashed_sid(raw_sid)
+    cwd = str(repo["cwd"])
+    scen_rel = repo["scen_rel"]
+    counter_path = _sdd_test_guard._amend_attempts_path(cwd, sid, scen_rel)
+    if counter_path is not None and Path(counter_path).exists():
+        Path(counter_path).unlink()
+
+    n_threads = 20
+    barrier = threading.Barrier(n_threads)
+    results = []
+    results_lock = threading.Lock()
+
+    def _worker():
+        # Synchronize start so threads contend for the lock simultaneously
+        barrier.wait()
+        post = _sdd_test_guard._increment_amend_attempts(cwd, sid, scen_rel)
+        with results_lock:
+            results.append(post)
+
+    threads = [threading.Thread(target=_worker) for _ in range(n_threads)]
+    try:
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=10)
+            assert not t.is_alive(), "thread hung — flock deadlock?"
+
+        # Final counter on disk must equal n_threads (no lost updates)
+        final = int(Path(counter_path).read_text().strip())
+        assert final == n_threads, (
+            f"atomic counter regression: expected {n_threads}, got {final}; "
+            f"results from threads: {sorted(results)}"
         )
-        assert post == 3, (
-            f"counter must be incremented by rejected amend (Fix 2); "
-            f"got {post}"
+
+        # Each thread must have observed a unique post-increment value
+        # in {1..n_threads} — proves the read+write was serialized
+        assert sorted(results) == list(range(1, n_threads + 1)), (
+            f"thread results not unique sequence; got {sorted(results)}"
         )
+    finally:
+        _cleanup_attempts_file(cwd, sid, scen_rel)
+
+
+def test_scen_219_below_ceiling_still_emits_format_r(repo):
+    """Below the ceiling, rejected amends still surface Format R for review.
+
+    Pre-seed counter=0. Send an Edit with a malformed amend_request →
+    hook rejects via Gate 2 fail-closed, increments counter to 1, sees
+    1 < MAX, falls through to [SDD:AMEND_R] (Format R escalation).
+    Confirms Fix 5A's ceiling check is post-increment, not unconditional.
+    """
+    raw_sid = "scen-219-below-ceiling"
+    sid = _hashed_sid(raw_sid)
+    cwd = str(repo["cwd"])
+    scen_rel = repo["scen_rel"]
+
+    counter = _sdd_test_guard._amend_attempts_path(cwd, sid, scen_rel)
+    assert counter is not None
+    if Path(counter).exists():
+        Path(counter).unlink()
+
+    try:
+        new_content = repo["scen_content"] + "**Notes**: clarification\n"
+        amend_request = {
+            "proposed_content": new_content,
+            "premortem": "If wrong, revert via git revert; blast radius single scenario file.",
+            "evidence_artifact": {
+                "path": scen_rel,
+                "class": "git_tracked_at_head",
+                "metadata": {},
+            },
+            "base_head_sha": repo["head_sha"],
+            "base_file_hash": repo["file_hash"],
+            "proposer_role": "teammate",
+            "scenario_rel": scen_rel,
+        }
+        rc, _stdout, stderr, _elapsed = invoke_hook("sdd-test-guard.py", {
+            "cwd": cwd,
+            "session_id": raw_sid,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(repo["scen_file"]),
+                "old_string": repo["scen_content"],
+                "new_string": new_content,
+                "amend_request": amend_request,
+            },
+        })
+
+        assert rc == 2, f"expected exit 2, got {rc}; stderr={stderr!r}"
+        assert "[SDD:AMEND_R]" in stderr, (
+            f"below ceiling, rejected amend must emit AMEND_R. stderr={stderr!r}"
+        )
+        assert Path(counter).read_text().strip() == "1"
     finally:
         _cleanup_attempts_file(cwd, sid, scen_rel)
 
@@ -600,7 +843,7 @@ def test_load_amend_request_from_disk_fallback(repo):
     }
     proposal_path = write_proposal(repo["cwd"], "test", sid, payload)
     assert Path(proposal_path).exists()
-    expected_mtime = Path(proposal_path).stat().st_mtime
+    expected_received_at = json.loads(Path(proposal_path).read_text())["_received_at"]
 
     payload_loaded, proposal_mtime = _sdd_test_guard._load_amend_request(
         str(repo["cwd"]), {}, sid, repo["scen_rel"],
@@ -608,8 +851,12 @@ def test_load_amend_request_from_disk_fallback(repo):
     assert payload_loaded is not None, "disk fallback should resolve a matching proposal"
     assert payload_loaded.get("scenario_rel") == repo["scen_rel"]
     assert payload_loaded.get("marker") == "from-disk"
-    assert proposal_mtime == expected_mtime, (
-        "disk transport must use OS-attested proposal JSON mtime, not metadata"
+    # Fix 5C: disk transport uses the HMAC-sealed `_received_at` from the
+    # proposal envelope, NOT `stat().st_mtime` (which is mutable via
+    # `os.utime`). `expected_received_at` is read directly from the JSON
+    # to confirm the unpacker returns the sealed value.
+    assert proposal_mtime == expected_received_at, (
+        "disk transport must use HMAC-sealed _received_at, not OS mtime"
     )
 
 

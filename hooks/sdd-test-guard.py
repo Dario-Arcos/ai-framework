@@ -422,26 +422,73 @@ def _reset_amend_attempts(cwd, sid, scenario_rel):
 def _increment_amend_attempts(cwd, sid, scenario_rel):
     """Atomically bump the per-(session,scenario) counter by one.
 
-    Called on every divergence-denial path — both "no amend_request
-    supplied" and "amend_request supplied but rejected" — so the
-    SCEN-219 STOP-after-2 ceiling is enforced in production rather
-    than only in tests that pre-seed the counter.
+    Fix 5B: previously a naive read-modify-write (`_read_amend_attempts`
+    then `write_text`). Two concurrent PreToolUse invocations could read
+    `current=N`, both compute `N+1`, both write `N+1` — counter only
+    advances by one and the agent gets a free retry per concurrent
+    collision (multi-agent same-session is unusual but not impossible
+    given Ralph's leader+teammate parallelism).
 
-    Returns the post-increment value, or 0 on any failure (so a
-    transient FS error never crashes the hook). Best-effort by design:
-    if the counter file cannot be written, the worst case is the
-    agent gets one extra retry — preferable to crashing the guard.
+    The atomic version uses `fcntl.flock` (POSIX advisory lock) on the
+    counter file as a serialization gate. Both invocations open the
+    file, flock blocks the second until the first releases, then both
+    read-modify-write proceed sequentially. The lock is held only for
+    the read+write window (microseconds), so contention cost is
+    negligible.
+
+    Falls back to non-atomic write if `fcntl` is unavailable (Windows)
+    — the framework is POSIX-only in practice but the fallback prevents
+    import errors on cross-platform tooling. Returns the post-increment
+    value, or the pre-increment value on persistence failure.
     """
     p = _amend_attempts_path(cwd, sid, scenario_rel)
     if p is None:
         return 0
-    current = _read_amend_attempts(cwd, sid, scenario_rel)
-    new_value = current + 1
     try:
-        p.write_text(str(new_value))
+        import fcntl
+    except ImportError:
+        # Non-POSIX platform; fall back to naive read-write. Race is
+        # accepted (single-user, single-agent typical case).
+        current = _read_amend_attempts(cwd, sid, scenario_rel)
+        new_value = current + 1
+        try:
+            p.write_text(str(new_value))
+        except OSError:
+            return current
+        return new_value
+    fd = None
+    try:
+        # O_RDWR|O_CREAT — open for read+write, create if missing.
+        # 0o600 — only the owner can read/write the counter file.
+        fd = os.open(str(p), os.O_RDWR | os.O_CREAT, 0o600)
+        # Exclusive advisory lock — blocks concurrent _increment calls
+        # in the same process or other processes on the same FS.
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        # Read current value under lock
+        os.lseek(fd, 0, os.SEEK_SET)
+        try:
+            existing = os.read(fd, 64).decode("utf-8", errors="replace").strip()
+            current = int(existing) if existing else 0
+        except (ValueError, OSError):
+            current = 0
+        new_value = current + 1
+        # Truncate then write under lock
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.ftruncate(fd, 0)
+        os.write(fd, str(new_value).encode("utf-8"))
+        return new_value
     except OSError:
-        return current
-    return new_value
+        return _read_amend_attempts(cwd, sid, scenario_rel)
+    finally:
+        if fd is not None:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            try:
+                os.close(fd)
+            except OSError:
+                pass
 
 
 def _scenario_goal(scenario_rel, cwd):
@@ -471,9 +518,12 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
     TRUSTED timestamp used by Gate 1 Class B. For the inline transport
     proposal_mtime is `time.time()` at hook receipt — the model cannot
     backdate a value that the hook itself reads from the OS clock. For
-    the disk transport proposal_mtime is `proposal_path.stat().st_mtime`
-    — the OS-attested mtime of the proposal JSON, which the proposer
-    cannot rewrite without re-proposing through `write_proposal`.
+    the disk transport proposal_mtime is the HMAC-sealed `_received_at`
+    inside the proposal JSON envelope (Fix 5C). The previous
+    implementation used `proposal_path.stat().st_mtime`, which a
+    proposer could mutate via `os.utime()`/`touch -t` to forge a wide
+    Class B idle window. The HMAC binding survives mtime manipulation
+    because OS mtime changes do not modify file contents.
 
     Preferred: `tool_input.amend_request` carried inline by the model. The
     inline payload, when present, must declare a `scenario_rel` matching
@@ -511,11 +561,14 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
         except (OSError, json.JSONDecodeError):
             continue
         if payload.get("scenario_rel") == scenario_rel:
-            try:
-                disk_mtime = Path(path).stat().st_mtime
-            except OSError:
-                disk_mtime = None
-            return payload, disk_mtime
+            # Fix 5C: read the trusted received_at from the HMAC-bound
+            # `_received_at` envelope inside the JSON, NOT from
+            # `Path(path).stat().st_mtime`. The OS mtime is mutable via
+            # `os.utime`/`touch -t`; the HMAC-sealed received_at is not
+            # (it changes the JSON bytes, which invalidates the HMAC).
+            from _amend_protocol import verify_proposal_received_at
+            trusted_mtime = verify_proposal_received_at(cwd, payload)
+            return payload, trusted_mtime
     return None, None
 
 
@@ -898,8 +951,30 @@ def main():
                                 # Bump counter — a rejected amend_request
                                 # still consumes one of the SCEN-219
                                 # STOP-after-2 budget. Otherwise an agent
-                                # could spam malformed proposals forever.
-                                _increment_amend_attempts(cwd, sid, rel)
+                                # could spam malformed proposals forever
+                                # (Fix 5A: pre-Fix-5 the rejected branch
+                                # incremented but never enforced the
+                                # ceiling — agent could switch from
+                                # no-amend to malformed-amend to bypass
+                                # the STOP-after-2 invariant).
+                                attempts = _increment_amend_attempts(cwd, sid, rel)
+                                if attempts >= _AMEND_ATTEMPTS_MAX:
+                                    _record_guard_trigger(
+                                        cwd, "ATTEMPTS", tool_name, file_path,
+                                    )
+                                    append_telemetry(cwd, {
+                                        "event": "amend_attempts_exhausted",
+                                        "scenario_rel": rel,
+                                        "attempts": attempts,
+                                        "via": "rejected_amend",
+                                    })
+                                    _fail(
+                                        f"amend-proposal required — "
+                                        f"{_AMEND_ATTEMPTS_MAX} attempts exhausted on "
+                                        f"{rel}; rejected proposals consume the "
+                                        f"budget. End session and escalate via Format R.",
+                                        category="ATTEMPTS",
+                                    )
                                 _record_guard_trigger(
                                     cwd, "SCENARIO", tool_name, file_path,
                                 )
@@ -935,7 +1010,7 @@ def main():
                             # without an amend_request consumes one of the
                             # SCEN-219 STOP-after-2 budget. The next call
                             # with the same (sid, scenario_rel) hits the
-                            # `attempts >= _AMEND_ATTEMPTS_MAX` branch.
+                            # `attempts >= _AMEND_ATTEMPTS_MAX` branch above.
                             _increment_amend_attempts(cwd, sid, rel)
                             _record_guard_trigger(
                                 cwd, "SCENARIO", tool_name, file_path,

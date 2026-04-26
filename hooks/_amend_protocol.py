@@ -747,15 +747,41 @@ def _safe_filename_component(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]", "-", value or "unknown")
 
 
+def _proposal_received_at_hmac(cwd: Path, scenario_rel: str, received_at: float, nonce: str) -> str:
+    """HMAC binding for `received_at` so a proposer cannot forge the
+    proposal timestamp via `os.utime`/`touch -t` after `write_proposal`
+    has emitted the file. Bound to the per-session key (project + sid)
+    via the same derivation as Class C evidence and Fix 1 markers.
+
+    The nonce ties the HMAC to a specific proposal write so the same
+    `received_at` value cannot be replayed across two proposals.
+    """
+    payload = json.dumps({
+        "scenario_rel": scenario_rel,
+        "received_at": received_at,
+        "nonce": nonce,
+    }, sort_keys=True, separators=(",", ":"))
+    return hmac.new(
+        _session_hmac_key(cwd), payload.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
 def write_proposal(cwd: Path, goal: str, sid: str, payload: dict) -> Path:
     """Write a proposal JSON under .ralph/specs/{goal}/amend-proposals/.
 
     Filename: {sid}-{ts_iso}-{nonce}.json with `:` swapped for `-` so the
     path is portable across filesystems. The 6-hex-char nonce defends
     against the second-precision timestamp colliding when the same sid
-    writes twice in the same UTC second (atomic rename would otherwise
-    clobber the first proposal — edge-case review P2). Sort by filename
-    still preserves timestamp ordering across distinct seconds.
+    writes twice in the same UTC second.
+
+    Fix 5C: every emitted proposal carries an HMAC-bound `received_at`
+    field. `_load_amend_request` consumes `received_at` (NOT the file's
+    OS mtime) as the trusted `proposal_mtime` for Class B Gate 1. Pre-
+    Fix-5C the disk transport read `Path(path).stat().st_mtime`, which a
+    proposer could mutate post-emission via `os.utime()`/`touch -t` to
+    forge a wide idle window. Now the timestamp is sealed at write time
+    inside the JSON itself, with HMAC integrity bound to the per-session
+    key — `os.utime` does not change the JSON contents.
     """
     pdir = _proposals_dir(cwd, goal)
     pdir.mkdir(parents=True, exist_ok=True)
@@ -763,8 +789,55 @@ def write_proposal(cwd: Path, goal: str, sid: str, payload: dict) -> Path:
     ts = _iso_z_now().replace(":", "-")
     nonce = secrets.token_hex(3)
     path = pdir / f"{safe_sid}-{ts}-{nonce}.json"
-    _write_json_atomic(path, payload, prefix="amend-proposal-")
+
+    # Bind a trusted received_at into the payload, sealed by HMAC.
+    # The proposer's payload is preserved as-is alongside our envelope.
+    sealed = dict(payload)
+    received_at = time.time()
+    sealed_scenario_rel = str(payload.get("scenario_rel", ""))
+    sealed["_received_at"] = received_at
+    sealed["_received_at_nonce"] = nonce
+    sealed["_received_at_hmac"] = _proposal_received_at_hmac(
+        cwd, sealed_scenario_rel, received_at, nonce,
+    )
+    _write_json_atomic(path, sealed, prefix="amend-proposal-")
     return path.resolve()
+
+
+def verify_proposal_received_at(cwd: Path, payload: dict) -> Optional[float]:
+    """Verify the HMAC-bound `_received_at` in a loaded proposal payload.
+
+    Returns the trusted `received_at` value (float seconds-since-epoch)
+    if the HMAC checks out, else None. Callers (`_load_amend_request`
+    disk transport) use the returned value as `proposal_mtime` for
+    Gate 1 Class B; on mismatch the gate fails closed because Class B
+    requires a non-None proposal_mtime.
+
+    A proposer who mutates the JSON to set their own `_received_at`
+    must also recompute the HMAC — same threat-model boundary as
+    Class C evidence (acknowledged: a same-session attacker with HMAC
+    computation capability can forge; closing this requires a
+    privileged signer, deferred). This still defeats the trivial
+    `os.utime`/`touch -t` bypass: those leave the JSON contents
+    unchanged, so the HMAC stays valid only for the original
+    `_received_at`, not the forged file mtime.
+    """
+    received_at = payload.get("_received_at")
+    nonce = payload.get("_received_at_nonce")
+    provided = payload.get("_received_at_hmac")
+    scenario_rel = payload.get("scenario_rel")
+    if not isinstance(received_at, (int, float)):
+        return None
+    if not isinstance(nonce, str) or not nonce:
+        return None
+    if not isinstance(provided, str) or not provided:
+        return None
+    if not isinstance(scenario_rel, str) or not scenario_rel:
+        return None
+    expected = _proposal_received_at_hmac(cwd, scenario_rel, float(received_at), nonce)
+    if not hmac.compare_digest(expected, provided):
+        return None
+    return float(received_at)
 
 
 def read_proposals(cwd: Path, goal: str) -> list:
