@@ -526,20 +526,29 @@ def evaluate_amend_request(
             return _evidence_fail("class_a_content_diverged_from_head")
 
     elif art_class == "sandboxed_run_output":
-        # Class B uses the TRUSTED top-level `proposal_mtime` (caller-supplied
-        # from a non-proposer source: hook injects time.time() at receipt for
-        # inline transport, or proposal_path.stat().st_mtime for disk
-        # transport). Reading `art_meta.get("proposal_mtime")` would let the
-        # proposer set the timestamp themselves and trivially clear the idle
-        # window — that was the original P0 surface (see module docstring).
+        # Class B uses the TRUSTED top-level `proposal_mtime` plus the
+        # artifact's `st_ctime` (last inode status change), NOT `st_mtime`.
+        # Pre-Fix-6 the gate read `st_mtime`, which is mutable via
+        # `os.utime()`/`touch -t` — an agent could backdate the artifact
+        # to epoch 0 and clear the 30-second idle window unconditionally
+        # (Round 4 P0 finding). `st_ctime` cannot be set backwards: any
+        # call to `utime()` is itself a metadata operation that *bumps*
+        # ctime to "now", so backdating attempts surface as ctime≈now,
+        # which fails the gap check rather than passing it.
+        #
+        # Legitimate flow: sandbox writes artifact at T → ctime=T.
+        # Agent waits 30s. Agent writes proposal at T+30. Hook reads
+        # proposal_mtime=T+30, artifact_ctime=T, gap=30 → passes.
+        # Adversarial flow: `os.utime(artifact, (0, 0))` → ctime=now
+        # (utime is a metadata change). Hook reads gap=0 → fails.
         if proposal_mtime is None:
             return _evidence_fail("class_b_proposal_mtime_missing")
         try:
-            file_mtime = artifact_resolved.stat().st_mtime
+            file_ctime = artifact_resolved.stat().st_ctime
         except OSError:
             return _evidence_fail("class_b_artifact_unreadable")
         try:
-            gap = float(proposal_mtime) - float(file_mtime)
+            gap = float(proposal_mtime) - float(file_ctime)
         except (TypeError, ValueError):
             return _evidence_fail("class_b_proposal_mtime_invalid")
         if gap < _CLASS_B_IDLE_WINDOW_SECONDS:
@@ -729,8 +738,18 @@ def evaluate_amend_request(
 # ─────────────────────────────────────────────────────────────────
 
 
-def _proposals_dir(cwd: Path, goal: str) -> Path:
-    return Path(cwd) / ".ralph" / "specs" / goal / "amend-proposals"
+def _proposals_dir(cwd: Path, goal: str, discovery_root: str = ".ralph/specs") -> Path:
+    """Locate the amend-proposals directory for a goal under the given
+    discovery root. Pre-Fix-6 was hardcoded to `.ralph/specs/` — that
+    silently broke the non-Ralph (`docs/specs/`) disk transport: any
+    proposal written there was invisible to `_load_amend_request`,
+    contradicting the SCEN-A23 mode-parity invariant.
+
+    The caller is responsible for picking the right root; helpers
+    (`_load_amend_request`) iterate the configured discovery roots so
+    both Ralph and non-Ralph proposals are found.
+    """
+    return Path(cwd) / discovery_root / goal / "amend-proposals"
 
 
 def _iso_z_now() -> str:
@@ -766,8 +785,8 @@ def _proposal_received_at_hmac(cwd: Path, scenario_rel: str, received_at: float,
     ).hexdigest()
 
 
-def write_proposal(cwd: Path, goal: str, sid: str, payload: dict) -> Path:
-    """Write a proposal JSON under .ralph/specs/{goal}/amend-proposals/.
+def write_proposal(cwd: Path, goal: str, sid: str, payload: dict, discovery_root: str = ".ralph/specs") -> Path:
+    """Write a proposal JSON under {discovery_root}/{goal}/amend-proposals/.
 
     Filename: {sid}-{ts_iso}-{nonce}.json with `:` swapped for `-` so the
     path is portable across filesystems. The 6-hex-char nonce defends
@@ -783,7 +802,7 @@ def write_proposal(cwd: Path, goal: str, sid: str, payload: dict) -> Path:
     inside the JSON itself, with HMAC integrity bound to the per-session
     key — `os.utime` does not change the JSON contents.
     """
-    pdir = _proposals_dir(cwd, goal)
+    pdir = _proposals_dir(cwd, goal, discovery_root)
     pdir.mkdir(parents=True, exist_ok=True)
     safe_sid = _safe_filename_component(sid)
     ts = _iso_z_now().replace(":", "-")
@@ -840,7 +859,7 @@ def verify_proposal_received_at(cwd: Path, payload: dict) -> Optional[float]:
     return float(received_at)
 
 
-def read_proposals(cwd: Path, goal: str) -> list:
+def read_proposals(cwd: Path, goal: str, discovery_root: str = ".ralph/specs") -> list:
     """List unresolved proposals for a goal, sorted by timestamp ascending.
 
     A proposal is unresolved iff:
@@ -850,8 +869,12 @@ def read_proposals(cwd: Path, goal: str) -> list:
     Sort key is the filename itself, which begins with `{sid}-{ts_iso}` —
     timestamp ordering holds for proposals from the same sid; the leader
     consumer is sid-scoped so cross-sid interleaving is irrelevant.
+
+    `discovery_root` (Fix 6) lets callers pick between Ralph
+    (`.ralph/specs`) and non-Ralph (`docs/specs`) trees. Defaults to
+    Ralph for backward compat with leader-supervision callers.
     """
-    pdir = _proposals_dir(cwd, goal)
+    pdir = _proposals_dir(cwd, goal, discovery_root)
     if not pdir.is_dir():
         return []
     out = []

@@ -472,10 +472,16 @@ def _increment_amend_attempts(cwd, sid, scenario_rel):
         except (ValueError, OSError):
             current = 0
         new_value = current + 1
-        # Truncate then write under lock
+        # Write-before-truncate: if `os.write` raises after `ftruncate`,
+        # the on-disk file is empty and subsequent reads return 0,
+        # giving the agent free retries on degraded FS (Round 4 P3).
+        # Order: lseek to 0 → write new bytes → ftruncate to written
+        # length. If write fails before ftruncate, the file content is
+        # unchanged from pre-call (existing data preserved).
+        new_bytes = str(new_value).encode("utf-8")
         os.lseek(fd, 0, os.SEEK_SET)
-        os.ftruncate(fd, 0)
-        os.write(fd, str(new_value).encode("utf-8"))
+        os.write(fd, new_bytes)
+        os.ftruncate(fd, len(new_bytes))
         return new_value
     except OSError:
         return _read_amend_attempts(cwd, sid, scenario_rel)
@@ -549,8 +555,23 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
     goal = _scenario_goal(scenario_rel, cwd)
     if not goal:
         return None, None
+    # Fix 6: derive the discovery root from the scenario path so the
+    # disk fallback honors both Ralph (`.ralph/specs`) and non-Ralph
+    # (`docs/specs`) modes. Pre-Fix-6 the hardcoded `.ralph/specs`
+    # silently broke the non-Ralph disk transport — proposals authored
+    # under `docs/specs/<goal>/amend-proposals/` were invisible to the
+    # hook, contradicting SCEN-A23 mode parity.
+    rel_parts = Path(scenario_rel).parts
+    discovery_root = None
+    for root in get_scenario_discovery_roots(cwd):
+        root_parts = Path(root).parts
+        if rel_parts[:len(root_parts)] == root_parts:
+            discovery_root = root
+            break
+    if discovery_root is None:
+        return None, None
     try:
-        candidates = read_proposals(cwd, goal)
+        candidates = read_proposals(cwd, goal, discovery_root)
     except Exception:  # noqa: BLE001 — disk fallback must not crash hook
         return None, None
     for path in candidates:
@@ -561,13 +582,32 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
         except (OSError, json.JSONDecodeError):
             continue
         if payload.get("scenario_rel") == scenario_rel:
-            # Fix 5C: read the trusted received_at from the HMAC-bound
-            # `_received_at` envelope inside the JSON, NOT from
-            # `Path(path).stat().st_mtime`. The OS mtime is mutable via
-            # `os.utime`/`touch -t`; the HMAC-sealed received_at is not
-            # (it changes the JSON bytes, which invalidates the HMAC).
+            # Fix 5C + 6B: trusted received_at resolution.
+            #
+            # Preferred path: HMAC-sealed envelope in the JSON
+            # (`_received_at` + `_received_at_hmac`). Produced by the
+            # `write_proposal()` helper. Survives `os.utime()` because
+            # the HMAC is over the JSON bytes, not the OS metadata.
+            #
+            # Fallback path (Fix 6B): when the proposal was authored via
+            # raw Edit/Write — the documented agent-prompt flow per
+            # PROMPT_implementer.md / PROMPT_reviewer.md — the envelope
+            # is absent. Use `Path(path).stat().st_ctime` (last inode
+            # status change). ctime CANNOT be set backwards by `utime()`:
+            # the syscall itself bumps ctime to "now", so any backdating
+            # attempt (e.g. `os.utime(p, (0, 0))`) lands ctime≈now and
+            # the Class B gap check fails closed (correct behavior).
+            #
+            # The fallback closes the Round-4 P1 workflow break: agent-
+            # written proposals without the helper still produce a
+            # forge-resistant trusted timestamp.
             from _amend_protocol import verify_proposal_received_at
             trusted_mtime = verify_proposal_received_at(cwd, payload)
+            if trusted_mtime is None:
+                try:
+                    trusted_mtime = Path(path).stat().st_ctime
+                except OSError:
+                    trusted_mtime = None
             return payload, trusted_mtime
     return None, None
 

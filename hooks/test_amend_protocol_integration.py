@@ -553,6 +553,165 @@ def test_scen_219_rejected_amend_respects_stop_ceiling(repo):
         _cleanup_attempts_file(cwd, sid, scen_rel)
 
 
+@pytest.mark.parametrize("mode", ["ralph", "nonralph"])
+def test_fix6a_class_b_artifact_immune_to_os_utime(tmp_path, monkeypatch, mode):
+    """Fix 6A adversarial: backdating the artifact via `os.utime` MUST NOT
+    pass Class B Gate 1. Pre-Fix-6A the gate read `st_mtime`, which is
+    settable to any value via `utime()` — agent could `os.utime(artifact,
+    (0, 0))` to forge an unbounded idle window. Round 4 audit confirmed
+    the bypass live.
+
+    Post-Fix-6A the gate reads `st_ctime`. Calling `utime()` is itself a
+    metadata change that bumps ctime to "now"; the forge attempt
+    therefore lands ctime≈now and the gap shrinks to ~0 → fails closed.
+
+    Ralph + non-Ralph parity is enforced via parametrization — the gate
+    is mode-agnostic but the discovery-root assumption must hold across
+    both axes (mode-switching cannot reopen the bypass).
+    """
+    import os as _os
+    import time as _time
+    from _amend_protocol import evaluate_amend_request
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_SESSION_ID", f"fix6a-{mode}")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+    if mode == "ralph":
+        scen_rel = ".ralph/specs/featx/scenarios/featx.scenarios.md"
+    else:
+        scen_rel = "docs/specs/featx/scenarios/featx.scenarios.md"
+    scen_path = tmp_path / scen_rel
+    scen_path.parent.mkdir(parents=True)
+    scen_content = (
+        "---\nname: x\n---\n## SCEN-001: x\n"
+        "**Given**: a\n**When**: b\n**Then**: c\n**Evidence**: d\n"
+    )
+    scen_path.write_text(scen_content)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path,
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    file_hash = hashlib.sha256(scen_content.encode()).hexdigest()
+
+    artifact = tmp_path / "sandbox_run.txt"
+    artifact.write_text("captured\n")
+
+    # ADVERSARIAL: backdate the artifact's mtime to epoch 0 — the
+    # `os.utime` syscall ALSO bumps ctime to "now" because it's a
+    # metadata change. Pre-Fix-6A this would have made gap = ~now,
+    # passing the gate. Post-Fix-6A the gate reads ctime → gap ≈ 0.
+    _os.utime(artifact, (0, 0))
+    forged_mtime = artifact.stat().st_mtime
+    actual_ctime = artifact.stat().st_ctime
+    assert forged_mtime == 0, "os.utime should land on mtime"
+    assert actual_ctime > 1000000000, (
+        f"ctime should be ~now, not the forged value (mode={mode}); "
+        f"got {actual_ctime}"
+    )
+
+    proposed = scen_content + "**Notes**: clarification\n"
+    decision = evaluate_amend_request(
+        cwd=tmp_path,
+        scenario_rel=scen_rel,
+        proposed_content=proposed,
+        premortem="If wrong, revert via git revert; blast radius single scenario file.",
+        evidence_artifact={
+            "path": "sandbox_run.txt",
+            "class": "sandboxed_run_output",
+            "metadata": {},
+        },
+        base_head_sha=head_sha,
+        base_file_hash=file_hash,
+        proposal_mtime=_time.time(),
+    )
+
+    assert decision.approved is False, (
+        f"backdated artifact mtime MUST NOT pass Class B in {mode} mode"
+    )
+    assert decision.failed_gate == "evidence"
+    assert decision.reason == "class_b_idle_window_violation", (
+        f"expected idle_window_violation, got {decision.reason} ({mode})"
+    )
+
+
+@pytest.mark.parametrize("mode", ["ralph", "nonralph"])
+def test_fix6b_envelope_less_proposal_uses_ctime_fallback(tmp_path, monkeypatch, mode):
+    """Fix 6B: a proposal authored via raw Edit/Write (no HMAC envelope)
+    MUST resolve `proposal_mtime` from the proposal file's `st_ctime` —
+    this is the documented agent-prompt flow per
+    `PROMPT_implementer.md` / `PROMPT_reviewer.md` and the round-4 P1
+    finding.
+
+    Without the fallback, `verify_proposal_received_at` returns None →
+    `_load_amend_request` returns `(payload, None)` → Class B disk
+    transport always fails closed → naive agent flows are broken.
+
+    Ralph + non-Ralph parity: the disk fallback walks the matching goal
+    in either discovery root.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_SESSION_ID", f"fix6b-{mode}")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+
+    if mode == "ralph":
+        scen_rel = ".ralph/specs/featx/scenarios/featx.scenarios.md"
+        proposals_dir = tmp_path / ".ralph/specs/featx/amend-proposals"
+    else:
+        scen_rel = "docs/specs/featx/scenarios/featx.scenarios.md"
+        proposals_dir = tmp_path / "docs/specs/featx/amend-proposals"
+    scen_path = tmp_path / scen_rel
+    scen_path.parent.mkdir(parents=True)
+    scen_path.write_text(
+        "---\nname: x\n---\n## SCEN-001: x\n"
+        "**Given**: a\n**When**: b\n**Then**: c\n**Evidence**: d\n"
+    )
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+
+    # Agent writes a proposal directly via raw Edit/Write — NO HMAC envelope
+    proposals_dir.mkdir(parents=True)
+    raw_sid = f"raw-author-{mode}"
+    sid = _hashed_sid(raw_sid)
+    proposal_path = proposals_dir / f"{sid}-2026-04-26T00-00-00Z-aaaaaa.json"
+    proposal_path.write_text(json.dumps({
+        "scenario_rel": scen_rel,
+        "proposed_content": "x",
+        "premortem": "If wrong, revert via git revert; blast radius single scenario file.",
+        "evidence_artifact": {
+            "path": "sandbox.txt",
+            "class": "sandboxed_run_output",
+            "metadata": {},
+        },
+        "base_head_sha": "00000",
+        "base_file_hash": "00000",
+        "proposer_role": "teammate",
+        # Deliberately no _received_at, _received_at_nonce, _received_at_hmac
+    }))
+    expected_ctime = proposal_path.stat().st_ctime
+
+    payload, proposal_mtime = _sdd_test_guard._load_amend_request(
+        cwd=str(tmp_path),
+        tool_input={},
+        sid=sid,
+        scenario_rel=scen_rel,
+    )
+    assert payload is not None, (
+        f"agent-written envelope-less proposal MUST resolve in {mode} mode"
+    )
+    assert proposal_mtime == expected_ctime, (
+        f"fallback must use proposal_path.stat().st_ctime in {mode} mode; "
+        f"got {proposal_mtime}, expected {expected_ctime}"
+    )
+
+
 def test_fix5c_disk_proposal_mtime_immune_to_os_utime(repo):
     """Fix 5C adversarial: `os.utime` on the proposal JSON file MUST NOT
     forge `proposal_mtime`. The disk transport now reads the HMAC-sealed
@@ -826,7 +985,11 @@ def test_load_amend_request_from_tool_input(repo):
 
 
 def test_load_amend_request_from_disk_fallback(repo):
-    """Empty tool_input → reads matching proposal under .ralph/specs/<goal>/amend-proposals/."""
+    """Empty tool_input → reads matching proposal under the scenario's
+    discovery root. The `repo` fixture uses `docs/specs/test/scenarios/`
+    so the proposal must land under `docs/specs/test/amend-proposals/`
+    (Fix 6: discovery_root threading honors non-Ralph root).
+    """
     sid = "diskfallbacksid"
     payload = {
         "proposed_content": _happy_proposed_content(repo["scen_content"]),
@@ -841,7 +1004,10 @@ def test_load_amend_request_from_disk_fallback(repo):
         "scenario_rel": repo["scen_rel"],
         "marker": "from-disk",
     }
-    proposal_path = write_proposal(repo["cwd"], "test", sid, payload)
+    # Match the fixture's non-Ralph scenario discovery root.
+    proposal_path = write_proposal(
+        repo["cwd"], "test", sid, payload, discovery_root="docs/specs",
+    )
     assert Path(proposal_path).exists()
     expected_received_at = json.loads(Path(proposal_path).read_text())["_received_at"]
 
