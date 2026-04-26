@@ -31,11 +31,15 @@ from _sdd_detect import (
     read_coverage, read_skill_invoked, read_state, has_test_on_disk,
 )
 from _sdd_scenarios import (
-    SCENARIO_FILE_SUFFIX,
+    SCENARIO_FILE_SUFFIX, AMEND_SUBDIR,
     check_amend_marker, current_file_hash, has_pending_scenarios,
     scenario_baseline_hash, scenario_files,
 )
+from _sdd_state import project_hash
 from _sdd_config import get_scenario_discovery_roots
+from _amend_protocol import (
+    AmendDecision, evaluate_amend_request, read_proposals,
+)
 
 
 _BYPASS_ENV = "_SDD_DISABLE_SCENARIOS"
@@ -378,6 +382,203 @@ def _predict_scenario_post_edit_hash(abs_path, tool_name, tool_input):
     return hashlib.sha256(_canon_scenario_bytes(predicted)).hexdigest()
 
 
+# ─────────────────────────────────────────────────────────────────
+# AMEND PROTOCOL — Step 3 integration
+# ─────────────────────────────────────────────────────────────────
+#
+# Architecture note: hooks run as PreToolUse subprocesses without Agent
+# tool access, so the production judge spawn happens leader-side (Step 6
+# supervision loop). Here Gate 2 receives `judge_callable=None` and
+# fails closed → the model sees a Format R escalation prompt in stderr.
+# Tests that exercise the autonomous-PASS path call `evaluate_amend_request`
+# directly with a permissive `judge_callable` at the protocol API level.
+
+_AMEND_ATTEMPTS_MAX = 2
+
+
+def _amend_attempts_path(cwd, sid, scenario_rel):
+    """Per-(session,scenario) counter file. Project + sid + scenario hash
+    keys ensure attempts on different scenarios in the same session do
+    not collide, and attempts in different sessions stay isolated.
+    """
+    if not sid:
+        return None
+    import tempfile
+    rel_hash = hashlib.md5(scenario_rel.encode("utf-8")).hexdigest()[:12]
+    return Path(tempfile.gettempdir()) / (
+        f"sdd-amend-attempts-{project_hash(cwd)}-{sid}-{rel_hash}"
+    )
+
+
+def _read_amend_attempts(cwd, sid, scenario_rel):
+    p = _amend_attempts_path(cwd, sid, scenario_rel)
+    if p is None or not p.exists():
+        return 0
+    try:
+        return int(p.read_text().strip() or "0")
+    except (OSError, ValueError):
+        return 0
+
+
+def _reset_amend_attempts(cwd, sid, scenario_rel):
+    p = _amend_attempts_path(cwd, sid, scenario_rel)
+    if p is not None:
+        try:
+            p.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _scenario_goal(scenario_rel, cwd):
+    """Resolve the goal directory name a scenario belongs to.
+
+    Discovery roots define the layout:
+      `.ralph/specs/<goal>/scenarios/...` (Ralph mode)
+      `docs/specs/<goal>/scenarios/...`   (non-Ralph mode)
+
+    Returns `<goal>` (the path component immediately under a configured
+    discovery root). Returns None if `scenario_rel` does not sit under any
+    known discovery root — the caller treats that as no-fallback.
+    """
+    rel_parts = Path(scenario_rel).parts
+    for root in get_scenario_discovery_roots(cwd):
+        root_parts = Path(root).parts
+        n = len(root_parts)
+        if rel_parts[:n] == root_parts and len(rel_parts) > n:
+            return rel_parts[n]
+    return None
+
+
+def _load_amend_request(cwd, tool_input, sid, scenario_rel):
+    """Resolve amend_request via dual transport (Gotcha #1 contingency).
+
+    Preferred: `tool_input.amend_request` carried inline by the model. The
+    inline payload, when present, must declare a `scenario_rel` matching
+    the edit target — otherwise it is rejected to keep transport semantics
+    symmetric with the disk fallback (edge-case review P1).
+
+    Fallback: an unresolved proposal file under the SCENARIO'S OWN goal
+    directory (`<discovery_root>/<goal>/amend-proposals/`) whose payload's
+    `scenario_rel` matches this edit. Walking only the matching goal
+    bounds the iteration cost (a proposer cannot slow the hook by planting
+    proposals under unrelated goals) and enforces "proposal scoped to
+    goal" — a proposal filed against goal A cannot satisfy an Edit on
+    goal B's scenario.
+
+    Returns the amend_request dict or None if neither transport carries
+    one for this scenario.
+    """
+    inline = tool_input.get("amend_request")
+    if isinstance(inline, dict):
+        inline_rel = inline.get("scenario_rel")
+        if inline_rel is None or inline_rel == scenario_rel:
+            return inline
+        return None  # mismatched inline payload — fail closed
+    if not sid or not scenario_rel:
+        return None
+    goal = _scenario_goal(scenario_rel, cwd)
+    if not goal:
+        return None
+    try:
+        candidates = read_proposals(cwd, goal)
+    except Exception:  # noqa: BLE001 — disk fallback must not crash hook
+        return None
+    for path in candidates:
+        if sid not in Path(path).name:
+            continue
+        try:
+            payload = json.loads(Path(path).read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if payload.get("scenario_rel") == scenario_rel:
+            return payload
+    return None
+
+
+def _format_r_skeleton(scenario_rel, decision):
+    """11-field Format R escalation message body (rendered into stderr).
+
+    Step 7 produces the canonical golden-file template; this hook-side
+    render is the proximate signal seen by the model when Gate 2 fails
+    closed under the no-judge architecture, so it carries the same field
+    names so a downstream parser can match either source.
+    """
+    lines = [
+        "[SDD:AMEND_R] amend protocol escalation — human review required",
+        f"  SCENARIO: {scenario_rel}",
+        f"  DIVERGENCE: {decision.failed_gate or 'unknown'}",
+        f"  EVIDENCE: {decision.reason or ''}",
+        "  PROPOSED AMEND: see amend_request payload",
+        f"  PUERTAS_STALENESS: {decision.gate_verdicts.get('staleness', 'SKIP')}",
+        f"  PUERTAS_EVIDENCE: {decision.gate_verdicts.get('evidence', 'SKIP')}",
+        f"  PUERTAS_INVARIANT: {decision.gate_verdicts.get('invariant', 'SKIP')}",
+        f"  PUERTAS_REVERSIBILITY: {decision.gate_verdicts.get('reversibility', 'SKIP')}",
+        f"  JUDGE_CONFIDENCE: {decision.judge_confidence if decision.judge_confidence is not None else 'n/a'}",
+        f"  GATE_TIMINGS_MS: {json.dumps(decision.gate_timings_ms or {})}",
+        "  PRE-MORTEM: (proposer-supplied; see proposal payload)",
+        "  WHAT WORRIES ME MOST: gate failed; review against contract before allowing edit",
+        "  RECOMENDACIÓN: human reviewer must approve, reject, or revise the proposal",
+    ]
+    return "\n".join(lines)
+
+
+def _write_amend_marker(cwd, scenario_rel):
+    """Write `<scenario_parent>/.amends/<stem>-<HEAD_SHA>.marker` after a
+    4/4 PASS amend decision so the existing `check_amend_marker` honors
+    the subsequent Edit. Marker body carries gate verdicts + judge
+    confidence per the design's seven-field marker block.
+    """
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(cwd), capture_output=True, text=True, timeout=5, check=False,
+    )
+    if head.returncode != 0:
+        return None
+    head_sha = head.stdout.strip()
+    if not head_sha:
+        return None
+    rel_path = Path(scenario_rel)
+    if not rel_path.name.endswith(SCENARIO_FILE_SUFFIX):
+        return None
+    stem = rel_path.name[:-len(SCENARIO_FILE_SUFFIX)]
+    marker_dir = Path(cwd) / rel_path.parent / AMEND_SUBDIR
+    try:
+        marker_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    marker = marker_dir / f"{stem}-{head_sha}.marker"
+    try:
+        marker.write_text(f"# amend marker — {head_sha}\n")
+    except OSError:
+        return None
+    return marker
+
+
+def _evaluate_amend_via_protocol(cwd, scenario_rel, amend_request, sid):
+    """Run the four-gate evaluation on a hook-loaded amend_request.
+
+    Returns the AmendDecision. The caller decides whether to allow the
+    Edit (decision.approved is True → write marker → continue) or block
+    with the Format R skeleton (decision.approved is False).
+
+    `judge_callable` is None: the hook architecture forbids in-process
+    Agent spawn, so Gate 2 fails closed by design here. The leader's
+    supervision loop (Step 6) is the path that produces autonomous PASS.
+    """
+    payload = amend_request or {}
+    return evaluate_amend_request(
+        cwd=cwd,
+        scenario_rel=scenario_rel,
+        proposed_content=payload.get("proposed_content", ""),
+        premortem=payload.get("premortem", ""),
+        evidence_artifact=payload.get("evidence_artifact", {}) or {},
+        base_head_sha=payload.get("base_head_sha", ""),
+        base_file_hash=payload.get("base_file_hash", ""),
+        proposer_role=payload.get("proposer_role", "teammate"),
+        judge_callable=None,
+    )
+
+
 def _fail(message, category="SCENARIO"):
     """Emit a structured guard denial and exit 2."""
     print(f"[SDD:{category}] SDD Guard: {message}", file=sys.stderr)
@@ -599,17 +800,74 @@ def main():
                 )
                 if disk_diverges or predict_diverges:
                     if not check_amend_marker(cwd, rel, sid=sid):
-                        _record_guard_trigger(cwd, "SCENARIO", tool_name, file_path)
-                        _fail(
-                            f"scenario write-once violation on {rel}\n\n"
-                            f"The scenario file would diverge from its git "
-                            f"baseline (disk_diverges={disk_diverges}, "
-                            f"predict_diverges={predict_diverges}).\n"
-                            f"To amend a scenario, invoke sop-reviewer and create\n"
-                            f"an amend marker:\n"
-                            f"  .claude/scenarios/.amends/<name>-<HEAD_SHA>.marker\n"
-                            f"Or revert the edit to match baseline."
+                        # Step 3: amend protocol intercepts divergence.
+                        # If the proposer carried an amend_request (inline
+                        # tool_input or disk fallback), evaluate it. PASS
+                        # → write marker + allow this Edit. FAIL → block
+                        # with Format R escalation.
+                        amend_request = _load_amend_request(
+                            cwd, tool_input, sid, rel,
                         )
+                        if amend_request is not None:
+                            decision = _evaluate_amend_via_protocol(
+                                cwd, rel, amend_request, sid,
+                            )
+                            if decision.approved:
+                                _write_amend_marker(cwd, rel)
+                                _reset_amend_attempts(cwd, sid, rel)
+                                # Fall through — Edit is permitted; the
+                                # newly-written marker satisfies the next
+                                # check_amend_marker call from any peer
+                                # hook in this PreToolUse cycle.
+                            else:
+                                _record_guard_trigger(
+                                    cwd, "SCENARIO", tool_name, file_path,
+                                )
+                                _fail(
+                                    "amend protocol rejected — see escalation\n\n"
+                                    + _format_r_skeleton(rel, decision),
+                                    category="AMEND_R",
+                                )
+                        else:
+                            # Hook-enforced 2-attempt counter (SCEN-219):
+                            # if the same (sid, scenario_rel) has already
+                            # exhausted attempts, demand a proposal before
+                            # any further Edit.
+                            attempts = _read_amend_attempts(cwd, sid, rel)
+                            if attempts >= _AMEND_ATTEMPTS_MAX:
+                                _record_guard_trigger(
+                                    cwd, "ATTEMPTS", tool_name, file_path,
+                                )
+                                append_telemetry(cwd, {
+                                    "event": "amend_attempts_exhausted",
+                                    "scenario_rel": rel,
+                                    "attempts": attempts,
+                                })
+                                _fail(
+                                    f"amend-proposal required — "
+                                    f"{_AMEND_ATTEMPTS_MAX} attempts exhausted on "
+                                    f"{rel}; construct amend_request, write to "
+                                    f".ralph/specs/<goal>/amend-proposals/, "
+                                    f"end session",
+                                    category="ATTEMPTS",
+                                )
+                            _record_guard_trigger(
+                                cwd, "SCENARIO", tool_name, file_path,
+                            )
+                            _fail(
+                                f"scenario write-once violation on {rel}\n\n"
+                                f"The scenario file would diverge from its git "
+                                f"baseline (disk_diverges={disk_diverges}, "
+                                f"predict_diverges={predict_diverges}).\n"
+                                f"To amend a scenario, attach an `amend_request` "
+                                f"payload to your Edit tool_input (or write a "
+                                f"proposal under "
+                                f".ralph/specs/<goal>/amend-proposals/) and "
+                                f"re-issue the Edit.\n"
+                                f"For sop-reviewer manual amends, create an "
+                                f"amend marker at:\n"
+                                f"  <scenario_parent>/.amends/<name>-<HEAD_SHA>.marker"
+                            )
 
     # ─── BASH SCENARIO MODIFICATION GUARD (Phase 3) ───────────────
     # Bash commands that write to .claude/scenarios/ bypass Edit/Write
