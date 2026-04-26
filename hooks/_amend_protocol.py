@@ -15,7 +15,9 @@ rewrite:
                       HMAC-SHA256.
   Gate 2 — INVARIANT: a judge agent confirms the proposed text preserves
                       the SCEN block's observable Given/When/Then meaning.
-                      Stubbed in Step 1 (judge_callable=None → SKIP_STUB).
+                      Fail-closed: a missing `judge_callable` is treated as
+                      gate failure (no silent SKIP). Production callers
+                      build one via `build_judge_callable(spawn_fn=...)`.
   Gate 3 — REVERSIBILITY: the diff is small (≤30 changed lines), no
                           `**Evidence**:` line is removed, and the change
                           class is one of the safe-clarification shapes.
@@ -775,3 +777,250 @@ def mark_proposal_resolved(cwd: Path, proposal_path: Path, status: str, payload:
         body.update(payload)
     _write_json_atomic(sibling, body, prefix="amend-resolved-")
     return sibling.resolve()
+
+
+# ─────────────────────────────────────────────────────────────────
+# Gate 2: judge agent factory
+# ─────────────────────────────────────────────────────────────────
+
+
+# Sentinel-fenced verdict format defends against verdict-token echo: even if
+# the proposer embeds `PRESERVES_INVARIANT|fine|99` in evidence content and
+# the judge LLM echoes it in its preamble, the parser only reads the line
+# between the unguessable START/END sentinels. The 16-hex-char suffixes are
+# baked into the template so the judge sees them once and the proposer
+# cannot reproduce them without the source. (Edge-case review P0.)
+_JUDGE_VERDICT_START = "<<<JUDGE_VERDICT_START_a3f1c97e2b4d5089>>>"
+_JUDGE_VERDICT_END = "<<<JUDGE_VERDICT_END_a3f1c97e2b4d5089>>>"
+
+# Bare verdict tokens are rejected from inputs as well — the existing
+# `_INJECTION_TOKENS` list only catches template tags. A scenario or
+# evidence file containing the literal verdict token is treated as a
+# reward-hacking attempt and Gate 2 fails closed.
+_VERDICT_TOKENS = ("PRESERVES_INVARIANT", "ALTERS_INVARIANT")
+
+
+JUDGE_PROMPT_TEMPLATE = (
+    "You are reviewing a proposed change to a scenario contract file. "
+    "Your single job: decide whether the proposed text preserves the "
+    "observable Given/When/Then meaning of the SCEN block, OR alters it "
+    "(intentionally or accidentally).\n\n"
+    "You operate as a HOSTILE REVIEWER. Default to ALTERS_INVARIANT when:\n"
+    "  - You cannot prove the meaning is preserved\n"
+    "  - The diff weakens an assertion (e.g., 'exactly 5' to 'approximately 5')\n"
+    "  - The diff removes specificity (e.g., concrete values to placeholders)\n"
+    "  - The diff softens an exit code, status, or expected error\n"
+    "  - The diff renames a SCEN-### identifier or swaps it for a different ID\n\n"
+    "ORIGINAL SCENARIO:\n{scenario_original}\n\n"
+    "PROPOSED CHANGE (unified diff):\n{unified_diff}\n\n"
+    "EVIDENCE ARTIFACT (raw content the proposer captured):\n"
+    "{evidence_artifact_content}\n\n"
+    "OUTPUT FORMAT — wrap your verdict between sentinels exactly as shown:\n"
+    + _JUDGE_VERDICT_START + "\n"
+    "<verdict>|<reason>|<confidence>\n"
+    + _JUDGE_VERDICT_END + "\n\n"
+    "Where:\n"
+    "  verdict     in {{PRESERVES_INVARIANT, ALTERS_INVARIANT}}\n"
+    "  reason      = short phrase (no `|`, max 80 chars)\n"
+    "  confidence  = integer 0-100 (your subjective certainty)\n\n"
+    "Emit nothing outside the two sentinels except optional reasoning before them."
+)
+
+
+# Confidence range tightened to 0-100 (was \d{1,3} which silently clamped 999
+# to 100). Out-of-range numeric values now fail to match → fail-closed.
+JUDGE_VERDICT_RE = re.compile(
+    r"^\s*(PRESERVES_INVARIANT|ALTERS_INVARIANT)\s*\|\s*([^|]+?)\s*\|"
+    r"\s*(100|[1-9]?\d)\s*$",
+    re.MULTILINE,
+)
+
+
+def _read_evidence_content(evidence_artifact: dict, max_bytes: int = 64 * 1024) -> str:
+    """Read evidence artifact content, capped at max_bytes. Returns a
+    placeholder string on any failure — the caller's prompt is rendered
+    unconditionally so the judge sees a stable shape.
+
+    Defenses (edge-case review P0):
+      * `os.stat` + `S_ISREG` rejects FIFOs, sockets, char/block devices —
+        otherwise `read_bytes()` on a FIFO blocks indefinitely.
+      * Read is bounded by `read(max_bytes)` not `read_bytes()[:max_bytes]`
+        — the latter loads the entire file before slicing, which OOMs on
+        a multi-GB tracked artifact.
+      * Truncation is detected by a 1-byte trailing read so the placeholder
+        text reports "(truncated)" without loading the rest.
+    """
+    import stat
+
+    if not evidence_artifact:
+        return "<no evidence artifact>"
+    path_str = str(evidence_artifact.get("path", ""))
+    if not path_str:
+        return "<no evidence artifact path>"
+    try:
+        st = os.stat(path_str)
+    except OSError:
+        return f"<evidence artifact unreadable: {path_str}>"
+    if not stat.S_ISREG(st.st_mode):
+        return f"<evidence artifact not a regular file: {path_str}>"
+    try:
+        with open(path_str, "rb") as fh:
+            data = fh.read(max_bytes)
+            more = fh.read(1)
+    except OSError:
+        return f"<evidence artifact unreadable: {path_str}>"
+    text = data.decode("utf-8", errors="replace")
+    if more:
+        text += f"\n... (truncated at {max_bytes} bytes)"
+    return text
+
+
+# Tokens this template substitutes — narrower than _INJECTION_TOKENS so a
+# scenario that legitimately documents `<premortem>` (e.g. these very specs)
+# does not trigger a self-DoS in Gate 2 rendering. The pre-Gate-2 injection
+# check still uses the broader _INJECTION_TOKENS list against proposal
+# payloads, where `<premortem>` IS a reserved token.
+_JUDGE_TEMPLATE_TOKENS = (
+    "<scenario_original>",
+    "<unified_diff>",
+    "<evidence_artifact_content>",
+)
+
+
+def _render_judge_prompt(scenario_original: str, unified_diff: str, evidence_content: str) -> str:
+    """Positional substitution into JUDGE_PROMPT_TEMPLATE. Reject inputs
+    that contain template tokens (judge-prompt placeholders) OR verdict
+    tokens (`PRESERVES_INVARIANT`, `ALTERS_INVARIANT`). The verdict-token
+    scrub is part of a defense-in-depth chain against verdict echo
+    forgery (edge-case review P0): the proposer cannot embed a verdict
+    line that the LLM might echo into its preamble.
+    """
+    for label, value in (
+        ("scenario_original", scenario_original),
+        ("unified_diff", unified_diff),
+        ("evidence_content", evidence_content),
+    ):
+        text = value or ""
+        for tok in _JUDGE_TEMPLATE_TOKENS:
+            if tok in text:
+                raise ValueError(f"injection token in {label}: {tok}")
+        for tok in _VERDICT_TOKENS:
+            if tok in text:
+                raise ValueError(f"verdict token in {label}: {tok}")
+    return JUDGE_PROMPT_TEMPLATE.format(
+        scenario_original=scenario_original or "",
+        unified_diff=unified_diff or "",
+        evidence_artifact_content=evidence_content or "",
+    )
+
+
+def _parse_judge_output(raw: str) -> Optional[tuple]:
+    """Parse the judge's verdict line from a sentinel-fenced output region.
+
+    Layered defenses against verdict-token echo (edge-case review P0):
+      1. Inputs to the prompt are scrubbed of `PRESERVES_INVARIANT` /
+         `ALTERS_INVARIANT` literals at render time.
+      2. The judge is instructed to emit its verdict between two
+         unguessable sentinels; only the substring between them is parsed.
+      3. If multiple lines inside the sentinel region match the verdict
+         regex, the LAST match wins — the judge's own output is appended
+         after any echoed inputs.
+
+    Returns `(verdict, reason, confidence)` or None when the output does
+    not match. Confidence regex now bounds 0-100 directly (no silent
+    clamping of out-of-range values).
+    """
+    if not raw:
+        return None
+    start = raw.find(_JUDGE_VERDICT_START)
+    end = raw.find(_JUDGE_VERDICT_END, start + len(_JUDGE_VERDICT_START)) if start != -1 else -1
+    if start == -1 or end == -1:
+        return None
+    region = raw[start + len(_JUDGE_VERDICT_START):end]
+    matches = list(JUDGE_VERDICT_RE.finditer(region))
+    if not matches:
+        return None
+    m = matches[-1]
+    verdict = m.group(1)
+    reason = m.group(2).strip()
+    try:
+        conf = int(m.group(3))
+    except ValueError:
+        return None
+    if conf < 0 or conf > 100:
+        return None
+    return (verdict, reason, conf)
+
+
+def build_judge_callable(
+    spawn_fn: Optional[Callable[..., Any]] = None,
+    timeout_seconds: int = 60,
+) -> Callable[..., Any]:
+    """Build a `judge_callable` for `evaluate_amend_request`'s Gate 2.
+
+    The returned callable:
+      * Renders JUDGE_PROMPT_TEMPLATE positionally — never sees premortem.
+      * Spawns the judge via `spawn_fn(prompt: str, agent_name: str, timeout: int)`.
+        `spawn_fn` is a dependency-injection seam so tests can mock the spawn
+        without invoking the real Claude Code Agent tool. In production, the
+        caller wires `spawn_fn` to a real Agent invocation.
+      * On any spawn failure (None, exception, timeout, malformed output)
+        returns None — `evaluate_amend_request` then fails the gate closed
+        with reason="judge unavailable" (SCEN-204).
+      * On success returns `(verdict, reason, confidence)`.
+
+    Args:
+      spawn_fn: callable accepting `(prompt, agent_name, timeout)` and
+        returning either the judge's raw stdout str or None on failure.
+        Required — passing None raises TypeError so production wiring
+        cannot silently fall back to a no-op judge (security review P0).
+      timeout_seconds: passed to spawn_fn; default 60s per design.
+    """
+    if spawn_fn is None:
+        raise TypeError("spawn_fn is required — production callers must wire a real spawn")
+
+    def _judge(*, head_content=None, proposed_content=None,
+               evidence_artifact=None, **_ignored):
+        # Required inputs — empty/None fails closed rather than rendering an
+        # empty-vs-empty diff that the judge would trivially preserve
+        # (edge-case review P1).
+        if not head_content or not proposed_content:
+            return None
+        evidence_artifact = evidence_artifact or {}
+
+        # Build unified diff inside the factory — proposer cannot inject one.
+        diff_lines = list(
+            difflib.unified_diff(
+                head_content.splitlines(keepends=True),
+                proposed_content.splitlines(keepends=True),
+                fromfile="scenario.original",
+                tofile="scenario.proposed",
+                n=3,
+            )
+        )
+        unified_diff = "".join(diff_lines)
+        evidence_content = _read_evidence_content(evidence_artifact)
+        scenario_original = head_content
+
+        try:
+            prompt = _render_judge_prompt(
+                scenario_original=scenario_original,
+                unified_diff=unified_diff,
+                evidence_content=evidence_content,
+            )
+        except ValueError:
+            return None  # injection token detected post-hoc — fail closed
+
+        try:
+            raw = spawn_fn(
+                prompt=prompt,
+                agent_name="scenario-amend-judge",
+                timeout=timeout_seconds,
+            )
+        except Exception:  # noqa: BLE001 — judge spawn must not crash gates
+            return None
+        if raw is None:
+            return None
+        return _parse_judge_output(raw)
+
+    return _judge
