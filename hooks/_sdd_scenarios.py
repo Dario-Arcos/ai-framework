@@ -39,7 +39,12 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from _sdd_state import _write_json_atomic, project_hash, read_skill_invoked
+from _sdd_state import (
+    _write_json_atomic,
+    consume_skill_invoked,
+    project_hash,
+    read_skill_invoked,
+)
 
 
 SCENARIO_FILE_SUFFIX = ".scenarios.md"
@@ -572,7 +577,7 @@ def check_amend_marker(cwd, rel_scenario_path, sid=None):
 # High-level predicates for hooks
 # ─────────────────────────────────────────────────────────────────
 
-def has_pending_scenarios(cwd, sid=None):
+def has_pending_scenarios(cwd, sid=None, consume=False):
     """True iff scenarios exist AND verification-before-completion is missing.
 
     Used by PreToolUse guards (TaskUpdate, Bash git commit) to block
@@ -581,9 +586,22 @@ def has_pending_scenarios(cwd, sid=None):
 
     Without `sid` the session check cannot be performed — the caller
     receives a conservative True (scenarios exist → require verification).
+
+    Holdout enforcement (F1 close): when `consume=True`, the underlying
+    skill flag is atomically read-and-deleted (`consume_skill_invoked`).
+    The next caller will see the flag as missing — closing the bypass
+    where one skill invocation covers every commit inside the 30-min
+    TTL window. Used by the `git commit` / `git merge` / `git push`
+    gate; other consumers keep the persistent `read_skill_invoked`
+    semantics so leader→teammate inheritance for sop-code-assist /
+    sop-reviewer is preserved.
     """
     if not scenario_files(cwd):
         return False
     if sid is None:
         return True
-    return not read_skill_invoked(cwd, "verification-before-completion", sid=sid)
+    if consume:
+        state = consume_skill_invoked(cwd, "verification-before-completion")
+    else:
+        state = read_skill_invoked(cwd, "verification-before-completion", sid=sid)
+    return state is None

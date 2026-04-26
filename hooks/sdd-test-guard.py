@@ -1336,12 +1336,17 @@ def main():
     if tool_name == "Bash":
         command = tool_input.get("command", "")
         if _bash_is_git_commit(command) and "--no-verify" not in command:
-            if has_pending_scenarios(cwd, sid=sid):
+            # Holdout enforcement (F1 close): consume the skill flag on
+            # the git-commit gate. One skill invocation = one commit. The
+            # next commit must invoke the skill again. TaskUpdate /
+            # leader-teammate inheritance keep the persistent semantics.
+            if has_pending_scenarios(cwd, sid=sid, consume=True):
                 _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
                 _fail(
                     "git commit blocked — scenarios require verification\n\n"
                     "Scenarios exist under configured discovery roots but\n"
-                    "verification-before-completion was not invoked this session.\n"
+                    "verification-before-completion was not invoked this session\n"
+                    "(or its evidence was already consumed by a prior commit).\n"
                     "Invoke: Skill(skill='verification-before-completion')\n"
                     "To bypass (telemetry-logged): add --no-verify to the commit.",
                     category="POLICY",

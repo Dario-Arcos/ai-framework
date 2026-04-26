@@ -721,6 +721,37 @@ def read_skill_invoked(cwd, skill_name="sop-code-assist", max_age_seconds=_SKILL
     )
 
 
+def consume_skill_invoked(cwd, skill_name, max_age_seconds=_SKILL_TTL_SECONDS):
+    """Atomic read-and-delete of a skill-invocation flag.
+
+    Holdout enforcement (F1 close): the verification-before-completion
+    flag is one-shot per commit. Reading the flag DELETES the underlying
+    file so a single skill invocation cannot satisfy multiple subsequent
+    commits inside the 30-min TTL window. The next commit must re-invoke
+    the skill.
+
+    Returns the parsed state dict if the flag existed and was within TTL;
+    returns None otherwise. The file is removed on success; if removal
+    fails (already gone, race), the read still returns the data — best-
+    effort consume.
+
+    Used ONLY by the git-commit / merge / push policy gate. Other gates
+    (sop-code-assist inheritance, sop-reviewer marker) keep the
+    persistent `read_skill_invoked` semantics intact.
+    """
+    canonical = _normalize_skill_name(skill_name)
+    path = skill_invoked_path(cwd, canonical)
+    state = _read_json_with_ttl(path, max_age_seconds, use_flock=True)
+    if state is None:
+        return None
+    try:
+        os.unlink(path)
+    except (FileNotFoundError, OSError):
+        # Race or already consumed — return the read regardless.
+        pass
+    return state
+
+
 # ─────────────────────────────────────────────────────────────────
 # TEST BASELINE STATE — pre-existing failure detection for teammates
 # ─────────────────────────────────────────────────────────────────
