@@ -1,0 +1,14 @@
+[SDD:AMEND_R] amend protocol escalation — human review required
+  SCENARIO: <relative-path-to-scenario-file>
+  DIVERGENCE: <failed-gate-name>
+  EVIDENCE: <gate-failure-reason>
+  PROPOSED AMEND: see amend_request payload
+  PUERTAS_STALENESS: <PASS|FAIL|SKIP>
+  PUERTAS_EVIDENCE: <PASS|FAIL|SKIP>
+  PUERTAS_INVARIANT: <PASS|FAIL|SKIP>
+  PUERTAS_REVERSIBILITY: <PASS|FAIL|SKIP>
+  JUDGE_CONFIDENCE: <integer-0-100-or-n/a>
+  GATE_TIMINGS_MS: <json-object>
+  PRE-MORTEM: (proposer-supplied; see proposal payload)
+  WHAT WORRIES ME MOST: <non-empty-prose-explaining-uncertainty>
+  RECOMENDACIÓN: <next-action-recommendation>
