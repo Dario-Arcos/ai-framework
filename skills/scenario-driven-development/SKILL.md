@@ -395,7 +395,7 @@ Before writing or modifying scenarios, review the testing anti-patterns to avoid
 
 | Receives | Produces |
 |---|---|
-| Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Scenario file(s) at `.claude/scenarios/{slug}.scenarios.md`, committed before implementation begins (parent branch in Ralph mode) |
+| Observable scenarios from approved plan file (or defined inline for bug fixes/small changes) | Scenario file(s) at the configured discovery root (Ralph: `.ralph/specs/{goal}/scenarios/{slug}.scenarios.md`; non-Ralph: `docs/specs/{name}/scenarios/{slug}.scenarios.md`), committed before implementation begins (parent branch in Ralph mode) |
 | | Satisfied code with all scenarios passing |
 | | Quality Integration complete (code-reviewer + code-simplifier + edge-case-detector + performance-engineer agents) |
 
@@ -404,7 +404,9 @@ Before writing or modifying scenarios, review the testing anti-patterns to avoid
 
 ## Scenarios Artifact
 
-Canonical path: `.claude/scenarios/*.scenarios.md`
+Canonical paths (resolved at runtime by `_sdd_config.get_scenario_discovery_roots()`):
+- Ralph mode: `.ralph/specs/{goal}/scenarios/*.scenarios.md`
+- Non-Ralph mode: `docs/specs/{name}/scenarios/*.scenarios.md`
 
 Minimal shape (SPEC §3.3 summary):
 
@@ -424,14 +426,14 @@ task_id: TIP-003      # optional, ralph-only
 ```
 
 Output steps (non-negotiable):
-- NEVER emit scenarios anywhere other than `.claude/scenarios/{kebab-slug}.scenarios.md`. The slug is the primary goal noun, kebab-cased (example: `password-reset-flow`).
+- NEVER emit scenarios outside the configured discovery roots. In Ralph mode write to `.ralph/specs/{goal}/scenarios/{kebab-slug}.scenarios.md`; in non-Ralph mode write to `docs/specs/{name}/scenarios/{kebab-slug}.scenarios.md`. The slug is the primary goal noun, kebab-cased (example: `password-reset-flow`).
 - NEVER leave a SCEN block without an `**Evidence**:` field naming a concrete observable (HTTP response, DOM state, DB row, log line, file content). Scenarios without Evidence are unverifiable and fail the parser.
-- NEVER proceed to implementation while `.claude/scenarios/` remains uncommitted. In Ralph mode, commit on the parent branch BEFORE teammate worktrees spawn — teammates inherit the holdout via branch, not via re-authoring.
+- NEVER proceed to implementation while the scenarios file remains uncommitted under its discovery root. In Ralph mode, commit on the parent branch BEFORE teammate worktrees spawn — teammates inherit the holdout via branch, not via re-authoring.
 - NEVER re-open a committed scenario to adjust assertions toward your code. That is reward hacking. Legitimate edits go through the amend-marker protocol below.
 
 Operational rules:
 - Scenario artifacts are write-once after the first commit. Treat the committed file as the holdout contract.
-- Legitimate edits require the amend-marker protocol documented in `sop-reviewer`: `.claude/scenarios/.amends/{name}-{HEAD_SHA}.marker`.
+- Legitimate edits require the amend-marker protocol documented in `sop-reviewer`: `<scenario_parent>/.amends/{name}-{HEAD_SHA}.marker`.
 - Marker contents are ignored. Presence + filename are the attestation; a new commit invalidates prior markers by design.
 
 Tier-2 stack config lives in `.claude/config.json`:
@@ -440,3 +442,50 @@ Tier-2 stack config lives in `.claude/config.json`:
 - `COVERAGE_REPORT_PATH`
 
 Use Tier 2 only to teach the hooks what counts as source/tests/coverage for the current stack. It does not weaken the scenario contract.
+
+## Amend Protocol — when scenarios genuinely diverge
+
+Scenarios are write-once. When a committed contract is wrong (the world changed, a counterexample surfaced, the contract was authored against a misread spec), do NOT mutate the file. Construct an `amend_request` payload and pass it through the four-gate evaluator. The protocol's full specification is at `docs/specs/2026-04-25-amend-protocol/`; the operational shape is below.
+
+**Trigger the amend protocol only after**:
+- Two failed attempts at satisfying the scenario as written (the hook enforces a 2-attempt counter).
+- A documented divergence between scenario text and observed reality you can articulate in 2-3 sentences (the pre-mortem).
+
+**`amend_request` shape (5 fields, structured)**:
+```
+{
+  "premortem": "Why I think this contract is wrong + revert path if I'm mistaken (≥20 chars, non-trivial)",
+  "evidence_artifact": {
+    "path": "<path inside cwd>",
+    "class": "git_tracked_at_head" | "sandboxed_run_output" | "captured_command_output",
+    "metadata": { ... class-specific fields ... }
+  },
+  "proposed_content": "<full new scenario file content>",
+  "base_head_sha": "<sha you reasoned against>",
+  "base_file_hash": "<sha256 of the file content you reasoned against>"
+}
+```
+
+**Pre-mortem — good vs bad**:
+- Good: "The contract asserts HTTP 200 but the API now returns 204 per the spec change documented at docs/api/v3-migration.md. If I'm wrong about the spec change, revert via `git revert <commit>` and re-run the integration suite."
+- Bad: "Scenario seems off." (Not specific. Not a hypothesis. Not a revert path.)
+
+**"What worries me most" — populate honestly**:
+- Good: "I might be misreading the spec — the migration doc was published 3 weeks ago and could have been amended."
+- Bad: "Nothing." (Reward-hacking signal — every change has a worry surface.)
+
+**Two transports** (both supported):
+1. Inline: attach `amend_request` to your `Edit` tool_input. The PreToolUse hook reads it and runs the four gates.
+2. Disk: write a proposal JSON under `.ralph/specs/{goal}/amend-proposals/{sid}-{ts}-{nonce}.json`. The leader supervision tick (Ralph mode) processes it.
+
+**Outcome**:
+- All four gates PASS → autonomous amend; hook writes the marker; your Edit succeeds.
+- Any gate FAILs → the hook emits a Format R escalation to stderr; the human reviews. Do not retry — the contract is intentionally human-final on disagreement.
+
+**STOP-after-2 protocol** (Ralph teammates):
+- After 2 failed attempts on the same scenario in the same session, STOP. Do not iterate further.
+- Construct the amend_request as above.
+- Write it to disk via the proposal path.
+- Emit a confession marker `> blocked: amend-required`.
+- Call `TaskUpdate(status="blocked-pending-amend")`.
+- End your session. The leader picks up the proposal in its next supervision tick.

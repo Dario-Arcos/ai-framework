@@ -180,7 +180,7 @@ path the user can inspect:
 
 ### Scenario contract presence
 
-- Count `.claude/scenarios/*.scenarios.md` files in git HEAD.
+- Count `*.scenarios.md` files under each configured discovery root in git HEAD (`.ralph/specs/{goal}/scenarios/` for Ralph mode, `docs/specs/{name}/scenarios/` for non-Ralph mode — the runtime list comes from `_sdd_config.get_scenario_discovery_roots()`).
 - Zero: `Scenarios: not yet defined — run /scenario-driven-development to author the first holdout contract.`
 - N > 0: `Scenarios: {N} file(s) tracked in git.`
 

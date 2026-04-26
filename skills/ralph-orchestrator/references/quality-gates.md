@@ -91,7 +91,7 @@ Tasks with `Scenario-Strategy: required` (or field absent) follow full SDD. Task
 
 ### Scenario Gate Priority
 
-When `.claude/scenarios/` exists, committed scenario artifacts are the primary quality contract. Automated gates still run, but the orchestration model is scenarios first:
+When committed scenario files exist under any configured discovery root (Ralph: `.ralph/specs/{goal}/scenarios/`; non-Ralph: `docs/specs/{name}/scenarios/`), those committed scenario artifacts are the primary quality contract. Automated gates still run, but the orchestration model is scenarios first:
 
 - Scenario integrity and verification are blocking.
 - Coverage is an informational signal when scenarios exist, not the authority on task correctness.
@@ -108,7 +108,7 @@ Both sides canonicalize via `_canon_scenario_bytes()` (strips UTF-8 BOM + normal
 
 Malformed edits are denied BEFORE simulation: `Edit.old_string` empty or absent from disk, non-object MultiEdit entries. This prevents pathological `replace()` semantics and silent pass-through when the simulator cannot verify the divergence.
 
-Amend flow: invoke `/ai-framework:sop-reviewer` in the session, then create `.claude/scenarios/.amends/{stem}-{HEAD_SHA}.marker`. The marker is invalidated by the next `git commit`, enforcing "amends must be justified per-commit".
+Amend flow has two routes. Manual: invoke `/ai-framework:sop-reviewer` in the session and create `<scenario_parent>/.amends/{stem}-{HEAD_SHA}.marker`. Autonomous: pass an `amend_request` payload through the four-gate protocol (`docs/specs/2026-04-25-amend-protocol/`); on PASS the hook writes the marker for you. Either way the marker is invalidated by the next `git commit`, enforcing "amends must be justified per-commit".
 
 ---
 
@@ -302,11 +302,12 @@ Deleting `.claude/metrics.jsonl` is safe. The next telemetry write recreates it 
 
 ### Scenario rollback ladder
 
-Escalate from narrowest to broadest rollback:
+Escalate from narrowest to broadest rollback (no env-var bypass — the back door was removed in amend-protocol Step 4 per the factory.ai holdout principle):
 
-1. Delete one scenario file in `.claude/scenarios/` to remove a single contract.
-2. Delete the entire `.claude/scenarios/` directory to return the project to backward-compatible pre-scenario behavior.
-3. Reserved emergency bypass: `_SDD_DISABLE_SCENARIOS=1`. Configure it in the current shell session, the shell profile used for the incident window, or Claude Code `settings.json` via the `env` block. This bypass skips only scenario-specific guards in `sdd-test-guard.py` and `_enforce_scenario_gate` in `task-completed.py`; other policy, gate, test, and coverage checks still run. Every hook invocation that observes the bypass emits a `scenarios_bypassed` telemetry event in `.claude/metrics.jsonl`. See [Migration To Scenarios](../../../docs/migration-to-scenarios.md) for the canonical operational explanation.
+1. `git rm` a single scenario file under its discovery root to drop a single contract from the holdout. Commit the removal.
+2. `git rm -r` the goal's `scenarios/` directory to return the project to backward-compatible pre-scenario behavior for that goal.
+3. For genuine scenario divergence (the contract is wrong, not the code): construct an `amend_request` and route it through the four-gate amend protocol. If any gate fails, the hook surfaces a Format R escalation and a human disposes of the proposal — there is no single-key escape hatch.
+4. Hotfix-without-scenario-validation in an incident window: `git commit --no-verify`. This is telemetry-logged as a deliberate bypass; review the log post-incident and either roll forward with a real validation or revert.
 
 ### Circuit Breaker Tripped
 

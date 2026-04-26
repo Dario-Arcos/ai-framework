@@ -59,13 +59,13 @@ Scan `.ralph/specs/` for existing goals. For each (or `$ARGUMENTS` if provided),
 
 | Artifact | Detected Phase |
 |----------|----------------|
-| Any `*.code-task.md` exists AND `.claude/scenarios/{goal}.scenarios.md` MISSING in `git HEAD` | legacy-migration (Step 3.5 authors scenarios, then Step 4 regenerates task files — stale tasks MUST NOT be reused) |
+| Any `*.code-task.md` exists AND `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` MISSING in `git HEAD` | legacy-migration (Step 3.5 authors scenarios, then Step 4 regenerates task files — stale tasks MUST NOT be reused) |
 | All `*.code-task.md` with `Status: COMPLETED` | COMPLETE |
 | Any `*.code-task.md` with `Status: IN_REVIEW` | execution (Step 7) |
 | Any `*.code-task.md` with `Status: PENDING` | execution (Step 7) |
 | `implementation/plan.md` without task files | task-generator (Step 4) |
-| `design/detailed-design.md` without `.claude/scenarios/{goal}.scenarios.md` | scenarios-authorship (Step 3.5) |
-| `design/detailed-design.md` + `.claude/scenarios/{goal}.scenarios.md` committed | planning-complete (Step 4) |
+| `design/detailed-design.md` without `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` | scenarios-authorship (Step 3.5) |
+| `design/detailed-design.md` + `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` committed | planning-complete (Step 4) |
 | `referents/catalog.md` | referent-complete (Step 3) |
 | Nothing | NEW |
 
@@ -104,10 +104,10 @@ Store as `PLANNING_MODE={interactive|autonomous}`. **You MUST NOT** proceed with
 
 - [ ] `.ralph/specs/{goal}/referents/catalog.md` exists — If missing: Execute `sop-reverse` in referent mode (Step 2)
 - [ ] `.ralph/specs/{goal}/design/detailed-design.md` exists — If missing: Execute `sop-planning` (Step 3)
-- [ ] `.claude/scenarios/{goal}.scenarios.md` exists in `git HEAD` — If missing: Execute `scenario-driven-development` (Step 3.5). The scenarios contract must be committed to the parent branch BEFORE task generation so teammates inherit a frozen acceptance holdout.
+- [ ] `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` exists in `git HEAD` — If missing: Execute `scenario-driven-development` (Step 3.5). The scenarios contract must be committed to the parent branch BEFORE task generation so teammates inherit a frozen acceptance holdout.
 - [ ] `.ralph/specs/{goal}/implementation/plan.md` + task files exist — If missing: Execute `sop-task-generator` (Step 4)
 
-**You MUST NOT** skip referent discovery, skip planning, skip scenarios authorship, or proceed with missing prerequisites. Scenarios authorship is non-optional: autonomous Ralph without a committed `.claude/scenarios/*` disables the anti-reward-hacking gate (`.claude/scenarios/` missing = backward-compat mode, which is legitimate only for pre-Phase-3 projects).
+**You MUST NOT** skip referent discovery, skip planning, skip scenarios authorship, or proceed with missing prerequisites. Scenarios authorship is non-optional: autonomous Ralph without a committed scenarios file under `.ralph/specs/{goal}/scenarios/` disables the anti-reward-hacking gate (no scenarios discovered = backward-compat mode, which is legitimate only for pre-Phase-3 projects).
 
 ### Step 2: Referent Discovery
 
@@ -131,28 +131,28 @@ Output: `.ralph/specs/{goal}/design/detailed-design.md` — Continue to Step 3.5
 
 **Purpose**: author the write-once acceptance contract that every teammate will satisfy. Without this step, autonomous execution has no external holdout — the implementer and the validator collapse into the same agent.
 
-Invoke `scenario-driven-development` from the parent branch with the `detailed-design.md` as the source of intent. The skill owns its own argument contract — see its SKILL.md for the current invocation shape. Produce exactly one `.claude/scenarios/{goal}.scenarios.md` file containing the observable behaviors the design implies.
+Invoke `scenario-driven-development` from the parent branch with the `detailed-design.md` as the source of intent. The skill owns its own argument contract — see its SKILL.md for the current invocation shape. Produce exactly one `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` file containing the observable behaviors the design implies.
 
 Then commit to the parent branch:
 
 ```
-git add .claude/scenarios/{goal}.scenarios.md
+git add .ralph/specs/{goal}/scenarios/{goal}.scenarios.md
 git commit -m "scenarios({goal}): acceptance contract"
 ```
 
 Output:
-- `.claude/scenarios/{goal}.scenarios.md` committed to `git HEAD`, containing one or more `## SCEN-NNN: <title>` blocks with `Given / When / Then / Evidence` per `_sdd_scenarios` parser spec.
-- Baseline hash locked via `git log --diff-filter=A` — any subsequent edit requires a `sop-reviewer` amend marker at `.claude/scenarios/.amends/{goal}-{HEAD_SHA}.marker`.
+- `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` committed to `git HEAD`, containing one or more `## SCEN-NNN: <title>` blocks with `Given / When / Then / Evidence` per `_sdd_scenarios` parser spec.
+- Baseline hash locked via `git log --diff-filter=A` — any subsequent edit requires a `sop-reviewer` amend marker at `<scenario_parent>/.amends/{goal}-{HEAD_SHA}.marker`.
 
 **You MUST NOT** author scenarios inside a teammate worktree (the implementer must never author its own acceptance contract — that defeats the holdout). Scenarios live on the parent branch before worktree creation; each teammate inherits them via branch checkout.
 
-> Known gap — not closed by this step alone. `hooks/sdd-test-guard.py` permits first-write of untracked scenario files; a teammate could in principle author a fresh `.claude/scenarios/*.scenarios.md` locally inside its worktree and satisfy the completion gate without parent-branch authorship. Mechanical enforcement (reject first-write unless baseline exists OR writer is on the parent branch) is tracked as Phase 8 roadmap. Until then, Step 3.5 is a procedural guarantee: follow it and the holdout holds; skip it and the holdout degrades to advisory.
+> Known gap — not closed by this step alone. `hooks/sdd-test-guard.py` permits first-write of untracked scenario files; a teammate could in principle author a fresh a scenarios file under the configured discovery root locally inside its worktree and satisfy the completion gate without parent-branch authorship. Mechanical enforcement (reject first-write unless baseline exists OR writer is on the parent branch) is tracked as Phase 8 roadmap. Until then, Step 3.5 is a procedural guarantee: follow it and the holdout holds; skip it and the holdout degrades to advisory.
 
 **You MUST commit** before Step 4 so the baseline hash is locked before teammates enter the loop.
 
 **Migration branch — legacy specs**: if `.ralph/specs/{goal}/implementation/plan.md` and `.code-task.md` files already exist in the repo BEFORE this step runs (i.e., a spec authored before Step 3.5 was introduced), authoring scenarios retroactively leaves task files without scenario traceability. In that case:
 1. Author scenarios normally (this step).
-2. Re-run Step 4 to regenerate `.code-task.md` files from the current `plan.md` + the new `.claude/scenarios/{goal}.scenarios.md`. Accept the loss of any per-task execution history on the regenerated files.
+2. Re-run Step 4 to regenerate `.code-task.md` files from the current `plan.md` + the new `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md`. Accept the loss of any per-task execution history on the regenerated files.
 3. If regeneration would destroy in-flight work (teammates already executing), pause the Agent Team, regenerate, then resume. Do NOT keep stale task files — they bypass the contract.
 
 Do NOT add a permanent "skip scenarios" flag for legacy specs; that reopens the reward-hacking loophole this step closes.
@@ -165,7 +165,7 @@ Continue to Step 4.
 /sop-task-generator input=".ralph/specs/{goal}/implementation/plan.md" mode={PLANNING_MODE}
 ```
 
-When `.claude/scenarios/{goal}.scenarios.md` exists, pass it as context so generated `.code-task.md` files reference the SCEN IDs they satisfy (via acceptance criteria prose — no dedicated metadata field exists yet; follow-up roadmap). Teammates read scenarios at execution time via `sop-code-assist`; traceability is best-effort prose until the task-file schema gains a first-class scenario-link field.
+When `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` exists, pass it as context so generated `.code-task.md` files reference the SCEN IDs they satisfy (via acceptance criteria prose — no dedicated metadata field exists yet; follow-up roadmap). Teammates read scenarios at execution time via `sop-code-assist`; traceability is best-effort prose until the task-file schema gains a first-class scenario-link field.
 
 Output: `plan.md` + `.code-task.md` files — Continue to Step 5.
 
@@ -397,6 +397,24 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 3. **Fresh Context + Guardrails = Compounding Intelligence** — Each teammate gets fresh 200K context. `guardrails.md` accumulates lessons across tasks. Quality gates (TaskCompleted hook) enforce standards. Reviewers validate SDD compliance after gates pass.
 4. **Disk Is State, Git Is Memory** — `.code-task.md` files are the task contract. `guardrails.md` is shared memory. Git commits are checkpoints. If a teammate crashes, its task file persists for the next one.
 
+## Amend proposals — leader supervision loop
+
+Teammates that hit the STOP-after-2 protocol on a scenario write an `amend_request` proposal to disk and end their session. The leader processes those proposals each supervision tick. Full protocol spec at `docs/specs/2026-04-25-amend-protocol/`; operational summary below.
+
+**Each tick the leader**:
+1. Scans `.ralph/specs/{goal}/amend-proposals/` for new `*.json` files (no sibling `*.resolved.json`).
+2. Processes proposals in filename order — timestamp ascending. First-write-wins via Gate 0 staleness.
+3. For each proposal: invokes `_amend_protocol.evaluate_amend_request(...)` with a real judge spawn (Gate 2). The leader has Agent-tool access; the hook side does not — that asymmetry is intentional and documented in `hooks/_amend_protocol.py`.
+4. AUTONOMOUS (4/4 PASS) → applies the Edit with `amend_request` carried inline → hook accepts → writes a sibling `<stem>.resolved.json` with `{status: "resolved-autonomous", marker_path, resolved_at}` → re-spawns the teammate or closes the task.
+5. ESCALATE (any gate FAIL) → pauses the mission → emits Format R via mission-report → on human resolution writes the sibling with `{status: "resolved-human:approved" | "resolved-human:rejected", human_reasoning, resolved_at}`.
+
+**Cleanup**:
+- `SessionStart` deletes BOTH `<stem>.json` and `<stem>.resolved.json` only when (proposal mtime > 24h AND sibling exists).
+- Unresolved proposals older than 24h are RETAINED — they are a debt signal visible to the human.
+
+**Leader-as-proposer special case**:
+- The leader may also author a proposal (e.g. when the discrepancy was found by the leader's own gate review, not a teammate). For those, Gate 0 enforces a one-tick deferral: a proposal written at tick N can only be processed at tick ≥ N+1. This prevents the leader from racing its own gates inside a single tick.
+
 ---
 
 ## References
@@ -429,6 +447,6 @@ WHEN reviewer goes idle — read 8-word summary from SendMessage:
 |-------|------|---------|
 | `sop-reverse` | 2 | Referent discovery |
 | `sop-planning` | 3 | Research, design |
-| `scenario-driven-development` | 3.5 | Write-once `.claude/scenarios/*` acceptance contract |
+| `scenario-driven-development` | 3.5 | Write-once acceptance contract under the configured discovery roots |
 | `sop-task-generator` | 4 | Task files (cite `SCEN-NNN` IDs) |
 | `sop-code-assist` | Teammates | SDD implementation (reads scenarios; never authors) |

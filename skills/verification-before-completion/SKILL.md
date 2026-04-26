@@ -254,10 +254,10 @@ The delegating agent is responsible for verifying the subagent's claims through 
 
 ## Scenario Artifact Contract
 
-`.claude/scenarios/` is the canonical source of acceptance criteria when scenario artifacts exist. Do not substitute memory, task summaries, or test names for that contract.
+Scenario discovery (resolved by `_sdd_config.get_scenario_discovery_roots()` — `.ralph/specs/{goal}/scenarios/` in Ralph mode, `docs/specs/{name}/scenarios/` in non-Ralph mode) is the canonical source of acceptance criteria when scenario artifacts exist. Do not substitute memory, task summaries, or test names for that contract.
 
 Verification requirements when scenarios exist:
-- Iterate every file in `.claude/scenarios/*.scenarios.md`
+- Iterate every file returned by `_sdd_scenarios.scenario_files(cwd)` (or, equivalently, every `*.scenarios.md` under each configured discovery root)
 - Read every `SCEN-###` block in those files
 - Confirm observable satisfaction through execution evidence for each scenario
 - Report the validated scenario set, not a partial subset chosen for convenience

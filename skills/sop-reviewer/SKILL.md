@@ -279,7 +279,7 @@ Task 01: PASS, SDD compliant, 3/3 satisfied
 
 When reviewing a proposed scenario edit, you may authorize it only if the edit is legitimate and explicitly reviewed. The attestation mechanism is a marker file:
 
-- Path: `.claude/scenarios/.amends/{name}-{HEAD_SHA}.marker`
+- Path: `<scenario_parent>/.amends/{name}-{HEAD_SHA}.marker` (sibling to the amended scenario file under its discovery root — Ralph: `.ralph/specs/{goal}/scenarios/.amends/`; non-Ralph: `docs/specs/{name}/scenarios/.amends/`)
 - `{name}` is the scenario basename before `.scenarios.md`
 - `{HEAD_SHA}` must match a prefix of the current `HEAD` commit SHA at review time
 - Marker file contents are unused; only the filename and presence matter

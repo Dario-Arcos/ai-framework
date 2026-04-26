@@ -297,4 +297,4 @@ Secondary (in `{documentation_dir}/`):
 
 ## Scenario Artifact Note
 
-Before implementation, check whether `.claude/scenarios/` contains a relevant scenario file. If one exists, treat it as the observable contract for the work and implement against that committed artifact rather than inventing a new local interpretation. If no relevant scenario exists and the task changes behavior, ask the user whether to generate one via `scenario-driven-development` before writing production code.
+Before implementation, check whether the configured discovery roots (Ralph: `.ralph/specs/{goal}/scenarios/`; non-Ralph: `docs/specs/{name}/scenarios/`) contain a relevant scenario file. The runtime answer comes from `_sdd_scenarios.scenario_files(cwd)`. If one exists, treat it as the observable contract for the work and implement against that committed artifact rather than inventing a new local interpretation. If no relevant scenario exists and the task changes behavior, ask the user whether to generate one via `scenario-driven-development` before writing production code.
