@@ -309,12 +309,34 @@ class TestRealWorldAmendFlow(unittest.TestCase):
         )
         self.assertEqual(rc, 2)
 
-        # With marker for current HEAD + sop-reviewer skill invoked: allowed
+        # With four-gate-issued marker for current HEAD: allowed.
+        # Pre-Fix-1 a manual `"ok\n"` body was sufficient — that was the
+        # legacy bypass. Post-Fix-1 the marker body must contain the
+        # 4/4 PASS payload + HMAC bound to the current session key.
         head_sha = _git(["rev-parse", "HEAD"], self.tmpdir).stdout.strip()
         marker_dir = Path(self.tmpdir) / SCENARIO_DIR / ".amends"
         marker_dir.mkdir(parents=True, exist_ok=True)
-        (marker_dir / f"auth-{head_sha}.marker").write_text("ok\n", encoding="utf-8")
-        _record_skill(self.tmpdir, "sop-reviewer", self.sid)
+        os.environ.setdefault("CLAUDE_SESSION_ID", self.raw_sid)
+        from _sdd_scenarios import _expected_marker_hmac
+        scen_rel = str(scen_path.relative_to(self.tmpdir))
+        gate_verdicts = {
+            "staleness": "PASS", "evidence": "PASS",
+            "invariant": "PASS", "reversibility": "PASS",
+        }
+        payload = {
+            "scenario_rel": scen_rel,
+            "head_sha": head_sha,
+            "gate_verdicts": gate_verdicts,
+            "judge_confidence": 95,
+            "class_label": "safe_clarification",
+        }
+        payload["hmac"] = _expected_marker_hmac(
+            self.tmpdir, scen_rel, head_sha, gate_verdicts, 95,
+            "safe_clarification",
+        )
+        (marker_dir / f"auth-{head_sha}.marker").write_text(
+            json.dumps(payload, sort_keys=True), encoding="utf-8"
+        )
 
         rc, _out, _err, _t = invoke_hook(
             "sdd-test-guard.py",

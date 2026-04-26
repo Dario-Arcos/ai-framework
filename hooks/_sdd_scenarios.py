@@ -32,6 +32,8 @@ hooks consume.
 """
 import json
 import hashlib
+import hmac
+import os
 import re
 import subprocess
 import tempfile
@@ -430,15 +432,66 @@ def amend_marker_dir(cwd, rel_scenario_path):
     return Path(cwd) / Path(rel_scenario_path).parent / AMEND_SUBDIR
 
 
-def check_amend_marker(cwd, rel_scenario_path, sid=None):
-    """Return True iff a valid amend marker exists for this scenario file.
+def _amend_marker_hmac_key(cwd):
+    """Per-session HMAC key for amend-marker integrity. Mirrors the Class C
+    evidence key derivation (project_hash | CLAUDE_SESSION_ID) so a marker
+    issued in one session is invalid in another, and a marker issued in
+    one project is invalid in another. Returns 32 bytes.
+    """
+    sess = os.environ.get("CLAUDE_SESSION_ID", "none")
+    return hashlib.sha256(
+        f"{project_hash(str(cwd))}|{sess}".encode("utf-8")
+    ).digest()
 
-    A valid marker:
+
+def _expected_marker_hmac(cwd, scenario_rel, head_sha, gate_verdicts, judge_confidence, class_label):
+    """Compute the HMAC expected for a four-gate-issued marker payload.
+
+    Canonicalised JSON (sorted keys, no whitespace) over a fixed field set
+    so a malformed payload cannot collide with a legitimate one. Bound to
+    the per-session HMAC key.
+    """
+    payload = json.dumps({
+        "scenario_rel": scenario_rel,
+        "head_sha": head_sha,
+        "gate_verdicts": gate_verdicts,
+        "judge_confidence": judge_confidence,
+        "class_label": class_label,
+    }, sort_keys=True, separators=(",", ":"))
+    return hmac.new(
+        _amend_marker_hmac_key(cwd), payload.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
+def check_amend_marker(cwd, rel_scenario_path, sid=None):
+    """Return True iff a four-gate-issued amend marker exists for this scenario.
+
+    A valid marker (post-Fix-1 hardening):
       * Lives under `{scenario_parent}/.amends/{stem}-{sha}.marker`
       * `stem` matches the scenario file's basename (before `.scenarios.md`)
       * `sha` is a prefix of the current HEAD commit SHA
-      * When `sid` is provided: sop-reviewer was invoked in that session
       * Marker and marker dir are regular files/dirs (no symlinks)
+      * Marker BODY is a JSON object with the four-gate emission shape:
+          {
+            "scenario_rel": str,
+            "head_sha": str,
+            "gate_verdicts": {"staleness":"PASS","evidence":"PASS","invariant":"PASS","reversibility":"PASS"},
+            "judge_confidence": int 0-100,
+            "class_label": str,
+            "hmac": hex SHA-256 HMAC over the canonical payload bound to
+                    the per-session key (CLAUDE_SESSION_ID + project_hash)
+          }
+        ALL four gates must be PASS. Any gate not in the all-PASS verdict
+        set rejects the marker.
+      * The HMAC must verify against `_expected_marker_hmac(...)` using the
+        current session's key. Cross-session replay → mismatch.
+
+    Pre-Fix-1, the marker body was unvalidated (just a header line). An
+    agent could write any file with the right filename via Edit/Write
+    inside a sop-reviewer invocation and bypass the four-gate protocol —
+    contradicting the design's "sole channel" claim. Marker integrity is
+    now bound to the four-gate emission code path; arbitrary Edit/Write
+    of a marker file produces a payload that fails HMAC verification.
 
     A new commit invalidates all prior markers (SHA mismatch). This
     enforces the "amend must be justified per-commit" invariant.
@@ -458,8 +511,12 @@ def check_amend_marker(cwd, rel_scenario_path, sid=None):
     if not head_sha:
         return False
 
-    if sid is not None and not read_skill_invoked(cwd, "sop-reviewer", sid=sid):
-        return False
+    expected_all_pass = {
+        "staleness": "PASS",
+        "evidence": "PASS",
+        "invariant": "PASS",
+        "reversibility": "PASS",
+    }
 
     for marker in marker_dir.glob(f"{stem}-*.marker"):
         if marker.is_symlink() or not marker.is_file():
@@ -471,6 +528,40 @@ def check_amend_marker(cwd, rel_scenario_path, sid=None):
         if marker_stem != stem:
             continue
         if not head_sha.startswith(marker_sha):
+            continue
+        try:
+            body_text = marker.read_text(encoding="utf-8")
+            body = json.loads(body_text)
+        except (OSError, json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(body, dict):
+            continue
+        provided_hmac = body.get("hmac")
+        if not isinstance(provided_hmac, str) or not provided_hmac:
+            continue
+        gate_verdicts = body.get("gate_verdicts")
+        if gate_verdicts != expected_all_pass:
+            continue
+        try:
+            judge_confidence = int(body.get("judge_confidence"))
+        except (TypeError, ValueError):
+            continue
+        if judge_confidence < 0 or judge_confidence > 100:
+            continue
+        class_label = body.get("class_label")
+        if not isinstance(class_label, str) or not class_label:
+            continue
+        body_scenario = body.get("scenario_rel")
+        if body_scenario != str(rel_scenario_path):
+            continue
+        body_sha = body.get("head_sha")
+        if not isinstance(body_sha, str) or not head_sha.startswith(body_sha):
+            continue
+        expected = _expected_marker_hmac(
+            cwd, body_scenario, body_sha, gate_verdicts,
+            judge_confidence, class_label,
+        )
+        if not hmac.compare_digest(expected, provided_hmac):
             continue
         return True
 

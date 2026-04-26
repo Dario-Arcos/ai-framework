@@ -269,14 +269,34 @@ class TestPhase7EndToEndFlow(_Phase7Base):
 
         head_sha = _git_rev_parse_head(cwd)
         # Phase 10: amend markers are sibling-scoped to the scenario file.
+        # Fix 1: marker body must contain four-gate emission payload + HMAC.
         marker = (
             Path(cwd) / Path(_SCENARIO_REL).parent
             / ".amends" / f"auth-{head_sha}.marker"
         )
         marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("approved\n", encoding="utf-8")
+        from _sdd_scenarios import _expected_marker_hmac
+        gate_verdicts = {
+            "staleness": "PASS", "evidence": "PASS",
+            "invariant": "PASS", "reversibility": "PASS",
+        }
+        marker_payload = {
+            "scenario_rel": _SCENARIO_REL,
+            "head_sha": head_sha,
+            "gate_verdicts": gate_verdicts,
+            "judge_confidence": 95,
+            "class_label": "safe_clarification",
+        }
+        marker_payload["hmac"] = _expected_marker_hmac(
+            cwd, _SCENARIO_REL, head_sha, gate_verdicts, 95,
+            "safe_clarification",
+        )
+        marker.write_text(json.dumps(marker_payload, sort_keys=True), encoding="utf-8")
+        # sop-reviewer recording is required by a separate POLICY check
+        # downstream (review-without-skill-invocation gate); not by the
+        # marker check itself post-Fix-1.
         _record_skill_invoked(cwd, "sop-reviewer", sid)
-        self.assertTrue(check_amend_marker(cwd, _SCENARIO_REL, sid=sid))
+        self.assertTrue(check_amend_marker(cwd, _SCENARIO_REL))
 
         rc, _stdout, stderr, _elapsed_ms = _invoke_scenario_edit(
             cwd, scenario_path, original, updated, session_id=raw_sid

@@ -191,13 +191,24 @@ def test_scen_207_protocol_autonomous_pass_and_marker_format(repo):
     assert autonomous_events[0].get("scenario_rel") == repo["scen_rel"]
 
     # Marker format: <scenario_parent>/.amends/<stem>-<HEAD_SHA>.marker
-    marker = _sdd_test_guard._write_amend_marker(repo["cwd"], repo["scen_rel"])
+    # Fix 1: marker body now requires the structured 4/4 PASS payload +
+    # HMAC. Pass `decision` so `check_amend_marker` honors the file.
+    marker = _sdd_test_guard._write_amend_marker(
+        repo["cwd"], repo["scen_rel"], decision=decision,
+    )
     assert marker is not None, "marker path should be returned on success"
     marker_path = Path(marker)
     assert marker_path.exists(), f"marker file missing at {marker_path}"
     expected_dir = repo["cwd"] / "docs/specs/test/scenarios" / ".amends"
     assert marker_path.parent == expected_dir
     assert marker_path.name == f"test-{repo['head_sha']}.marker"
+
+    # Fix 1 verification: the marker is honored by check_amend_marker
+    # because its body contains a 4/4 PASS verdict + valid HMAC.
+    from _sdd_scenarios import check_amend_marker
+    assert check_amend_marker(repo["cwd"], repo["scen_rel"]) is True, (
+        "four-gate-issued marker must be honored by check_amend_marker"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -246,6 +257,97 @@ def test_scen_219_hook_blocks_third_attempt(repo):
         assert any(ev.get("scenario_rel") == scen_rel for ev in events)
     finally:
         _cleanup_attempts_file(cwd, sid, scen_rel)
+
+
+@pytest.mark.parametrize("mode", ["ralph", "nonralph"])
+def test_fix1_legacy_marker_rejected_both_modes(tmp_path, monkeypatch, mode):
+    """Fix 1 parity: a manual empty-body marker MUST be rejected in BOTH
+    Ralph (.ralph/specs/) and non-Ralph (docs/specs/) discovery roots.
+    The legacy `sop-reviewer` bypass relied on writing arbitrary content
+    to `<scenario_parent>/.amends/<stem>-<HEAD_SHA>.marker`. Closing it
+    asymmetrically would silently re-open the bypass via mode-switching.
+    """
+    from _sdd_scenarios import check_amend_marker, amend_marker_dir
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_SESSION_ID", f"fix1-parity-{mode}")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+    if mode == "ralph":
+        scen_rel = ".ralph/specs/featx/scenarios/featx.scenarios.md"
+    else:
+        scen_rel = "docs/specs/featx/scenarios/featx.scenarios.md"
+    scen_path = tmp_path / scen_rel
+    scen_path.parent.mkdir(parents=True)
+    scen_path.write_text("---\nname: x\n---\n## SCEN-001: x\n**Given**: a\n**When**: b\n**Then**: c\n**Evidence**: d\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path,
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    marker_dir = amend_marker_dir(str(tmp_path), scen_rel)
+    marker_dir.mkdir(parents=True)
+    legacy_marker = marker_dir / f"featx-{head_sha}.marker"
+    legacy_marker.write_text("approved\n", encoding="utf-8")
+
+    assert check_amend_marker(str(tmp_path), scen_rel) is False, (
+        f"empty/legacy marker MUST be rejected in {mode} mode"
+    )
+
+
+@pytest.mark.parametrize("mode", ["ralph", "nonralph"])
+def test_fix1_valid_marker_honored_both_modes(tmp_path, monkeypatch, mode):
+    """Fix 1 parity: a four-gate-issued marker (HMAC-bound 4/4 PASS) MUST
+    be honored in BOTH Ralph and non-Ralph discovery roots.
+    """
+    from _sdd_scenarios import (
+        check_amend_marker, amend_marker_dir, _expected_marker_hmac,
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_SESSION_ID", f"fix1-positive-{mode}")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+    if mode == "ralph":
+        scen_rel = ".ralph/specs/featx/scenarios/featx.scenarios.md"
+    else:
+        scen_rel = "docs/specs/featx/scenarios/featx.scenarios.md"
+    scen_path = tmp_path / scen_rel
+    scen_path.parent.mkdir(parents=True)
+    scen_path.write_text("---\nname: x\n---\n## SCEN-001: x\n**Given**: a\n**When**: b\n**Then**: c\n**Evidence**: d\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path,
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    marker_dir = amend_marker_dir(str(tmp_path), scen_rel)
+    marker_dir.mkdir(parents=True)
+    gate_verdicts = {
+        "staleness": "PASS", "evidence": "PASS",
+        "invariant": "PASS", "reversibility": "PASS",
+    }
+    payload = {
+        "scenario_rel": scen_rel,
+        "head_sha": head_sha,
+        "gate_verdicts": gate_verdicts,
+        "judge_confidence": 95,
+        "class_label": "safe_clarification",
+    }
+    payload["hmac"] = _expected_marker_hmac(
+        str(tmp_path), scen_rel, head_sha, gate_verdicts, 95, "safe_clarification",
+    )
+    valid_marker = marker_dir / f"featx-{head_sha}.marker"
+    valid_marker.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    assert check_amend_marker(str(tmp_path), scen_rel) is True, (
+        f"four-gate-issued marker MUST be honored in {mode} mode"
+    )
 
 
 @pytest.fixture

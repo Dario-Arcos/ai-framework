@@ -546,12 +546,26 @@ def _format_r_skeleton(scenario_rel, decision):
     return "\n".join(lines)
 
 
-def _write_amend_marker(cwd, scenario_rel):
+def _write_amend_marker(cwd, scenario_rel, decision=None):
     """Write `<scenario_parent>/.amends/<stem>-<HEAD_SHA>.marker` after a
-    4/4 PASS amend decision so the existing `check_amend_marker` honors
-    the subsequent Edit. Marker body carries gate verdicts + judge
-    confidence per the design's seven-field marker block.
+    4/4 PASS amend decision so the four-gate-aware `check_amend_marker`
+    honors the subsequent Edit.
+
+    The marker body is a JSON object carrying the four-gate emission
+    payload + an HMAC bound to the per-session key. Pre-Fix-1 the body
+    was just a header string and could be forged by any Edit/Write to a
+    correctly-named file (the legacy `sop-reviewer` bypass). Now the
+    body must verify against `_expected_marker_hmac` — manually-crafted
+    files without the HMAC are rejected by `check_amend_marker`.
+
+    `decision` is the AmendDecision returned by `evaluate_amend_request`.
+    Required for the marker to verify; without it the marker still
+    reaches disk but `check_amend_marker` will reject it (gate_verdicts
+    not all-PASS). Callers MUST pass the decision object after a 4/4
+    PASS — `_evaluate_amend_via_protocol` returns it.
     """
+    from _sdd_scenarios import _expected_marker_hmac
+
     head = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=str(cwd), capture_output=True, text=True, timeout=5, check=False,
@@ -571,8 +585,40 @@ def _write_amend_marker(cwd, scenario_rel):
     except OSError:
         return None
     marker = marker_dir / f"{stem}-{head_sha}.marker"
+
+    gate_verdicts = (decision.gate_verdicts if decision is not None else {}) or {}
+    judge_confidence = (
+        decision.judge_confidence
+        if decision is not None and decision.judge_confidence is not None
+        else 0
+    )
+    class_label = (
+        decision.class_label
+        if decision is not None and decision.class_label
+        else ""
+    )
+    marker_payload = {
+        "scenario_rel": scenario_rel,
+        "head_sha": head_sha,
+        "gate_verdicts": {
+            "staleness": gate_verdicts.get("staleness", "SKIP"),
+            "evidence": gate_verdicts.get("evidence", "SKIP"),
+            "invariant": gate_verdicts.get("invariant", "SKIP"),
+            "reversibility": gate_verdicts.get("reversibility", "SKIP"),
+        },
+        "judge_confidence": int(judge_confidence),
+        "class_label": class_label,
+    }
+    marker_payload["hmac"] = _expected_marker_hmac(
+        cwd,
+        marker_payload["scenario_rel"],
+        marker_payload["head_sha"],
+        marker_payload["gate_verdicts"],
+        marker_payload["judge_confidence"],
+        marker_payload["class_label"],
+    )
     try:
-        marker.write_text(f"# amend marker — {head_sha}\n")
+        marker.write_text(json.dumps(marker_payload, sort_keys=True))
     except OSError:
         return None
     return marker
@@ -842,7 +888,7 @@ def main():
                                 proposal_mtime=proposal_mtime,
                             )
                             if decision.approved:
-                                _write_amend_marker(cwd, rel)
+                                _write_amend_marker(cwd, rel, decision=decision)
                                 _reset_amend_attempts(cwd, sid, rel)
                                 # Fall through — Edit is permitted; the
                                 # newly-written marker satisfies the next

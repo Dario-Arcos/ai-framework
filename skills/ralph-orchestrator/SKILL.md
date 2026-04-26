@@ -142,7 +142,7 @@ git commit -m "scenarios({goal}): acceptance contract"
 
 Output:
 - `.ralph/specs/{goal}/scenarios/{goal}.scenarios.md` committed to `git HEAD`, containing one or more `## SCEN-NNN: <title>` blocks with `Given / When / Then / Evidence` per `_sdd_scenarios` parser spec.
-- Baseline hash locked via `git log --diff-filter=A` — any subsequent edit requires a `sop-reviewer` amend marker at `<scenario_parent>/.amends/{goal}-{HEAD_SHA}.marker`.
+- Baseline hash locked via `git log --diff-filter=A` — any subsequent edit must go through the four-gate amend protocol (`amend_request` payload in `tool_input` or written to `<discovery_root>/<goal>/amend-proposals/`). Manual marker files at `<scenario_parent>/.amends/` are no longer honored unless their body carries the four-gate-emitted HMAC payload (Fix 1).
 
 **You MUST NOT** author scenarios inside a teammate worktree (the implementer must never author its own acceptance contract — that defeats the holdout). Scenarios live on the parent branch before worktree creation; each teammate inherits them via branch checkout.
 

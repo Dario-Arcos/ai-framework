@@ -680,53 +680,123 @@ class TestAmendMarker(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def _write_marker(self, stem, sha):
-        (self.markers_dir / f"{stem}-{sha}.marker").write_text("", encoding="utf-8")
+    def _write_marker(self, stem, sha, body_text=None):
+        """Write a marker file. By default writes an EMPTY body — the
+        legacy pre-Fix-1 format. Tests that need a valid 4/4 PASS marker
+        call `_write_valid_marker` instead.
+        """
+        body = body_text if body_text is not None else ""
+        (self.markers_dir / f"{stem}-{sha}.marker").write_text(body, encoding="utf-8")
+
+    def _write_valid_marker(self, stem, sha, scenario_rel=None):
+        """Write a marker with the four-gate emission body + HMAC.
+
+        Mirrors what `_write_amend_marker` in sdd-test-guard.py produces
+        after a 4/4 PASS decision. Used by tests that want to assert the
+        positive case (a legitimate four-gate-issued marker is honored).
+        """
+        rel = scenario_rel if scenario_rel is not None else self.rel
+        gate_verdicts = {
+            "staleness": "PASS", "evidence": "PASS",
+            "invariant": "PASS", "reversibility": "PASS",
+        }
+        payload = {
+            "scenario_rel": rel,
+            "head_sha": sha,
+            "gate_verdicts": gate_verdicts,
+            "judge_confidence": 95,
+            "class_label": "safe_clarification",
+        }
+        payload["hmac"] = S._expected_marker_hmac(
+            self.tmpdir, payload["scenario_rel"], payload["head_sha"],
+            payload["gate_verdicts"], payload["judge_confidence"],
+            payload["class_label"],
+        )
+        (self.markers_dir / f"{stem}-{sha}.marker").write_text(
+            json.dumps(payload, sort_keys=True), encoding="utf-8"
+        )
 
     def test_no_markers_returns_false(self):
         self.assertFalse(S.check_amend_marker(self.tmpdir, self.rel))
 
     def test_matching_head_sha_passes(self):
-        self._write_marker("login", self.sha[:10])
+        """Fix 1: matching SHA + valid HMAC payload is honored."""
+        self._write_valid_marker("login", self.sha[:10])
         self.assertTrue(S.check_amend_marker(self.tmpdir, self.rel))
 
     def test_full_sha_also_passes(self):
-        self._write_marker("login", self.sha)
+        """Fix 1: full SHA + valid HMAC payload is honored."""
+        self._write_valid_marker("login", self.sha)
         self.assertTrue(S.check_amend_marker(self.tmpdir, self.rel))
 
     def test_mismatched_sha_rejected(self):
-        self._write_marker("login", "0" * 10)
+        self._write_valid_marker("login", "0" * 10)
         self.assertFalse(S.check_amend_marker(self.tmpdir, self.rel))
 
     def test_mismatched_stem_rejected(self):
         """A marker for a different scenario must not satisfy this file."""
-        self._write_marker("signup", self.sha[:10])
+        self._write_valid_marker("signup", self.sha[:10])
         self.assertFalse(S.check_amend_marker(self.tmpdir, self.rel))
 
     def test_too_short_sha_rejected(self):
         """Regex requires ≥7 hex chars; 6 must be rejected."""
-        self._write_marker("login", self.sha[:6])
+        self._write_valid_marker("login", self.sha[:6])
         self.assertFalse(S.check_amend_marker(self.tmpdir, self.rel))
 
-    def test_sid_requires_sop_reviewer(self):
-        """With sid set, sop-reviewer must be recorded in session."""
-        self._write_marker("login", self.sha[:10])
-        with patch.object(S, "read_skill_invoked", return_value=None):
-            self.assertFalse(
-                S.check_amend_marker(self.tmpdir, self.rel, sid="abc")
-            )
+    def test_legacy_empty_body_rejected_post_fix1(self):
+        """Fix 1 regression: a marker with an EMPTY body (the pre-Fix-1
+        format that any agent could write via Edit/Write) MUST be
+        rejected. Closes the legacy `sop-reviewer` bypass.
+        """
+        self._write_marker("login", self.sha[:10])  # default empty body
+        self.assertFalse(
+            S.check_amend_marker(self.tmpdir, self.rel),
+            "manual marker with empty body must be rejected post-Fix-1"
+        )
 
-    def test_sid_with_sop_reviewer_recorded_passes(self):
-        self._write_marker("login", self.sha[:10])
-        with patch.object(S, "read_skill_invoked",
-                          return_value={"skill": "sop-reviewer"}):
-            self.assertTrue(
-                S.check_amend_marker(self.tmpdir, self.rel, sid="abc")
-            )
+    def test_legacy_arbitrary_body_rejected_post_fix1(self):
+        """Fix 1 regression: a marker whose body is arbitrary text or a
+        forged JSON without HMAC MUST be rejected.
+        """
+        self._write_marker(
+            "login", self.sha[:10],
+            body_text='{"scenario_rel":"x","head_sha":"y","gate_verdicts":{"staleness":"PASS","evidence":"PASS","invariant":"PASS","reversibility":"PASS"},"judge_confidence":99,"class_label":"x","hmac":"DEADBEEF"}',
+        )
+        self.assertFalse(
+            S.check_amend_marker(self.tmpdir, self.rel),
+            "marker with forged HMAC (DEADBEEF) must be rejected"
+        )
+
+    def test_marker_with_partial_pass_verdicts_rejected(self):
+        """Fix 1: ALL four gates must be PASS in the marker payload. A
+        marker with one gate=SKIP cannot have come from a 4/4 PASS path
+        and is rejected.
+        """
+        partial = {
+            "staleness": "PASS", "evidence": "PASS",
+            "invariant": "SKIP", "reversibility": "PASS",
+        }
+        payload = {
+            "scenario_rel": self.rel, "head_sha": self.sha[:10],
+            "gate_verdicts": partial, "judge_confidence": 95,
+            "class_label": "x",
+        }
+        payload["hmac"] = S._expected_marker_hmac(
+            self.tmpdir, payload["scenario_rel"], payload["head_sha"],
+            payload["gate_verdicts"], payload["judge_confidence"],
+            payload["class_label"],
+        )
+        self._write_marker(
+            "login", self.sha[:10], body_text=json.dumps(payload, sort_keys=True),
+        )
+        self.assertFalse(
+            S.check_amend_marker(self.tmpdir, self.rel),
+            "marker with partial PASS verdicts must be rejected"
+        )
 
     def test_non_scenario_filename_rejected(self):
         """Passing something that isn't `.scenarios.md` returns False."""
-        self._write_marker("login", self.sha[:10])
+        self._write_valid_marker("login", self.sha[:10])
         self.assertFalse(
             S.check_amend_marker(
                 self.tmpdir, f"{_SCENARIO_DIR_REL}/login.md"

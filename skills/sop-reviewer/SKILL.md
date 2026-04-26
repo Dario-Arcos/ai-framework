@@ -275,17 +275,14 @@ Task 01: PASS, SDD compliant, 3/3 satisfied
 
 - [review-protocol.md](references/review-protocol.md) — Detailed checklists and patterns catalog
 
-## Scenario Amend Marker Protocol
+## Scenario Amend Protocol — DO NOT write markers manually
 
-When reviewing a proposed scenario edit, you may authorize it only if the edit is legitimate and explicitly reviewed. The attestation mechanism is a marker file:
+You MUST NOT write amend marker files via Edit/Write/Bash. The sole legitimate path to evolve a scenario contract is the four-gate `amend_request` flow:
 
-- Path: `<scenario_parent>/.amends/{name}-{HEAD_SHA}.marker` (sibling to the amended scenario file under its discovery root — Ralph: `.ralph/specs/{goal}/scenarios/.amends/`; non-Ralph: `docs/specs/{name}/scenarios/.amends/`)
-- `{name}` is the scenario basename before `.scenarios.md`
-- `{HEAD_SHA}` must match a prefix of the current `HEAD` commit SHA at review time
-- Marker file contents are unused; only the filename and presence matter
+1. Construct an `amend_request` payload with the five required fields: `proposed_content`, `premortem`, `evidence_artifact`, `base_head_sha`, `base_file_hash`, `scenario_rel`. See `skills/scenario-driven-development/SKILL.md` "Amend Protocol — when scenarios genuinely diverge" for the canonical shape.
+2. Either attach it inline to your Edit tool call (`tool_input.amend_request = {...}`) OR write it to `<discovery_root>/<goal>/amend-proposals/<sid>-<timestamp>.json` and end your session for leader supervision.
+3. The four gates (staleness, evidence, invariant, reversibility) decide. Only an autonomous PASS or human approval generates a valid amend marker; the marker body carries an HMAC-bound 4/4 PASS payload that the hook verifies.
 
-Rules:
-- Create the marker only after validating that the scenario change preserves or improves the observable contract rather than weakening it to fit the implementation.
-- Markers are intentionally commit-scoped. Any new commit invalidates prior markers because the stored SHA prefix no longer matches `HEAD`.
-- This invalidation is by design: scenario edits require re-review whenever the implementation moves.
-- If the scenario file changes again after review, the old marker is no longer sufficient. Re-run review and write a fresh marker for the new `HEAD`.
+**Why no manual markers**: pre-Fix-1, the marker mechanism accepted any file with the right name. That made `sop-reviewer` an agent-accessible bypass of the four-gate protocol — exactly the same class of back door as the removed `_SDD_DISABLE_SCENARIOS` env var. The hook now rejects markers whose body lacks the four-gate emission payload.
+
+If a manually-written marker is detected, `check_amend_marker` returns False; the next Edit on the scenario file is denied with `[SDD:SCENARIO]` and the agent is forced through the `amend_request` flow.

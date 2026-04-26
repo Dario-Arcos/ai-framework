@@ -149,16 +149,49 @@ class TestScen003(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write_marker(self, sha_prefix):
+        """Pre-Fix-1 helper: writes EMPTY-body marker. Post-Fix-1 these
+        markers are rejected (the legacy bypass is closed). Tests that
+        need a positive case use `_write_valid_marker` below.
+        """
         (self.markers_dir / f"login-{sha_prefix}.marker").write_text("", encoding="utf-8")
 
+    def _write_valid_marker(self, sha_prefix):
+        """Write a four-gate-issued marker (HMAC-bound 4/4 PASS payload)."""
+        gate_verdicts = {
+            "staleness": "PASS", "evidence": "PASS",
+            "invariant": "PASS", "reversibility": "PASS",
+        }
+        payload = {
+            "scenario_rel": self.rel,
+            "head_sha": sha_prefix,
+            "gate_verdicts": gate_verdicts,
+            "judge_confidence": 95,
+            "class_label": "safe_clarification",
+        }
+        payload["hmac"] = S._expected_marker_hmac(
+            self.tmpdir, payload["scenario_rel"], payload["head_sha"],
+            payload["gate_verdicts"], payload["judge_confidence"],
+            payload["class_label"],
+        )
+        (self.markers_dir / f"login-{sha_prefix}.marker").write_text(
+            json.dumps(payload, sort_keys=True), encoding="utf-8"
+        )
+
     def test_valid_marker_with_sop_reviewer_allows_edit(self):
-        """SHA_1 marker + sop-reviewer recorded → Edit permitted (exit 0)."""
-        self._write_marker(self.sha1[:10])
-        State.write_skill_invoked(self.tmpdir, "sop-reviewer", sid=SID)
-        # Sanity check: marker check itself passes
+        """Four-gate-issued marker (HMAC-bound 4/4 PASS) → Edit permitted.
+
+        Pre-Fix-1 this test asserted that an EMPTY-body marker plus a
+        recorded `sop-reviewer` skill invocation was sufficient. That
+        was the agent-accessible bypass: any session could invoke
+        `/sop-reviewer` and write any file with the right name. Fix 1
+        closes that path — only markers with the four-gate emission
+        payload + HMAC are honored.
+        """
+        self._write_valid_marker(self.sha1[:10])
+        # Sanity check: marker check itself passes (HMAC-bound payload)
         self.assertTrue(
-            S.check_amend_marker(self.tmpdir, self.rel, sid=SID),
-            "precondition: marker should validate before hook invocation",
+            S.check_amend_marker(self.tmpdir, self.rel),
+            "precondition: HMAC-bound marker should validate",
         )
 
         self.scenario_path.write_text(_AMENDED_FILE, encoding="utf-8")
@@ -167,8 +200,7 @@ class TestScen003(unittest.TestCase):
 
     def test_new_commit_invalidates_marker_denies_edit(self):
         """SHA_1 marker → new commit → HEAD is SHA_2 → stale marker → DENY (exit 2)."""
-        self._write_marker(self.sha1[:10])
-        State.write_skill_invoked(self.tmpdir, "sop-reviewer", sid=SID)
+        self._write_valid_marker(self.sha1[:10])
 
         sha2 = _advance_head(self.tmpdir, "advance past marker")
         self.assertNotEqual(
@@ -188,14 +220,19 @@ class TestScen003(unittest.TestCase):
         )
 
     def test_valid_sha_without_sop_reviewer_denies_edit(self):
-        """Matching SHA but sop-reviewer never invoked this session → DENY (exit 2)."""
-        self._write_marker(self.sha1[:10])
-        # Deliberately do NOT call write_skill_invoked — session lacks sop-reviewer.
-        with patch.object(S, "read_skill_invoked", return_value=None):
-            self.assertFalse(
-                S.check_amend_marker(self.tmpdir, self.rel, sid=SID),
-                "precondition: missing sop-reviewer must fail marker check",
-            )
+        """Empty-body marker (no HMAC payload) → DENY.
+
+        Pre-Fix-1 this test relied on the `sop-reviewer` skill having
+        been recorded; post-Fix-1 the sop-reviewer-recorded check is
+        gone (the four-gate HMAC payload IS the authority). An empty-
+        body marker is the canonical legacy bypass attempt and must
+        be rejected.
+        """
+        self._write_marker(self.sha1[:10])  # default empty body
+        self.assertFalse(
+            S.check_amend_marker(self.tmpdir, self.rel),
+            "precondition: empty-body marker must fail post-Fix-1",
+        )
 
         self.scenario_path.write_text(_AMENDED_FILE, encoding="utf-8")
         code, _out, err = _invoke_guard(self.tmpdir, self.scenario_path, _AMENDED_FILE)
