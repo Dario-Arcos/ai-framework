@@ -212,6 +212,61 @@ def cleanup_stale_sdd(max_age=86400):
             pass
 
 
+def cleanup_resolved_amend_proposals(project_dir, max_age=86400):
+    """Delete amend-proposals whose resolution lifecycle is complete.
+
+    SCEN-213: an amend proposal is removable only when BOTH:
+      * its mtime is older than `max_age` (default 24h), AND
+      * a sibling `<stem>.resolved.json` exists (lifecycle complete).
+
+    Both files (proposal + sibling) are deleted together so the audit
+    trail is consistent. Unresolved proposals older than 24h are
+    RETAINED — they are a debt signal visible to the human, not orphan
+    state. The cleanup walks both Ralph and non-Ralph discovery roots
+    so non-Ralph workflows that adopt the amend protocol get the same
+    lifecycle hygiene.
+
+    Idempotent: missing directories are skipped silently. Defensive
+    against partial filesystem state — never crashes on permission
+    errors or stale mounts.
+    """
+    if project_dir is None:
+        return
+    project_dir = Path(project_dir)
+    now = time.time()
+    discovery_roots = (".ralph/specs", "docs/specs")
+    for root in discovery_roots:
+        root_dir = project_dir / root
+        if not root_dir.is_dir():
+            continue
+        for goal_dir in root_dir.iterdir():
+            if not goal_dir.is_dir():
+                continue
+            proposals_dir = goal_dir / "amend-proposals"
+            if not proposals_dir.is_dir():
+                continue
+            for proposal in proposals_dir.glob("*.json"):
+                # Skip the resolved siblings themselves — we only
+                # iterate proposal files and delete them together
+                # with their sibling once both conditions hold.
+                if proposal.name.endswith(".resolved.json"):
+                    continue
+                sibling = proposal.with_name(proposal.stem + ".resolved.json")
+                if not sibling.exists():
+                    continue
+                try:
+                    age = now - proposal.stat().st_mtime
+                except OSError:
+                    continue
+                if age <= max_age:
+                    continue
+                for path in (proposal, sibling):
+                    try:
+                        path.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+
+
 def consume_stdin():
     """Consume stdin as required by hook protocol."""
     try:
@@ -243,6 +298,7 @@ def main():
 
     try:
         project_dir = find_project_dir()
+        cleanup_resolved_amend_proposals(project_dir)
         plugin_root_env = os.environ.get("CLAUDE_PLUGIN_ROOT")
         plugin_root = Path(plugin_root_env) if plugin_root_env else find_plugin_root()
 
