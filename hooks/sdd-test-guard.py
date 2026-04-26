@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -441,6 +442,14 @@ def _scenario_goal(scenario_rel, cwd):
 def _load_amend_request(cwd, tool_input, sid, scenario_rel):
     """Resolve amend_request via dual transport (Gotcha #1 contingency).
 
+    Returns `(payload, proposal_mtime)` where proposal_mtime is the
+    TRUSTED timestamp used by Gate 1 Class B. For the inline transport
+    proposal_mtime is `time.time()` at hook receipt — the model cannot
+    backdate a value that the hook itself reads from the OS clock. For
+    the disk transport proposal_mtime is `proposal_path.stat().st_mtime`
+    — the OS-attested mtime of the proposal JSON, which the proposer
+    cannot rewrite without re-proposing through `write_proposal`.
+
     Preferred: `tool_input.amend_request` carried inline by the model. The
     inline payload, when present, must declare a `scenario_rel` matching
     the edit target — otherwise it is rejected to keep transport semantics
@@ -449,29 +458,26 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
     Fallback: an unresolved proposal file under the SCENARIO'S OWN goal
     directory (`<discovery_root>/<goal>/amend-proposals/`) whose payload's
     `scenario_rel` matches this edit. Walking only the matching goal
-    bounds the iteration cost (a proposer cannot slow the hook by planting
-    proposals under unrelated goals) and enforces "proposal scoped to
-    goal" — a proposal filed against goal A cannot satisfy an Edit on
-    goal B's scenario.
+    bounds the iteration cost and enforces "proposal scoped to goal".
 
-    Returns the amend_request dict or None if neither transport carries
-    one for this scenario.
+    Returns `(None, None)` if neither transport carries an amend_request
+    for this scenario.
     """
     inline = tool_input.get("amend_request")
     if isinstance(inline, dict):
         inline_rel = inline.get("scenario_rel")
         if inline_rel is None or inline_rel == scenario_rel:
-            return inline
-        return None  # mismatched inline payload — fail closed
+            return inline, time.time()
+        return None, None  # mismatched inline payload — fail closed
     if not sid or not scenario_rel:
-        return None
+        return None, None
     goal = _scenario_goal(scenario_rel, cwd)
     if not goal:
-        return None
+        return None, None
     try:
         candidates = read_proposals(cwd, goal)
     except Exception:  # noqa: BLE001 — disk fallback must not crash hook
-        return None
+        return None, None
     for path in candidates:
         if sid not in Path(path).name:
             continue
@@ -480,8 +486,12 @@ def _load_amend_request(cwd, tool_input, sid, scenario_rel):
         except (OSError, json.JSONDecodeError):
             continue
         if payload.get("scenario_rel") == scenario_rel:
-            return payload
-    return None
+            try:
+                disk_mtime = Path(path).stat().st_mtime
+            except OSError:
+                disk_mtime = None
+            return payload, disk_mtime
+    return None, None
 
 
 def _format_r_skeleton(scenario_rel, decision):
@@ -543,8 +553,16 @@ def _write_amend_marker(cwd, scenario_rel):
     return marker
 
 
-def _evaluate_amend_via_protocol(cwd, scenario_rel, amend_request, sid):
+def _evaluate_amend_via_protocol(cwd, scenario_rel, amend_request, sid, proposal_mtime=None):
     """Run the four-gate evaluation on a hook-loaded amend_request.
+
+    `proposal_mtime` MUST come from a non-proposer-controlled source:
+    `time.time()` for inline transport (read by hook from the OS clock at
+    receipt) or `proposal_path.stat().st_mtime` for disk transport. The
+    `_load_amend_request` helper returns this value alongside the payload
+    so call sites cannot accidentally trust `evidence_artifact.metadata`
+    fields. Class B evidence requires a non-None proposal_mtime; without
+    one Gate 1 fails closed with `class_b_proposal_mtime_missing`.
 
     Returns the AmendDecision. The caller decides whether to allow the
     Edit (decision.approved is True → write marker → continue) or block
@@ -564,6 +582,7 @@ def _evaluate_amend_via_protocol(cwd, scenario_rel, amend_request, sid):
         base_head_sha=payload.get("base_head_sha", ""),
         base_file_hash=payload.get("base_file_hash", ""),
         proposer_role=payload.get("proposer_role", "teammate"),
+        proposal_mtime=proposal_mtime,
         judge_callable=None,
     )
 
@@ -789,12 +808,13 @@ def main():
                         # tool_input or disk fallback), evaluate it. PASS
                         # → write marker + allow this Edit. FAIL → block
                         # with Format R escalation.
-                        amend_request = _load_amend_request(
+                        amend_request, proposal_mtime = _load_amend_request(
                             cwd, tool_input, sid, rel,
                         )
                         if amend_request is not None:
                             decision = _evaluate_amend_via_protocol(
                                 cwd, rel, amend_request, sid,
+                                proposal_mtime=proposal_mtime,
                             )
                             if decision.approved:
                                 _write_amend_marker(cwd, rel)

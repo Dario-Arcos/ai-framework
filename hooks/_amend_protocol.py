@@ -39,10 +39,13 @@ Threat model boundaries known to this revision (deferred to later steps):
     same-session attacker that forges (cmd, exit, captured_at, file)
     can compute a valid HMAC. A privileged signer is the right fix and
     is out of scope for the foundation module.
-  * Class B `proposal_mtime` is read from `evidence_artifact.metadata`,
-    which is proposer-controlled. Step 6 will rebind it to the actual
-    mtime of the proposal JSON written by `write_proposal` — a value
-    the proposer cannot rewrite without re-proposing.
+  * Class B `proposal_mtime` is now read from the TRUSTED top-level
+    `proposal_mtime` parameter — caller (sdd-test-guard or leader
+    supervision loop) injects either `time.time()` at receipt (inline
+    transport) or `proposal_path.stat().st_mtime` (disk transport).
+    Reading `evidence_artifact.metadata` would let the proposer set
+    their own clock; the parameter now bypasses proposer-controlled
+    fields entirely.
   * Telemetry writes (`append_telemetry`) swallow OSError silently. A
     hostile filesystem state can therefore make `amend_autonomous` /
     `evidence_hmac_failure` events disappear while the decision still
@@ -521,15 +524,20 @@ def evaluate_amend_request(
             return _evidence_fail("class_a_content_diverged_from_head")
 
     elif art_class == "sandboxed_run_output":
-        prop_mtime = art_meta.get("proposal_mtime")
-        if prop_mtime is None:
+        # Class B uses the TRUSTED top-level `proposal_mtime` (caller-supplied
+        # from a non-proposer source: hook injects time.time() at receipt for
+        # inline transport, or proposal_path.stat().st_mtime for disk
+        # transport). Reading `art_meta.get("proposal_mtime")` would let the
+        # proposer set the timestamp themselves and trivially clear the idle
+        # window — that was the original P0 surface (see module docstring).
+        if proposal_mtime is None:
             return _evidence_fail("class_b_proposal_mtime_missing")
         try:
             file_mtime = artifact_resolved.stat().st_mtime
         except OSError:
             return _evidence_fail("class_b_artifact_unreadable")
         try:
-            gap = float(prop_mtime) - float(file_mtime)
+            gap = float(proposal_mtime) - float(file_mtime)
         except (TypeError, ValueError):
             return _evidence_fail("class_b_proposal_mtime_invalid")
         if gap < _CLASS_B_IDLE_WINDOW_SECONDS:

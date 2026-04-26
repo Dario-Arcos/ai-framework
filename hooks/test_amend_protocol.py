@@ -333,7 +333,13 @@ def test_scen_220_evidence_class_a_path_not_tracked(repo):
 
 
 def test_scen_221_evidence_class_b_idle_window_violation(repo):
-    """Class (b) evidence with mtime <30s before proposal → idle-window violation."""
+    """Class (b) evidence with mtime <30s before proposal → idle-window violation.
+
+    `proposal_mtime` is now passed as the TRUSTED top-level parameter (the
+    caller injects the hook's clock-at-receipt or the proposal JSON's
+    OS-attested mtime). Reading `metadata.proposal_mtime` is no longer
+    consulted — that field is proposer-controlled and was the original P0.
+    """
     artifact = repo["cwd"] / "sandbox_output.txt"
     artifact.write_text("captured run output\n")
     proposal_mtime = time.time()
@@ -347,14 +353,53 @@ def test_scen_221_evidence_class_b_idle_window_violation(repo):
         evidence_artifact={
             "path": "sandbox_output.txt",
             "class": "sandboxed_run_output",
-            "metadata": {"proposal_mtime": proposal_mtime},
+            "metadata": {},
         },
         base_head_sha=repo["head_sha"],
         base_file_hash=repo["file_hash"],
+        proposal_mtime=proposal_mtime,
     )
     assert decision.approved is False
     assert decision.failed_gate == "evidence"
     assert decision.reason == "class_b_idle_window_violation"
+
+
+def test_scen_221_class_b_ignores_metadata_proposal_mtime(repo):
+    """Adversarial: a forged `metadata.proposal_mtime` claiming a 31-second
+    gap MUST NOT clear Gate 1. The trusted top-level `proposal_mtime` is
+    the only source. With proposal_mtime=None at the top level, the gate
+    fails closed regardless of metadata content.
+
+    This is the regression test for the P0 fix: prior to the rebind a
+    proposer could write `metadata.proposal_mtime = file_mtime + 31` and
+    pass Class B without ever waiting the idle window.
+    """
+    artifact = repo["cwd"] / "sandbox_output.txt"
+    artifact.write_text("captured run output\n")
+    file_mtime = time.time() - 100  # very old
+    os.utime(artifact, (file_mtime, file_mtime))
+    decision = evaluate_amend_request(
+        cwd=repo["cwd"],
+        scenario_rel=repo["scen_rel"],
+        proposed_content=_happy_proposed_content(repo["scen_content"]),
+        premortem="If wrong, revert via git revert; blast radius single scenario file.",
+        evidence_artifact={
+            "path": "sandbox_output.txt",
+            "class": "sandboxed_run_output",
+            # Proposer FORGES a value claiming a wide idle window — must
+            # be ignored because the gate now reads the top-level param.
+            "metadata": {"proposal_mtime": file_mtime + 9999},
+        },
+        base_head_sha=repo["head_sha"],
+        base_file_hash=repo["file_hash"],
+        proposal_mtime=None,  # caller did not supply trusted timestamp
+    )
+    assert decision.approved is False
+    assert decision.failed_gate == "evidence"
+    assert decision.reason == "class_b_proposal_mtime_missing", (
+        "forged metadata.proposal_mtime must not satisfy Gate 1 — "
+        "trusted top-level param is the only source"
+    )
 
 
 def test_scen_222_evidence_class_c_hmac_mismatch(repo):

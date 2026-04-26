@@ -311,7 +311,13 @@ def test_scen_219_hook_cannot_reset_counter_without_judge(repo):
 
 
 def test_load_amend_request_from_tool_input(repo):
-    """tool_input.amend_request takes precedence over disk fallback."""
+    """tool_input.amend_request takes precedence over disk fallback.
+
+    Returns `(payload, proposal_mtime)`; inline transport stamps
+    `proposal_mtime = time.time()` so Class B uses the trusted hook
+    clock rather than a proposer-supplied metadata field.
+    """
+    import time as _time
     inline_payload = {
         "proposed_content": "anything",
         "premortem": "x" * 40,
@@ -322,11 +328,17 @@ def test_load_amend_request_from_tool_input(repo):
         "file_path": str(repo["scen_file"]),
         "amend_request": inline_payload,
     }
-    result = _sdd_test_guard._load_amend_request(
+    before = _time.time()
+    payload, proposal_mtime = _sdd_test_guard._load_amend_request(
         str(repo["cwd"]), tool_input, "anysid", repo["scen_rel"],
     )
-    assert result is inline_payload
-    assert result.get("marker") == "from-tool-input"
+    after = _time.time()
+    assert payload is inline_payload
+    assert payload.get("marker") == "from-tool-input"
+    assert proposal_mtime is not None
+    assert before <= proposal_mtime <= after, (
+        "inline transport must stamp proposal_mtime from hook receipt clock"
+    )
 
 
 def test_load_amend_request_from_disk_fallback(repo):
@@ -347,13 +359,17 @@ def test_load_amend_request_from_disk_fallback(repo):
     }
     proposal_path = write_proposal(repo["cwd"], "test", sid, payload)
     assert Path(proposal_path).exists()
+    expected_mtime = Path(proposal_path).stat().st_mtime
 
-    result = _sdd_test_guard._load_amend_request(
+    payload_loaded, proposal_mtime = _sdd_test_guard._load_amend_request(
         str(repo["cwd"]), {}, sid, repo["scen_rel"],
     )
-    assert result is not None, "disk fallback should resolve a matching proposal"
-    assert result.get("scenario_rel") == repo["scen_rel"]
-    assert result.get("marker") == "from-disk"
+    assert payload_loaded is not None, "disk fallback should resolve a matching proposal"
+    assert payload_loaded.get("scenario_rel") == repo["scen_rel"]
+    assert payload_loaded.get("marker") == "from-disk"
+    assert proposal_mtime == expected_mtime, (
+        "disk transport must use OS-attested proposal JSON mtime, not metadata"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -371,13 +387,14 @@ def test_load_amend_request_rejects_cross_goal_inline(repo):
         "premortem": "y" * 40,
         "scenario_rel": "docs/specs/OTHER/scenarios/other.scenarios.md",
     }
-    result = _sdd_test_guard._load_amend_request(
+    payload, proposal_mtime = _sdd_test_guard._load_amend_request(
         cwd=str(repo["cwd"]),
         tool_input={"amend_request": inline},
         sid="any-sid",
         scenario_rel=repo["scen_rel"],
     )
-    assert result is None
+    assert payload is None
+    assert proposal_mtime is None
 
 
 def test_load_amend_request_disk_fallback_skips_other_goals(repo):
@@ -401,15 +418,16 @@ def test_load_amend_request_disk_fallback_skips_other_goals(repo):
         "premortem": "x" * 40,
     }))
 
-    result = _sdd_test_guard._load_amend_request(
+    payload, proposal_mtime = _sdd_test_guard._load_amend_request(
         cwd=str(repo["cwd"]),
         tool_input={},
         sid=sid,
         scenario_rel=repo["scen_rel"],
     )
-    assert result is None, (
+    assert payload is None, (
         "cross-goal proposal must be ignored by goal-scoped fallback"
     )
+    assert proposal_mtime is None
 
 
 def test_format_r_skeleton_contains_required_fields(repo):
