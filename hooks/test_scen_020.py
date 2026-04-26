@@ -23,7 +23,6 @@ Red-green contract:
     1. Pre-fix, worktree first-write passes silently (exit 0).
     2. Post-fix, worktree first-write denies with [SDD:SCENARIO]
        prefix; main-clone first-write still passes (no regression).
-    3. Bypass env `_SDD_DISABLE_SCENARIOS=1` honored in both contexts.
 
 Ralph + non-Ralph coverage:
     Ralph     → worktree context → DENY
@@ -222,21 +221,6 @@ class TestScen020ParentBranchScenarioEnforcement(unittest.TestCase):
             "write-once" in stderr.lower() or "violation" in stderr.lower(),
             f"Denial must cite write-once contract (existing SCEN-011 guard), "
             f"not the worktree-first-write guard; got: {stderr!r}",
-        )
-
-    def test_worktree_bypass_env_honored(self):
-        """_SDD_DISABLE_SCENARIOS=1 bypasses the new guard (existing pattern)."""
-        payload = self._write_scenario_payload(
-            self.worktree, "bypassed.scenarios.md"
-        )
-        rc, _stdout, stderr, _elapsed = invoke_hook(
-            "sdd-test-guard.py", payload,
-            env={"_SDD_DISABLE_SCENARIOS": "1"},
-        )
-        self.assertEqual(
-            rc, 0,
-            f"Bypass env must allow worktree first-write; "
-            f"got exit={rc}, stderr={stderr!r}",
         )
 
     def test_worktree_non_scenario_file_unaffected(self):

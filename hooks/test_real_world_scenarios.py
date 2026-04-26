@@ -18,9 +18,6 @@ What these tests add beyond `test_phase7_integration.py` and
     `event` values.
   * Realistic stacks: synthetic Python + JS + Go projects exercise the
     stack-agnostic config path (`SOURCE_EXTENSIONS`, coverage paths).
-  * `settings.json` `env` block simulated via subprocess env override —
-    the canonical way Claude Code would deliver `_SDD_DISABLE_SCENARIOS=1`
-    per the C7 citation table.
 
 Not covered (requires a live Claude Code session):
   * Actual `PreToolUse` dispatch from Claude Code to the hook binary.
@@ -176,8 +173,7 @@ class TestRealWorldHappyPath(unittest.TestCase):
                     "old_string": original,
                     "new_string": mutated,
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:SCENARIO]"), stderr)
@@ -196,8 +192,7 @@ class TestRealWorldHappyPath(unittest.TestCase):
                 "task_subject": "Ship checkout",
                 "teammate_name": "impl-checkout",
                 "session_id": self.raw_sid,
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 0, stderr)
         self.assertIn("Scenario IDs validated", stderr)
@@ -236,8 +231,7 @@ class TestRealWorldRewardHackingAttempt(unittest.TestCase):
                 "tool_input": {
                     "command": f"sed -i 's/foo/bar/' \"{SCENARIO_DIR}/auth.scenarios.md\"",
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 2)
         self.assertTrue(stderr.startswith("[SDD:SCENARIO]"), stderr)
@@ -259,8 +253,7 @@ class TestRealWorldRewardHackingAttempt(unittest.TestCase):
                     "old_string": "x",
                     "new_string": "y",
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 2)
         self.assertIn("symlink", stderr.lower())
@@ -312,8 +305,7 @@ class TestRealWorldAmendFlow(unittest.TestCase):
                     "old_string": original,
                     "new_string": updated,
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 2)
 
@@ -335,8 +327,7 @@ class TestRealWorldAmendFlow(unittest.TestCase):
                     "old_string": original,
                     "new_string": updated,
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 0)
 
@@ -355,57 +346,12 @@ class TestRealWorldAmendFlow(unittest.TestCase):
                     "old_string": original,
                     "new_string": updated,
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 2)
 
 
 @pytest.mark.skipif(not _GIT_AVAILABLE, reason="git required")
-class TestRealWorldSettingsJsonEnvBypass(unittest.TestCase):
-    """Simulates `settings.json` delivering `_SDD_DISABLE_SCENARIOS=1` via env."""
-
-    def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="phase7-real-bypass-")
-        self.raw_sid = "real-bypass"
-        self.sid = extract_session_id({"session_id": self.raw_sid})
-
-    def tearDown(self):
-        cleanup_all_state(self.tmpdir, sid=self.sid)
-        shutil.rmtree(self.tmpdir, ignore_errors=True)
-
-    def test_bypass_env_disables_scenario_guards_and_emits_telemetry(self):
-        _init_repo(self.tmpdir)
-        scen_path = _commit_scenario(self.tmpdir, "auth")
-        original = scen_path.read_text(encoding="utf-8")
-        updated = original.replace("USD 42.00", "USD 45.00")
-        scen_path.write_text(updated, encoding="utf-8")
-
-        rc, _out, stderr, _t = invoke_hook(
-            "sdd-test-guard.py",
-            {
-                "cwd": self.tmpdir,
-                "session_id": self.raw_sid,
-                "tool_name": "Edit",
-                "tool_input": {
-                    "file_path": str(scen_path),
-                    "old_string": original,
-                    "new_string": updated,
-                },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": "1"},
-        )
-        self.assertEqual(rc, 0, stderr)
-
-        events = _read_events(self.tmpdir)
-        bypassed = [
-            e for e in events
-            if e.get("event") == "scenarios_bypassed"
-            and e.get("hook") == "sdd-test-guard"
-        ]
-        self.assertEqual(len(bypassed), 1, bypassed)
-
-
 class TestRealWorldBackwardCompat(unittest.TestCase):
     """Project WITHOUT `.claude/scenarios/` must behave exactly as pre-Phase-3."""
 
@@ -428,8 +374,7 @@ class TestRealWorldBackwardCompat(unittest.TestCase):
                     "old_string": "x = 1\n",
                     "new_string": "x = 2\n",
                 },
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 0, stderr)
         self.assertNotIn("[SDD:", stderr)
@@ -441,8 +386,7 @@ class TestRealWorldBackwardCompat(unittest.TestCase):
                 "cwd": self.tmpdir,
                 "tool_name": "TaskUpdate",
                 "tool_input": {"status": "completed", "taskId": "T-1"},
-            },
-            env={"_SDD_DISABLE_SCENARIOS": ""},
+            }
         )
         self.assertEqual(rc, 0, stderr)
 
