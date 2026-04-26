@@ -143,10 +143,14 @@ DEFAULT_SOURCE_EXTENSIONS = frozenset({
 })
 
 DEFAULT_TEST_FILE_PATTERNS = (
-    r"(?:test|spec|__tests__)[/\\]",
+    # B2 (SCEN-307): plural `tests/` recognized alongside `test/` and `__tests__/`.
+    r"(?:test|tests|spec|__tests__)[/\\]",
     r"\.(?:test|spec)\.",
     r"_tests?\.",
-    r"test_",
+    # B1 (SCEN-301, P0): anchor `test_` to filename start so production
+    # files like `attest_logger.py`, `prod_test_data.py` are not classified
+    # as tests. Files whose basename starts with `test_` still match.
+    r"(?:^|[/\\])test_",
 )
 
 # Per-cwd config cache (keyed by resolved absolute path).

@@ -49,11 +49,19 @@ GENERATED_COMPOUND_RE = re.compile(r"\.(?:d\.ts|min\.js|min\.css)$")
 
 # Legacy compiled regex from defaults (used when cwd is None).
 # Canonical patterns live in _sdd_config.DEFAULT_TEST_FILE_PATTERNS.
+#
+# B1 (SCEN-301, P0 reward-hacking close): `test_` is anchored to filename
+#   start (`(?:^|[/\\])test_`) so production names like `attest_logger.py`,
+#   `prod_test_data.py`, `contest_winner.py` are NOT misclassified as tests
+#   and skip the coverage gate. Files whose basename starts with `test_`
+#   (e.g. `test_login.py`, `src/test_helper.py`) still match.
+# B2 (SCEN-307): `tests` plural directory recognized alongside `test` and
+#   `__tests__`, matching pytest convention (`tests/conftest.py`).
 TEST_FILE_RE = re.compile(
-    r"(?:test|spec|__tests__)[/\\]|"
+    r"(?:test|tests|spec|__tests__)[/\\]|"
     r"\.(?:test|spec)\.|"
     r"_tests?\.|"
-    r"test_"
+    r"(?:^|[/\\])test_"
 )
 
 EXEMPT_RE = re.compile(
