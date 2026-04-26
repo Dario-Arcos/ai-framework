@@ -112,17 +112,28 @@ _TAUTOLOGICAL_PATTERNS = [
 #     the amend-marker: raises cost, not a security boundary.
 # These are acknowledged; hardening requires the Strong threat model
 # (external scenario store + sandboxed validator — SPEC 3.5 roadmap).
+#
+# False-positive note (P1, fix/bash-scenarios-regex-false-positive):
+# The verb-prefixed alternatives below originally used `>` directly,
+# which greedily matched the `>` inside `2>&1`, `>&2`, and `&>`. That
+# misclassified read-only pipelines like
+#   `echo "src diffs" ; diff -r a b 2>&1 | grep -v "...docs/specs"`
+# as scenario writes. The redirect token is now narrowed to a *file*
+# redirect — not preceded by a digit (rules out `2>`, `1>`) and not
+# followed by `&` (rules out `>&2`). Numeric-fd redirects that DO
+# write to a scenario file (`echo x 1> path.scenarios.md`) are still
+# caught by the catch-all `>\s*...scenarios` alternative below.
 _BASH_SCENARIO_WRITE_RE = re.compile(
     r"(?:"
     r"sed\s+-i"                       # in-place sed (handles -ibackup too)
-    r"|cat\s+[^|]*>"                  # cat > or cat << > (heredoc)
+    r"|cat\s+[^|]*(?<!\d)>(?!\s*&)"   # cat > or cat << > (heredoc) — file redirect only
     r"|\btee\b"                       # tee (with or without -a)
     r"|\bcp\b"                        # copy into scenarios
     r"|\bmv\b"                        # move into scenarios
     r"|\brm\b"                        # delete scenario file
     r"|\bln\b"                        # hardlink/symlink into scenarios
-    r"|echo\s+[^|]*>"                 # echo > / >>
-    r"|printf\s+[^|]*>"               # printf >
+    r"|echo\s+[^|]*(?<!\d)>(?!\s*&)"  # echo > / >> — not 2>&1, not >&2
+    r"|printf\s+[^|]*(?<!\d)>(?!\s*&)"  # printf > — not 2>&1, not >&2
     r"|dd\s+[^|]*of="                 # dd of=
     r"|>\s*[^&|;]*/scenarios/[^/\s&|;]*\.scenarios\.md"  # any redirect to a scenario file
     r")"
