@@ -577,24 +577,50 @@ def check_amend_marker(cwd, rel_scenario_path, sid=None):
 # High-level predicates for hooks
 # ─────────────────────────────────────────────────────────────────
 
-def has_pending_scenarios(cwd, sid=None, consume=False):
-    """True iff scenarios exist AND verification-before-completion is missing.
+def current_scenario_hashes(cwd):
+    """Return ``{rel_path: sha256}`` for every scenario file under roots.
 
-    Used by PreToolUse guards (TaskUpdate, Bash git commit) to block
-    completion attempts when the verification skill has not been invoked
-    in the current session.
+    Used by Bundle B (F2/F3): the verification-before-completion skill
+    records this map at invocation time; the git-commit gate re-hashes
+    at commit time and rejects on mismatch (edited or new scenarios).
+
+    Paths are returned relative to ``cwd`` so the map is portable
+    across worktrees that share a project_hash.
+    """
+    import hashlib
+    import os
+    out = {}
+    for path in scenario_files(cwd):
+        try:
+            data = Path(path).read_bytes()
+        except OSError:
+            continue
+        rel = os.path.relpath(path, cwd)
+        out[rel] = hashlib.sha256(data).hexdigest()
+    return out
+
+
+def has_pending_scenarios(cwd, sid=None, consume=False):
+    """True iff scenarios exist AND verification evidence is missing or stale.
+
+    Used by PreToolUse guards (Bash git commit / merge / push) to block
+    completion attempts when verification-before-completion has not been
+    invoked in the current session, or when its evidence is stale.
 
     Without `sid` the session check cannot be performed — the caller
     receives a conservative True (scenarios exist → require verification).
 
-    Holdout enforcement (F1 close): when `consume=True`, the underlying
-    skill flag is atomically read-and-deleted (`consume_skill_invoked`).
-    The next caller will see the flag as missing — closing the bypass
-    where one skill invocation covers every commit inside the 30-min
-    TTL window. Used by the `git commit` / `git merge` / `git push`
-    gate; other consumers keep the persistent `read_skill_invoked`
-    semantics so leader→teammate inheritance for sop-code-assist /
-    sop-reviewer is preserved.
+    Holdout enforcement modes (consume=True path):
+      F1 close — flag is read-and-deleted (`consume_skill_invoked`),
+        so a single invocation cannot cover multiple commits.
+      F2/F3 close — if the evidence carries a `scenario_hashes` map,
+        every CURRENT scenario must appear in the map with a matching
+        sha256. Edited or newly-added scenarios fail the check.
+        Removed scenarios are tolerated (subset is fine — the contract
+        was reduced, not extended).
+
+    Other consumers (sop-code-assist / sop-reviewer leader→teammate
+    inheritance) keep the persistent `read_skill_invoked` path.
     """
     if not scenario_files(cwd):
         return False
@@ -604,4 +630,12 @@ def has_pending_scenarios(cwd, sid=None, consume=False):
         state = consume_skill_invoked(cwd, "verification-before-completion")
     else:
         state = read_skill_invoked(cwd, "verification-before-completion", sid=sid)
-    return state is None
+    if state is None:
+        return True
+    if consume:
+        evidence = state.get("scenario_hashes")
+        if evidence is not None:
+            for rel, h in current_scenario_hashes(cwd).items():
+                if evidence.get(rel) != h:
+                    return True
+    return False

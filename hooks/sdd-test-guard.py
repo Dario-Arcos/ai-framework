@@ -1318,20 +1318,12 @@ def main():
                 "or invoke sop-reviewer to author a legitimate amend."
             )
 
-    # ─── COMPLETION-WITHOUT-VERIFICATION GUARD (Phase 3) ──────────
-    # Mirrors the task-completed scenario gate at PreToolUse time so
-    # the model cannot "mark complete" without invoking verification.
-    if tool_name == "TaskUpdate":
-        if tool_input.get("status") == "completed":
-            if has_pending_scenarios(cwd, sid=sid):
-                _record_guard_trigger(cwd, "POLICY", tool_name, file_path)
-                _fail(
-                    "TaskUpdate(completed) blocked — scenarios require verification\n\n"
-                    "Scenarios exist under configured discovery roots but\n"
-                    "verification-before-completion was not invoked this session.\n"
-                    "Invoke: Skill(skill='verification-before-completion')",
-                    category="POLICY",
-                )
+    # ─── COMPLETION-WITHOUT-VERIFICATION GUARD ────────────────────
+    # F4 close (Bundle B): the TaskUpdate(completed) gate was redundant
+    # with the substantive `git commit` gate below. Symbolic task-tracker
+    # actions don't change durable history; only commits/merges/pushes do.
+    # Removed entirely. The git-commit gate remains the single enforcement
+    # point.
 
     if tool_name == "Bash":
         command = tool_input.get("command", "")

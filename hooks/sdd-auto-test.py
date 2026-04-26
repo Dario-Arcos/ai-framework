@@ -240,11 +240,17 @@ def main():
     if tool_name == "Skill":
         raw_skill = tool_input.get("skill", "")
         skill_name = raw_skill.split(":", 1)[-1] if ":" in raw_skill else raw_skill
-        if skill_name in (
-            "sop-code-assist",
-            "sop-reviewer",
-            "verification-before-completion",
-        ):
+        if skill_name == "verification-before-completion":
+            # Holdout enforcement (F2/F3): bind verification evidence to
+            # the current scenario set. Edited or new scenarios after
+            # invocation invalidate the evidence at commit time.
+            try:
+                from _sdd_scenarios import current_scenario_hashes
+                hashes = current_scenario_hashes(cwd)
+            except Exception:
+                hashes = None
+            write_skill_invoked(cwd, skill_name, sid, scenario_hashes=hashes)
+        elif skill_name in ("sop-code-assist", "sop-reviewer"):
             write_skill_invoked(cwd, skill_name, sid)
         sys.exit(0)
 

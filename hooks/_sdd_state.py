@@ -694,13 +694,23 @@ def skill_invoked_path(cwd, skill_name="sop-code-assist", sid=None):
     return _tmp(f"sdd-skill-{canonical}-{project_hash(cwd)}.json")
 
 
-def write_skill_invoked(cwd, skill_name, sid=None):
-    """Record that an SDD skill was invoked. Project-scoped (no sid)."""
+def write_skill_invoked(cwd, skill_name, sid=None, scenario_hashes=None):
+    """Record that an SDD skill was invoked. Project-scoped (no sid).
+
+    Holdout enforcement (F2/F3 close): pass `scenario_hashes` (a
+    ``{rel_path: sha256}`` map of current `*.scenarios.md` files) to
+    bind the evidence to the specific scenarios it claims to verify.
+    The git-commit gate consumes the evidence and rejects when current
+    scenario hashes do not match the recorded map (edited / newly added
+    scenarios trigger re-invocation).
+    """
     canonical = _normalize_skill_name(skill_name)
     data = {
         "skill": canonical,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+    if scenario_hashes is not None:
+        data["scenario_hashes"] = scenario_hashes
     _write_json_atomic(skill_invoked_path(cwd, canonical), data, prefix="sdd-skill-")
 
 

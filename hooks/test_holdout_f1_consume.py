@@ -155,5 +155,129 @@ class TestHasPendingScenariosConsume(unittest.TestCase):
             shutil.rmtree(empty, ignore_errors=True)
 
 
+class TestScenarioHashBinding(unittest.TestCase):
+    """Bundle B (F2/F3): evidence is bound to scenario file hashes.
+
+    The verification-before-completion skill records ``scenario_hashes``
+    at invocation time. The git-commit gate (consume=True) re-hashes
+    current scenarios at commit time and rejects on mismatch — closing
+    the bypass where the user edits scenarios after invocation to make
+    them match the code.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="f2-hashes-")
+        _seed_scenarios(self.tmpdir)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+        path = skill_invoked_path(self.tmpdir, "verification-before-completion")
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    def _record_evidence_with_current_hashes(self):
+        from _sdd_scenarios import current_scenario_hashes
+        hashes = current_scenario_hashes(self.tmpdir)
+        write_skill_invoked(
+            self.tmpdir,
+            "verification-before-completion",
+            scenario_hashes=hashes,
+        )
+        return hashes
+
+    def test_matching_hashes_pass(self):
+        """No edits between invocation and consume → not pending."""
+        self._record_evidence_with_current_hashes()
+        self.assertFalse(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+    def test_edited_scenario_invalidates_evidence(self):
+        """Editing a scenario after invocation → consume returns pending."""
+        self._record_evidence_with_current_hashes()
+        sd = Path(self.tmpdir) / "docs" / "specs" / "f1" / "scenarios"
+        scenario_file = sd / "f1.scenarios.md"
+        original = scenario_file.read_text(encoding="utf-8")
+        scenario_file.write_text(original + "\n## SCEN-402: tampered\n", encoding="utf-8")
+        self.assertTrue(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+    def test_new_scenario_invalidates_evidence(self):
+        """Adding a new scenario file after invocation → consume returns pending."""
+        self._record_evidence_with_current_hashes()
+        sd = Path(self.tmpdir) / "docs" / "specs" / "g2" / "scenarios"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / "g2.scenarios.md").write_text(_SCENARIO_FRAGMENT, encoding="utf-8")
+        self.assertTrue(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+    def test_removed_scenario_does_not_invalidate(self):
+        """Deleting a scenario after invocation is tolerated (subset is OK)."""
+        # Seed a SECOND scenario, record evidence over both, then delete one.
+        sd = Path(self.tmpdir) / "docs" / "specs" / "g2" / "scenarios"
+        sd.mkdir(parents=True, exist_ok=True)
+        extra = sd / "g2.scenarios.md"
+        extra.write_text(_SCENARIO_FRAGMENT, encoding="utf-8")
+        self._record_evidence_with_current_hashes()
+        extra.unlink()
+        self.assertFalse(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+    def test_evidence_without_hashes_skips_binding_check(self):
+        """Backwards-compat: evidence written by old call path (no hashes)
+        passes as before — only F1 consume semantics apply."""
+        # Old-style write: no scenario_hashes argument.
+        write_skill_invoked(self.tmpdir, "verification-before-completion")
+        self.assertFalse(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+    def test_consume_returns_hashes_in_state(self):
+        """The consumed state dict carries the scenario_hashes map."""
+        recorded = self._record_evidence_with_current_hashes()
+        from _sdd_state import consume_skill_invoked
+        state = consume_skill_invoked(self.tmpdir, "verification-before-completion")
+        self.assertIsNotNone(state)
+        self.assertEqual(state.get("scenario_hashes"), recorded)
+
+    def test_ralph_mode_parity(self):
+        """SCEN-404: scenario hash binding works under `.ralph/specs/` too.
+
+        Mode parity is enforced by `current_scenario_hashes` calling
+        `scenario_files(cwd)`, which already iterates every configured
+        discovery root. This test pins that behavior with a Ralph-mode
+        scenario file alongside the default non-Ralph one.
+        """
+        ralph_sd = Path(self.tmpdir) / ".ralph" / "specs" / "auth" / "scenarios"
+        ralph_sd.mkdir(parents=True, exist_ok=True)
+        (ralph_sd / "auth.scenarios.md").write_text(
+            _SCENARIO_FRAGMENT, encoding="utf-8",
+        )
+        # Activate Ralph mode by creating .ralph/config.sh.
+        (Path(self.tmpdir) / ".ralph" / "config.sh").write_text(
+            'GATE_TEST=""\n', encoding="utf-8",
+        )
+        recorded = self._record_evidence_with_current_hashes()
+        # Ralph scenario must appear in the recorded map.
+        self.assertTrue(
+            any("auth.scenarios.md" in k for k in recorded),
+            f"Ralph scenario missing from evidence: {list(recorded)}",
+        )
+        # Editing the Ralph scenario should invalidate evidence.
+        scenario_file = ralph_sd / "auth.scenarios.md"
+        scenario_file.write_text(
+            _SCENARIO_FRAGMENT + "\n## SCEN-404b: tampered\n", encoding="utf-8",
+        )
+        self.assertTrue(
+            has_pending_scenarios(self.tmpdir, sid="t1", consume=True)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

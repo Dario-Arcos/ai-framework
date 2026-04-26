@@ -249,7 +249,16 @@ class TestPhase7CategoryPrefixes(unittest.TestCase):
         self.assertTrue(stderr.startswith("[SDD:SCENARIO]"), stderr)
         _assert_guard_event(self, self.tmpdir, "SCENARIO", "Bash")
 
-    def test_policy_prefix_for_taskupdate_completed_without_verification(self):
+    def test_taskupdate_completed_is_passthrough_after_bundle_b(self):
+        """TaskUpdate(completed) is no longer gated (Bundle B / F4).
+
+        The substantive enforcement point is `git commit` (covered by
+        `test_policy_prefix_for_git_commit_without_verification` below).
+        Symbolic task-tracker actions don't change durable history, so
+        the TaskUpdate gate was removed as redundant. This test pins
+        the new contract: TaskUpdate(completed) with scenarios pending
+        and no verification must NOT block — it returns rc=0.
+        """
         _seed_untracked_scenario(self.tmpdir)
         raw_sid = "phase7-taskupdate"
         rc, _stdout, stderr, _elapsed_ms = invoke_hook("sdd-test-guard.py", {
@@ -258,9 +267,8 @@ class TestPhase7CategoryPrefixes(unittest.TestCase):
             "tool_name": "TaskUpdate",
             "tool_input": {"status": "completed", "taskId": "T-1"},
         })
-        self.assertEqual(rc, 2)
-        self.assertTrue(stderr.startswith("[SDD:POLICY]"), stderr)
-        _assert_guard_event(self, self.tmpdir, "POLICY", "TaskUpdate")
+        self.assertEqual(rc, 0, stderr)
+        self.assertNotIn("[SDD:POLICY]", stderr)
 
     def test_policy_prefix_for_git_commit_without_verification(self):
         _seed_untracked_scenario(self.tmpdir)

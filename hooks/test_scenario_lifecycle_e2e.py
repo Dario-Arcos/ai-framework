@@ -109,15 +109,23 @@ def _invoke_scenario_edit(cwd, scenario_path, old_text, new_text, session_id=Non
 
 
 def _invoke_taskupdate_completed(cwd, raw_sid):
+    """Probe the verification-pending gate via the git-commit path.
+
+    Bundle B (F4 close) removed the redundant TaskUpdate(completed)
+    gate. The substantive enforcement point is `git commit` / merge /
+    push. This helper preserves the call sites of pre-Bundle-B tests
+    by routing through the Bash gate instead — what the test really
+    checks (does the policy gate block when verification is missing)
+    is behavior-equivalent.
+    """
     return invoke_hook(
         "sdd-test-guard.py",
         {
             "cwd": str(cwd),
             "session_id": raw_sid,
-            "tool_name": "TaskUpdate",
+            "tool_name": "Bash",
             "tool_input": {
-                "status": "completed",
-                "taskId": "PHASE7-C3",
+                "command": "git commit -m 'phase7 probe'",
             },
         },
     )
@@ -322,6 +330,11 @@ class TestPhase7EndToEndFlow(_Phase7Base):
         _record_skill_invoked(cwd, "verification-before-completion", sid)
         rc, _stdout, stderr, _elapsed_ms = _invoke_taskupdate_completed(cwd, raw_sid)
         self.assertEqual(rc, 0, stderr)
+        # Bundle B: the gate above consumed the flag. Re-record so the
+        # downstream task-completed.py probe (line below) still finds
+        # valid evidence; consume is a feature of the git-commit gate
+        # only, not of `read_skill_invoked`.
+        _record_skill_invoked(cwd, "verification-before-completion", sid)
 
         _write_ralph_config(cwd)
         _record_source_edit(cwd, sid)

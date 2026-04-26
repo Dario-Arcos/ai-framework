@@ -137,22 +137,31 @@ class TestScen006(unittest.TestCase):
     # ─────────────────────────────────────────────────────────
 
     def test_taskupdate_completed_with_scenarios_no_verification_denies(self):
-        """TaskUpdate(completed) + scenarios + no verification → exit 2 + structured message.
+        """git-commit + scenarios + no verification → exit 2 + structured message.
 
-        FAILS today: sdd-test-guard.py has no TaskUpdate branch → exits 0.
-        Expected failure: `AssertionError: 0 != 2`.
+        Bundle B (F4 close) removed the TaskUpdate(completed) gate; the
+        substantive enforcement point is now `git commit`. The semantic
+        contract this test asserts is unchanged: a completion attempt
+        without verification, with scenarios pending, must block with a
+        structured message citing the missing skill or scenarios.
         """
         self._write_scenario()
         # Deliberately do NOT write verification-before-completion skill state.
 
-        code, stderr = _invoke_guard(self._taskupdate_payload(), self.tmpdir)
+        bash_payload = {
+            "session_id": RAW_SID,
+            "cwd": self.tmpdir,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git commit -m 'scen-006 probe'"},
+        }
+        code, stderr = _invoke_guard(bash_payload, self.tmpdir)
 
         self.assertEqual(
             code, 2,
-            f"Expected DENY (exit 2) when TaskUpdate(completed) runs with "
+            f"Expected DENY (exit 2) when git commit runs with "
             f"pending scenarios and no verification. Got exit={code}, "
-            f"stderr={stderr!r}. FAILURE MODE: TaskUpdate completion guard "
-            f"not implemented in sdd-test-guard.py.",
+            f"stderr={stderr!r}. FAILURE MODE: git-commit completion guard "
+            f"not enforcing verification check.",
         )
         stderr_low = stderr.lower()
         self.assertTrue(
