@@ -75,24 +75,85 @@ _TRIPLE_QUOTED_RE = re.compile(
     r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'',
 )
 
+# Comments and single/double-quoted string literals — stripped before the
+# tautology scan so `# do NOT use assert True` (comment) and
+# `msg = "expect(true).toBe(true) demo"` (literal) don't trigger.
+# Triple-quoted bodies are handled separately (above).
+_PY_COMMENT_RE = re.compile(r"(?<!\\)#[^\n]*")
+_SQ_DQ_STRING_RE = re.compile(
+    r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'',
+)
+
+# Tautology patterns. A1 (SCEN-303/304):
+#   * `assert True` matches only when the statement TERMINATES (newline,
+#     end-of-string, semicolon, or `#` tail, optionally with a `, "msg"`
+#     trailer). `assert True == X` and `assert True is not None` carry
+#     real comparison semantics and must NOT match.
+#   * Patterns flagged ``scan="stripped"`` run after `_strip_docstrings`
+#     (triple-quoted strings + single/double-quoted literals + `#`
+#     comments removed). Patterns flagged ``scan="raw"`` run on the
+#     ORIGINAL text — they target structural form (whitespace + `def` /
+#     `it()` syntax) and would break if quoted-string labels (`it('x',
+#     ...)`) were stripped beforehand.
 _TAUTOLOGICAL_PATTERNS = [
-    ("assert True", re.compile(r"\bassert\s+True\b")),
-    ("assert 1 == 1", re.compile(r"\bassert\s+1\s*==\s*1\b")),
-    ("expect(true).toBe(true)", re.compile(r"expect\(true\)\.toBe\(true\)")),
+    (
+        "assert True",
+        re.compile(
+            r"\bassert\s+True\s*"
+            r"(?:,\s*[^\n;]*)?"   # optional `, "message"`
+            r"\s*(?:#[^\n]*)?"     # optional `# comment` tail
+            r"\s*(?:$|;|\n)",      # statement terminator
+            re.MULTILINE,
+        ),
+        "stripped",
+    ),
+    (
+        "assert 1 == 1",
+        re.compile(
+            r"\bassert\s+1\s*==\s*1\s*"
+            r"(?:,\s*[^\n;]*)?"
+            r"\s*(?:#[^\n]*)?"
+            r"\s*(?:$|;|\n)",
+            re.MULTILINE,
+        ),
+        "stripped",
+    ),
+    (
+        "expect(true).toBe(true)",
+        re.compile(r"expect\(true\)\.toBe\(true\)"),
+        "stripped",
+    ),
     (
         "empty test function",
         re.compile(
             r"^\s*def\s+test_\w+\([^)]*\):\s*\n\s*pass\s*$",
             re.MULTILINE,
         ),
+        "raw",
     ),
     (
         "empty arrow test",
         re.compile(
             r"it\([\'\"][^\'\"]+[\'\"]\s*,\s*(?:async\s+)?\(\s*\)\s*=>\s*\{\s*\}\s*\)"
         ),
+        "raw",
     ),
 ]
+
+
+# E (SCEN-308): ``@pytest.mark.skip`` / ``skipif`` / ``xfail`` and
+# ``@unittest.skip*`` decorators legitimately leave the test body empty.
+# Detect at the line ABOVE the matched ``def test_...`` so the empty-body
+# regex does not over-block decorated placeholders. Match at start of line
+# (``re.MULTILINE``) so attribute access (``mod.skip``) inside an
+# expression body is not mistaken for a decorator.
+_SKIP_DECORATOR_RE = re.compile(
+    r"^\s*@(?:"
+    r"pytest\.mark\.(?:skip|skipif|xfail)"
+    r"|unittest\.(?:skip|skipIf|skipUnless)"
+    r")\b",
+    re.MULTILINE,
+)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -147,6 +208,51 @@ _BASH_GIT_COMMIT_RE = re.compile(r"(?<![\w-])git\s+commit(?![\w-])")
 # the guard when inspecting a Bash command string.
 _QUOTED_LITERAL_RE = re.compile(r"'[^']*'|\"[^\"]*\"")
 
+# Heredoc body stripper (A2, SCEN-305).
+#
+# Bash heredoc grammar accepted here:
+#   ``<<TAG\n...body...\nTAG``           — unquoted tag, body inert for our purpose
+#   ``<<-TAG\n...body...\n[\t]*TAG``     — leading-tab strip variant
+#   ``<<'TAG'`` / ``<<"TAG"``            — quoted tag (no parameter expansion);
+#                                          the closing line is the bare TAG word
+#
+# Body content is replaced by spaces of equal length so command offsets
+# remain stable for any downstream regex. Stripping must precede
+# `_strip_quoted` because a heredoc body can contain unbalanced quotes
+# (``recordame: it's done``) that would otherwise confuse the
+# quoted-literal regex.
+#
+# Limitation: this is a heuristic, not a full Bash parser. Nested
+# heredocs, here-strings (``<<<``), and process substitution are
+# acknowledged out of scope (same threat-model class as `_bash_is_git_commit`
+# command-substitution false negatives — see `__no scope creep` notes).
+_HEREDOC_RE = re.compile(
+    r"<<-?\s*"                   # `<<` or `<<-`
+    r"(?P<q>['\"]?)"             # optional opening quote on tag
+    r"(?P<tag>[A-Za-z_][\w-]*)"  # tag identifier
+    r"(?P=q)"                    # matching closing quote
+    r"[^\n]*\n"                  # rest of the opening line (e.g. ` > out`)
+    r"(?P<body>(?:.*\n)*?)"      # body lines (non-greedy)
+    r"\s*(?P=tag)\b",            # closing tag line (leading ws allowed for `<<-`)
+)
+
+
+def _strip_heredocs(command):
+    """Replace each heredoc body with spaces, preserving length/offsets.
+
+    Closing tag line is also blanked so a `git commit` that legitimately
+    appears INSIDE the closing-tag line (rare) is treated as inert; in
+    practice the closing tag is `EOF` / `END` and contains no command.
+    """
+    if not command or "<<" not in command:
+        return command
+
+    def _blank(match):
+        full = match.group(0)
+        return " " * len(full)
+
+    return _HEREDOC_RE.sub(_blank, command)
+
 
 def _strip_quoted(command):
     """Return command with single/double quoted literals replaced by spaces.
@@ -158,12 +264,34 @@ def _strip_quoted(command):
     return _QUOTED_LITERAL_RE.sub(lambda m: " " * len(m.group(0)), command)
 
 
+_SCENARIO_PATH_TOKEN_RE = re.compile(
+    # Path-shaped token (no whitespace, no shell metachars, no quotes)
+    # that EITHER ends in `.scenarios.md` OR contains a `/scenarios/`
+    # directory segment. Anchored on a non-path boundary so substrings
+    # of larger words don't match.
+    r"(?<![\w./-])"
+    r"([\w.-]+(?:/[\w.-]+)*"
+    r"(?:/scenarios/[\w.-]+\.scenarios\.md|/scenarios/?|\.scenarios\.md))"
+    r"(?![\w./-])"
+)
+
+
 def _bash_writes_scenarios(command, cwd):
     """True iff the Bash command writes into a scenario file.
 
-    Detection: the command mentions any configured discovery root AND
-    invokes a write-verb against a `.scenarios.md` file. Read-only
-    commands (cat, diff, etc.) are not matched.
+    Detection (A3, SCEN-306): the command must satisfy BOTH gates:
+    1. A write-verb is invoked (`_BASH_SCENARIO_WRITE_RE`).
+    2. The command contains a TOKEN shaped like a scenario path
+       (`<root>/.../scenarios/<file>.scenarios.md`, or any path with
+       `/scenarios/` segment, or any token ending `.scenarios.md`)
+       AND that token sits under a configured discovery root.
+
+    Pre-Fix-A3 the second gate was a substring check
+    (``any(root in command for root in roots)``) that fired on any
+    mention of the root anywhere — including read-only paths and
+    unrelated cleanup paths (``rm -rf cache/.ralph/specs/leftover``).
+    Now the root must coincide with the WRITE TARGET rather than appear
+    anywhere in the surrounding command.
 
     Deliberately does NOT strip quoted literals: a quoted scenario
     path is still a legitimate write target. Quote-stripping is
@@ -171,10 +299,18 @@ def _bash_writes_scenarios(command, cwd):
     """
     if not command:
         return False
-    roots = get_scenario_discovery_roots(cwd)
-    if not any(root in command for root in roots):
+    if not _BASH_SCENARIO_WRITE_RE.search(command):
         return False
-    return bool(_BASH_SCENARIO_WRITE_RE.search(command))
+    roots = get_scenario_discovery_roots(cwd)
+    if not roots:
+        return False
+    for match in _SCENARIO_PATH_TOKEN_RE.finditer(command):
+        token = match.group(1)
+        for root in roots:
+            normalized = root.rstrip("/") + "/"
+            if token == root or token.startswith(normalized):
+                return True
+    return False
 
 
 def _bash_is_git_commit(command):
@@ -182,11 +318,18 @@ def _bash_is_git_commit(command):
 
     Matches: `git commit`, `git commit -m`, `git commit --amend`, etc.
     Excludes: `git commit-wrapper`, `my-git commit`, shell comments,
-    quoted `"git commit"` literals.
+    quoted `"git commit"` literals, heredoc bodies (A2, SCEN-305).
+
+    Strip order matters:
+      1. heredoc bodies — may contain unbalanced quotes that would
+         otherwise confuse the quoted-literal regex.
+      2. quoted literals — `"git commit"` and `'git commit'` are inert.
+      3. `#` comments — `# git commit` is documentation, not a command.
     """
     if not command:
         return False
-    stripped = _strip_quoted(command)
+    stripped = _strip_heredocs(command)
+    stripped = _strip_quoted(stripped)
     # Drop shell comments (# to end of line)
     stripped = re.sub(r"(?<!\\)#[^\n]*", "", stripped)
     return bool(_BASH_GIT_COMMIT_RE.search(stripped))
@@ -838,18 +981,90 @@ def _extract_new_text(tool_name, tool_input):
 
 
 def _strip_docstrings(text):
-    """Remove triple-quoted strings before tautology scanning."""
-    return _TRIPLE_QUOTED_RE.sub("", text or "")
+    """Remove triple-quoted strings, single/double-quoted literals, and `#`
+    comments before tautology scanning.
+
+    A1 (SCEN-303): pre-Fix-A1 only triple-quoted strings were stripped, so
+    `# do NOT use assert True here` (comment) and `msg = "expect(true).toBe(true)"`
+    (string literal) tripped the tautology gate. Stripping those constructs
+    keeps the regex limited to executable code positions. Order matters:
+    triple-quoted first (so `'''...''' # comment` keeps the docstring intact
+    rather than swallowing internal apostrophes), then `#` comments (so a
+    `#` inside a single-line string is preserved by string stripping below),
+    then single/double-quoted literals.
+    """
+    if not text:
+        return ""
+    stripped = _TRIPLE_QUOTED_RE.sub("", text)
+    # Strip quoted literals BEFORE comments so `"foo # bar"` is not
+    # truncated at the embedded `#`.
+    stripped = _SQ_DQ_STRING_RE.sub("", stripped)
+    stripped = _PY_COMMENT_RE.sub("", stripped)
+    return stripped
+
+
+def _empty_test_decorated_skip(new_text, match):
+    """E (SCEN-308): True iff the matched empty-test ``def`` line is
+    immediately preceded by a ``@pytest.mark.skip`` (or skipif/xfail) or
+    ``@unittest.skip*`` decorator.
+
+    The ``empty test function`` regex anchors on the start of the ``def``
+    line. Walk backwards from ``match.start()`` over consecutive
+    decorator lines (``@...``) and check whether any qualifies as a skip
+    decorator. Stack-stacked decorators (``@parametrize`` above
+    ``@skip``) are honored — only ONE skip decorator above the ``def``
+    line is required.
+    """
+    # Slice from the start of the new_text up to the match start so the
+    # MULTILINE regex below sees only what precedes this ``def``.
+    head = new_text[: match.start()]
+    # Walk backwards through whitespace + lines that begin with ``@``
+    # until we hit a non-decorator, non-blank line (function above) or
+    # the start of the buffer.
+    lines = head.splitlines()
+    # Drop trailing empty lines that may sit between decorator and def.
+    while lines and lines[-1].strip() == "":
+        lines.pop()
+    decorator_block = []
+    while lines and lines[-1].lstrip().startswith("@"):
+        decorator_block.append(lines.pop())
+    if not decorator_block:
+        return False
+    block_text = "\n".join(reversed(decorator_block))
+    return bool(_SKIP_DECORATOR_RE.search(block_text))
 
 
 def _find_tautological_test_addition(new_text):
-    """Return the matched tautology category, or None."""
+    """Return the matched tautology category, or None.
+
+    Per-pattern scan mode (A1, SCEN-303/304):
+    * ``stripped`` — scan after `_strip_docstrings` removes triple-quoted
+      strings, single/double-quoted literals, and `#` comments. Used by
+      textual patterns (assert True, assert 1==1, expect(true).toBe).
+    * ``raw`` — scan on the original text. Used by structural patterns
+      (empty test function, empty arrow test) whose regexes consume
+      quoted labels (e.g. ``it('x', () => {})``) and would mis-fire on
+      the stripped variant.
+
+    Empty-test pattern (E, SCEN-308): an immediately-preceding
+    ``@pytest.mark.skip`` (or ``skipif``/``xfail``) / ``@unittest.skip*``
+    decorator suppresses the match — skipped tests legitimately have
+    empty bodies.
+    """
     if not new_text:
         return None
     stripped = _strip_docstrings(new_text)
-    for category, pattern in _TAUTOLOGICAL_PATTERNS:
-        if pattern.search(stripped):
-            return category
+    for category, pattern, scan in _TAUTOLOGICAL_PATTERNS:
+        target = stripped if scan == "stripped" else new_text
+        match = pattern.search(target)
+        if not match:
+            continue
+        if (
+            category == "empty test function"
+            and _empty_test_decorated_skip(new_text, match)
+        ):
+            continue
+        return category
     return None
 
 
