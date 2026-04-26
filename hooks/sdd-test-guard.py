@@ -276,40 +276,47 @@ _SCENARIO_PATH_TOKEN_RE = re.compile(
 )
 
 
+_BASH_STATEMENT_SEP_RE = re.compile(r"&&|\|\|?|;|\n|&(?!&)")
+
+
 def _bash_writes_scenarios(command, cwd):
     """True iff the Bash command writes into a scenario file.
 
-    Detection (A3, SCEN-306): the command must satisfy BOTH gates:
-    1. A write-verb is invoked (`_BASH_SCENARIO_WRITE_RE`).
-    2. The command contains a TOKEN shaped like a scenario path
-       (`<root>/.../scenarios/<file>.scenarios.md`, or any path with
-       `/scenarios/` segment, or any token ending `.scenarios.md`)
-       AND that token sits under a configured discovery root.
+    Detection (A3, SCEN-306; hardened by Bundle 5):
 
-    Pre-Fix-A3 the second gate was a substring check
-    (``any(root in command for root in roots)``) that fired on any
-    mention of the root anywhere — including read-only paths and
-    unrelated cleanup paths (``rm -rf cache/.ralph/specs/leftover``).
-    Now the root must coincide with the WRITE TARGET rather than appear
-    anywhere in the surrounding command.
+    1. Strip heredoc bodies — paths and verbs in heredoc bodies are
+       inert text data, not active commands.
+    2. Strip ``#`` comments — verbs/paths inside a shell comment are
+       documentation, not actions.
+    3. Split into statements on ``&&``, ``||``, ``|``, ``;``, ``\\n``,
+       and single ``&`` (background). A write-verb in statement A
+       combined with a scenario path in statement B does NOT trigger
+       — they must coincide in the SAME statement.
+    4. For each statement: write-verb match (``_BASH_SCENARIO_WRITE_RE``)
+       AND a path-token (``_SCENARIO_PATH_TOKEN_RE``) that sits under a
+       configured discovery root.
 
-    Deliberately does NOT strip quoted literals: a quoted scenario
-    path is still a legitimate write target. Quote-stripping is
-    reserved for git-commit detection where false positives matter.
+    Quoted literals are intentionally NOT stripped: ``cat > "foo.scenarios.md"``
+    is a legitimate write target.
     """
     if not command:
-        return False
-    if not _BASH_SCENARIO_WRITE_RE.search(command):
         return False
     roots = get_scenario_discovery_roots(cwd)
     if not roots:
         return False
-    for match in _SCENARIO_PATH_TOKEN_RE.finditer(command):
-        token = match.group(1)
-        for root in roots:
-            normalized = root.rstrip("/") + "/"
-            if token == root or token.startswith(normalized):
-                return True
+    stripped = _strip_heredocs(command)
+    # Drop shell `#` comments (matches the strip in `_bash_is_git_commit`).
+    stripped = re.sub(r"(?<!\\)#[^\n]*", "", stripped)
+    statements = _BASH_STATEMENT_SEP_RE.split(stripped)
+    for stmt in statements:
+        if not _BASH_SCENARIO_WRITE_RE.search(stmt):
+            continue
+        for match in _SCENARIO_PATH_TOKEN_RE.finditer(stmt):
+            token = match.group(1)
+            for root in roots:
+                normalized = root.rstrip("/") + "/"
+                if token == root or token.startswith(normalized):
+                    return True
     return False
 
 

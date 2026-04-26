@@ -405,6 +405,118 @@ class TestBashWritesScenariosTargetBinding(unittest.TestCase):
 
 
 # -----------------------------------------------------------------
+# SCEN-306 (Bundle 5) -- A3 hardening: write-verb and path-token must
+# coincide in the SAME statement; comments are stripped before check
+# -----------------------------------------------------------------
+
+
+class TestBashWritesScenariosStatementBinding(unittest.TestCase):
+    """A3 hardening (Bundle 5).
+
+    The original A3 fix bound the path-token to a discovery root but
+    accepted ANY write-verb anywhere in the command. This left two
+    residual false positives:
+
+    1. Cross-statement: ``rm /tmp/foo && echo 'docs/specs/.../scenarios/x.scenarios.md'``
+       fired because ``rm`` (write-verb) and ``docs/specs/.../scenarios.md``
+       (path-token) coexisted in the command, even though they belonged
+       to different statements (split by ``&&``).
+
+    2. Comment poisoning: ``grep 'docs/specs/x/scenarios/x.scenarios.md' src/  # rm hint``
+       fired because ``rm`` matched the write-verb regex inside the
+       trailing ``# rm hint`` comment.
+
+    Bundle 5 strips ``#`` comments and heredoc bodies, then splits on
+    statement separators (``&&``, ``||``, ``|``, ``;``, ``\\n``, ``&``)
+    and requires write-verb + path-token in the SAME statement.
+    """
+
+    CASES = [
+        # FALSE POSITIVES — Bundle 5 closes these
+        (
+            "cross_stmt_rm_then_echo_path",
+            "nonralph",
+            "rm /tmp/foo && echo 'see {root}/x/scenarios/x.scenarios.md'",
+            0,
+        ),
+        (
+            "cross_stmt_rm_then_cat_read",
+            "ralph",
+            "rm /tmp/foo ; cat {root}/x/scenarios/x.scenarios.md",
+            0,
+        ),
+        (
+            "comment_rm_hint",
+            "nonralph",
+            "grep '{root}/x/scenarios/x.scenarios.md' src/  # rm hint",
+            0,
+        ),
+        (
+            "comment_full_command",
+            "ralph",
+            "ls {root}/  # later: rm {root}/x/scenarios/x.scenarios.md",
+            0,
+        ),
+        (
+            "touch_redirect_unrelated_then_grep_path",
+            "nonralph",
+            "touch /tmp/foo > /dev/null && grep {root}/x/scenarios/x.scenarios.md src/",
+            0,
+        ),
+        # TRUE POSITIVES — must still block
+        (
+            "tp_second_stmt_has_both_rm_and_path",
+            "nonralph",
+            "rm /tmp/foo && rm {root}/x/scenarios/x.scenarios.md",
+            2,
+        ),
+        (
+            "tp_tee_after_pipe",
+            "ralph",
+            "cat config | tee {root}/foo/scenarios/foo.scenarios.md",
+            2,
+        ),
+    ]
+
+    MODE_TO_ROOT = {
+        "ralph": ".ralph/specs",
+        "nonralph": "docs/specs",
+    }
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="a3hard-")
+        for d in (".ralph/specs/auth/scenarios", "docs/specs/foo/scenarios"):
+            sd = Path(self.tmpdir) / d
+            sd.mkdir(parents=True, exist_ok=True)
+            stem = d.split("/")[-2]
+            (sd / f"{stem}{S.SCENARIO_FILE_SUFFIX}").write_text(
+                _MINIMAL_SCENARIO, encoding="utf-8",
+            )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_parametrized_cases(self):
+        for label, mode, template, expected_rc in self.CASES:
+            with self.subTest(label=label, mode=mode):
+                root = self.MODE_TO_ROOT[mode]
+                cmd = template.format(root=root)
+                code, stderr = _invoke_guard(
+                    self.tmpdir, "Bash", {"command": cmd},
+                )
+                self.assertEqual(
+                    code, expected_rc,
+                    f"[{label}] cmd={cmd!r} expected_rc={expected_rc} "
+                    f"got rc={code} stderr={stderr!r}",
+                )
+                if expected_rc == 2:
+                    self.assertIn(
+                        "modifies scenario files", stderr,
+                        f"[{label}] true-positive missing scenario stderr",
+                    )
+
+
+# -----------------------------------------------------------------
 # SCEN-308 -- E empty-test honors @pytest.mark.skip decorators
 # -----------------------------------------------------------------
 
