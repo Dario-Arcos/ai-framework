@@ -46,11 +46,13 @@ Threat model boundaries known to this revision (deferred to later steps):
     Reading `evidence_artifact.metadata` would let the proposer set
     their own clock; the parameter now bypasses proposer-controlled
     fields entirely.
-  * Telemetry writes (`append_telemetry`) swallow OSError silently. A
-    hostile filesystem state can therefore make `amend_autonomous` /
-    `evidence_hmac_failure` events disappear while the decision still
-    returns approved. Step 7 hardens audit integrity by gating approval
-    on successful telemetry persistence.
+  * `append_telemetry` now returns bool. The autonomous-PASS path
+    captures the return value and fails the decision closed (failed_gate
+    "audit", reason "telemetry_persistence_failed") when the
+    `amend_autonomous` event cannot be written. A hostile or broken FS
+    state therefore cannot suppress the audit trail while the gate
+    still returns approved — the four-gate protocol is now a signed
+    contract against persistent audit, not an in-memory boolean.
 """
 
 import difflib
@@ -682,19 +684,43 @@ def evaluate_amend_request(
     decision.gate_timings_ms["reversibility"] = int((time.monotonic() - t3) * 1000)
     decision.class_label = "safe_clarification"
 
-    # ─── Approval ──────────────────────────────────────────────────
-    decision.approved = True
-    decision.failed_gate = None
-    decision.reason = None
-
-    append_telemetry(
+    # ─── Audit gate (P0 fix) ──────────────────────────────────────
+    # Approval is contingent on the autonomous-PASS event reaching disk.
+    # `append_telemetry` returns False on any persistence failure (OSError
+    # on the .claude/ directory, full disk, permission denied, etc.). A
+    # hostile or broken filesystem state must NOT silently swallow the
+    # audit trail while the decision still returns approved — that was
+    # the original P0 surface (see module docstring "deferred to later
+    # steps"). This gate makes the four-gate protocol a SIGNED contract
+    # against persistent audit, not an in-memory boolean.
+    persisted = append_telemetry(
         str(cwd),
         {"event": "amend_autonomous", "scenario_rel": scenario_rel,
          "proposer_role": proposer_role,
          "judge_confidence": decision.judge_confidence,
          "class_label": decision.class_label},
     )
+    if not persisted:
+        decision.gate_verdicts["audit"] = "FAIL"
+        decision.failed_gate = "audit"
+        decision.reason = "telemetry_persistence_failed"
+        decision.approved = False
+        # Best-effort secondary signal so an out-of-band watcher can
+        # distinguish "audit-gated rejection" from "happy denial". This
+        # write is allowed to fail (the primary write already failed).
+        try:
+            append_telemetry(
+                str(cwd),
+                {"event": "amend_audit_fail", "scenario_rel": scenario_rel},
+            )
+        except Exception:  # noqa: BLE001 — must not crash decision return
+            pass
+        return decision
 
+    # ─── Approval ──────────────────────────────────────────────────
+    decision.approved = True
+    decision.failed_gate = None
+    decision.reason = None
     return decision
 
 

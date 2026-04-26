@@ -245,7 +245,16 @@ def rotate_telemetry(cwd):
 
 
 def append_telemetry(cwd, event):
-    """Append a best-effort JSONL telemetry event under .claude/."""
+    """Append a JSONL telemetry event under .claude/.
+
+    Returns True iff the event was persisted to disk successfully, False
+    on any failure (OSError on directory create / open / write, TypeError
+    or ValueError serializing the event, etc.). Existing callers that
+    treat telemetry as best-effort still work — they ignore the return.
+    Callers that gate decisions on audit integrity (e.g., the four-gate
+    amend protocol's autonomous-PASS approval) can flip to fail-closed
+    when the return is False.
+    """
     try:
         metrics_path = Path(cwd) / METRICS_FILE
         metrics_path.parent.mkdir(parents=True, exist_ok=True)
@@ -264,8 +273,9 @@ def append_telemetry(cwd, event):
         with metrics_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload))
             f.write("\n")
+        return True
     except (OSError, TypeError, ValueError):
-        pass
+        return False
 
 
 def log_structured(hook_name, event, **kwargs):

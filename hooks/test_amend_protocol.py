@@ -578,3 +578,59 @@ def test_judge_callable_pass_returns_confidence(repo):
     assert decision.approved is True
     assert decision.gate_verdicts.get("invariant") == "PASS"
     assert decision.judge_confidence == 87
+
+
+def test_audit_gate_fails_closed_when_telemetry_persistence_fails(repo, monkeypatch):
+    """All four gates pass + telemetry write fails → approval IS REJECTED.
+
+    Adversarial regression for the original P0: a hostile or broken FS
+    state (full disk, permission denied, mount lost, race) must NOT let
+    `evaluate_amend_request` return approved while the audit trail is
+    silently lost. The decision is now contingent on `append_telemetry`
+    returning True for the `amend_autonomous` event.
+    """
+    import _amend_protocol as _ap
+
+    persisted_events: list = []
+
+    def _failing_append(cwd_arg, event):
+        # First call (the autonomous-PASS event) returns False to simulate
+        # the hostile FS. Secondary calls (the amend_audit_fail signal)
+        # are recorded so the test can assert the fallback emit.
+        persisted_events.append(event)
+        if event.get("event") == "amend_autonomous":
+            return False
+        return True
+
+    monkeypatch.setattr(_ap, "append_telemetry", _failing_append)
+
+    judge = lambda **kw: ("PRESERVES_INVARIANT", "all clear", 95)
+    decision = evaluate_amend_request(
+        cwd=repo["cwd"],
+        scenario_rel=repo["scen_rel"],
+        proposed_content=_happy_proposed_content(repo["scen_content"]),
+        premortem="If wrong, revert via git revert; blast radius single scenario file.",
+        evidence_artifact={
+            "path": repo["scen_rel"],
+            "class": "git_tracked_at_head",
+            "metadata": {},
+        },
+        base_head_sha=repo["head_sha"],
+        base_file_hash=repo["file_hash"],
+        judge_callable=judge,
+    )
+
+    assert decision.approved is False, (
+        "telemetry persistence failure must flip approval to False — "
+        "audit-gated approval P0 fix"
+    )
+    assert decision.failed_gate == "audit"
+    assert decision.reason == "telemetry_persistence_failed"
+    assert decision.gate_verdicts.get("audit") == "FAIL"
+
+    # Out-of-band audit-fail signal was attempted (best-effort secondary
+    # write so an external watcher can distinguish audit-gated rejection
+    # from happy denial).
+    event_names = [e.get("event") for e in persisted_events]
+    assert "amend_autonomous" in event_names
+    assert "amend_audit_fail" in event_names
