@@ -224,16 +224,21 @@ def extract_coverage_pct(output):
     - Istanbul/c8: "Statements : 85.71%"
     - pytest-cov:  "TOTAL    100    15    85%"
     - Go:          "coverage: 85.0% of statements"
-    - Generic:     "NN.N%" near coverage-related keywords
 
     Returns float percentage or None if not found.
+
+    Fail-safe: when no pattern matches, returns None so the threshold
+    check is skipped rather than satisfied by ambient log content. The
+    earlier catch-all `(?i)(?:total|overall|all).*?(\\d+\\.?\\d*)%`
+    pattern was a reward-hacking surface — phrases like
+    `All assertions pass: 100% confidence` were parsed as 100% coverage
+    (D2, SCEN-302). Patterns must anchor on a coverage-tool format.
     """
     patterns = [
         r"All files?\s*\|\s*(\d+\.?\d*)",
         r"Statements\s*:\s*(\d+\.?\d*)%",
         r"TOTAL\s+\d+\s+\d+\s+(\d+)%",
         r"coverage:\s*(\d+\.?\d*)%",
-        r"(?i)(?:total|overall|all).*?(\d+\.?\d*)%",
     ]
     for pattern in patterns:
         match = re.search(pattern, output)

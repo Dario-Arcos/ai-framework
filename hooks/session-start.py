@@ -60,6 +60,25 @@ def active_gitignore_rules(content):
     }
 
 
+def _normalize_gitignore_rule(rule):
+    """Canonicalise a gitignore rule for equivalence comparison.
+
+    `path/*` and `path/*/` match the same set of paths under standard
+    gitignore semantics (the `/*` glob already implies "contents of
+    path"). Treating them as distinct caused the canonical form to be
+    re-appended on every session — `.gitignore` grew indefinitely with
+    redundant rules (D3, SCEN-312).
+
+    Leading `/` semantics ARE preserved: `/.claude/*` (anchored to root)
+    differs from `.claude/*` (matches at any depth) and must NOT be
+    equated.
+    """
+    stripped = rule.strip()
+    if stripped.endswith("/*/"):
+        return stripped[:-1]  # `path/*/` -> `path/*`
+    return stripped
+
+
 def migrate_claude_gitignore(content):
     """Migrate old /.claude/ rule to /.claude/* so negation patterns work."""
     lines = content.splitlines(keepends=True)
@@ -93,9 +112,10 @@ def ensure_gitignore_rules(plugin_root, project_dir):
         content = migrate_claude_gitignore(content)
 
         active = active_gitignore_rules(content)
+        active_normalized = {_normalize_gitignore_rule(r) for r in active}
         appended = False
         for rule in CRITICAL_GITIGNORE_RULES:
-            if rule in active:
+            if _normalize_gitignore_rule(rule) in active_normalized:
                 continue
             if not appended:
                 if content and not content.endswith("\n"):
@@ -104,6 +124,7 @@ def ensure_gitignore_rules(plugin_root, project_dir):
                 appended = True
             content += rule + "\n"
             active.add(rule)
+            active_normalized.add(_normalize_gitignore_rule(rule))
 
         if content != original:
             with open(project_gitignore, "w", encoding="utf-8") as f:
