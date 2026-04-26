@@ -419,6 +419,31 @@ def _reset_amend_attempts(cwd, sid, scenario_rel):
             pass
 
 
+def _increment_amend_attempts(cwd, sid, scenario_rel):
+    """Atomically bump the per-(session,scenario) counter by one.
+
+    Called on every divergence-denial path — both "no amend_request
+    supplied" and "amend_request supplied but rejected" — so the
+    SCEN-219 STOP-after-2 ceiling is enforced in production rather
+    than only in tests that pre-seed the counter.
+
+    Returns the post-increment value, or 0 on any failure (so a
+    transient FS error never crashes the hook). Best-effort by design:
+    if the counter file cannot be written, the worst case is the
+    agent gets one extra retry — preferable to crashing the guard.
+    """
+    p = _amend_attempts_path(cwd, sid, scenario_rel)
+    if p is None:
+        return 0
+    current = _read_amend_attempts(cwd, sid, scenario_rel)
+    new_value = current + 1
+    try:
+        p.write_text(str(new_value))
+    except OSError:
+        return current
+    return new_value
+
+
 def _scenario_goal(scenario_rel, cwd):
     """Resolve the goal directory name a scenario belongs to.
 
@@ -824,6 +849,11 @@ def main():
                                 # check_amend_marker call from any peer
                                 # hook in this PreToolUse cycle.
                             else:
+                                # Bump counter — a rejected amend_request
+                                # still consumes one of the SCEN-219
+                                # STOP-after-2 budget. Otherwise an agent
+                                # could spam malformed proposals forever.
+                                _increment_amend_attempts(cwd, sid, rel)
                                 _record_guard_trigger(
                                     cwd, "SCENARIO", tool_name, file_path,
                                 )
@@ -855,6 +885,12 @@ def main():
                                     f"end session",
                                     category="ATTEMPTS",
                                 )
+                            # Bump counter — every divergence attempt
+                            # without an amend_request consumes one of the
+                            # SCEN-219 STOP-after-2 budget. The next call
+                            # with the same (sid, scenario_rel) hits the
+                            # `attempts >= _AMEND_ATTEMPTS_MAX` branch.
+                            _increment_amend_attempts(cwd, sid, rel)
                             _record_guard_trigger(
                                 cwd, "SCENARIO", tool_name, file_path,
                             )

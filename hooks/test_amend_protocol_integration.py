@@ -248,6 +248,135 @@ def test_scen_219_hook_blocks_third_attempt(repo):
         _cleanup_attempts_file(cwd, sid, scen_rel)
 
 
+@pytest.fixture
+def repo_modes(tmp_path, monkeypatch, request):
+    """Parametrized fixture: builds the scenario tree under either the
+    Ralph discovery root (`.ralph/specs/<goal>/scenarios/`) or the
+    non-Ralph root (`docs/specs/<goal>/scenarios/`). Test bodies are
+    identical across modes — both must enforce the SCEN-219 counter.
+    """
+    mode = request.param  # "ralph" or "nonralph"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CLAUDE_SESSION_ID", "test-session-counter")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+    if mode == "ralph":
+        scen_dir = tmp_path / ".ralph/specs/featx/scenarios"
+        scen_rel = ".ralph/specs/featx/scenarios/featx.scenarios.md"
+        # Ralph mode requires a .ralph/specs marker directory tree to exist
+        (tmp_path / ".ralph").mkdir(parents=True, exist_ok=True)
+    else:
+        scen_dir = tmp_path / "docs/specs/featx/scenarios"
+        scen_rel = "docs/specs/featx/scenarios/featx.scenarios.md"
+    scen_dir.mkdir(parents=True)
+    scen_file = scen_dir / "featx.scenarios.md"
+    scen_content = (
+        "---\nname: featx\ncreated_by: manual\ncreated_at: 2026-04-25T00:00:00Z\n---\n\n"
+        "## SCEN-001: example\n"
+        "**Given**: x\n"
+        "**When**: y\n"
+        "**Then**: z\n"
+        "**Evidence**: q\n"
+    )
+    scen_file.write_text(scen_content)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=tmp_path, check=True)
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path,
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    file_hash = hashlib.sha256(scen_content.encode()).hexdigest()
+    return {
+        "mode": mode,
+        "cwd": tmp_path,
+        "scen_rel": scen_rel,
+        "scen_file": scen_file,
+        "scen_content": scen_content,
+        "head_sha": head_sha,
+        "file_hash": file_hash,
+    }
+
+
+@pytest.mark.parametrize("repo_modes", ["ralph", "nonralph"], indirect=True)
+def test_scen_219_counter_increments_across_hook_invocations(repo_modes):
+    """SCEN-219 production enforcement: 3 sequential divergence-without-amend
+    Edits must be denied with SCENARIO/SCENARIO/ATTEMPTS — proving the
+    counter is incremented by the hook itself, not just by test fixtures
+    pre-seeding the file. Adversarial regression for the original P0 where
+    `_increment_amend_attempts` did not exist and the counter stayed at 0.
+
+    Ralph + non-Ralph parity is mandatory: the SCEN-A23 invariant requires
+    enforcement in both modes; weakening the gate for one mode would
+    silently re-open the bypass via mode-switching.
+    """
+    repo = repo_modes
+    raw_sid = f"counter-incr-{repo['mode']}"
+    sid = _hashed_sid(raw_sid)
+    cwd = str(repo["cwd"])
+    scen_rel = repo["scen_rel"]
+
+    # Pre-condition: no counter file exists yet
+    counter_path = _sdd_test_guard._amend_attempts_path(cwd, sid, scen_rel)
+    assert counter_path is not None
+    if Path(counter_path).exists():
+        Path(counter_path).unlink()
+
+    def _attempt(attempt_index):
+        # Fresh divergent content per attempt (so the simulator predicts a
+        # diverged hash each time). The mutation differs per call so the
+        # PreToolUse simulator can't trivially detect "same edit replayed".
+        new_content = (
+            repo["scen_content"]
+            + f"## SCEN-extra-{attempt_index}: drift\n"
+            + "**When**: a\n**Then**: b\n**Evidence**: e\n"
+        )
+        return invoke_hook("sdd-test-guard.py", {
+            "cwd": cwd,
+            "session_id": raw_sid,
+            "tool_name": "Edit",
+            "tool_input": {
+                "file_path": str(repo["scen_file"]),
+                "old_string": repo["scen_content"],
+                "new_string": new_content,
+            },
+        })
+
+    try:
+        # Attempt 1 — counter goes 0 → 1, denied with SCENARIO
+        rc1, _o1, stderr1, _e1 = _attempt(1)
+        assert rc1 == 2, f"attempt 1 expected exit 2, got {rc1}; stderr={stderr1!r}"
+        assert "[SDD:SCENARIO]" in stderr1, stderr1
+        assert "scenario write-once violation" in stderr1
+        assert Path(counter_path).read_text().strip() == "1", (
+            f"counter must be 1 after first denial in {repo['mode']} mode"
+        )
+
+        # Attempt 2 — counter goes 1 → 2, still denied with SCENARIO
+        rc2, _o2, stderr2, _e2 = _attempt(2)
+        assert rc2 == 2, f"attempt 2 expected exit 2, got {rc2}; stderr={stderr2!r}"
+        assert "[SDD:SCENARIO]" in stderr2, stderr2
+        assert Path(counter_path).read_text().strip() == "2", (
+            f"counter must be 2 after second denial in {repo['mode']} mode"
+        )
+
+        # Attempt 3 — counter is 2 (>= MAX), now denied with ATTEMPTS
+        rc3, _o3, stderr3, _e3 = _attempt(3)
+        assert rc3 == 2, f"attempt 3 expected exit 2, got {rc3}; stderr={stderr3!r}"
+        assert "[SDD:ATTEMPTS]" in stderr3, stderr3
+        assert "amend-proposal required" in stderr3, stderr3
+        assert "2 attempts exhausted on" in stderr3, stderr3
+
+        # Telemetry: amend_attempts_exhausted must appear at least once
+        events = _telemetry_events(cwd, "amend_attempts_exhausted")
+        assert any(ev.get("scenario_rel") == scen_rel for ev in events), (
+            f"expected amend_attempts_exhausted telemetry in {repo['mode']} mode"
+        )
+    finally:
+        _cleanup_attempts_file(cwd, sid, scen_rel)
+
+
 def test_scen_219_hook_cannot_reset_counter_without_judge(repo):
     """SCEN-219 architectural reality: hook judge_callable is always None.
 
@@ -298,9 +427,19 @@ def test_scen_219_hook_cannot_reset_counter_without_judge(repo):
 
         # Counter is NOT reset — only autonomous PASS resets it, and the
         # hook cannot reach PASS without a judge. Confirms architectural
-        # boundary documented in sdd-test-guard.py Step 3 block.
+        # boundary documented in sdd-test-guard.py Step 3 block. Fix 2
+        # additionally INCREMENTS the counter on every rejected amend so
+        # an agent cannot spam malformed proposals forever — counter
+        # post-condition is therefore ≥ pre-seeded value, never reset.
         assert Path(counter).exists(), "counter file removed unexpectedly"
-        assert Path(counter).read_text().strip() == "2"
+        post = int(Path(counter).read_text().strip())
+        assert post >= 2, (
+            f"counter must not be reset by rejected amend; got {post}"
+        )
+        assert post == 3, (
+            f"counter must be incremented by rejected amend (Fix 2); "
+            f"got {post}"
+        )
     finally:
         _cleanup_attempts_file(cwd, sid, scen_rel)
 
