@@ -10,6 +10,48 @@ Registro de cambios del framework, organizado por versión siguiendo [Keep a Cha
 
 ## [No Publicado]
 
+## [2026.5.0] - 2026-04-26
+
+### Corregido
+
+- **Bundle 0 — `_BASH_SCENARIO_WRITE_RE` stderr-redirect false positive**: `2>&1`, `>&2`, `&>` ya no se confunden con escrituras a scenarios. Verbos prefijados (`echo`, `cat`, `printf`) usan `(?<!\d)>(?!\s*&)` para detectar solo file-redirects reales.
+- **Bundle 1 — 4 false positives en `sdd-test-guard.py`**:
+  - **A1** tautology pre-strip honra `# comments` y string literals; `assert True == X` y `assert True is not None` ya no se marcan como tautológicos.
+  - **A2** `_bash_is_git_commit` tira heredoc bodies (`<<TAG`, `<<-TAG`, `<<'TAG'`, `<<"TAG"`).
+  - **A3** `_bash_writes_scenarios` requiere coincidencia entre WRITE TARGET y discovery root (no substring anywhere).
+  - **E** empty-test pattern honra `@pytest.mark.skip`/`skipif`/`xfail` y `@unittest.skip*`.
+- **Bundle 2 (P0 reward-hacking close)** — `_sdd_coverage.py`: `test_` anclado a inicio de filename (cierra rename evasion `attest_logger.py` etc.); `tests/` plural reconocido junto a `test/` y `__tests__/`.
+- **Bundle 3** — `_amend_protocol.py` + `sdd-auto-test.py`:
+  - **C1** `verify_proposal_received_at` rechaza bool explícitamente.
+  - **C2** `<premortem>` removido de `_INJECTION_TOKENS` (nunca se sustituye en Gate-2 template).
+  - **D1** `format_feedback` consistencia `[PASS]/[FAIL]` con summary, asimétrica (silenciar fallas reales nunca, sólo corregir desync espurio).
+- **Bundle 4 (P0 reward-hacking close)** — `task-completed.py` + `session-start.py`:
+  - **D2** `extract_coverage_pct` rechaza catch-all `total|overall|all.*?(\d+)%`. Solo formatos de coverage tools reales extraen valor.
+  - **D3** `ensure_gitignore_rules` normaliza glob patterns (`/path/*/` ≡ `/path/*`) antes de comparar membership.
+- **Bundle 5 — A3 hardening (cross-statement + comment FPs)**: strip de heredoc bodies + `#` comments y split por `&&|\|\|?|;|\n|&` antes del check. Write-verb y path-token deben coincidir en el mismo statement. Cierra casos como `rm /tmp/foo && echo 'docs/specs/.../scenarios/x.scenarios.md'` y `grep ... # rm hint`.
+
+### Holdout enforcement (architectural close)
+
+- **Bundle 6 (F1 close)** — `consume_skill_invoked` + git-commit gate: la verificación del flag `verification-before-completion` deja de ser TTL-permanente. Una invocación = un commit. `has_pending_scenarios(cwd, sid, consume=True)` consume el flag al ser usado por el git-commit gate. Otros consumidores (sop-code-assist / sop-reviewer leader-teammate inheritance) preservan semántica persistente.
+- **Bundle B (F2 + F3 + F4 close)** — scenario hash binding + remove TaskUpdate gate:
+  - **F2/F3**: la skill `verification-before-completion` ahora registra `{rel_path: sha256}` de cada `*.scenarios.md` al invocarse. El git-commit gate re-hashea al commit y rechaza si: cualquier scenario actual falta del map, o cualquier hash difiere. Cierra el bypass donde el agente edita scenarios después de "verificar" para que coincidan con el código. Removidos toleran (subset OK).
+  - **F4**: gate de `TaskUpdate(completed)` removido como redundante. Acciones simbólicas de task-tracker no cambian historial durable; el punto sustantivo de enforcement es `git commit / merge / push`.
+
+### Spec docs nuevas
+
+- `docs/specs/2026-04-26-hook-false-positives/` — 12 SCEN-301..312 con counter-tests adversariales y mode parity Ralph + non-Ralph.
+- `docs/specs/2026-04-26-holdout-enforcement/` — 8 SCEN-401..408 documentando los 4 hallazgos arquitectónicos y el plan de cierre.
+
+### Tests
+
+- `hooks/test_bash_scenario_regex_false_positives.py` — Bundle 0 (+25 tests).
+- `hooks/test_hook_false_positives_sdd_guard.py` — Bundles 1 + 5 (+25 tests, parametrizado Ralph + non-Ralph).
+- `hooks/test_hook_false_positives_coverage.py` — Bundle 2 (+18 tests).
+- `hooks/test_hook_false_positives_amend_autotest.py` — Bundle 3 (+19 tests).
+- `hooks/test_hook_false_positives_taskcompleted_session.py` — Bundle 4 (+18 tests).
+- `hooks/test_holdout_f1_consume.py` — Bundles 6 + B (+15 tests, F1 + F2/F3 hash binding + Ralph mode parity).
+- Total pytest: **1129 → 1243** (+114), 0 regressions.
+
 ### Añadido
 
 - **Phase 8 — per-edit fast-path (Factory.ai-aligned test impact, opt-in)**: `hooks/_sdd_detect.py::cascade_impacted_test_command(cwd, file, sid)` sustituye la invocación ciega `detect_test_command(cwd)` en `sdd-auto-test.py` por una cascada de cuatro rungs que eligen el comando más angosto que aún detecta la regresión para ese edit. La cascada:
